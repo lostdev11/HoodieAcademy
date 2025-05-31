@@ -1,39 +1,37 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%; /* Dark bluish-gray */
-    --foreground: 210 40% 98%; /* Light gray/white for text */
-    --card: 224 71% 10%; /* Slightly lighter dark blue for cards */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
+ 
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    
-    --primary: 158 79% 53%; /* Neon Green */
-    --primary-foreground: 222.2 47.4% 11.2%; /* Dark for contrast on green */
-    
-    --secondary: 326 100% 67%; /* Vibrant Pink */
-    --secondary-foreground: 210 40% 98%; /* Light for contrast on pink */
-    
-    --muted: 224 64% 18%; /* Muted darker blue */
-    --muted-foreground: 215.4 16.3% 56.9%; /* Muted gray */
-    
-    --accent: 180 100% 50%; /* Cyan */
-    --accent-foreground: 222.2 47.4% 11.2%; /* Dark for contrast on cyan */
-
-    --warning: 30 95% 52%; /* Bright Orange - for Technical Analysis course */
-    --warning-foreground: 210 40% 98%; /* Light for contrast on orange */
-    
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+ 
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+ 
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+ 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    
-    --border: 217.2 32.6% 17.5%; /* Dark border, can be neon if needed */
+
+    --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 180 100% 50%; /* Cyan for rings */
-    
+    --ring: 212.7 26.8% 83.9%;
+ 
     --radius: 0.5rem;
 
     --sidebar-background: 220 13% 13%;
@@ -51,42 +49,34 @@
     --chart-5: 70 100% 50%;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 224 71% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 158 79% 53%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 326 100% 67%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 224 64% 18%;
-    --muted-foreground: 215.4 16.3% 56.9%;
-    --accent: 180 100% 50%;
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+ 
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+ 
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-    --warning: 30 95% 52%; 
-    --warning-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+ 
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 180 100% 50%;
 
-    --sidebar-background: 220 13% 13%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 142.7 84.8% 60.6%;
-    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
-    --sidebar-accent: 12.7 100% 64.7%;
-    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
-    --sidebar-border: 217.2 32.6% 17.5%;
-    --sidebar-ring: 142.7 84.8% 60.6%;
-    --chart-1: 160 100% 50%;
-    --chart-2: 280 100% 50%;
-    --chart-3: 40 100% 50%;
-    --chart-4: 310 100% 50%;
-    --chart-5: 70 100% 50%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
   }
 }
 
@@ -126,7 +116,6 @@
   }
 }
 
-
 @layer utilities {
   .neon-border-purple {
     border-color: #a855f7; /* purple-500 */
@@ -146,7 +135,7 @@
   }
   .neon-border-pink {
     border-color: #ec4899; /* pink-500 */
-    box-shadow: 0 0 8px rgba(236, 72, 153, 0.6), 0 0 15px rgba(244, 114, 182, 0.4); /* pink-500, pink-400 */
+    box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);
   }
   .neon-border-yellow {
     border-color: #facc15; /* yellow-400 */
@@ -160,7 +149,6 @@
     border-color: hsl(var(--muted-foreground) / 0.5);
     box-shadow: 0 0 8px hsl(var(--muted-foreground) / 0.3), 0 0 15px hsl(var(--muted-foreground) / 0.2);
   }
-
 
   /* Custom scrollbar for cyberpunk theme */
   .scrollbar-thin {
@@ -183,4 +171,12 @@
    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--primary));
   }
+}
+
+.neon-border-green {
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+.neon-border-red {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
 }

@@ -1,4 +1,3 @@
-
 'use client'
 
 import Image from 'next/image';
@@ -26,7 +25,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
       <header className="mb-8 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold text-accent">
+        <h1 className="text-4xl md:text-5xl font-bold text-orange-400 neon-border-orange">
           Hoodie Academy: Learn Hard, HODL Harder
         </h1>
         <p className="text-md md:text-lg text-muted-foreground mt-2">
@@ -37,7 +36,7 @@ export default function Home() {
       <main className="flex flex-col items-center justify-center px-4 md:px-8">
         <section className="mb-8 text-center">
           <p className="text-lg md:text-xl text-foreground">
-            Welcome to <span className="text-secondary font-semibold">Hoodie Academy</span>, the premier Web3 learning center.
+            Welcome to <span className="text-cyan-400 font-semibold neon-border-cyan">Hoodie Academy</span>, the premier Web3 learning center.
             Dive into the world of <span className="text-primary">NFTs</span>,{' '}
             <span className="text-primary">meme coins</span>, and <span className="text-primary">crypto culture</span> with our
             cutting-edge courses.

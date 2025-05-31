@@ -1,35 +1,19 @@
-import type {Metadata} from 'next';
-import { Inter, IBM_Plex_Mono } from 'next/font/google';
-import './globals.css';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ['latin'],
-  variable: '--font-ibm-plex-mono',
-  weight: ['400', '700'], // Specify weights you might use
-  display: 'swap',
-});
+import './globals.css'
+import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Hoodie Academy Hub',
-  description: 'Web3 learning center for NFTs, meme coins, and crypto culture',
-};
+  title: 'Hoodie Academy - Crypto X Influence',
+  description: 'Learn how to build your influence in the crypto space on X',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${ibmPlexMono.variable} antialiased scrollbar-thin`}>
-        {children}
-      </body>
+    <html lang="en" className="dark">
+      <body className="min-h-screen bg-background text-foreground">{children}</body>
     </html>
-  );
+  )
 }

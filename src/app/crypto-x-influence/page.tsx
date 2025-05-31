@@ -1,4 +1,3 @@
-
 'use client'
 
 import { Button } from "@/components/ui/button";
@@ -383,7 +382,7 @@ export default function CryptoXInfluencePage() {
             Crypto X Influence: Build Your Clout
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground">
-            Curate X feeds and craft viral posts with AI optimization to earn the ‘Thread Tycoon’ NFT badge.
+            Curate X feeds and craft viral posts with AI optimization to earn the 'Thread Tycoon' NFT badge.
           </p>
         </header>
       </div>
