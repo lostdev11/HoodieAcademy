@@ -1,0 +1,37 @@
+{
+        "version": 2,
+        "framework": "nextjs",
+        "builds": [
+          {
+            "src": "package.json",
+            "use": "@vercel/next"
+          },
+          {
+            "src": "server.js",
+            "use": "@vercel/node"
+          },
+          {
+            "src": "ProgressAPI.js",
+            "use": "@vercel/node"
+          }
+        ],
+        "routes": [
+          {
+            "src": "/socket.io/(.*)",
+            "dest": "/server.js"
+          },
+          {
+            "src": "/api/(.*)",
+            "dest": "/ProgressAPI.js"
+          },
+          {
+            "src": "/(.*)",
+            "dest": "/"
+          }
+        ],
+        "env": {
+          "NODE_ENV": "production",
+          "HELIUS_API_KEY": "@helius_api_key",
+          "SOLANA_RPC_URL": "@solana_rpc_url"
+        }
+      }
