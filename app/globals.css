@@ -1,0 +1,186 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%; /* Dark bluish-gray */
+    --foreground: 210 40% 98%; /* Light gray/white for text */
+    --card: 224 71% 10%; /* Slightly lighter dark blue for cards */
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    
+    --primary: 158 79% 53%; /* Neon Green */
+    --primary-foreground: 222.2 47.4% 11.2%; /* Dark for contrast on green */
+    
+    --secondary: 326 100% 67%; /* Vibrant Pink */
+    --secondary-foreground: 210 40% 98%; /* Light for contrast on pink */
+    
+    --muted: 224 64% 18%; /* Muted darker blue */
+    --muted-foreground: 215.4 16.3% 56.9%; /* Muted gray */
+    
+    --accent: 180 100% 50%; /* Cyan */
+    --accent-foreground: 222.2 47.4% 11.2%; /* Dark for contrast on cyan */
+
+    --warning: 30 95% 52%; /* Bright Orange - for Technical Analysis course */
+    --warning-foreground: 210 40% 98%; /* Light for contrast on orange */
+    
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --border: 217.2 32.6% 17.5%; /* Dark border, can be neon if needed */
+    --input: 217.2 32.6% 17.5%;
+    --ring: 180 100% 50%; /* Cyan for rings */
+    
+    --radius: 0.5rem;
+
+    --sidebar-background: 220 13% 13%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 142.7 84.8% 60.6%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 12.7 100% 64.7%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 142.7 84.8% 60.6%;
+    --chart-1: 160 100% 50%;
+    --chart-2: 280 100% 50%;
+    --chart-3: 40 100% 50%;
+    --chart-4: 310 100% 50%;
+    --chart-5: 70 100% 50%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 224 71% 10%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 158 79% 53%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 326 100% 67%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 224 64% 18%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+    --accent: 180 100% 50%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --warning: 30 95% 52%; 
+    --warning-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 180 100% 50%;
+
+    --sidebar-background: 220 13% 13%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 142.7 84.8% 60.6%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 12.7 100% 64.7%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 142.7 84.8% 60.6%;
+    --chart-1: 160 100% 50%;
+    --chart-2: 280 100% 50%;
+    --chart-3: 40 100% 50%;
+    --chart-4: 310 100% 50%;
+    --chart-5: 70 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-inter), sans-serif; /* Using Inter font from layout */
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold; /* Ensure headers are bold */
+  }
+
+  /* Basic prose styles for lesson content */
+  .prose {
+    color: hsl(var(--foreground)); 
+  }
+  .prose strong {
+    color: hsl(var(--primary)); /* Example: primary color for strong text */
+  }
+  .prose ol, .prose ul {
+    @apply pl-5;
+  }
+  .prose li::marker {
+    color: hsl(var(--primary)); /* Color for list markers */
+  }
+  .prose-invert strong {
+     color: hsl(var(--primary));
+  }
+   .prose-invert ol > li::marker {
+    color: hsl(var(--primary));
+  }
+  .prose-invert ul > li::marker {
+    color: hsl(var(--primary));
+  }
+}
+
+
+@layer utilities {
+  .neon-border-purple {
+    border-color: #a855f7; /* purple-500 */
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.6), 0 0 15px rgba(192, 132, 252, 0.4); /* purple-500, purple-400 */
+  }
+  .neon-border-blue {
+    border-color: #3b82f6; /* blue-500 */
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6), 0 0 15px rgba(96, 165, 250, 0.4); /* blue-500, blue-400 */
+  }
+  .neon-border-cyan {
+    border-color: #06b6d4; /* cyan-500 */
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.6), 0 0 15px rgba(34, 211, 238, 0.4); /* cyan-500, cyan-400 */
+  }
+  .neon-border-green {
+    border-color: #22c55e; /* green-500 */
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.6), 0 0 15px rgba(74, 222, 128, 0.4); /* green-500, green-400 */
+  }
+  .neon-border-pink {
+    border-color: #ec4899; /* pink-500 */
+    box-shadow: 0 0 8px rgba(236, 72, 153, 0.6), 0 0 15px rgba(244, 114, 182, 0.4); /* pink-500, pink-400 */
+  }
+  .neon-border-yellow {
+    border-color: #facc15; /* yellow-400 */
+    box-shadow: 0 0 8px rgba(250, 204, 21, 0.6), 0 0 15px rgba(253, 224, 71, 0.4); /* yellow-400, yellow-300 */
+  }
+  .neon-border-orange { /* New Orange Border */
+    border-color: hsl(var(--warning)); /* Uses the --warning HSL variable */
+    box-shadow: 0 0 8px hsla(var(--warning), 0.6), 0 0 15px hsla(var(--warning), 0.4);
+  }
+  .neon-border-gray { /* For locked items */
+    border-color: hsl(var(--muted-foreground) / 0.5);
+    box-shadow: 0 0 8px hsl(var(--muted-foreground) / 0.3), 0 0 15px hsl(var(--muted-foreground) / 0.2);
+  }
+
+
+  /* Custom scrollbar for cyberpunk theme */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--accent)) hsl(var(--background));
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+    border-radius: 10px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--accent));
+    border-radius: 10px;
+    border: 2px solid hsl(var(--background));
+  }
+   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary));
+  }
+}
