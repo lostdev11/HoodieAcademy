@@ -16,8 +16,11 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Hoodie Academy Hub',
-  description: 'Web3 learning center for NFTs, meme coins, and crypto culture',
+  title: 'Hoodie Academy',
+  description: 'Learn about NFTs, meme coins, and Web3 culture',
+  icons: {
+    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">��</text></svg>'
+  }
 };
 
 export default function RootLayout({
@@ -27,6 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="data:," />
+      </head>
       <body className={`${inter.variable} ${ibmPlexMono.variable} antialiased scrollbar-thin`}>
         {children}
       </body>

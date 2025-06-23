@@ -13,7 +13,7 @@
         useEffect(() => {
           const { solana } = window;
           if (solana && solana.isPhantom) {
-            solana.connect({ onlyIfTrusted: true }).then(response => {
+            solana.connect({ onlyIfTrusted: true }).then((response: { publicKey: { toString: () => string } }) => {
               setWalletAddress(response.publicKey.toString());
             }).catch(() => {});
           }
@@ -81,14 +81,14 @@
                 </p>
                 <h3 className="text-xl font-bold text-cyan-400 mb-2">Step 2: Join the LFG Campaign</h3>
                 <p className="text-gray-300 mb-4">
-                  - Earn “dots” by registering .sol domains (post-May 1, 2025), updating profiles, or referring friends.<br />
+                  - Earn "dots" by registering .sol domains (post-May 1, 2025), updating profiles, or referring friends.<br />
                   - Use SNS Manager to track dots and claim rewards.<br />
                   - Higher badge tiers (Bronze to Diamond) unlock bigger rewards.[](https://docs.sns.id/collection/tokenomics/sns-token)
                 </p>
                 <h3 className="text-xl font-bold text-cyan-400 mb-2">Step 3: Use Referral Codes</h3>
                 <p className="text-gray-300 mb-4">
                   - Hold a .sol domain to generate a referral code at sns.id.<br />
-                  - Share your code to earn 10% of your referral’s dots (retroactive).<br />
+                  - Share your code to earn 10% of your referral's dots (retroactive).<br />
                   - Enter a referral code before generating your own to earn 1,000 bonus dots.[](https://docs.sns.id/collection/tokenomics/sns-token)
                 </p>
                 <Button

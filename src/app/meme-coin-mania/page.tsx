@@ -1,40 +1,35 @@
-
 'use client'
 
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
-import Web3 from 'web3';
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useSwipeable } from 'react-swipeable';
 import { motion } from 'framer-motion';
-import { GlowingCoinIcon } from "@/components/icons/GlowingCoinIcon";
-import { ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, LineChart, Repeat, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, Wallet, ChevronDown, ChevronUp, Clock, Lock } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
+import TokenGate from "@/components/TokenGate";
 
 declare global {
   interface Window {
-    ethereum?: any;
     solana?: any;
     solflare?: any;
   }
 }
 
-type WalletProviderOption = 'metamask' | 'phantom' | 'solflare' | 'jup' | 'magic-eden';
+type WalletProviderOption = 'phantom' | 'solflare';
 
 interface QuizOption {
   id: string;
@@ -57,6 +52,7 @@ interface Lesson {
   pitfallWarning?: React.ReactNode;
 }
 
+// TODO: Update lessonsData to reflect your NFT project's theme (e.g., Solana NFTs, your collection's details)
 const lessonsData: Lesson[] = [
   {
     id: 'l1',
@@ -112,7 +108,7 @@ const lessonsData: Lesson[] = [
         <p>Red flags include: parabolic price charts (near-vertical increases), excessive hype with little substance, promises of unrealistic guaranteed returns, and pressure to buy immediately. Resist the urge to chase pumps. Stick to your strategy, research thoroughly (even for meme coins), and never invest more than you can afford to lose.</p>
       </>
     ),
-    pitfallWarning:(
+    pitfallWarning: (
         <div className="mt-6 p-4 border border-red-500/50 bg-red-900/30 rounded-lg">
             <h4 className="text-lg font-semibold text-red-400 flex items-center mb-2"><AlertTriangle size={20} className="mr-2"/>FOMO Cliff Warning!</h4>
             <p className="text-sm text-red-300">
@@ -130,11 +126,23 @@ const lessonsData: Lesson[] = [
 
 const PASSING_PERCENTAGE = 0.75;
 const LOCAL_STORAGE_KEY = 'memeCoinManiaProgress';
+const TIMEOUT_STORAGE_KEY = 'memeCoinManiaTimeout';
 
-export default function MemeCoinManiaPage() {
+// Timeout durations in milliseconds
+const TIMEOUT_DURATIONS = [
+  30 * 60 * 1000,    // 30 minutes
+  1 * 60 * 60 * 1000, // 1 hour
+  2 * 60 * 60 * 1000, // 2 hours
+  4 * 60 * 60 * 1000, // 4 hours
+  8 * 60 * 60 * 1000, // 8 hours
+  12 * 60 * 60 * 1000, // 12 hours
+  24 * 60 * 60 * 1000, // 24 hours
+];
+
+const MemeCoinManiaPage = () => {
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [lessonStatus, setLessonStatus] = useState<Array<'locked' | 'unlocked' | 'completed'>>(
-    lessonsData.map((_, index) => (index === 0 ? 'unlocked' : 'locked'))
+    lessonsData.map(() => 'unlocked' as const) // Initialize all lessons as unlocked with proper type
   );
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -142,12 +150,7 @@ export default function MemeCoinManiaPage() {
   const [currentScore, setCurrentScore] = useState(0);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackModalContent, setFeedbackModalContent] = useState({ title: "", description: "" });
-  const [showSimulationAlert, setShowSimulationAlert] = useState(false);
-
-  const [jupPrice, setJupPrice] = useState<number | null>(null);
-  const [bonkPrice, setBonkPrice] = useState<number | null>(null);
-  const [loadingPrices, setLoadingPrices] = useState(true);
-  const [priceError, setPriceError] = useState<string | null>(null);
+  const [showPostAlert, setShowPostAlert] = useState(false);
 
   const [account, setAccount] = useState<string | null>(null);
   const [balance, setBalance] = useState<string | null>(null);
@@ -157,8 +160,14 @@ export default function MemeCoinManiaPage() {
   const [connectedWalletProvider, setConnectedWalletProvider] = useState<WalletProviderOption | null>(null);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   
-  const solanaNetwork = "https://api.mainnet-beta.solana.com";
-  const solanaConnection = new Connection(solanaNetwork);
+  const [timeoutEnd, setTimeoutEnd] = useState<number | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [showTimeoutAlert, setShowTimeoutAlert] = useState(false);
+  const [timeoutAlertConfig, setTimeoutAlertConfig] = useState({ title: "", description: "" });
+  const [isLocked, setIsLocked] = useState(false);
+
+  const solanaNetwork = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
+  const solanaConnection = new Connection(solanaNetwork, "confirmed");
 
   const currentLesson = lessonsData[currentLessonIndex];
   const allLessonsCompleted = lessonStatus.every(status => status === 'completed');
@@ -168,10 +177,19 @@ export default function MemeCoinManiaPage() {
       const savedStatus = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (savedStatus) {
         const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
-        setLessonStatus(parsedStatus);
-        const lastCompletedIndex = parsedStatus.lastIndexOf('completed');
-        const newCurrentIndex = parsedStatus.findIndex(status => status === 'unlocked');
+        // Ensure all lessons are unlocked while preserving completion status
+        const updatedStatus = parsedStatus.map(status => 
+          status === 'completed' ? 'completed' as const : 'unlocked' as const
+        );
+        setLessonStatus(updatedStatus);
+        const lastCompletedIndex = updatedStatus.lastIndexOf('completed');
+        const newCurrentIndex = updatedStatus.findIndex(status => status === 'unlocked');
         setCurrentLessonIndex(newCurrentIndex !== -1 ? newCurrentIndex : (lastCompletedIndex + 1 < lessonsData.length ? lastCompletedIndex + 1 : lastCompletedIndex));
+      } else {
+        // Initialize all lessons as unlocked
+        const initialStatus = lessonsData.map(() => 'unlocked' as const);
+        setLessonStatus(initialStatus);
+        saveProgress(initialStatus);
       }
     }
   }, []);
@@ -183,29 +201,6 @@ export default function MemeCoinManiaPage() {
   };
   
   const progressPercentage = (lessonStatus.filter(s => s === 'completed').length / lessonsData.length) * 100;
-
-
-  useEffect(() => {
-    const fetchPrices = async () => {
-      setLoadingPrices(true);
-      setPriceError(null);
-      try {
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=jupiter-exchange-solana,bonk&vs_currencies=usd');
-        if (!response.ok) {
-          throw new Error(`Failed to fetch prices: ${response.statusText}`);
-        }
-        const data = await response.json();
-        setJupPrice(data['jupiter-exchange-solana']?.usd ?? null);
-        setBonkPrice(data.bonk?.usd ?? null);
-      } catch (error: any) {
-        console.error("CoinGecko API Error:", error);
-        setPriceError(error.message || "Failed to load prices.");
-      } finally {
-        setLoadingPrices(false);
-      }
-    };
-    fetchPrices();
-  }, []);
 
   const resetWalletState = () => {
     setAccount(null);
@@ -220,96 +215,96 @@ export default function MemeCoinManiaPage() {
 
     try {
       switch (providerName) {
-        case 'metamask':
-          if (typeof window.ethereum === 'undefined') {
-            setWalletAlertConfig({ title: "MetaMask Not Detected", description: "Please install MetaMask to continue." });
-            setShowWalletAlert(true);
-            return;
-          }
-          let ethProvider = window.ethereum;
-          if (window.ethereum.providers?.length) {
-            const metaMaskProvider = window.ethereum.providers.find((p: any) => p.isMetaMask);
-            if (!metaMaskProvider) {
-                 setWalletAlertConfig({ title: "MetaMask Required", description: "Please select MetaMask. If installed, ensure it's your active wallet or try refreshing." });
-                 setShowWalletAlert(true);
-                 return;
-            }
-            ethProvider = metaMaskProvider;
-          } else if (!window.ethereum.isMetaMask) {
-             setWalletAlertConfig({ title: "MetaMask Required", description: "Please use MetaMask. Other Ethereum wallets are not supported for this action." });
-             setShowWalletAlert(true);
-             return;
-          }
-          
-          const web3 = new Web3(ethProvider);
-          const accounts = await ethProvider.request({ method: 'eth_requestAccounts' });
-          const userAccount = accounts[0];
-          setAccount(userAccount);
-          const balanceWei = await web3.eth.getBalance(userAccount);
-          const balanceEth = web3.utils.fromWei(balanceWei, 'ether');
-          setBalance(`${parseFloat(balanceEth).toFixed(4)} ETH`);
-          setMockNftStatus(Math.random() > 0.5 ? 'Mock Hoodie-Verse NFT: Owned!' : 'Mock Hoodie-Verse NFT: None found.');
-          setWalletAlertConfig({ title: "MetaMask Connected", description: `Successfully connected: ${userAccount.slice(0, 6)}...${userAccount.slice(-4)}` });
-          break;
-
         case 'phantom':
         case 'solflare':
-        case 'jup': 
-        case 'magic-eden':
-          let solProvider;
+          let solProvider: any;
+          let walletName = providerName;
+
            if (providerName === 'phantom') {
             if (!(window.solana && window.solana.isPhantom)) {
-              setWalletAlertConfig({ title: "Phantom Not Detected", description: "Please install Phantom wallet to continue." });
+              setWalletAlertConfig({
+                title: "Phantom Not Detected",
+                description: "Please install Phantom wallet to view your NFT status. Download it from https://phantom.app.",
+              });
               setShowWalletAlert(true);
               return;
             }
             solProvider = window.solana;
           } else if (providerName === 'solflare') {
              if (!(window.solflare && window.solflare.isSolflare) && !(window.solana && window.solana.isSolflare)) {
-                setWalletAlertConfig({ title: "Solflare Not Detected", description: "Please install Solflare wallet to continue." });
+              setWalletAlertConfig({
+                title: "Solflare Not Detected",
+                description: "Please install Solflare wallet to view your NFT status. Download it from https://solflare.com.",
+              });
                 setShowWalletAlert(true);
                 return;
             }
             solProvider = window.solflare || window.solana;
+          }
+
+          // Check if wallet is already connected or attempt to connect
+          if (!solProvider.isConnected) {
+            try {
+              await solProvider.connect();
+            } catch (error: any) {
+              if (error.message?.includes('rejected') || error.code === 4001) {
+                setWalletAlertConfig({
+                  title: "Connection Rejected",
+                  description: "You rejected the connection request. Please approve in your wallet to view your NFT status.",
+                });
+              } else if (error.message?.includes('locked')) {
+                setWalletAlertConfig({
+                  title: "Wallet Locked",
+                  description: "Your wallet is locked. Please unlock it and try again.",
+                });
           } else { 
-             if (window.solana && window.solana.isPhantom) solProvider = window.solana;
-             else if (window.solflare && window.solflare.isSolflare) solProvider = window.solflare;
-             else if (window.solana) solProvider = window.solana;
-             else {
-                setWalletAlertConfig({ title: "Solana Wallet Not Detected", description: `Please install a compatible Solana wallet (e.g., Phantom, Solflare) for ${providerName}.` });
+                setWalletAlertConfig({
+                  title: "Connection Error",
+                  description: `Failed to connect ${walletName}: ${error.message || 'Unknown error'}`,
+                });
+              }
                 setShowWalletAlert(true);
                 return;
              }
           }
 
-          await solProvider.connect();
           const solAccount = solProvider.publicKey.toString();
           setAccount(solAccount);
+
+          // Fetch balance
+          try {
           const solBalanceLamports = await solanaConnection.getBalance(new PublicKey(solAccount));
           setBalance(`${(solBalanceLamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
-          setMockNftStatus(Math.random() > 0.5 ? 'Mock Solana NFT: Owned!' : 'Mock Solana NFT: None found.');
-          
-          let successTitle = `${providerName.charAt(0).toUpperCase() + providerName.slice(1)} Connected`;
-          if (providerName === 'jup') successTitle = `Connected via ${solProvider.isPhantom ? 'Phantom' : solProvider.isSolflare ? 'Solflare' : 'Solana Wallet'} for JUP`;
-          if (providerName === 'magic-eden') successTitle = `Connected via ${solProvider.isPhantom ? 'Phantom' : solProvider.isSolflare ? 'Solflare' : 'Solana Wallet'} for Magic Eden`;
+          } catch (error: any) {
+            console.error("Failed to fetch Solana balance:", error);
+            setBalance("Error fetching balance");
+            setWalletAlertConfig({
+              title: "Balance Fetch Error",
+              description: "Failed to retrieve your SOL balance. The Solana network may be congested. Please try again later.",
+            });
+            setShowWalletAlert(true);
+          }
 
-          setWalletAlertConfig({ title: successTitle, description: `Successfully connected: ${solAccount.slice(0, 4)}...${solAccount.slice(-4)}` });
-          
-          if (providerName === 'jup') setTimeout(() => alert("Simulating Jupiter Swap interaction: You can now trade tokens! (Mock)"), 500);
-          if (providerName === 'magic-eden') setTimeout(() => alert("Simulating Magic Eden interaction: You can now browse NFTs! (Mock)"), 500);
+          // Mock NFT status (deterministic for consistency)
+          const hash = (str: string) => str.split('').reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0);
+          const hasMockNFT = hash(solAccount) % 2 === 0;
+          setMockNftStatus(hasMockNFT ? 'Meme Coin Master NFT: Owned!' : 'Meme Coin Master NFT: None found.');
+
+          setWalletAlertConfig({
+            title: `${walletName.charAt(0).toUpperCase() + walletName.slice(1)} Connected`,
+            description: `Successfully connected: ${solAccount.slice(0, 4)}...${solAccount.slice(-4)}`,
+          });
           break;
+
         default:
-          setWalletAlertConfig({ title: "Unsupported Wallet", description: "This wallet provider is not yet supported." });
+          setWalletAlertConfig({ title: "Unsupported Wallet", description: "This wallet provider is not supported." });
       }
     } catch (error: any) {
       console.error("Wallet connection error:", error);
-      let description = `Failed to connect ${providerName}. Please try again.`;
-       if (error.code === 4001 || error.message?.includes('User rejected the request')) { 
-          description = 'Connection request rejected. Please approve in your wallet.';
-      } else if (error.message?.includes('missing provider')) {
-          description = `${providerName.charAt(0).toUpperCase() + providerName.slice(1)} not found. Please ensure it's installed and enabled.`;
-      }
-      setWalletAlertConfig({ title: "Connection Error", description });
+      setWalletAlertConfig({
+        title: "Connection Error",
+        description: `Failed to connect ${providerName}: ${error.message || 'Unknown error'}`,
+      });
     }
     setShowWalletAlert(true);
     setShowWalletSelector(false);
@@ -339,7 +334,7 @@ export default function MemeCoinManiaPage() {
     setQuizSubmitted(true);
 
     if (passed) {
-      setFeedbackModalContent({ title: "Quiz Passed!", description: `You scored ${score}/${totalQuestions}. The Hype is real! You can proceed.` });
+      setFeedbackModalContent({ title: "Quiz Passed!", description: `You scored ${score}/${totalQuestions}. Great job! You can proceed.` });
       const newLessonStatus = [...lessonStatus];
       newLessonStatus[currentLessonIndex] = 'completed';
       if (currentLessonIndex < lessonsData.length - 1) {
@@ -380,25 +375,86 @@ export default function MemeCoinManiaPage() {
     trackMouse: true,
   });
 
-  const handleMockPortfolioAction = () => {
-    setShowSimulationAlert(true);
-  };
-
   const allQuestionsAnswered = currentLesson?.quiz.every(q => selectedAnswers[q.id]);
 
   const walletProviders: { name: WalletProviderOption; label: string; icon?: JSX.Element }[] = [
-    { name: 'metamask', label: 'MetaMask', icon: <Wallet size={20} className="mr-2 text-orange-500" /> },
     { name: 'phantom', label: 'Phantom', icon: <Wallet size={20} className="mr-2 text-purple-500" /> },
     { name: 'solflare', label: 'Solflare', icon: <Wallet size={20} className="mr-2 text-yellow-500" /> },
-    { name: 'jup', label: 'JUP Wallet', icon: <Wallet size={20} className="mr-2 text-green-500" /> },
-    { name: 'magic-eden', label: 'Magic Eden Wallet', icon: <Wallet size={20} className="mr-2 text-blue-500" /> },
   ];
 
+  // Function to generate a random timeout duration
+  const generateRandomTimeout = useCallback(() => {
+    const randomDuration = TIMEOUT_DURATIONS[Math.floor(Math.random() * TIMEOUT_DURATIONS.length)];
+    const endTime = Date.now() + randomDuration;
+    setTimeoutEnd(endTime);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(TIMEOUT_STORAGE_KEY, endTime.toString());
+    }
+    return endTime;
+  }, []);
+
+  // Function to format remaining time
+  const formatTimeRemaining = useCallback((endTime: number) => {
+    const now = Date.now();
+    const remaining = endTime - now;
+    
+    if (remaining <= 0) return 'Time\'s up!';
+    
+    const hours = Math.floor(remaining / (1000 * 60 * 60));
+    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+    
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }, []);
+
+  // Initialize timeout on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTimeout = localStorage.getItem(TIMEOUT_STORAGE_KEY);
+      if (savedTimeout) {
+        const endTime = parseInt(savedTimeout);
+        if (endTime > Date.now()) {
+          setTimeoutEnd(endTime);
+          setIsLocked(true);
+        } else {
+          generateRandomTimeout();
+          setIsLocked(false);
+        }
+      } else {
+        generateRandomTimeout();
+        setIsLocked(false);
+      }
+    }
+  }, [generateRandomTimeout]);
+
+  // Update remaining time every second
+  useEffect(() => {
+    if (!timeoutEnd) return;
+
+    const timer = setInterval(() => {
+      const remaining = formatTimeRemaining(timeoutEnd);
+      setTimeRemaining(remaining);
+
+      if (remaining === 'Time\'s up!') {
+        clearInterval(timer);
+        setTimeoutAlertConfig({
+          title: "Course Locked",
+          description: "This course is currently locked. Please check back later for your next access window!"
+        });
+        setShowTimeoutAlert(true);
+        setIsLocked(true);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeoutEnd, formatTimeRemaining]);
+
   return (
-    <div className="flex flex-col items-center min-h-screen py-8 px-4 bg-background text-foreground">
-      <div className="w-full max-w-4xl mb-8 relative">
-        <div className="absolute top-0 left-0 z-10 pt-4 pl-4 md:pt-0 md:pl-0">
-          <Button variant="outline" size="sm" asChild className="bg-card hover:bg-muted text-accent hover:text-accent-foreground border-accent">
+    <TokenGate>
+      <div className="flex flex-col items-center min-h-screen py-8 px-4 bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+        <div className="w-full max-w-5xl mb-8 relative">
+          <div className="absolute top-0 left-0 z-10 pt-4 pl-4">
+            <Button variant="outline" size="sm" asChild className="bg-[hsl(var(--card))] hover:bg-[hsl(var(--muted))] text-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] border-[hsl(var(--accent))]">
             <Link href="/courses" className="flex items-center space-x-1">
               <ArrowLeft size={16} />
               <span>Back to Courses</span>
@@ -406,39 +462,27 @@ export default function MemeCoinManiaPage() {
           </Button>
         </div>
         <header className="text-center pt-16 md:pt-8">
-           <h1 className="text-4xl md:text-5xl font-bold text-blue-400 mb-2">
-            Meme Coin Mania: Ride the Wave
+            <h1 className="text-4xl md:text-5xl font-bold text-[hsl(var(--primary))] mb-2">
+              Meme Coin Mania: The Art of the Pump
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground">
-            Analyze meme coin trends via X data; build a mock portfolio to earn the ‘Moon Merchant’ NFT badge.
+            <p className="text-lg md:text-xl text-[hsl(var(--muted-foreground))]">
+              Master the psychology and mechanics of meme coin trading. Complete lessons to unlock the next course!
           </p>
-        </header>
+            {isLocked ? (
+              <div className="mt-4 flex items-center justify-center space-x-2 text-red-400">
+                <Lock size={20} />
+                <span>Course Locked - Next Access: {timeRemaining}</span>
       </div>
-
-      <div className="w-full max-w-md mb-8 p-4 bg-card border border-blue-600 rounded-lg shadow-md flex justify-around items-center neon-border-blue">
-         <h3 className="text-lg font-semibold text-primary mr-4">Live Prices:</h3>
-         {loadingPrices ? (
-             <>
-                <Skeleton className="h-5 w-20" />
-                <Skeleton className="h-5 w-20" />
-             </>
-         ) : priceError ? (
-            <p className="text-sm text-red-500">{priceError}</p>
-         ) : (
-            <>
-                <div className="text-center">
-                    <span className="text-sm font-medium text-muted-foreground">JUP:</span>
-                    <span className="ml-1 text-md font-semibold text-blue-300">${jupPrice?.toFixed(4)}</span>
+            ) : (
+              <div className="mt-4 flex items-center justify-center space-x-2 text-yellow-400">
+                <Clock size={20} />
+                <span>Time Remaining: {timeRemaining}</span>
                 </div>
-                 <div className="text-center">
-                    <span className="text-sm font-medium text-muted-foreground">BONK:</span>
-                    <span className="ml-1 text-md font-semibold text-blue-300">${bonkPrice?.toExponential(2)}</span>
-                </div>
-            </>
          )}
+          </header>
       </div>
 
-      <Progress value={progressPercentage} className="w-full max-w-3xl mb-8 bg-blue-900/50 [&>div]:bg-blue-500" />
+        <Progress value={progressPercentage} className="w-full max-w-3xl mb-8 bg-[hsl(var(--primary))]/20 [&>div]:bg-[hsl(var(--primary))]" />
 
       <main className="w-full max-w-3xl flex flex-col items-center py-8 space-y-10">
         {!allLessonsCompleted && currentLesson && lessonStatus[currentLessonIndex] !== 'locked' ? (
@@ -447,11 +491,10 @@ export default function MemeCoinManiaPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="bg-card p-6 md:p-8 rounded-xl shadow-lg border border-blue-600 w-full neon-border-blue hover:shadow-[0_0_25px_rgba(59,130,246,1)] transition-all duration-300"
-            {...swipeHandlers}
+              className="bg-[hsl(var(--card))] p-6 md:p-8 rounded-xl shadow-lg border border-[hsl(var(--primary))] w-full"
           >
-            <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-4">{currentLesson.title}</h2>
-            <div className="text-md md:text-lg text-foreground leading-relaxed mb-6 prose prose-invert max-w-none">
+              <h2 className="text-2xl md:text-3xl font-semibold text-[hsl(var(--primary))] mb-4">{currentLesson.title}</h2>
+              <div className="text-md md:text-lg text-[hsl(var(--foreground))] leading-relaxed mb-6 prose prose-invert max-w-none">
               {currentLesson.content}
             </div>
 
@@ -466,17 +509,17 @@ export default function MemeCoinManiaPage() {
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="mt-8"
               >
-                <h3 className="text-xl md:text-2xl font-semibold text-secondary mt-8 mb-4">Knowledge Check! (Swipe Left to Submit / Right to Reset)</h3>
+                  <h3 className="text-xl md:text-2xl font-semibold text-[hsl(var(--secondary))] mt-8 mb-4">Knowledge Check!</h3>
                 <RadioGroup className="space-y-6">
                   {currentLesson.quiz.map((q, qIndex) => (
-                    <div key={q.id} className={`p-4 rounded-md border-2 ${quizSubmitted ? (selectedAnswers[q.id] === q.correctAnswerId ? 'border-green-500 bg-green-500/10 neon-border-green' : 'border-red-500 bg-red-500/10 neon-border-red') : 'border-green-900 hover:border-green-600'}`}>
+                      <div key={q.id} className={`p-4 rounded-md border-2 ${quizSubmitted ? (selectedAnswers[q.id] === q.correctAnswerId ? 'border-green-500 bg-green-500/10' : 'border-red-500 bg-red-500/10') : 'border-[hsl(var(--primary))]/50 hover:border-[hsl(var(--primary))]'}`}>
                       <p className="font-medium mb-2">{qIndex + 1}. {q.text}</p>
                       {q.options.map(opt => (
                         <motion.div 
                             key={opt.id}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className={`flex items-center space-x-3 p-3 bg-muted/30 rounded-lg border-2 hover:border-green-600 cursor-pointer transition-all duration-150 ${selectedAnswers[q.id] === opt.id ? 'border-green-500 ring-2 ring-green-500 neon-border-green' : 'border-green-900'}`}
+                            className={`flex items-center space-x-3 p-3 bg-[hsl(var(--muted))]/30 rounded-lg border-2 hover:border-[hsl(var(--primary))] cursor-pointer transition-all duration-150 ${selectedAnswers[q.id] === opt.id ? 'border-[hsl(var(--primary))] ring-2 ring-[hsl(var(--primary))]' : 'border-[hsl(var(--primary))]/50'}`}
                             onClick={() => handleOptionChange(q.id, opt.id)}
                         >
                           <RadioGroupItem
@@ -484,7 +527,7 @@ export default function MemeCoinManiaPage() {
                             id={`${q.id}-${opt.id}`}
                             checked={selectedAnswers[q.id] === opt.id}
                             disabled={quizSubmitted && quizPassed}
-                            className="border-green-600 text-green-600 focus:ring-green-500 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-500"
+                              className="border-[hsl(var(--primary))] text-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))] data-[state=checked]:bg-[hsl(var(--primary))] data-[state=checked]:border-[hsl(var(--primary))]"
                           />
                           <Label htmlFor={`${q.id}-${opt.id}`} className="cursor-pointer flex-1">{opt.text}</Label>
                            {quizSubmitted && selectedAnswers[q.id] === opt.id && selectedAnswers[q.id] !== q.correctAnswerId && (
@@ -499,17 +542,17 @@ export default function MemeCoinManiaPage() {
                         </motion.div>
                       ))}
                       {quizSubmitted && selectedAnswers[q.id] !== q.correctAnswerId && q.explanation && (
-                        <p className="text-sm text-muted-foreground mt-1">💡 {q.explanation}</p>
+                          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1"> {q.explanation}</p>
                       )}
                     </div>
                   ))}
                 </RadioGroup>
                 <Button
                   onClick={handleSubmitQuiz}
-                  className="mt-8 w-full bg-blue-600 hover:bg-green-700 text-white shadow-[0_0_10px_theme(colors.blue.600)] hover:shadow-[0_0_15px_theme(colors.green.500)] transition-all duration-300"
+                    className="mt-8 w-full bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-[hsl(var(--primary-foreground))]"
                   disabled={!allQuestionsAnswered || (quizSubmitted && quizPassed)}
                 >
-                  Submit Quiz (or Swipe Left)
+                    Submit Quiz
                 </Button>
               </motion.div>
             )}
@@ -519,40 +562,45 @@ export default function MemeCoinManiaPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="bg-card p-6 md:p-8 rounded-xl shadow-lg border-2 border-green-500 neon-border-green hover:shadow-[0_0_30px_rgba(34,197,94,1)] w-full text-center"
+              className="bg-[hsl(var(--card))] p-6 md:p-8 rounded-xl shadow-lg border-2 border-[hsl(var(--primary))] w-full text-center"
           >
-            <Award className="w-20 h-20 text-green-400 mx-auto mb-4" />
-            <h2 className="text-3xl md:text-4xl font-bold text-green-300 mb-3">Course Complete! Moon Merchant!</h2>
-            <p className="text-xl text-foreground mb-4">You've navigated the meme coin madness!</p>
+              <Award className="w-20 h-20 text-[hsl(var(--primary))] mx-auto mb-4" />
+              <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--primary))] mb-3">Course Complete!</h2>
+              <p className="text-xl text-[hsl(var(--foreground))] mb-4">You've mastered the art of meme coin trading!</p>
             <div className="flex items-center justify-center space-x-3 my-6">
-              <GlowingCoinIcon className="w-12 h-12 text-blue-400" data-ai-hint="glowing coin" />
+                <Award className="w-12 h-12 text-[hsl(var(--primary))]" />
               <div>
-                <p className="text-lg md:text-xl font-semibold text-primary">REWARD: Moon Merchant NFT</p>
-                <p className="text-md text-muted-foreground">Your meme coin analysis skills are certified.</p>
+                  <p className="text-lg md:text-xl font-semibold text-[hsl(var(--primary))]">REWARD: Meme Coin Master NFT</p>
+                  <p className="text-md text-[hsl(var(--muted-foreground))]">Your ability to navigate meme coin markets is recognized.</p>
+                </div>
               </div>
-            </div>
-             <Button
-                onClick={handleMockPortfolioAction}
-                className="bg-blue-600 hover:bg-blue-700 text-white min-w-[200px] transition-all mt-4 shadow-[0_0_10px_theme(colors.blue.600)] hover:shadow-[0_0_15px_theme(colors.blue.500)]"
-              >
-                <Repeat size={18} className="mr-2"/> Simulate Portfolio Update
-            </Button>
             {lessonsData.find(l => l.pitfallWarning && lessonStatus[lessonsData.indexOf(l)] === 'completed')?.pitfallWarning}
-            <Button asChild className="mt-6 w-full md:w-auto bg-pink-600 hover:bg-pink-700 text-white shadow-[0_0_10px_theme(colors.pink.600)] hover:shadow-[0_0_15px_theme(colors.pink.500)] transition-all duration-300">
-                <Link href="/crypto-x-influence">Advance to Crypto X Influence</Link>
+              <Button asChild className="mt-6 w-full md:w-auto bg-[hsl(var(--secondary))] hover:bg-[hsl(var(--secondary))]/90 text-[hsl(var(--secondary-foreground))]">
+                <Link href="/community-strategy">Advance to Next Course</Link>
             </Button>
           </motion.section>
         )}
 
+          <section className="my-8 text-center p-6 bg-card rounded-xl shadow-lg border border-blue-600 neon-border-blue w-full">
+            <h2 className="text-2xl font-bold text-primary mb-2">[Your NFT Project Name]</h2>
+            <p className="text-sm text-muted-foreground mb-4">Explore our exclusive Solana NFT collection!</p>
+            <div className="space-y-2">
+              <p><strong>Collection Size:</strong> 10,000 NFTs</p>
+              <p><strong>Mint Date:</strong> [Your Mint Date]</p>
+              <p><strong>Utility:</strong> Access to exclusive events, staking rewards, and more.</p>
+            </div>
+          </section>
+
         <section className="my-8 text-center p-6 bg-card rounded-xl shadow-lg border border-blue-600 neon-border-blue w-full">
             <h2 className="text-2xl font-bold text-primary mb-2">Connect Your Wallet</h2>
-            <p className="text-sm text-muted-foreground mb-4">Safely connect your preferred wallet to view your balance and NFTs.</p>
+            <p className="text-sm text-muted-foreground mb-4">Connect a Solana wallet to view your address, balance, and NFT status.</p>
             
             <div className="flex justify-center items-center">
               <Button 
                   onClick={() => setShowWalletSelector(!showWalletSelector)}
                   className="px-6 py-3 mb-4 rounded-lg shadow-lg bg-gradient-to-r from-green-500 to-purple-600 hover:from-green-600 hover:to-purple-700 text-white min-w-[240px] transition-all duration-300 flex items-center justify-center"
                   aria-expanded={showWalletSelector}
+                aria-label={showWalletSelector ? "Close wallet selector" : "Open wallet selector"}
               >
                   <Wallet size={18} className="mr-2"/>
                   {connectedWalletProvider ? `Connected: ${connectedWalletProvider}` : "Select Wallet"}
@@ -586,8 +634,8 @@ export default function MemeCoinManiaPage() {
                 className="mt-4 text-foreground space-y-1"
             >
                 <p><strong>Address:</strong> {account}</p>
-                <p><strong>Balance:</strong> {balance || 'Loading...'}</p>
-                <p>{mockNftStatus || 'Checking NFT status...'}</p>
+                <p><strong>Balance:</strong> {balance || 'Fetching balance...'}</p>
+                <p><strong>NFT Status:</strong> {mockNftStatus || 'Checking NFT status...'}</p>
             </motion.div>
             )}
         </section>
@@ -611,20 +659,6 @@ export default function MemeCoinManiaPage() {
                   <AlertDialogAction onClick={() => {setSelectedAnswers({}); setQuizSubmitted(false); setQuizPassed(false); setCurrentScore(0); setShowFeedbackModal(false);}} className="bg-blue-600 hover:bg-blue-700">Retry Quiz</AlertDialogAction>
                 </>
               )}
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <AlertDialog open={showSimulationAlert} onOpenChange={setShowSimulationAlert}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                <AlertDialogTitle>Mock Portfolio Updated!</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Your simulated trade for $MEMECOIN has been processed. Your paper portfolio now reflects a hypothetical gain of 10%. Remember, past performance is not indicative of future results!
-                </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                <AlertDialogAction onClick={() => setShowSimulationAlert(false)} className="bg-blue-600 hover:bg-blue-700">Got it!</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
@@ -638,19 +672,38 @@ export default function MemeCoinManiaPage() {
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                {walletAlertConfig.title !== "MetaMask Connected" && walletAlertConfig.title !== "Phantom Connected" && walletAlertConfig.title !== "Solflare Connected" && !walletAlertConfig.title.includes("Connected via") && <AlertDialogCancel>Cancel</AlertDialogCancel> }
+                {walletAlertConfig.title !== "Phantom Connected" && walletAlertConfig.title !== "Solflare Connected" && <AlertDialogCancel>Cancel</AlertDialogCancel> }
                 <AlertDialogAction onClick={() => setShowWalletAlert(false)} className="bg-blue-600 hover:bg-blue-700">OK</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
 
+          <AlertDialog open={showTimeoutAlert} onOpenChange={setShowTimeoutAlert}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{timeoutAlertConfig.title}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {timeoutAlertConfig.description}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogAction onClick={() => setShowTimeoutAlert(false)} className="bg-pink-600 hover:bg-pink-700">
+                  Got it!
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
       </main>
 
       <footer className="mt-12 text-center">
-        <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
           #StayBuilding #StayHODLing
         </p>
       </footer>
     </div>
+    </TokenGate>
   );
-}
+};
+
+export default MemeCoinManiaPage;
