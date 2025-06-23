@@ -32,6 +32,6 @@
         "env": {
           "NODE_ENV": "production",
           "HELIUS_API_KEY": "c3038c42-5453-489b-9d14-4b583ab7b2b2",
-          "SOLANA_RPC_URL": "@solana_rpc_url"
+          "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com"
         }
       }
