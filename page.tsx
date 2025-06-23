@@ -4,7 +4,6 @@
     import { Button } from "@/components/ui/button";
     import { motion } from "framer-motion";
     import Link from "next/link";
-    import SocialInteraction from "@/components/SocialInteraction";
 
     interface NftAsset {
       id: string;
@@ -137,7 +136,6 @@
                   transition={{ duration: 0.5 }}
                 >
                   <h2 className="text-3xl font-bold text-purple-400 mb-4">Welcome, Verified Hoodie!</h2>
-                  <SocialInteraction isVerified={isHolder} />
                 </motion.div>
                 <div className="mt-8">
                   <h3 className="text-2xl font-bold text-cyan-400 mb-4">Your Course Progress</h3>
@@ -179,7 +177,6 @@
                       { path: "/nft-mastery", name: "NFT Mastery" },
                       { path: "/community-strategy", name: "Community Strategy" },
                       { path: "/meme-coin-mania", name: "Meme Coin Mania" },
-                      { path: "/crypto-x-influence", name: "Crypto X Influence" },
                       { path: "/technical-analysis", name: "Technical Analysis" }
                     ].map((course) => (
                       <Button

@@ -1,4 +1,3 @@
-
 'use client'
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,12 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+
+interface PhantomResponse {
+  publicKey: {
+    toString: () => string;
+  };
+}
 
 declare global {
   interface Window {
@@ -381,7 +386,7 @@ export default function CommunityStrategyPage() {
             Community Strategy: Lead the Hoodie-Verse
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground">
-            Learn to lead and grow Web3 communities with strategic insight, earning the ‘Hoodie Strategist’ NFT badge.
+            Learn to lead and grow Web3 communities with strategic insight, earning the 'Hoodie Strategist' NFT badge.
           </p>
         </header>
       </div>

@@ -1,4 +1,3 @@
-
 interface RiskArtProps {
   type: "phishing" | "fomo";
   className?: string;

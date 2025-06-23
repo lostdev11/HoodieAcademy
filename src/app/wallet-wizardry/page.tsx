@@ -1,4 +1,3 @@
-
 'use client'
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,7 @@ import Web3 from 'web3';
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useSwipeable } from 'react-swipeable';
 import { motion } from 'framer-motion';
-import { LockKeyhole, AlertTriangle, ArrowLeft, CheckCircle, XCircle, Award, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
+import { LockKeyhole, AlertTriangle, ArrowLeft, CheckCircle, XCircle, Award, Wallet, ChevronDown, ChevronUp, Clock, Calendar } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -370,12 +369,7 @@ export default function WalletWizardryPage() {
   ];
 
   return (
-    <TokenGate 
-        requiredCollectionAddress={WIFHOODIE_COLLECTION_ADDRESS}
-        deniedAccessMessage="Sorry, you need a WifHoodie NFT to access this course."
-        mintLink="https://magiceden.us/marketplace/wifhoodies"
-        mintLinkText="WifHoodie on Magic Eden"
-    >
+    <TokenGate>
       <div className="flex flex-col items-center min-h-screen py-8 px-4 bg-background text-foreground">
         <div className="w-full max-w-4xl mb-8 relative">
           <div className="absolute top-0 left-0 z-10 pt-4 pl-4 md:pt-0 md:pl-0">
@@ -391,7 +385,7 @@ export default function WalletWizardryPage() {
               Wallet Wizardry: Secure the Bag
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground">
-                  Master wallet setup and security protocols to protect your Web3 assets, earning the ‘Vault Keeper’ NFT badge.
+                  Master wallet setup and security protocols to protect your Web3 assets, earning the 'Vault Keeper' NFT badge.
               </p>
           </header>
         </div>
@@ -400,7 +394,7 @@ export default function WalletWizardryPage() {
             <section className="my-8 w-full max-w-2xl text-center mx-auto">
                 <h2 className="text-xl font-semibold text-accent mb-2">Hoodie-Verse Lore</h2>
                 <p className="text-md text-foreground">
-                    The Wallet Wall’s neon locks, powered by the ‘First Thread,’ secure the Hoodie-Verse’s future.
+                    The Wallet Wall's neon locks, powered by the 'First Thread,' secure the Hoodie-Verse's future.
                 </p>
             </section>
 
@@ -491,7 +485,7 @@ export default function WalletWizardryPage() {
                 >
                     <Award className="w-20 h-20 text-green-400 mx-auto mb-4" />
                     <h2 className="text-3xl md:text-4xl font-bold text-green-300 mb-3">Congratulations! Vault Keeper!</h2>
-                    <p className="text-xl text-foreground mb-4">You've completed Wallet Wizardry and earned the{' '} <span className="text-purple-400 font-semibold">‘Vault Keeper’ NFT badge!</span></p>
+                    <p className="text-xl text-foreground mb-4">You've completed Wallet Wizardry and earned the{' '} <span className="text-purple-400 font-semibold">'Vault Keeper' NFT badge!</span></p>
                     <div className="flex items-center justify-center space-x-3 my-6">
                         <LockKeyhole className="w-12 h-12 text-purple-400" data-ai-hint="lock vault" />
                         <div>
@@ -506,10 +500,45 @@ export default function WalletWizardryPage() {
                 </motion.section>
             )}
 
-            <section className="my-8 text-center p-6 bg-card rounded-xl shadow-lg border border-purple-600 neon-border-purple w-full">
-                <h2 className="text-2xl font-bold text-primary mb-2">Connect Your Wallet (In-Course Practice)</h2>
-                <p className="text-sm text-muted-foreground mb-4">Safely connect your preferred wallet to view your balance and NFTs.</p>
+            <AlertDialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>{feedbackModalContent.title}</AlertDialogTitle>
+                <AlertDialogDescription>
+                    {feedbackModalContent.description}
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                {quizPassed && currentLessonIndex < lessonsData.length - 1 ? (
+                    null
+                ) : quizPassed && allLessonsCompleted ? (
+                    <AlertDialogAction onClick={() => setShowFeedbackModal(false)} className="bg-green-600 hover:bg-green-700">Wizardry Mastered!</AlertDialogAction>
+                ) : (
+                    <>
+                    <AlertDialogCancel onClick={() => setShowFeedbackModal(false)}>Review Lesson</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => {setSelectedAnswers({}); setQuizSubmitted(false); setQuizPassed(false); setCurrentScore(0); setShowFeedbackModal(false);}} className="bg-purple-600 hover:bg-purple-700">Retry Quiz</AlertDialogAction>
+                    </>
+                )}
+                </AlertDialogFooter>
+            </AlertDialogContent>
+            </AlertDialog>
 
+            <AlertDialog open={showCourseWalletAlert} onOpenChange={setShowCourseWalletAlert}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>{courseWalletAlertConfig.title}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {courseWalletAlertConfig.description}
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    {courseWalletAlertConfig.title !== "MetaMask Connected" && courseWalletAlertConfig.title !== "Phantom Connected" && courseWalletAlertConfig.title !== "Solflare Connected" && !courseWalletAlertConfig.title.includes("Connected via") && <AlertDialogCancel>Cancel</AlertDialogCancel> }
+                    <AlertDialogAction onClick={() => setShowCourseWalletAlert(false)} className="bg-purple-600 hover:bg-purple-700">OK</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <section className="my-8 text-center p-6 bg-card rounded-xl shadow-lg border border-purple-600 neon-border-purple w-full">
                 <div className="flex justify-center items-center">
                 <Button
                     onClick={() => setShowCourseWalletSelector(!showCourseWalletSelector)}
@@ -553,44 +582,6 @@ export default function WalletWizardryPage() {
                 </motion.div>
                 )}
             </section>
-
-            <AlertDialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                <AlertDialogTitle>{feedbackModalContent.title}</AlertDialogTitle>
-                <AlertDialogDescription>
-                    {feedbackModalContent.description}
-                </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                {quizPassed && currentLessonIndex < lessonsData.length - 1 ? (
-                    null
-                ) : quizPassed && allLessonsCompleted ? (
-                    <AlertDialogAction onClick={() => setShowFeedbackModal(false)} className="bg-green-600 hover:bg-green-700">Wizardry Mastered!</AlertDialogAction>
-                ) : (
-                    <>
-                    <AlertDialogCancel onClick={() => setShowFeedbackModal(false)}>Review Lesson</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => {setSelectedAnswers({}); setQuizSubmitted(false); setQuizPassed(false); setCurrentScore(0); setShowFeedbackModal(false);}} className="bg-purple-600 hover:bg-purple-700">Retry Quiz</AlertDialogAction>
-                    </>
-                )}
-                </AlertDialogFooter>
-            </AlertDialogContent>
-            </AlertDialog>
-
-            <AlertDialog open={showCourseWalletAlert} onOpenChange={setShowCourseWalletAlert}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                    <AlertDialogTitle>{courseWalletAlertConfig.title}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        {courseWalletAlertConfig.description}
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    {courseWalletAlertConfig.title !== "MetaMask Connected" && courseWalletAlertConfig.title !== "Phantom Connected" && courseWalletAlertConfig.title !== "Solflare Connected" && !courseWalletAlertConfig.title.includes("Connected via") && <AlertDialogCancel>Cancel</AlertDialogCancel> }
-                    <AlertDialogAction onClick={() => setShowCourseWalletAlert(false)} className="bg-purple-600 hover:bg-purple-700">OK</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </main>
 
         <footer className="mt-12 text-center">

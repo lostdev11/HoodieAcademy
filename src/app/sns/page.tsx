@@ -13,7 +13,7 @@
         useEffect(() => {
           const { solana } = window;
           if (solana && solana.isPhantom) {
-            solana.connect({ onlyIfTrusted: true }).then(response => {
+            solana.connect({ onlyIfTrusted: true }).then((response: { publicKey: { toString: () => string } }) => {
               setWalletAddress(response.publicKey.toString());
             }).catch(() => {});
           }
