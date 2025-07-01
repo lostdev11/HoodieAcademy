@@ -5,10 +5,12 @@
       import Link from "next/link";
       import { ArrowLeft } from "lucide-react";
       import axios from "axios";
+      import { Card, CardContent } from "@/components/ui/card";
 
       export default function SNSCourse() {
         const [walletAddress, setWalletAddress] = useState<string | null>(null);
         const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>({});
+        const [currentTime, setCurrentTime] = useState<string>("");
 
         useEffect(() => {
           const { solana } = window;
@@ -24,6 +26,14 @@
             fetchProgress();
           }
         }, [walletAddress]);
+
+        useEffect(() => {
+          setCurrentTime(new Date().toLocaleTimeString());
+          const timerId = setInterval(() => {
+            setCurrentTime(new Date().toLocaleTimeString());
+          }, 1000);
+          return () => clearInterval(timerId);
+        }, []);
 
         const fetchProgress = async () => {
           if (!walletAddress) return;
@@ -42,51 +52,71 @@
 
         return (
           <TokenGate>
-            <div className="flex flex-col items-center min-h-screen py-8 px-4 bg-gray-900 text-gray-300">
-              <div className="w-full max-w-5xl mb-8 relative">
-                <div className="absolute top-0 left-0 z-10 pt-4 pl-4">
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+              {/* Animated background effects */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900 to-slate-900"></div>
+              <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+              <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+              <div className="relative z-10 p-8">
+                {/* Back Button */}
+                <div className="mb-6">
                   <Button
-                    variant="outline"
-                    size="sm"
                     asChild
-                    className="bg-gray-800 hover:bg-gray-700 text-cyan-400 hover:text-cyan-300 border-cyan-400"
+                    variant="outline"
+                    className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300"
                   >
-                    <Link href="/" className="flex items-center space-x-1">
-                      <ArrowLeft size={16} />
-                      <span>Back to Home</span>
+                    <Link href="/courses">
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back to Courses
                     </Link>
                   </Button>
                 </div>
-                <header className="text-center pt-16">
-                  <h1 className="text-4xl font-bold text-cyan-400 mb-2">Solana Name Service (SNS)</h1>
-                  <p className="text-md text-gray-400">Own Your Web3 Identity</p>
-                </header>
-              </div>
-              <main className="w-full max-w-2xl text-center">
-                <h2 className="text-2xl font-bold text-purple-400 mb-4">Lessons</h2>
-                <div className="grid grid-cols-1 gap-4">
-                  {lessons.map((lesson) => (
-                    <div key={lesson.id} className="bg-gray-800 p-4 rounded-lg">
-                      <h3 className="text-lg font-bold text-cyan-400">{lesson.title}</h3>
-                      <p className="text-gray-300">{lesson.description}</p>
-                      <Button
-                        asChild
-                        className="bg-gradient-to-r from-green-600 to-purple-600 text-white mt-2 hover:from-green-500 hover:to-purple-500"
-                      >
-                        <Link href={`/sns/${lesson.id}`}>
-                          {completedLessons[lesson.id] ? "Review Lesson" : "Start Lesson"}
-                        </Link>
-                      </Button>
-                      {completedLessons[lesson.id] && (
-                        <p className="text-green-400 mt-2">Completed</p>
-                      )}
-                    </div>
-                  ))}
+
+                {/* Header */}
+                <div className="text-center mb-12">
+                  <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent glow-text">
+                    Solana Name Service (SNS)
+                  </h1>
+                  <p className="text-xl text-gray-300 mb-2">Own Your Web3 Identity</p>
+                  <p className="text-cyan-300 text-lg">
+                    Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
+                  </p>
                 </div>
-              </main>
-              <footer className="mt-12 text-center">
-                <p className="text-sm text-gray-400">#StayBuilding #StayHODLing</p>
-              </footer>
+                {/* Main content: lessons, quizzes, wallet, etc. */}
+                <div className="max-w-2xl mx-auto">
+                  {/* Existing lessons logic and UI goes here, wrapped in Card if needed */}
+                  {/* ...existing lesson navigation, quiz, wallet connect, etc... */}
+                  <h2 className="text-2xl font-bold text-purple-400 mb-4">Lessons</h2>
+                  <div className="grid grid-cols-1 gap-4">
+                    {lessons.map((lesson) => (
+                      <Card key={lesson.id} className="bg-slate-800/80 border-2 border-cyan-500/40 backdrop-blur-sm shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+                        <CardContent className="p-4">
+                          <h3 className="text-lg font-bold text-cyan-400">{lesson.title}</h3>
+                          <p className="text-gray-300">{lesson.description}</p>
+                          <Button
+                            asChild
+                            className="bg-gradient-to-r from-green-600 to-purple-600 text-white mt-2 hover:from-green-500 hover:to-purple-500"
+                          >
+                            <a href={`/sns/${lesson.id}`}>
+                              {completedLessons[lesson.id] ? "Review Lesson" : "Start Lesson"}
+                            </a>
+                          </Button>
+                          {completedLessons[lesson.id] && (
+                            <p className="text-green-400 mt-2">Completed</p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+                {/* Footer hashtags */}
+                <div className="mt-12 text-cyan-400/70 text-sm text-center">#StayBuilding #StayHODLing</div>
+              </div>
+              <style jsx global>{`
+                .glow-text {
+                  text-shadow: 0 0 10px currentColor;
+                }
+              `}</style>
             </div>
           </TokenGate>
         );

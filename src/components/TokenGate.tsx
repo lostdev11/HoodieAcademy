@@ -94,6 +94,26 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
     }
   };
 
+  const disconnectWallet = () => {
+    setWalletAddress(null);
+    setIsHolder(false);
+    setError(null);
+    setShowSuccess(false);
+    
+    // Clear all wallet-related storage
+    sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
+    localStorage.removeItem('walletAddress');
+    localStorage.removeItem('connectedWallet');
+    
+    // Disconnect from wallet providers
+    if (window.solana?.disconnect) {
+      window.solana.disconnect();
+    }
+    if (window.solflare?.disconnect) {
+      window.solflare.disconnect();
+    }
+  };
+
   const checkWifHoodieOwnership = async () => {
     if (!walletAddress) return;
     setLoading(true);
@@ -155,6 +175,10 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
           timestamp: Date.now()
         };
         sessionStorage.setItem(VERIFICATION_SESSION_KEY, JSON.stringify(sessionData));
+        
+        // Store wallet address in localStorage for profile access
+        localStorage.setItem('walletAddress', walletAddress);
+        localStorage.setItem('connectedWallet', walletAddress);
         
         setShowSuccess(true);
         // Hide success message after 2 seconds and show courses
@@ -237,7 +261,7 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
                   Get WifHoodie NFT
                 </a>
               </Button>
-               <Button variant="link" onClick={() => setWalletAddress(null)} className="text-gray-400 mt-2">
+               <Button variant="link" onClick={disconnectWallet} className="text-gray-400 mt-2">
                 Try a different wallet
               </Button>
             </motion.div>

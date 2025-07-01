@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useSwipeable } from 'react-swipeable';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, Wallet, ChevronDown, ChevronUp, Clock, Lock } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +21,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import TokenGate from "@/components/TokenGate";
+import { Card, CardContent } from "@/components/ui/card";
 
 declare global {
   interface Window {
@@ -126,18 +127,6 @@ const lessonsData: Lesson[] = [
 
 const PASSING_PERCENTAGE = 0.75;
 const LOCAL_STORAGE_KEY = 'memeCoinManiaProgress';
-const TIMEOUT_STORAGE_KEY = 'memeCoinManiaTimeout';
-
-// Timeout durations in milliseconds
-const TIMEOUT_DURATIONS = [
-  30 * 60 * 1000,    // 30 minutes
-  1 * 60 * 60 * 1000, // 1 hour
-  2 * 60 * 60 * 1000, // 2 hours
-  4 * 60 * 60 * 1000, // 4 hours
-  8 * 60 * 60 * 1000, // 8 hours
-  12 * 60 * 60 * 1000, // 12 hours
-  24 * 60 * 60 * 1000, // 24 hours
-];
 
 const MemeCoinManiaPage = () => {
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
@@ -160,11 +149,7 @@ const MemeCoinManiaPage = () => {
   const [connectedWalletProvider, setConnectedWalletProvider] = useState<WalletProviderOption | null>(null);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   
-  const [timeoutEnd, setTimeoutEnd] = useState<number | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState<string>('');
-  const [showTimeoutAlert, setShowTimeoutAlert] = useState(false);
-  const [timeoutAlertConfig, setTimeoutAlertConfig] = useState({ title: "", description: "" });
-  const [isLocked, setIsLocked] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>("");
 
   const solanaNetwork = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
   const solanaConnection = new Connection(solanaNetwork, "confirmed");
@@ -354,10 +339,9 @@ const MemeCoinManiaPage = () => {
       saveProgress(newLessonStatus);
     } else {
       setFeedbackModalContent({ title: "Quiz Failed", description: `You scored ${score}/${totalQuestions}. Review the lesson and try again. You need at least ${Math.ceil(PASSING_PERCENTAGE * totalQuestions)} correct answers.` });
-      setTimeout(() => setShowFeedbackModal(false), 3000);
     }
     setShowFeedbackModal(true);
-  }, [selectedAnswers, currentLesson, currentLessonIndex, lessonStatus]);
+  }, [currentLesson, selectedAnswers, lessonStatus, currentLessonIndex, lessonsData.length]);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => {
@@ -375,271 +359,227 @@ const MemeCoinManiaPage = () => {
     trackMouse: true,
   });
 
-  const allQuestionsAnswered = currentLesson?.quiz.every(q => selectedAnswers[q.id]);
+  const allQuestionsAnswered = currentLesson?.quiz.every(q => selectedAnswers[q.id]) ?? false;
 
   const walletProviders: { name: WalletProviderOption; label: string; icon?: JSX.Element }[] = [
     { name: 'phantom', label: 'Phantom', icon: <Wallet size={20} className="mr-2 text-purple-500" /> },
     { name: 'solflare', label: 'Solflare', icon: <Wallet size={20} className="mr-2 text-yellow-500" /> },
   ];
 
-  // Function to generate a random timeout duration
-  const generateRandomTimeout = useCallback(() => {
-    const randomDuration = TIMEOUT_DURATIONS[Math.floor(Math.random() * TIMEOUT_DURATIONS.length)];
-    const endTime = Date.now() + randomDuration;
-    setTimeoutEnd(endTime);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(TIMEOUT_STORAGE_KEY, endTime.toString());
-    }
-    return endTime;
-  }, []);
-
-  // Function to format remaining time
-  const formatTimeRemaining = useCallback((endTime: number) => {
-    const now = Date.now();
-    const remaining = endTime - now;
-    
-    if (remaining <= 0) return 'Time\'s up!';
-    
-    const hours = Math.floor(remaining / (1000 * 60 * 60));
-    const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
-    
-    return `${hours}h ${minutes}m ${seconds}s`;
-  }, []);
-
-  // Initialize timeout on component mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedTimeout = localStorage.getItem(TIMEOUT_STORAGE_KEY);
-      if (savedTimeout) {
-        const endTime = parseInt(savedTimeout);
-        if (endTime > Date.now()) {
-          setTimeoutEnd(endTime);
-          setIsLocked(true);
-        } else {
-          generateRandomTimeout();
-          setIsLocked(false);
-        }
-      } else {
-        generateRandomTimeout();
-        setIsLocked(false);
-      }
-    }
-  }, [generateRandomTimeout]);
-
-  // Update remaining time every second
-  useEffect(() => {
-    if (!timeoutEnd) return;
-
-    const timer = setInterval(() => {
-      const remaining = formatTimeRemaining(timeoutEnd);
-      setTimeRemaining(remaining);
-
-      if (remaining === 'Time\'s up!') {
-        clearInterval(timer);
-        setTimeoutAlertConfig({
-          title: "Course Locked",
-          description: "This course is currently locked. Please check back later for your next access window!"
-        });
-        setShowTimeoutAlert(true);
-        setIsLocked(true);
-      }
+    setCurrentTime(new Date().toLocaleTimeString());
+    const timerId = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
     }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeoutEnd, formatTimeRemaining]);
+    return () => clearInterval(timerId);
+  }, []);
 
   return (
     <TokenGate>
-      <div className="flex flex-col items-center min-h-screen py-8 px-4 bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-        <div className="w-full max-w-5xl mb-8 relative">
-          <div className="absolute top-0 left-0 z-10 pt-4 pl-4">
-            <Button variant="outline" size="sm" asChild className="bg-[hsl(var(--card))] hover:bg-[hsl(var(--muted))] text-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))] border-[hsl(var(--accent))]">
-            <Link href="/courses" className="flex items-center space-x-1">
-              <ArrowLeft size={16} />
-              <span>Back to Courses</span>
-            </Link>
-          </Button>
-        </div>
-        <header className="text-center pt-16 md:pt-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-[hsl(var(--primary))] mb-2">
-              Meme Coin Mania: The Art of the Pump
-          </h1>
-            <p className="text-lg md:text-xl text-[hsl(var(--muted-foreground))]">
-              Master the psychology and mechanics of meme coin trading. Complete lessons to unlock the next course!
-          </p>
-            {isLocked ? (
-              <div className="mt-4 flex items-center justify-center space-x-2 text-red-400">
-                <Lock size={20} />
-                <span>Course Locked - Next Access: {timeRemaining}</span>
-      </div>
-            ) : (
-              <div className="mt-4 flex items-center justify-center space-x-2 text-yellow-400">
-                <Clock size={20} />
-                <span>Time Remaining: {timeRemaining}</span>
-                </div>
-         )}
-          </header>
-      </div>
-
-        <Progress value={progressPercentage} className="w-full max-w-3xl mb-8 bg-[hsl(var(--primary))]/20 [&>div]:bg-[hsl(var(--primary))]" />
-
-      <main className="w-full max-w-3xl flex flex-col items-center py-8 space-y-10">
-        {!allLessonsCompleted && currentLesson && lessonStatus[currentLessonIndex] !== 'locked' ? (
-          <motion.section 
-            key={currentLessonIndex}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-              className="bg-[hsl(var(--card))] p-6 md:p-8 rounded-xl shadow-lg border border-[hsl(var(--primary))] w-full"
-          >
-              <h2 className="text-2xl md:text-3xl font-semibold text-[hsl(var(--primary))] mb-4">{currentLesson.title}</h2>
-              <div className="text-md md:text-lg text-[hsl(var(--foreground))] leading-relaxed mb-6 prose prose-invert max-w-none">
-              {currentLesson.content}
-            </div>
-
-            {currentLesson.pitfallWarning && lessonStatus[currentLessonIndex] !== 'completed' && (
-                 <div className="my-4">{currentLesson.pitfallWarning}</div>
-            )}
-
-            {lessonStatus[currentLessonIndex] !== 'completed' && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="mt-8"
-              >
-                  <h3 className="text-xl md:text-2xl font-semibold text-[hsl(var(--secondary))] mt-8 mb-4">Knowledge Check!</h3>
-                <RadioGroup className="space-y-6">
-                  {currentLesson.quiz.map((q, qIndex) => (
-                      <div key={q.id} className={`p-4 rounded-md border-2 ${quizSubmitted ? (selectedAnswers[q.id] === q.correctAnswerId ? 'border-green-500 bg-green-500/10' : 'border-red-500 bg-red-500/10') : 'border-[hsl(var(--primary))]/50 hover:border-[hsl(var(--primary))]'}`}>
-                      <p className="font-medium mb-2">{qIndex + 1}. {q.text}</p>
-                      {q.options.map(opt => (
-                        <motion.div 
-                            key={opt.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className={`flex items-center space-x-3 p-3 bg-[hsl(var(--muted))]/30 rounded-lg border-2 hover:border-[hsl(var(--primary))] cursor-pointer transition-all duration-150 ${selectedAnswers[q.id] === opt.id ? 'border-[hsl(var(--primary))] ring-2 ring-[hsl(var(--primary))]' : 'border-[hsl(var(--primary))]/50'}`}
-                            onClick={() => handleOptionChange(q.id, opt.id)}
-                        >
-                          <RadioGroupItem
-                            value={opt.id}
-                            id={`${q.id}-${opt.id}`}
-                            checked={selectedAnswers[q.id] === opt.id}
-                            disabled={quizSubmitted && quizPassed}
-                              className="border-[hsl(var(--primary))] text-[hsl(var(--primary))] focus:ring-[hsl(var(--primary))] data-[state=checked]:bg-[hsl(var(--primary))] data-[state=checked]:border-[hsl(var(--primary))]"
-                          />
-                          <Label htmlFor={`${q.id}-${opt.id}`} className="cursor-pointer flex-1">{opt.text}</Label>
-                           {quizSubmitted && selectedAnswers[q.id] === opt.id && selectedAnswers[q.id] !== q.correctAnswerId && (
-                            <XCircle className="h-5 w-5 text-red-500 ml-2" />
-                          )}
-                          {quizSubmitted && selectedAnswers[q.id] === opt.id && selectedAnswers[q.id] === q.correctAnswerId && (
-                            <CheckCircle className="h-5 w-5 text-green-500 ml-2" />
-                          )}
-                           {quizSubmitted && opt.id === q.correctAnswerId && selectedAnswers[q.id] !== q.correctAnswerId && (
-                             <span className="text-xs text-green-400 ml-2">(Correct Answer)</span>
-                          )}
-                        </motion.div>
-                      ))}
-                      {quizSubmitted && selectedAnswers[q.id] !== q.correctAnswerId && q.explanation && (
-                          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1"> {q.explanation}</p>
-                      )}
-                    </div>
-                  ))}
-                </RadioGroup>
-                <Button
-                  onClick={handleSubmitQuiz}
-                    className="mt-8 w-full bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary))]/90 text-[hsl(var(--primary-foreground))]"
-                  disabled={!allQuestionsAnswered || (quizSubmitted && quizPassed)}
-                >
-                    Submit Quiz
-                </Button>
-              </motion.div>
-            )}
-          </motion.section>
-        ) : (
-          <motion.section 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-              className="bg-[hsl(var(--card))] p-6 md:p-8 rounded-xl shadow-lg border-2 border-[hsl(var(--primary))] w-full text-center"
-          >
-              <Award className="w-20 h-20 text-[hsl(var(--primary))] mx-auto mb-4" />
-              <h2 className="text-3xl md:text-4xl font-bold text-[hsl(var(--primary))] mb-3">Course Complete!</h2>
-              <p className="text-xl text-[hsl(var(--foreground))] mb-4">You've mastered the art of meme coin trading!</p>
-            <div className="flex items-center justify-center space-x-3 my-6">
-                <Award className="w-12 h-12 text-[hsl(var(--primary))]" />
-              <div>
-                  <p className="text-lg md:text-xl font-semibold text-[hsl(var(--primary))]">REWARD: Meme Coin Master NFT</p>
-                  <p className="text-md text-[hsl(var(--muted-foreground))]">Your ability to navigate meme coin markets is recognized.</p>
-                </div>
-              </div>
-            {lessonsData.find(l => l.pitfallWarning && lessonStatus[lessonsData.indexOf(l)] === 'completed')?.pitfallWarning}
-              <Button asChild className="mt-6 w-full md:w-auto bg-[hsl(var(--secondary))] hover:bg-[hsl(var(--secondary))]/90 text-[hsl(var(--secondary-foreground))]">
-                <Link href="/community-strategy">Advance to Next Course</Link>
-            </Button>
-          </motion.section>
-        )}
-
-          <section className="my-8 text-center p-6 bg-card rounded-xl shadow-lg border border-blue-600 neon-border-blue w-full">
-            <h2 className="text-2xl font-bold text-primary mb-2">[Your NFT Project Name]</h2>
-            <p className="text-sm text-muted-foreground mb-4">Explore our exclusive Solana NFT collection!</p>
-            <div className="space-y-2">
-              <p><strong>Collection Size:</strong> 10,000 NFTs</p>
-              <p><strong>Mint Date:</strong> [Your Mint Date]</p>
-              <p><strong>Utility:</strong> Access to exclusive events, staking rewards, and more.</p>
-            </div>
-          </section>
-
-        <section className="my-8 text-center p-6 bg-card rounded-xl shadow-lg border border-blue-600 neon-border-blue w-full">
-            <h2 className="text-2xl font-bold text-primary mb-2">Connect Your Wallet</h2>
-            <p className="text-sm text-muted-foreground mb-4">Connect a Solana wallet to view your address, balance, and NFT status.</p>
-            
-            <div className="flex justify-center items-center">
-              <Button 
-                  onClick={() => setShowWalletSelector(!showWalletSelector)}
-                  className="px-6 py-3 mb-4 rounded-lg shadow-lg bg-gradient-to-r from-green-500 to-purple-600 hover:from-green-600 hover:to-purple-700 text-white min-w-[240px] transition-all duration-300 flex items-center justify-center"
-                  aria-expanded={showWalletSelector}
-                aria-label={showWalletSelector ? "Close wallet selector" : "Open wallet selector"}
-              >
-                  <Wallet size={18} className="mr-2"/>
-                  {connectedWalletProvider ? `Connected: ${connectedWalletProvider}` : "Select Wallet"}
-                  {showWalletSelector ? <ChevronUp size={18} className="ml-2" /> : <ChevronDown size={18} className="ml-2" />}
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+        {/* Animated background effects */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900 to-slate-900"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="relative z-10 p-8">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent glow-text">
+              Meme Coin Mania
+            </h1>
+            <p className="text-xl text-gray-300 mb-2">Analyze trends, build a mock portfolio, and learn to navigate hype.</p>
+            <p className="text-cyan-300 text-lg">
+              Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
+            </p>
+          </div>
+          
+          {/* Main content */}
+          <div className="max-w-3xl mx-auto">
+            {/* Back button */}
+            <div className="mb-8">
+              <Button variant="outline" size="sm" asChild className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30">
+                <Link href="/courses" className="flex items-center space-x-1">
+                  <ArrowLeft size={16} />
+                  <span>Back to Courses</span>
+                </Link>
               </Button>
             </div>
 
-            {showWalletSelector && (
-                <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 overflow-hidden"
+            {/* Course status */}
+            <Card className="mb-8 bg-slate-800/50 border-2 border-cyan-500/30 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold text-cyan-400 mb-2">Meme Coin Mania: The Art of the Pump</h2>
+                <p className="text-gray-300 mb-4">Master the psychology and mechanics of meme coin trading. Complete lessons to unlock the next course!</p>
+              </CardContent>
+            </Card>
+
+            {/* Progress bar */}
+            <div className="mb-8">
+              <Progress value={progressPercentage} className="w-full bg-slate-800/50 [&>div]:bg-gradient-to-r [&>div]:from-cyan-500 [&>div]:to-pink-500" />
+              <p className="text-center text-gray-300 mt-2">Progress: {Math.round(progressPercentage)}%</p>
+            </div>
+
+            {/* Lessons and quizzes */}
+            <main className="space-y-8">
+              {!allLessonsCompleted && currentLesson && lessonStatus[currentLessonIndex] !== 'locked' ? (
+                <motion.section 
+                  key={currentLessonIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="bg-slate-800/50 p-6 rounded-xl shadow-lg border-2 border-cyan-500/30 backdrop-blur-sm"
                 >
-                    {walletProviders.map(wallet => (
+                  <h2 className="text-2xl font-semibold text-cyan-400 mb-4">{currentLesson.title}</h2>
+                  <div className="text-gray-300 leading-relaxed mb-6">
+                    {currentLesson.content}
+                  </div>
+
+                  {currentLesson.pitfallWarning && lessonStatus[currentLessonIndex] !== 'completed' && (
+                    <div className="my-4">{currentLesson.pitfallWarning}</div>
+                  )}
+
+                  {lessonStatus[currentLessonIndex] !== 'completed' && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2, duration: 0.5 }}
+                      className="mt-8"
+                    >
+                      <h3 className="text-xl font-semibold text-pink-400 mt-8 mb-4">Knowledge Check!</h3>
+                      <RadioGroup className="space-y-6">
+                        {currentLesson.quiz.map((q, qIndex) => (
+                          <div key={q.id} className={`p-4 rounded-md border-2 ${quizSubmitted ? (selectedAnswers[q.id] === q.correctAnswerId ? 'border-green-500 bg-green-500/10' : 'border-red-500 bg-red-500/10') : 'border-cyan-500/50 hover:border-cyan-500'}`}>
+                            <p className="font-medium mb-2 text-gray-300">{qIndex + 1}. {q.text}</p>
+                            {q.options.map(opt => (
+                              <motion.div 
+                                key={opt.id}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className={`flex items-center space-x-3 p-3 bg-slate-700/30 rounded-lg border-2 hover:border-cyan-500 cursor-pointer transition-all duration-150 ${selectedAnswers[q.id] === opt.id ? 'border-cyan-500 ring-2 ring-cyan-500' : 'border-cyan-500/50'}`}
+                                onClick={() => handleOptionChange(q.id, opt.id)}
+                              >
+                                <RadioGroupItem
+                                  value={opt.id}
+                                  id={`${q.id}-${opt.id}`}
+                                  checked={selectedAnswers[q.id] === opt.id}
+                                  disabled={quizSubmitted && quizPassed}
+                                  className="border-cyan-500 text-cyan-500 focus:ring-cyan-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
+                                />
+                                <Label htmlFor={`${q.id}-${opt.id}`} className="cursor-pointer flex-1 text-gray-300">{opt.text}</Label>
+                                {quizSubmitted && selectedAnswers[q.id] === opt.id && selectedAnswers[q.id] !== q.correctAnswerId && (
+                                  <XCircle className="h-5 w-5 text-red-500 ml-2" />
+                                )}
+                                {quizSubmitted && selectedAnswers[q.id] === opt.id && selectedAnswers[q.id] === q.correctAnswerId && (
+                                  <CheckCircle className="h-5 w-5 text-green-500 ml-2" />
+                                )}
+                                {quizSubmitted && opt.id === q.correctAnswerId && selectedAnswers[q.id] !== q.correctAnswerId && (
+                                  <span className="text-xs text-green-400 ml-2">(Correct Answer)</span>
+                                )}
+                              </motion.div>
+                            ))}
+                            {quizSubmitted && selectedAnswers[q.id] !== q.correctAnswerId && q.explanation && (
+                              <p className="text-sm text-gray-400 mt-1">{q.explanation}</p>
+                            )}
+                          </div>
+                        ))}
+                      </RadioGroup>
+                      <Button
+                        onClick={handleSubmitQuiz}
+                        className="mt-8 w-full bg-gradient-to-r from-cyan-500 to-pink-500 hover:from-cyan-600 hover:to-pink-600 text-white"
+                        disabled={!allQuestionsAnswered || (quizSubmitted && quizPassed)}
+                      >
+                        Submit Quiz
+                      </Button>
+                    </motion.div>
+                  )}
+                </motion.section>
+              ) : (
+                <motion.section 
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="bg-slate-800/50 p-6 rounded-xl shadow-lg border-2 border-cyan-500/30 backdrop-blur-sm text-center"
+                >
+                  <Award className="w-20 h-20 text-cyan-400 mx-auto mb-4" />
+                  <h2 className="text-3xl font-bold text-cyan-400 mb-3">Course Complete!</h2>
+                  <p className="text-xl text-gray-300 mb-4">You've mastered the art of meme coin trading!</p>
+                  <div className="flex items-center justify-center space-x-3 my-6">
+                    <Award className="w-12 h-12 text-cyan-400" />
+                    <div>
+                      <p className="text-lg font-semibold text-cyan-400">REWARD: Meme Coin Master NFT</p>
+                      <p className="text-gray-400">Your ability to navigate meme coin markets is recognized.</p>
+                    </div>
+                  </div>
+                  {lessonsData.find(l => l.pitfallWarning && lessonStatus[lessonsData.indexOf(l)] === 'completed')?.pitfallWarning}
+                  <Button asChild className="mt-6 w-full md:w-auto bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white">
+                    <Link href="/community-strategy">Advance to Next Course</Link>
+                  </Button>
+                </motion.section>
+              )}
+
+              {/* Wallet section */}
+              <Card className="bg-slate-800/50 border-2 border-cyan-500/30 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-bold text-cyan-400 mb-4 text-center">Connect Your Wallet</h2>
+                  <p className="text-gray-300 mb-4 text-center">Connect a Solana wallet to view your address, balance, and NFT status.</p>
+                  
+                  <div className="flex justify-center items-center">
+                    <Button 
+                      onClick={() => setShowWalletSelector(!showWalletSelector)}
+                      className="px-6 py-3 mb-4 rounded-lg shadow-lg bg-gradient-to-r from-green-500 to-purple-600 hover:from-green-600 hover:to-purple-700 text-white min-w-[240px] transition-all duration-300 flex items-center justify-center"
+                      aria-expanded={showWalletSelector}
+                      aria-label={showWalletSelector ? "Close wallet selector" : "Open wallet selector"}
+                    >
+                      <Wallet size={18} className="mr-2"/>
+                      {connectedWalletProvider ? `Connected: ${connectedWalletProvider}` : "Select Wallet"}
+                      {showWalletSelector ? <ChevronUp size={18} className="ml-2" /> : <ChevronDown size={18} className="ml-2" />}
+                    </Button>
+                  </div>
+
+                  {showWalletSelector && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 overflow-hidden"
+                    >
+                      {walletProviders.map(wallet => (
                         <Button
-                            key={wallet.name}
-                            onClick={() => handleWalletConnection(wallet.name)}
-                            className="w-full px-6 py-3 rounded-lg shadow-lg bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700 text-white transition-all duration-300 flex items-center justify-center"
+                          key={wallet.name}
+                          onClick={() => handleWalletConnection(wallet.name)}
+                          className="w-full px-6 py-3 rounded-lg shadow-lg bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700 text-white transition-all duration-300 flex items-center justify-center"
                         >
-                           {wallet.icon} {wallet.label}
+                          {wallet.icon} {wallet.label}
                         </Button>
-                    ))}
-                </motion.div>
-            )}
+                      ))}
+                    </motion.div>
+                  )}
 
-            {account && (
-            <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-4 text-foreground space-y-1"
-            >
-                <p><strong>Address:</strong> {account}</p>
-                <p><strong>Balance:</strong> {balance || 'Fetching balance...'}</p>
-                <p><strong>NFT Status:</strong> {mockNftStatus || 'Checking NFT status...'}</p>
-            </motion.div>
-            )}
-        </section>
+                  {account && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-4 text-gray-300 space-y-1"
+                    >
+                      <p><strong>Address:</strong> {account}</p>
+                      <p><strong>Balance:</strong> {balance || 'Fetching balance...'}</p>
+                      <p><strong>NFT Status:</strong> {mockNftStatus || 'Checking NFT status...'}</p>
+                    </motion.div>
+                  )}
+                </CardContent>
+              </Card>
+            </main>
 
+            {/* Footer */}
+            <footer className="mt-12 text-center">
+              <p className="text-sm text-gray-400">
+                #StayBuilding #StayHODLing
+              </p>
+            </footer>
+          </div>
+        </div>
+
+        {/* Alert dialogs */}
         <AlertDialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -652,56 +592,38 @@ const MemeCoinManiaPage = () => {
               {quizPassed && currentLessonIndex < lessonsData.length - 1 ? (
                 null 
               ) : quizPassed && currentLessonIndex === lessonsData.length - 1 ? (
-                 <AlertDialogAction onClick={() => setShowFeedbackModal(false)} className="bg-green-600 hover:bg-green-700">To the Moon!</AlertDialogAction>
+                <AlertDialogAction onClick={() => setShowFeedbackModal(false)} className="bg-green-600 hover:bg-green-700">To the Moon!</AlertDialogAction>
               ) : (
                 <>
                   <AlertDialogCancel onClick={() => setShowFeedbackModal(false)}>Review Lesson</AlertDialogCancel>
                   <AlertDialogAction onClick={() => {setSelectedAnswers({}); setQuizSubmitted(false); setQuizPassed(false); setCurrentScore(0); setShowFeedbackModal(false);}} className="bg-blue-600 hover:bg-blue-700">Retry Quiz</AlertDialogAction>
                 </>
               )}
-                </AlertDialogFooter>
-            </AlertDialogContent>
+            </AlertDialogFooter>
+          </AlertDialogContent>
         </AlertDialog>
 
         <AlertDialog open={showWalletAlert} onOpenChange={setShowWalletAlert}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                <AlertDialogTitle>{walletAlertConfig.title}</AlertDialogTitle>
-                <AlertDialogDescription>
-                    {walletAlertConfig.description}
-                </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                {walletAlertConfig.title !== "Phantom Connected" && walletAlertConfig.title !== "Solflare Connected" && <AlertDialogCancel>Cancel</AlertDialogCancel> }
-                <AlertDialogAction onClick={() => setShowWalletAlert(false)} className="bg-blue-600 hover:bg-blue-700">OK</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{walletAlertConfig.title}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {walletAlertConfig.description}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              {walletAlertConfig.title !== "Phantom Connected" && walletAlertConfig.title !== "Solflare Connected" && <AlertDialogCancel>Cancel</AlertDialogCancel> }
+              <AlertDialogAction onClick={() => setShowWalletAlert(false)} className="bg-blue-600 hover:bg-blue-700">OK</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
         </AlertDialog>
 
-          <AlertDialog open={showTimeoutAlert} onOpenChange={setShowTimeoutAlert}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{timeoutAlertConfig.title}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {timeoutAlertConfig.description}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogAction onClick={() => setShowTimeoutAlert(false)} className="bg-pink-600 hover:bg-pink-700">
-                  Got it!
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-      </main>
-
-      <footer className="mt-12 text-center">
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">
-          #StayBuilding #StayHODLing
-        </p>
-      </footer>
-    </div>
+        <style jsx global>{`
+          .glow-text {
+            text-shadow: 0 0 10px currentColor;
+          }
+        `}</style>
+      </div>
     </TokenGate>
   );
 };

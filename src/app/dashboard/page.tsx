@@ -1,10 +1,11 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
+import { useState, useEffect } from 'react';
+import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { 
   Clock, 
   Bell, 
@@ -15,12 +16,10 @@ import {
   Award,
   BookOpen,
   Video,
-  AlertCircle,
-  Trophy
-} from "lucide-react"
-import Link from "next/link"
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
-import TokenGate from "@/components/TokenGate"
+  AlertCircle
+} from 'lucide-react';
+import TokenGate from '@/components/TokenGate';
+import Link from 'next/link';
 
 interface Announcement {
   id: string;
@@ -124,7 +123,7 @@ const mockUpcomingClasses: UpcomingClass[] = [
   }
 ];
 
-export default function HoodieAcademy() {
+export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
   const [overallProgress, setOverallProgress] = useState(65);
@@ -173,8 +172,8 @@ export default function HoodieAcademy() {
           <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-cyan-400">Welcome to Hoodie Academy</h1>
-                <p className="text-gray-300">Your Web3 learning journey starts here!</p>
+                <h1 className="text-3xl font-bold text-cyan-400">Dashboard</h1>
+                <p className="text-gray-300">Welcome back, Hoodie Scholar!</p>
               </div>
               <div className="text-right">
                 <div className="text-sm text-gray-400">Current Time</div>
@@ -245,51 +244,6 @@ export default function HoodieAcademy() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Leaderboard Preview */}
-              <Card className="bg-slate-800/50 border-yellow-500/30 lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="text-yellow-400 flex items-center space-x-2">
-                    <Trophy className="w-5 h-5" />
-                    <span>Top Performers</span>
-                    <Button size="sm" variant="outline" asChild className="ml-auto text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/10">
-                      <Link href="/leaderboard">View All</Link>
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between p-2 bg-yellow-500/10 rounded border border-yellow-500/20">
-                    <div className="flex items-center space-x-2">
-                      <Trophy className="w-4 h-4 text-yellow-400" />
-                      <span className="text-sm font-medium text-white">HoodieScholar</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-yellow-400">2,850</div>
-                      <div className="text-xs text-gray-400">pts</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-gray-500/10 rounded border border-gray-500/20">
-                    <div className="flex items-center space-x-2">
-                      <Award className="w-4 h-4 text-gray-300" />
-                      <span className="text-sm font-medium text-white">CryptoNinja</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-gray-300">2,720</div>
-                      <div className="text-xs text-gray-400">pts</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-amber-500/10 rounded border border-amber-500/20">
-                    <div className="flex items-center space-x-2">
-                      <Award className="w-4 h-4 text-amber-600" />
-                      <span className="text-sm font-medium text-white">Web3Wizard</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-amber-600">2,580</div>
-                      <div className="text-xs text-gray-400">pts</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Upcoming Classes */}
               <Card className="bg-slate-800/50 border-cyan-500/30 lg:col-span-1">
                 <CardHeader>
@@ -438,5 +392,5 @@ export default function HoodieAcademy() {
         </div>
       </div>
     </TokenGate>
-  )
-}
+  );
+} 
