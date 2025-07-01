@@ -1,100 +1,217 @@
-# 🎓 Hoodie Academy: The Heart of the Hoodie-Verse 🧥
+# Hoodie Academy 🎓
 
-**Assignment Overview**: Design the **Hoodie Academy**, the foundational learning hub of the Hoodie-Verse, where builders master NFTs, meme coins, and Web3 culture. This document outlines the visual concept, key features, courses, lore, and creative vision, blending scholarly rigor with a degen edge.
+A comprehensive Next.js educational platform focused on Web3, Solana, and NFTs, featuring token gating, interactive courses, and a competitive leaderboard system.
 
-**Deadline**: May 5, 2025  
-**Hashtag**: #StayBuilding #StayHODLing
+## 🚀 Features
+
+### Core Learning Platform
+- **Token-gated content** based on WifHoodie NFT ownership
+- **Interactive course content** with lessons, quizzes, and progress tracking
+- **6 comprehensive courses** covering Web3 fundamentals
+- **Real-time progress tracking** with localStorage persistence
+- **Responsive design** optimized for all devices
+
+### 🏆 Top 20 Leaderboard System
+- **Wallet-based user tracking** using Solana addresses
+- **Performance scoring** based on course completion, quiz scores, and achievements
+- **Achievement system** with automatic unlocking
+- **Real-time ranking** with search and filter capabilities
+- **Detailed user profiles** with progress breakdown
+- **Competitive gamification** to motivate learners
+
+### 📊 Dashboard & Analytics
+- **Personalized dashboard** with progress overview
+- **Course completion statistics** and performance metrics
+- **NFT badge tracking** and achievement display
+- **Upcoming classes** and announcements
+- **To-do list** with course assignments
+- **Real-time clock** and activity tracking
+
+### 🎯 Course Catalog
+1. **Wallet Wizardry** - Master wallet setup and security
+2. **NFT Mastery** - Create, trade, and build NFT communities
+3. **Meme Coin Mania** - Navigate volatile meme coin markets
+4. **Community Strategy** - Build thriving Web3 communities
+5. **SNS Simplified** - Master Solana Name Service domains
+6. **Technical Analysis** - Advanced trading strategies
+
+### 🔐 Authentication & Security
+- **Multi-wallet support** (MetaMask, Solflare, Phantom)
+- **NFT verification** via Helius API
+- **Session management** with secure storage
+- **Wallet address validation** and SNS resolution
+
+## 🛠️ Technologies Used
+
+### Frontend
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **Radix UI** - Accessible component primitives
+- **Lucide React** - Beautiful icons
+
+### Blockchain Integration
+- **Solana Web3.js** - Solana blockchain interaction
+- **Helius API** - NFT verification and data
+- **SNS Resolver** - Solana Name Service integration
+
+### Development Tools
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
+- **Vercel** - Deployment platform
+
+## 📁 Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── leaderboard/       # Leaderboard system
+│   ├── courses/          # Course catalog
+│   ├── profile/          # User profiles
+│   └── [course-pages]/   # Individual course pages
+├── components/           # Reusable UI components
+│   ├── leaderboard/     # Leaderboard components
+│   ├── dashboard/       # Dashboard components
+│   ├── ui/             # Base UI components
+│   └── course-roadmap/ # Course navigation
+├── services/           # Business logic services
+├── hooks/             # Custom React hooks
+├── lib/               # Utility functions and data
+└── styles/            # Global styles
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Solana wallet (MetaMask, Solflare, or Phantom)
+- WifHoodie NFT for access
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/lostdev11/HoodieAcademy.git
+   cd HoodieAcademy
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Set up Environment Variables:**
+   Create a `.env.local` file in the root directory:
+   ```env
+   NEXT_PUBLIC_HELIUS_API_KEY=your_helius_api_key_here
+   NEXT_PUBLIC_RPC_URL=https://api.mainnet-beta.solana.com
+   ```
+
+4. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Build for production:**
+   ```bash
+   npm run build
+   ```
+
+## 🎮 How to Use
+
+### For Learners
+1. **Connect your wallet** - Use MetaMask, Solflare, or Phantom
+2. **Verify NFT ownership** - Ensure you own a WifHoodie NFT
+3. **Access courses** - Browse the course catalog and start learning
+4. **Track progress** - Monitor your completion and quiz scores
+5. **Compete on leaderboard** - View rankings and achievements
+6. **Earn badges** - Complete courses to unlock NFT badges
+
+### For Developers
+1. **Explore the codebase** - Check out the component structure
+2. **Customize courses** - Modify course content in `src/lib/`
+3. **Extend leaderboard** - Add new scoring metrics or achievements
+4. **Deploy** - Use Vercel for easy deployment
+
+## 🏆 Leaderboard System
+
+### Scoring Algorithm
+- **Course Completion**: 300 points per course
+- **Lesson Progress**: 50 points per lesson
+- **Quiz Performance**: 100 points + (score × 2)
+- **Badge System**: 150 points per NFT badge
+- **Achievements**: 100-300 points based on type
+- **Consistency Bonus**: Up to 500 points for daily participation
+
+### Achievements
+- 🎯 **First Steps** - Complete your first course
+- ⭐ **Perfect Score** - Achieve 100% on any quiz
+- ⚡ **Speed Learner** - Complete 3 courses in one week
+- 🔥 **Consistency King** - Log in for 30 consecutive days
+
+## 📊 Performance Metrics
+
+- **Build Size**: Optimized for fast loading
+- **SEO**: Static generation for better performance
+- **Accessibility**: WCAG compliant components
+- **Mobile**: Responsive design for all devices
+
+## 🔧 Development
+
+### Available Scripts
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+```
+
+### Code Style
+- TypeScript for type safety
+- ESLint for code quality
+- Prettier for formatting
+- Component-based architecture
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+1. Connect your GitHub repository
+2. Configure environment variables
+3. Deploy automatically on push
+
+### Manual Deployment
+```bash
+npm run build
+npm run start
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## 🙏 Acknowledgments
+
+- **Solana Foundation** for blockchain infrastructure
+- **Helius** for NFT verification API
+- **Radix UI** for accessible components
+- **Tailwind CSS** for styling utilities
+
+## 📞 Support
+
+For questions or issues:
+- Check the [Issues](https://github.com/lostdev11/HoodieAcademy/issues) page
+- Review the [LEADERBOARD_README.md](./LEADERBOARD_README.md) for detailed leaderboard documentation
+- Ensure your wallet is properly connected and you own a WifHoodie NFT
 
 ---
 
-## 1. Visual Concept and Layout
-
-The **Hoodie Academy** is a futuristic, hybrid campus merging physical architecture with a digital metaverse hub, accessible via VR/AR. It blends cyberpunk aesthetics (neon-lit glass, purples, blues, greens) with cozy streetwear vibes (hoodie textures, graffiti-style murals). The campus is alive with holographic displays, real-time X feeds, and digital Easter eggs (e.g., hidden memes, QR codes).
-
-### Key Areas
-- **Great Hoodie Hall** (Redefined):
-  - **Purpose**: A scholarly-degen war room for learning NFTs, meme coins, and crypto culture.
-  - **Features**:
-    - **NFT Knowledge Hub**: Holographic tutorials on minting/trading (OpenSea, Rarible, Magic Eden) and Hoodie-Verse NFT case studies.
-    - **Meme Coin Command Center**: Live dashboard with AI-driven sentiment analysis of meme coins (e.g., HoodieCoin).
-    - **Wallet Wall**: Touch-sensitive display of must-have wallets (MetaMask, Phantom, Trust Wallet) with setup guides.
-    - **Crypto X Radar**: Curated feed of key X accounts (@VitalikButerin, @CryptoWendyO, @HoodieHustler) with trending hashtags.
-    - **AI Productivity Suite**: Hoodie pods run Grok 3 in “Degen Mode” for NFT art prompts, trading simulations, X post scheduling, and whitepaper summaries.
-  - **Aesthetic**: Neon-lit walls with crypto memes, hoodie pods as study stations, and a “Rug-Pull Alarm” for crashing coins. Motto: “Learn Hard, HODL Harder.”
-- **Dojo of Infinite Threads**: Training ground for crafting viral X posts and NFT designs, with glowing analytics screens.
-- **Debate Dome**: Arena for chaotic debates (e.g., “Is a hot dog a sandwich?”) with holographic avatar effects.
-- **Pixel Garden**: Digital flora blooms based on community engagement, a serene space for inspiration.
-- **NFT Vault**: Underground library for earning/storing blockchain-verified badges (e.g., “Hoodie Scholar”).
-
----
-
-## 2. Description of the Hoodie Academy
-
-The Hoodie Academy is the Hoodie-Verse’s epicenter of Web3 wisdom, where degens and scholars unite to master NFTs, meme coins, and crypto culture in a neon-lit campus buzzing with AI-driven tools. From the Great Hoodie Hall’s live X feeds to the NFT Vault’s blockchain badges, it’s where builders earn certifications to shape the multiverse. #StayBuilding, #StayHODLing.
-
----
-
-## 3. Courses for Certification
-
-The Academy offers five courses, each granting an **NFT-based certification** stored in the NFT Vault. Completing three courses earns the prestigious “Hoodie Scholar” NFT, unlocking advanced features (e.g., DAO governance).
-
-1. **NFT Mastery: From Mint to Moon**
-   - **Focus**: Create and trade NFTs using AI tools; simulate marketplace strategies.
-   - **Lessons**: NFT creation, gas fee optimization, scam prevention.
-   - **Certification**: “NFT Ninja” NFT (pixelated hoodie).
-   - **Degen Twist**: Pitch a “Hoodie Drop” NFT on X.
-
-2. **Meme Coin Mania: Ride the Wave**
-   - **Focus**: Analyze meme coin trends via X data; build a mock portfolio.
-   - **Lessons**: Tokenomics, rug-pull red flags, AI sentiment analysis.
-   - **Certification**: “Moon Merchant” NFT (glowing HoodieCoin).
-   - **Degen Twist**: Create a viral meme coin concept (e.g., “HODLcat”).
-
-3. **Wallet Wizardry: Secure the Bag**
-   - **Focus**: Master wallet setup and security protocols.
-   - **Lessons**: Hot vs. cold wallets, multi-sig, phishing prevention.
-   - **Certification**: “Vault Keeper” NFT (locked hoodie).
-   - **Degen Twist**: Ethical hacking simulation to “crack” a dummy wallet.
-
-4. **Crypto X Influence: Build Your Clout**
-   - **Focus**: Curate X feeds and craft viral posts with AI optimization.
-   - **Lessons**: Identifying alpha accounts, hashtag strategies, meme storytelling.
-   - **Certification**: “Thread Tycoon” NFT (holographic hashtag hoodie).
-   - **Degen Twist**: Compete in an “X Frenzy” for max likes.
-
-5. **AI-Powered DeFi: Hack the Future**
-   - **Focus**: Optimize DeFi strategies (yield farming, staking) with AI.
-   - **Lessons**: Uniswap, Aave, impermanent loss, market predictions.
-   - **Certification**: “Yield Yoda” NFT (blockchain saber hoodie).
-   - **Degen Twist**: Design a simulated arbitrage bot.
-
----
-
-## 4. Hoodie-Verse Lore Integration
-
-The Academy is steeped in Hoodie-Verse history:
-- **First Thread**: The Great Hoodie Hall stands on the site of the original X post that sparked the DAO, immortalized in a holographic monument.
-- **HoodieCoin Saga**: A fictional meme coin funded the Academy, its volatile history (from $0.0001 to $69) taught in Meme Coin Mania.
-- **OG Builders**: Courses feature pseudonymous pioneers (e.g., “ThreadMaster,” “PixelPapi”) as lecturers, tying students to the chaotic roots.
-
----
-
-## 5. Visual Scenes for Inspiration
-
-These scenes capture the Academy’s aesthetic (awaiting image generation confirmation):
-1. **Great Hoodie Hall**: Students in hoodie pods study amid neon walls streaming X posts, with a “Rug-Pull Alarm” flashing.
-2. **Pixel Garden**: Glowing digital plants reflect X engagement; students sketch NFTs on AR tablets.
-3. **NFT Vault**: A student receives a “Hoodie Scholar” NFT in a glowing, blockchain-verified chamber.
-
----
-
-## 6. Next Steps
-
-- **Website Development**: Build a website to showcase the Academy, integrating Web3 features (NFT display, X feed, wallet connection). See provided HTML/CSS/JavaScript code.
-- **Image Generation**: Confirm if sample images (Great Hoodie Hall, Pixel Garden, NFT Vault) should be generated, specifying style (e.g., cyberpunk, anime).
-- **Lore Expansion**: Provide specific Hoodie-Verse events or figures to deepen the narrative.
-- **Deadline**: On track for May 5, 2025. Request additional features or format tweaks as needed.
-
----
-
-**Contact**: For feedback or iterations, reach out to continue building the Hoodie Academy! 🎓🧥🔥
+**Ready to start your Web3 learning journey? Connect your wallet and dive into the Hoodie Academy! 🎓✨** 
