@@ -1,4 +1,3 @@
-
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
@@ -7,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
 
 // Existing glossary and resource data
 const glossaryTerms = [
   {
     term: "HODL",
-    definition: "Holding onto crypto despite market volatility, a degen’s badge of honor.",
+    definition: "Holding onto crypto despite market volatility, a degen's badge of honor.",
   },
   {
     term: "Rug Pull",
@@ -157,7 +157,7 @@ const categorizedResources: ChainResources[] = [
       },
       {
         name: "Magic Eden",
-        description: "Solana’s top NFT marketplace with cross-chain support.",
+        description: "Solana's top NFT marketplace with cross-chain support.",
         url: "https://magiceden.io",
       },
       {
@@ -280,6 +280,7 @@ export default function GreatHoodieHall() {
   const [isHolder, setIsHolder] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState("Phantom"); // Default to Phantom
+  const [currentTime, setCurrentTime] = useState<string>("");
 
   const WIFHOODIE_COLLECTION_ADDRESS = "6bRhotj6T2ducLXdMneXCXUYW1ye4bRZCTHatxZKutS5";
   const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
@@ -363,135 +364,92 @@ export default function GreatHoodieHall() {
     }
   }, [walletAddress, checkWifHoodieOwnership]);
 
+  useEffect(() => {
+    setCurrentTime(new Date().toLocaleTimeString());
+    const timerId = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, []);
+
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen py-8 px-4 md:px-8 bg-background text-foreground">
-      <div className="w-full max-w-5xl mb-8 relative">
-        <div className="absolute top-0 left-0 z-10 pt-4 pl-4 md:pt-0 md:pl-0">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      {/* Animated background effects */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900 to-slate-900"></div>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      <div className="relative z-10 p-8">
+        {/* Back Button */}
+        <div className="mb-6">
           <Button
-            variant="outline"
-            size="sm"
             asChild
-            className="bg-card hover:bg-muted text-accent hover:text-accent-foreground border-accent"
+            variant="outline"
+            className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300"
           >
-            <Link href="/" className="flex items-center space-x-1">
-              <ArrowLeft size={16} />
-              <span>Back to Home</span>
+            <Link href="/courses">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Courses
             </Link>
           </Button>
         </div>
-        <header className="text-center pt-16 md:pt-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">
-            Great Hoodie Hall
+
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent glow-text">
+            The Great Hoodie Hall
           </h1>
-          <p className="text-md md:text-lg text-muted-foreground mt-2">
-            Your gateway to Web3 wisdom.
+          <p className="text-xl text-gray-300 mb-2">Glossary, Resources & More</p>
+          <p className="text-cyan-300 text-lg">
+            Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
           </p>
-        </header>
-      </div>
-
-      <main className="flex flex-col items-center justify-center w-full max-w-5xl space-y-8">
-        {!walletAddress ? (
-          <div className="text-center p-6 bg-card rounded-xl shadow-lg border-2 neon-border-cyan">
-            <p className="text-foreground mb-4 text-lg">Connect your wallet to verify WifHoodie NFT ownership and access exclusive content!</p>
-            <select
-              value={selectedWallet}
-              onChange={(e) => setSelectedWallet(e.target.value)}
-              className="bg-muted border border-input text-foreground rounded-lg px-4 py-3 mb-6 w-full max-w-xs text-base focus:ring-2 focus:ring-accent"
-            >
-              <option value="Phantom">Phantom</option>
-              <option value="Solflare">Solflare</option>
-              <option value="MagicEden">Magic Eden (via Phantom/Solflare)</option>
-            </select>
-            <Button
-              onClick={connectWallet}
-              className="w-full max-w-xs px-6 py-3 rounded-lg shadow-lg bg-gradient-to-r from-green-500 to-purple-600 hover:from-green-600 hover:to-purple-700 text-white text-base font-semibold"
-            >
-              Connect {selectedWallet} Wallet
-            </Button>
-          </div>
-        ) : loading ? (
-          <div className="flex flex-col items-center justify-center text-center p-6">
-             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-4"></div>
-            <p className="text-foreground text-lg">Verifying your WifHoodie NFT ownership...</p>
-          </div>
-        ) : isHolder ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="w-full"
-          >
-            <section className="w-full max-w-2xl text-center p-4 bg-card rounded-xl shadow-md border neon-border-green mx-auto">
-              <h2 className="text-2xl font-bold text-green-400">Welcome, WifHoodie Holder!</h2>
-              <p className="text-foreground mt-1">You have unlocked the Great Hoodie Hall.</p>
-            </section>
-            
-            <section className="w-full max-w-2xl text-center mt-8 mx-auto">
-              <h2 className="text-xl font-semibold text-accent mb-2">Hoodie-Verse Lore</h2>
-              <p className="text-md text-foreground">
-                The Wallet Wall in the Great Hoodie Hall was forged to protect the “First Thread” keys, securing the Hoodie-Verse’s origins.
-              </p>
-            </section>
-
-            <section className="w-full max-w-4xl mt-10 mx-auto">
-              <h2 className="text-3xl font-bold text-primary mb-6 text-center">
-                Crypto Lingo Glossary: Speak the Web3 Language
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        </div>
+        {/* Main content: glossary, resources, wallet, etc. */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-7xl mx-auto">
+          {/* Glossary */}
+          <Card className="bg-slate-800/80 border-2 border-cyan-500/40 backdrop-blur-sm shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold text-cyan-400 mb-4 glow-text">Web3 Glossary</h2>
+              <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
                 {glossaryTerms.map((item) => (
-                  <div key={item.term} className="bg-card p-6 rounded-xl shadow-lg border-2 neon-border-cyan hover:shadow-[0_0_20px_theme(colors.cyan.400)] transition-all duration-300">
-                    <h3 className="text-xl font-bold text-primary mb-2">{item.term}</h3>
-                    <p className="text-foreground">{item.definition}</p>
-                  </div>
+                  <li key={item.term}>
+                    <span className="text-pink-400 font-semibold">{item.term}:</span> <span className="text-gray-300">{item.definition}</span>
+                  </li>
                 ))}
-              </div>
-            </section>
-
-            <section className="w-full max-w-4xl mt-10 mx-auto">
-              <h2 className="text-3xl font-bold text-primary mb-6 text-center">
-                Essential Web3 Tools: Gear Up for the Hoodie-Verse
-              </h2>
-              {categorizedResources.map((category) => (
-                <div key={category.chainName} className="mb-10">
-                  <h3 className="text-2xl font-semibold text-accent mb-4 text-center md:text-left">{category.chainName}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {category.resources.map((tool) => (
-                      <div key={tool.name} className="bg-card p-6 rounded-xl shadow-lg border-2 neon-border-cyan hover:shadow-[0_0_20px_theme(colors.cyan.400)] transition-all duration-300">
-                        <h4 className="text-xl font-bold text-primary mb-2">
-                          <a href={tool.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                            {tool.name}
+              </ul>
+            </CardContent>
+          </Card>
+          {/* Resources */}
+          <Card className="bg-slate-800/80 border-2 border-pink-500/40 backdrop-blur-sm shadow-[0_0_30px_rgba(236,72,153,0.3)]">
+            <CardContent className="p-6">
+              <h2 className="text-2xl font-bold text-pink-400 mb-4 glow-text">Resources</h2>
+              <ul className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                {categorizedResources.map((cat) => (
+                  <li key={cat.chainName}>
+                    <span className="text-cyan-400 font-semibold">{cat.chainName}</span>
+                    <ul className="ml-4 mt-1 space-y-1">
+                      {cat.resources.map((res) => (
+                        <li key={res.name}>
+                          <a href={res.url} target="_blank" rel="noopener noreferrer" className="text-green-400 hover:underline">
+                            {res.name}
                           </a>
-                        </h4>
-                        <p className="text-foreground">{tool.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </section>
-          </motion.div>
-        ) : (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="text-center p-6 bg-card rounded-xl shadow-lg border-2 neon-border-orange"
-          >
-            <p className="text-foreground text-lg">
-              Access Denied. You need a WifHoodie NFT to enter the Great Hoodie Hall.
-            </p>
-            <p className="text-muted-foreground mt-2">
-              Mint one at <a href="https://magiceden.us/marketplace/wifhoodies" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">WifHoodie on Magic Eden</a>!
-            </p>
-          </motion.div>
-        )}
-      </main>
-
-      <footer className="mt-12 text-center">
-        <p className="text-sm text-muted-foreground">
-          #StayBuilding #StayHODLing
-        </p>
-      </footer>
+                          <span className="text-gray-300 ml-2">- {res.description}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+        {/* Footer hashtags */}
+        <div className="mt-12 text-cyan-400/70 text-sm text-center">#StayBuilding #StayHODLing</div>
+      </div>
+      <style jsx global>{`
+        .glow-text {
+          text-shadow: 0 0 10px currentColor;
+        }
+      `}</style>
     </div>
   );
 }

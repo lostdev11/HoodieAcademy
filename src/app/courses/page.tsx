@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Home, ArrowDown, ArrowRight, LockKeyhole, CheckCircle, LineChart, Clock } from "lucide-react";
+import { Home, ArrowDown, ArrowRight, LockKeyhole, CheckCircle, LineChart, Clock, Filter } from "lucide-react";
 import { MilestoneBadge } from "@/components/course-roadmap/MilestoneBadge";
 import { RiskArt } from "@/components/course-roadmap/RiskArt";
 import { HoodieIcon } from "@/components/icons/HoodieIcon";
@@ -12,32 +12,65 @@ import { PixelHoodieIcon } from "@/components/icons/PixelHoodieIcon";
 import { SaberHoodieIcon } from "@/components/icons/SaberHoodieIcon";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { GlowingCoinIcon } from "@/components/icons/GlowingCoinIcon"; // Added for consistency
-import TokenGate from "@/components/TokenGate"; // Import TokenGate
-import { useCourseLockTimer } from "@/lib/courseLockTimer";
+import { GlowingCoinIcon } from "@/components/icons/GlowingCoinIcon";
+import TokenGate from "@/components/TokenGate";
+import { Card, CardContent } from "@/components/ui/card";
+import { squadTracks, getSquadForCourse, getCoursesForSquad } from "@/lib/squadData";
 
-const socialPathCoursesData: CourseCardProps[] = [
+// Simple course data
+const allCourses: Array<{
+  id: string;
+  title: string;
+  description: string;
+  badge: string;
+  emoji: string;
+  pathType: "tech" | "social" | "converged";
+  href: string;
+  localStorageKey?: string;
+  totalLessons?: number;
+}> = [
+  {
+    id: 'wallet-wizardry',
+    title: "Wallet Wizardry",
+    description: "Master wallet setup with interactive quizzes and MetaMask integration.",
+    badge: "Vault Keeper",
+    emoji: "🔒",
+    pathType: "tech",
+    href: "/wallet-wizardry",
+    localStorageKey: "walletWizardryProgress",
+    totalLessons: 4,
+  },
+  {
+    id: 'nft-mastery',
+    title: "NFT Mastery",
+    description: "Learn the ins and outs of NFTs, from creation to trading and community building, with interactive quizzes and mock minting.",
+    badge: "NFT Ninja",
+    emoji: "👾",
+    pathType: "tech",
+    href: "/nft-mastery",
+    localStorageKey: "nftMasteryProgress",
+    totalLessons: 4,
+  },
   {
     id: 'meme-coin-mania',
     title: "Meme Coin Mania",
     description: "Analyze meme coin trends via X data, build a mock portfolio, and learn to navigate hype with live price tracking and interactive quizzes.",
     badge: "Moon Merchant",
-    emoji: "💰", // Replaced icon with emoji
+    emoji: "💰",
     pathType: "social",
     href: "/meme-coin-mania",
-    riskType: "fomo",
     localStorageKey: "memeCoinManiaProgress",
     totalLessons: 4,
   },
   {
-    id: 'community-strategy-social',
+    id: 'community-strategy',
     title: "Community Strategy", 
     description: "Master the art of social dynamics to foster loyal and active Web3 communities through interactive lessons and mock DAO voting.",
     badge: "Hoodie Strategist",
-    emoji: "🗣️", // Replaced icon with emoji
-    pathType: "social", 
+    emoji: "🗣️",
+    pathType: "social",
     href: "/community-strategy",
-    localStorageKey: "communityStrategyProgress", 
+    localStorageKey: "communityStrategyProgress",
     totalLessons: 4,
   },
   {
@@ -50,109 +83,42 @@ const socialPathCoursesData: CourseCardProps[] = [
     href: "/sns",
     localStorageKey: "snsProgress",
     totalLessons: 2,
-  }
-];
-
-const techPathCoursesData: CourseCardProps[] = [
-    {
-        id: 'wallet-wizardry',
-        title: "Wallet Wizardry",
-        description: "Master wallet setup with interactive quizzes and MetaMask integration.",
-        badge: "Vault Keeper",
-        emoji: "🔒", // Replaced icon with emoji
-        pathType: "tech",
-        href: "/wallet-wizardry",
-        riskType: "phishing" as "phishing" | "fomo" | undefined,
-        localStorageKey: "walletWizardryProgress",
-        totalLessons: 4,
-    },
-    {
-        id: 'nft-mastery',
-        title: "NFT Mastery",
-        description: "Learn the ins and outs of NFTs, from creation to trading and community building, with interactive quizzes and mock minting.",
-        badge: "NFT Ninja",
-        emoji: "👾", // Replaced icon with emoji
-        pathType: "tech",
-        href: "/nft-mastery",
-        localStorageKey: "nftMasteryProgress",
-        totalLessons: 4,
-    },
-    {
-        id: 'community-strategy-tech',
-        title: "Community Strategy", 
-        description: "Leverage technical skills to build and engage vibrant Web3 communities, mastering DAO governance and social dynamics through interactive lessons.",
-        badge: "Hoodie Strategist",
-        emoji: "⚔️", // Replaced icon with emoji
-        pathType: "tech",
-        href: "/community-strategy",
-        localStorageKey: "communityStrategyProgress",
-        totalLessons: 4,
-    }
-];
-
-const tradingPathCoursesData: CourseCardProps[] = [
+  },
   {
     id: 'technical-analysis',
     title: "Technical Analysis Tactics",
     description: "Master chart patterns, indicators, and leverage trading to navigate market trends.",
     badge: "Chart Commander",
     emoji: "📈", 
-    pathType: "tech", // Changed from "trading" to "tech"
+    pathType: "tech",
     href: "/technical-analysis",
     localStorageKey: "technicalAnalysisProgress",
     totalLessons: 4,
-    // riskType: "liquidation" // Optional: if we extend RiskArt
   }
 ];
 
-
-const COURSE_LOCAL_STORAGE_KEYS = {
-  WALLET_WIZARDRY: "walletWizardryProgress",
-  NFT_MASTERY: "nftMasteryProgress",
-  MEME_COIN_MANIA: "memeCoinManiaProgress",
-  COMMUNITY_STRATEGY: "communityStrategyProgress",
-  TECHNICAL_ANALYSIS: "technicalAnalysisProgress", // New key
-  SNS: "snsProgress",
-};
-
-const ALL_COURSE_KEYS = [
-    COURSE_LOCAL_STORAGE_KEYS.WALLET_WIZARDRY,
-    COURSE_LOCAL_STORAGE_KEYS.NFT_MASTERY,
-    COURSE_LOCAL_STORAGE_KEYS.MEME_COIN_MANIA,
-    COURSE_LOCAL_STORAGE_KEYS.COMMUNITY_STRATEGY,
-    COURSE_LOCAL_STORAGE_KEYS.TECHNICAL_ANALYSIS, // Added new course key
-    COURSE_LOCAL_STORAGE_KEYS.SNS,
-];
-
-// Keys for Great Hoodie Hall access (Technical Analysis is not a prerequisite for now)
-const ALL_COURSE_KEYS_FOR_HALL_ACCESS = [
-    COURSE_LOCAL_STORAGE_KEYS.WALLET_WIZARDRY,
-    COURSE_LOCAL_STORAGE_KEYS.NFT_MASTERY,
-    COURSE_LOCAL_STORAGE_KEYS.MEME_COIN_MANIA,
-    COURSE_LOCAL_STORAGE_KEYS.COMMUNITY_STRATEGY,
-    COURSE_LOCAL_STORAGE_KEYS.SNS,
-];
-
-
 const ADMIN_PASSWORD = "darkhoodie";
+
+type FilterType = 'all' | 'squads' | 'completed';
 
 export default function CoursesPage() {
   const [courseCompletionStatus, setCourseCompletionStatus] = useState<Record<string, { completed: boolean, progress: number }>>({});
-  const [allRequiredCoursesCompleted, setAllRequiredCoursesCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Course lock timers
-  const walletWizardryLock = useCourseLockTimer('wallet-wizardry');
-  const memeCoinManiaLock = useCourseLockTimer('meme-coin-mania');
-  const nftMasteryLock = useCourseLockTimer('nft-mastery');
-  const communityStrategyLock = useCourseLockTimer('community-strategy');
-  const technicalAnalysisLock = useCourseLockTimer('technical-analysis');
-  const snsLock = useCourseLockTimer('sns');
-
+  const [currentTime, setCurrentTime] = useState<string>("");
   const [isAdminBypass, setIsAdminBypass] = useState(false);
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [passwordAttempt, setPasswordAttempt] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [selectedSquad, setSelectedSquad] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentTime(new Date().toLocaleTimeString());
+    const timerId = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, []);
 
   useEffect(() => {
     const getCompletionInfo = (key: string): { completed: boolean, progress: number } => {
@@ -161,7 +127,7 @@ export default function CoursesPage() {
         if (savedStatus) {
           try {
             const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
-            const courseData = [...techPathCoursesData, ...socialPathCoursesData, ...tradingPathCoursesData].find(c => c.localStorageKey === key);
+            const courseData = allCourses.find(c => c.localStorageKey === key);
             const totalLessons = courseData?.totalLessons || 1;
             const completedLessons = parsedStatus.filter(s => s === 'completed').length;
             const progress = Math.round((completedLessons / totalLessons) * 100);
@@ -177,12 +143,20 @@ export default function CoursesPage() {
     };
 
     const status: Record<string, { completed: boolean, progress: number }> = {};
-    ALL_COURSE_KEYS.forEach(key => {
-      status[key] = getCompletionInfo(key);
+    allCourses.forEach(course => {
+      if (course.localStorageKey) {
+        status[course.localStorageKey] = getCompletionInfo(course.localStorageKey);
+      }
+    });
+    
+    console.log('Courses page loaded:', {
+      totalCourses: allCourses.length,
+      courseStatus: status,
+      isLoading: false,
+      allCourses: allCourses.map(c => ({ id: c.id, title: c.title }))
     });
     
     setCourseCompletionStatus(status);
-    setAllRequiredCoursesCompleted(ALL_COURSE_KEYS_FOR_HALL_ACCESS.every(key => status[key]?.completed));
     setIsLoading(false);
   }, []);
 
@@ -196,279 +170,285 @@ export default function CoursesPage() {
     }
   };
 
+  // Filter courses based on active filter and selected squad
+  const getFilteredCourses = () => {
+    switch (activeFilter) {
+      case 'completed':
+        return allCourses.filter(course => 
+          course.localStorageKey && courseCompletionStatus[course.localStorageKey]?.completed
+        );
+      case 'squads':
+        if (selectedSquad) {
+          const squadCourseIds = getCoursesForSquad(selectedSquad);
+          return allCourses.filter(course => squadCourseIds.includes(course.id));
+        }
+        return allCourses;
+      default:
+        return allCourses;
+    }
+  };
+
+  const completedCoursesCount = allCourses.filter(course => 
+    course.localStorageKey && courseCompletionStatus[course.localStorageKey]?.completed
+  ).length;
+
   if (isLoading) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen py-8 px-4 bg-background text-foreground">
-            <p>Loading course progress...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <span className="text-cyan-400 text-2xl animate-pulse">Loading courses...</span>
+      </div>
     );
   }
 
-  const getCourseStatus = (key: string) => {
-    return courseCompletionStatus[key] || { completed: false, progress: 0 };
-  };
-
-  const socialPathCourses = socialPathCoursesData.map(course => {
-    let isLocked = false;
-    const isMemeCoinManiaCompleted = getCourseStatus(COURSE_LOCAL_STORAGE_KEYS.MEME_COIN_MANIA).completed;
-
-    if (course.id === 'meme-coin-mania') {
-      isLocked = false;
-    } else if (course.id === 'community-strategy-social' || course.id === 'sns') {
-      isLocked = !isMemeCoinManiaCompleted;
-    }
-    
-    const { completed, progress } = getCourseStatus(course.localStorageKey!);
-    
-    // Check course lock status
-    let courseLockStatus;
-    switch (course.id) {
-      case 'meme-coin-mania':
-        courseLockStatus = memeCoinManiaLock;
-        break;
-      case 'community-strategy-social':
-        courseLockStatus = communityStrategyLock;
-        break;
-      case 'sns':
-        courseLockStatus = snsLock;
-        break;
-      default:
-        courseLockStatus = { isLocked: false, timeRemaining: null };
-    }
-    
-    return { 
-      ...course, 
-      isLocked: !isAdminBypass && (isLocked || courseLockStatus.isLocked), 
-      isCompleted: completed, 
-      progress,
-      lockStatus: courseLockStatus
-    };
-  });
-
-  const techPathCourses = techPathCoursesData.map(course => {
-    let isLocked = false;
-    const isWalletWizardryCompleted = getCourseStatus(COURSE_LOCAL_STORAGE_KEYS.WALLET_WIZARDRY).completed;
-    const isNftMasteryCompleted = getCourseStatus(COURSE_LOCAL_STORAGE_KEYS.NFT_MASTERY).completed;
-
-    if (course.id === 'nft-mastery') {
-        isLocked = !isWalletWizardryCompleted;
-    } else if (course.id === 'community-strategy-tech') {
-        isLocked = !isNftMasteryCompleted;
-    }
-
-    const { completed, progress } = getCourseStatus(course.localStorageKey!);
-    
-    // Check course lock status
-    let courseLockStatus;
-    switch (course.id) {
-      case 'wallet-wizardry':
-        courseLockStatus = walletWizardryLock;
-        break;
-      case 'nft-mastery':
-        courseLockStatus = nftMasteryLock;
-        break;
-      case 'community-strategy-tech':
-        courseLockStatus = communityStrategyLock;
-        break;
-      default:
-        courseLockStatus = { isLocked: false, timeRemaining: null };
-    }
-    
-    return { 
-      ...course, 
-      isLocked: !isAdminBypass && (isLocked || courseLockStatus.isLocked), 
-      isCompleted: completed, 
-      progress,
-      lockStatus: courseLockStatus
-    };
-  });
-
-  const tradingPathTechnicalAnalysis = {
-    ...tradingPathCoursesData[0],
-    isLocked: !isAdminBypass && technicalAnalysisLock.isLocked,
-    isCompleted: getCourseStatus(COURSE_LOCAL_STORAGE_KEYS.TECHNICAL_ANALYSIS).completed,
-    progress: getCourseStatus(COURSE_LOCAL_STORAGE_KEYS.TECHNICAL_ANALYSIS).progress,
-    lockStatus: technicalAnalysisLock
-  };
-
-  const isGreatHoodieHallUnlocked = isAdminBypass || allRequiredCoursesCompleted;
-
-
   return (
     <TokenGate>
-      <div className="flex flex-col items-center min-h-screen py-8 px-4 bg-background text-foreground">
-        <div className="w-full max-w-7xl mb-8 relative">
-          <div className="absolute top-0 left-0 z-10 pt-4 pl-4 md:pt-0 md:pl-0">
-            <Button variant="outline" size="sm" asChild className="bg-card hover:bg-muted text-accent hover:text-accent-foreground border-accent">
-              <Link href="/" className="flex items-center space-x-1">
-                <Home size={16} />
-                <span>Back to Home</span>
-              </Link>
-            </Button>
-          </div>
-          <header className="text-center pt-12 md:pt-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-cyan-400 mb-2">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+        {/* Animated background effects */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900 to-slate-900"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="relative z-10 p-8">
+          {/* Header */}
+          <div className="text-center mb-12">
+            {/* Home Navigation Button */}
+            <div className="flex justify-start mb-6">
+              <Button
+                asChild
+                variant="outline"
+                className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300"
+              >
+                <Link href="/">
+                  <Home className="w-4 h-4 mr-2" />
+                  Back to Dashboard
+                </Link>
+              </Button>
+            </div>
+            
+            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent glow-text">
               The Hoodie Path
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground">
-              Your Quest to Hoodie Scholar.
+            <p className="text-xl text-gray-300 mb-2">Your Quest to Hoodie Scholar.</p>
+            <p className="text-cyan-300 text-lg">
+              Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
             </p>
-          </header>
-        </div>
+          </div>
 
-        <main className="w-full max-w-4xl flex flex-col items-center py-8 space-y-10">
-
-          {/* Stage 1: Initial Courses + Risks */}
-          <div className="flex flex-col md:flex-row justify-around items-start w-full space-y-8 md:space-y-0 md:space-x-8">
-            {/* Tech Path - Wallet Wizardry */}
-            <div className="flex flex-col items-center space-y-4 w-full md:w-96">
-               <CourseCard {...techPathCourses.find(c => c.id === 'wallet-wizardry')} pathType="tech" />
-               {techPathCourses.find(c => c.id === 'wallet-wizardry')?.lockStatus?.timeRemaining && 
-                techPathCourses.find(c => c.id === 'wallet-wizardry')?.lockStatus?.timeRemaining! > 0 && (
-                 <div className="w-full p-2 bg-amber-900/30 border border-amber-500/50 rounded-lg text-center">
-                   <div className="flex items-center justify-center space-x-2 text-amber-300 text-sm">
-                     <Clock size={16} />
-                     <span>Lock in: {Math.floor(techPathCourses.find(c => c.id === 'wallet-wizardry')?.lockStatus?.timeRemaining! / 60000)}:{(Math.floor(techPathCourses.find(c => c.id === 'wallet-wizardry')?.lockStatus?.timeRemaining! / 1000) % 60).toString().padStart(2, '0')}</span>
-                   </div>
-                 </div>
-               )}
+          {/* Filter Tabs */}
+          <div className="flex justify-center mb-8">
+            <div className="flex space-x-2 bg-slate-800/50 p-2 rounded-lg border border-cyan-500/30">
+              <Button
+                variant={activeFilter === 'all' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => {
+                  setActiveFilter('all');
+                  setSelectedSquad(null);
+                }}
+                className={activeFilter === 'all' 
+                  ? 'bg-cyan-600 hover:bg-cyan-700 text-white' 
+                  : 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10'
+                }
+              >
+                All Courses
+              </Button>
+              <Button
+                variant={activeFilter === 'squads' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveFilter('squads')}
+                className={activeFilter === 'squads' 
+                  ? 'bg-cyan-600 hover:bg-cyan-700 text-white' 
+                  : 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10'
+                }
+              >
+                Squad Tracks
+              </Button>
+              <Button
+                variant={activeFilter === 'completed' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveFilter('completed')}
+                className={activeFilter === 'completed' 
+                  ? 'bg-cyan-600 hover:bg-cyan-700 text-white' 
+                  : 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10'
+                }
+              >
+                Completed ({completedCoursesCount})
+              </Button>
             </div>
+          </div>
 
-            {/* Social Path - Meme Coin Mania */}
-            <div className="flex flex-col items-center space-y-4 w-full md:w-96">
-              <CourseCard {...socialPathCourses.find(c => c.id === 'meme-coin-mania')} pathType="social"/>
-              {socialPathCourses.find(c => c.id === 'meme-coin-mania')?.lockStatus?.timeRemaining && 
-               socialPathCourses.find(c => c.id === 'meme-coin-mania')?.lockStatus?.timeRemaining! > 0 && (
-                <div className="w-full p-2 bg-amber-900/30 border border-amber-500/50 rounded-lg text-center">
-                  <div className="flex items-center justify-center space-x-2 text-amber-300 text-sm">
-                    <Clock size={16} />
-                    <span>Lock in: {Math.floor(socialPathCourses.find(c => c.id === 'meme-coin-mania')?.lockStatus?.timeRemaining! / 60000)}:{(Math.floor(socialPathCourses.find(c => c.id === 'meme-coin-mania')?.lockStatus?.timeRemaining! / 1000) % 60).toString().padStart(2, '0')}</span>
+          {/* Squad Selection (when squads filter is active) */}
+          {activeFilter === 'squads' && (
+            <div className="flex justify-center mb-8">
+              <div className="flex flex-wrap gap-3 max-w-4xl">
+                {squadTracks.map((squad) => (
+                  <Button
+                    key={squad.id}
+                    variant={selectedSquad === squad.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedSquad(selectedSquad === squad.id ? null : squad.id)}
+                    className={`${selectedSquad === squad.id 
+                      ? `${squad.bgColor} ${squad.borderColor} border` 
+                      : 'bg-slate-800/50 border-slate-600/50 text-gray-300 hover:bg-slate-700/50'
+                    } transition-all duration-300`}
+                  >
+                    <span className="mr-2">{squad.icon}</span>
+                    {squad.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Admin bypass section */}
+          {!isAdminBypass && (
+            <div className="text-center mb-8">
+              <Button
+                onClick={() => setShowPasswordInput(true)}
+                variant="outline"
+                className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30"
+              >
+                Admin Bypass
+              </Button>
+            </div>
+          )}
+
+          {/* Revoke bypass section */}
+          {isAdminBypass && (
+            <div className="text-center mb-8">
+              <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-green-500/30 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-center space-x-3">
+                    <span className="text-green-400 text-lg">🔓</span>
+                    <span className="text-green-400 font-semibold">Admin Bypass Active</span>
+                    <Button
+                      onClick={() => setIsAdminBypass(false)}
+                      variant="outline"
+                      size="sm"
+                      className="bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 border-red-500/50 hover:border-red-400/50"
+                    >
+                      Revoke Bypass
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {showPasswordInput && (
+            <Card className="max-w-md mx-auto mb-8 bg-slate-800/50 border-2 border-cyan-500/30 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold text-cyan-400 mb-4">Admin Access</h3>
+                <Input
+                  type="password"
+                  placeholder="Enter admin password"
+                  value={passwordAttempt}
+                  onChange={(e) => setPasswordAttempt(e.target.value)}
+                  className="mb-4 bg-slate-700/50 border-cyan-500/30 text-white"
+                  onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                />
+                {passwordError && <p className="text-red-400 text-sm mb-4">{passwordError}</p>}
+                <div className="flex space-x-2">
+                  <Button onClick={handlePasswordSubmit} className="bg-cyan-600 hover:bg-cyan-700">
+                    Submit
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      setShowPasswordInput(false);
+                      setPasswordAttempt("");
+                      setPasswordError("");
+                    }}
+                    variant="outline"
+                    className="border-cyan-500/30 text-cyan-400 hover:text-cyan-300"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Courses Display */}
+          {activeFilter === 'squads' && selectedSquad ? (
+            // Show courses for selected squad
+            <div className="space-y-8">
+              {squadTracks.filter(s => s.id === selectedSquad).map((squad) => (
+                <div key={squad.id} className="space-y-6">
+                  <div className="text-center">
+                    <h2 className={`text-3xl font-bold mb-2 ${squad.color} glow-text flex items-center justify-center gap-3`}>
+                      <span>{squad.icon}</span>
+                      {squad.name}
+                    </h2>
+                    <p className="text-gray-300 max-w-2xl mx-auto">{squad.description}</p>
+                  </div>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                    {getFilteredCourses().map((course) => (
+                      <CourseCard
+                        key={course.id}
+                        id={course.id}
+                        title={course.title}
+                        description={course.description}
+                        badge={course.badge}
+                        emoji={course.emoji}
+                        pathType={course.pathType}
+                        href={course.href}
+                        isCompleted={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.completed : false}
+                        progress={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.progress : 0}
+                      />
+                    ))}
                   </div>
                 </div>
-              )}
+              ))}
             </div>
-          </div>
-          
-          {/* Trading Path - Technical Analysis (New Independent Path) */}
-          <div className="flex flex-col md:flex-row justify-center items-start w-full mt-8">
-              <div className="flex flex-col items-center space-y-4 w-full md:w-96">
-                   <CourseCard {...tradingPathTechnicalAnalysis} pathType="tech" />
-                   {tradingPathTechnicalAnalysis.lockStatus?.timeRemaining && 
-                    tradingPathTechnicalAnalysis.lockStatus?.timeRemaining! > 0 && (
-                     <div className="w-full p-2 bg-amber-900/30 border border-amber-500/50 rounded-lg text-center">
-                       <div className="flex items-center justify-center space-x-2 text-amber-300 text-sm">
-                         <Clock size={16} />
-                         <span>Lock in: {Math.floor(tradingPathTechnicalAnalysis.lockStatus?.timeRemaining! / 60000)}:{(Math.floor(tradingPathTechnicalAnalysis.lockStatus?.timeRemaining! / 1000) % 60).toString().padStart(2, '0')}</span>
-                       </div>
-                     </div>
-                   )}
-              </div>
-          </div>
-
-
-          {/* Arrow Down */}
-          <div className="flex justify-center text-3xl md:text-5xl text-cyan-400 opacity-70">
-            <ArrowDown strokeWidth={1.5}/>
-          </div>
-
-          {/* Stage 2: Mid Courses + Milestones */}
-          <div className="flex flex-col md:flex-row justify-around items-start w-full space-y-8 md:space-y-0 md:space-x-8">
-            {/* Tech Path - NFT Mastery */}
-             <div className="flex flex-col items-center space-y-4 w-full md:w-96">
-                  <CourseCard {...techPathCourses.find(c => c.id === 'nft-mastery')} pathType="tech"/>
-                  <MilestoneBadge text="Tech Novice" />
-             </div>
-
-             {/* Social Path - Community Strategy */}
-             <div className="flex flex-col items-center space-y-4 w-full md:w-96">
-               <CourseCard {...socialPathCourses.find(c => c.id === 'community-strategy-social')} pathType="social"/>
-               <MilestoneBadge text="Social Savvy" />
-             </div>
-          </div>
-
-          {/* Arrow Down */}
-          <div className="flex justify-center text-3xl md:text-5xl text-cyan-400 opacity-70">
-            <ArrowDown strokeWidth={1.5}/>
-          </div>
-
-          {/* Stage 3: Converging Courses */}
-           <div className="flex flex-col md:flex-row justify-around items-start w-full space-y-8 md:space-y-0 md:space-x-8">
-             {/* Tech Path - Community Strategy (Tech Focus) */}
-             <div className="w-full md:w-96">
-                <CourseCard {...techPathCourses.find(c => c.id === 'community-strategy-tech')} pathType="tech" title="Community Strategy (Tech Focus)" />
-             </div>
-
-             {/* Social Path - SNS Course */}
-             <div className="flex flex-col items-center space-y-4 w-full md:w-96">
-                <CourseCard {...socialPathCourses.find(c => c.id === 'sns')} pathType="social" />
-             </div>
-           </div>
-
-          {/* Arrow Down */}
-          <div className="flex justify-center text-3xl md:text-5xl text-cyan-400 opacity-70">
-            <ArrowDown strokeWidth={1.5}/>
-          </div>
-
-          {/* Stage 4: Great Hoodie Hall */}
-          <div className="flex flex-col items-center justify-center w-full max-w-sm md:max-w-md">
-             <div className={`bg-card p-6 md:p-8 rounded-xl shadow-2xl border-2 w-full transition-all duration-300
-               ${isGreatHoodieHallUnlocked
-                  ? "neon-border-green hover:shadow-[0_0_30px_rgba(34,197,94,1)]" 
-                  : "border-muted neon-border-gray"}`}>
-               <HoodieIcon className={`w-16 h-16 md:w-20 md:h-20 mx-auto mb-3 md:mb-4 ${isGreatHoodieHallUnlocked ? 'text-green-400' : 'text-muted-foreground'}`} />
-               <h4 className={`text-xl md:text-2xl font-bold ${isGreatHoodieHallUnlocked ? 'text-green-300' : 'text-muted-foreground'}`}>Great Hoodie Hall</h4>
-               <p className={`text-md md:text-lg font-semibold ${isGreatHoodieHallUnlocked ? 'text-foreground' : 'text-muted-foreground/70'} mt-2`}>Hoodie Scholar NFT</p>
-               <p className={`text-sm ${isGreatHoodieHallUnlocked ? 'text-muted-foreground' : 'text-muted-foreground/50'} mt-1`}>
-                  {isGreatHoodieHallUnlocked ? "The pinnacle of your journey." : "Complete all courses to unlock."}
-               </p>
-              {isGreatHoodieHallUnlocked ? (
-                  <Button asChild size="lg" className="mt-6 w-full bg-green-500 hover:bg-green-600 text-background shadow-lg hover:shadow-xl">
-                      <Link href="/great-hoodie-hall">Enter the Hall</Link>
-                  </Button>
-              ) : (
-                  <Button size="lg" disabled className="mt-6 w-full bg-muted text-muted-foreground opacity-50 cursor-not-allowed flex items-center">
-                      <LockKeyhole size={18} className="mr-2"/>
-                      Locked
-                  </Button>
-              )}
-             </div>
-          </div>
-
-          {/* Admin Access Section */}
-          {!isAdminBypass && (
-              <div className="mt-12 w-full max-w-md p-6 bg-card rounded-xl shadow-lg border border-border">
-              {!showPasswordInput && (
-                  <Button variant="outline" onClick={() => setShowPasswordInput(true)} className="w-full">
-                  Admin Access (Unlock All)
-                  </Button>
-              )}
-
-              {showPasswordInput && (
-                  <div className="flex flex-col items-center space-y-3">
-                  <Input 
-                      type="password"
-                      placeholder="Enter admin password"
-                      value={passwordAttempt}
-                      onChange={(e) => setPasswordAttempt(e.target.value)}
-                      className="text-center"
-                  />
-                  <Button onClick={handlePasswordSubmit} className="w-full bg-primary hover:bg-primary/90">Submit Password</Button>
-                  {passwordError && <p className="text-sm text-red-500 mt-2">{passwordError}</p>}
-                  <Button variant="ghost" onClick={() => { setShowPasswordInput(false); setPasswordError(""); setPasswordAttempt("");}} className="text-xs text-muted-foreground">Cancel</Button>
-                  </div>
-              )}
-              </div>
+          ) : (
+            // Show all courses or completed courses
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+              {getFilteredCourses().map((course) => (
+                <CourseCard
+                  key={course.id}
+                  id={course.id}
+                  title={course.title}
+                  description={course.description}
+                  badge={course.badge}
+                  emoji={course.emoji}
+                  pathType={course.pathType}
+                  href={course.href}
+                  isCompleted={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.completed : false}
+                  progress={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.progress : 0}
+                />
+              ))}
+            </div>
           )}
-          {isAdminBypass && (
-              <p className="mt-4 text-sm text-green-400">Admin bypass active. All courses unlocked.</p>
-          )}
-        </main>
 
-        <footer className="mt-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            #StayBuilding #StayHODLing
-          </p>
-        </footer>
+          {/* Great Hoodie Hall */}
+          <div className="text-center mt-12">
+            <Card className="max-w-2xl mx-auto bg-slate-800/80 border-2 border-yellow-500/40 backdrop-blur-sm shadow-[0_0_30px_rgba(234,179,8,0.3)] hover:shadow-[0_0_40px_rgba(234,179,8,0.5)] transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="flex items-center justify-center mb-4">
+                  <span className="text-4xl mr-3">🏆</span>
+                  <h2 className="text-3xl font-bold text-yellow-400 glow-text">Great Hoodie Hall</h2>
+                </div>
+                <p className="text-gray-300 mb-6">
+                  Access exclusive resources, advanced strategies, and the Hoodie community hub.
+                </p>
+                <Button
+                  asChild
+                  className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 border-2 border-yellow-400/50 shadow-[0_0_20px_rgba(234,179,8,0.4)] hover:shadow-[0_0_30px_rgba(234,179,8,0.6)] transition-all duration-300 transform hover:scale-105"
+                >
+                  <Link href="/great-hoodie-hall">
+                    Enter the Hall
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Footer hashtags */}
+          <div className="mt-12 text-cyan-400/70 text-sm text-center">#StayBuilding #StayHODLing</div>
+        </div>
+        <style jsx global>{`
+          .glow-text {
+            text-shadow: 0 0 10px currentColor;
+          }
+        `}</style>
       </div>
     </TokenGate>
   );
