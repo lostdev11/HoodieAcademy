@@ -16,7 +16,9 @@ import {
   BookOpen,
   Video,
   AlertCircle,
-  Trophy
+  Trophy,
+  LogOut,
+  User
 } from "lucide-react"
 import Link from "next/link"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
@@ -128,6 +130,15 @@ export default function HoodieAcademy() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
   const [overallProgress, setOverallProgress] = useState(65);
+  const [walletAddress, setWalletAddress] = useState<string>("");
+
+  useEffect(() => {
+    // Get wallet address from localStorage
+    const storedWallet = localStorage.getItem('walletAddress');
+    if (storedWallet) {
+      setWalletAddress(storedWallet);
+    }
+  }, []);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -158,6 +169,34 @@ export default function HoodieAcademy() {
   const completedTodos = mockTodos.filter(todo => todo.completed).length;
   const totalTodos = mockTodos.length;
 
+  const handleDisconnect = () => {
+    // Clear wallet data from storage
+    localStorage.removeItem('walletAddress');
+    localStorage.removeItem('connectedWallet');
+    sessionStorage.removeItem('wifhoodie_verification_session');
+    
+    // Disconnect from wallet providers
+    if (typeof window !== 'undefined') {
+      if (window.solana?.disconnect) {
+        window.solana.disconnect();
+      }
+      if (window.solflare?.disconnect) {
+        window.solflare.disconnect();
+      }
+      if (window.ethereum?.disconnect) {
+        window.ethereum.disconnect();
+      }
+    }
+    
+    // Redirect to home page or refresh
+    window.location.href = '/';
+  };
+
+  const formatWalletAddress = (address: string) => {
+    if (!address) return '';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
   return (
     <TokenGate>
       <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -176,9 +215,33 @@ export default function HoodieAcademy() {
                 <h1 className="text-3xl font-bold text-cyan-400">Welcome to Hoodie Academy</h1>
                 <p className="text-gray-300">Your Web3 learning journey starts here!</p>
               </div>
-              <div className="text-right">
-                <div className="text-sm text-gray-400">Current Time</div>
-                <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
+              <div className="flex items-center space-x-4">
+                {/* Wallet Info */}
+                {walletAddress && (
+                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30">
+                    <User className="w-4 h-4 text-cyan-400" />
+                    <span className="text-sm text-cyan-400 font-mono">
+                      {formatWalletAddress(walletAddress)}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Disconnect Button */}
+                <Button
+                  onClick={handleDisconnect}
+                  variant="outline"
+                  size="sm"
+                  className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Disconnect
+                </Button>
+                
+                {/* Time */}
+                <div className="text-right">
+                  <div className="text-sm text-gray-400">Current Time</div>
+                  <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
+                </div>
               </div>
             </div>
           </header>
