@@ -25,6 +25,7 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [hasBeenConnected, setHasBeenConnected] = useState(false);
 
   const WIFHOODIE_COLLECTION_ID = "H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ";
   const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
@@ -44,15 +45,30 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
           if (sessionValid && sessionIsHolder) {
             setWalletAddress(sessionWallet);
             setIsHolder(true);
+            setHasBeenConnected(true);
             console.log('Using existing verification session');
+            return; // Exit early if we have a valid session
           } else {
             // Clear expired session
             sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
+            localStorage.removeItem('walletAddress');
+            localStorage.removeItem('connectedWallet');
           }
         } catch (error) {
           console.error('Failed to parse verification session:', error);
           sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
+          localStorage.removeItem('walletAddress');
+          localStorage.removeItem('connectedWallet');
         }
+      }
+      
+      // If no valid session, check if there's a wallet address in localStorage
+      // but no session (indicating a disconnect scenario)
+      const storedWallet = localStorage.getItem('walletAddress');
+      if (storedWallet && !sessionStorage.getItem(VERIFICATION_SESSION_KEY)) {
+        // Clear any stale wallet data
+        localStorage.removeItem('walletAddress');
+        localStorage.removeItem('connectedWallet');
       }
     }
   }, []);
@@ -99,6 +115,7 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
     setIsHolder(false);
     setError(null);
     setShowSuccess(false);
+    setHasBeenConnected(false);
     
     // Clear all wallet-related storage
     sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
@@ -181,6 +198,7 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         localStorage.setItem('connectedWallet', walletAddress);
         
         setShowSuccess(true);
+        setHasBeenConnected(true);
         // Hide success message after 2 seconds and show courses
         setTimeout(() => setShowSuccess(false), 2000);
       }
@@ -276,9 +294,14 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         animate={{ opacity: 1, y: 0 }}
         className="text-center p-8 bg-gray-800 rounded-xl shadow-lg"
       >
-        <h2 className="text-2xl font-bold text-white mb-4">Course Access Required</h2>
+        <h2 className="text-2xl font-bold text-white mb-4">
+          {hasBeenConnected ? 'Welcome Back!' : 'Course Access Required'}
+        </h2>
         <p className="text-gray-300 mb-6">
-          Connect your wallet to verify your WifHoodie NFT and access this course.
+          {hasBeenConnected 
+            ? 'Please reconnect your wallet to continue your learning journey.'
+            : 'Connect your wallet to verify your WifHoodie NFT and access this course.'
+          }
         </p>
         {error && <p className="text-red-400 mb-4">{error}</p>}
         

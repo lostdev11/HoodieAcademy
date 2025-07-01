@@ -188,7 +188,10 @@ export default function HoodieAcademy() {
       }
     }
     
-    // Redirect to home page or refresh
+    // Clear the wallet address state to trigger re-render
+    setWalletAddress("");
+    
+    // Redirect to home page to show connection screen
     window.location.href = '/';
   };
 
