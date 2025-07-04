@@ -98,31 +98,36 @@ export const getUserScore = (walletAddress: string): number => {
   return leaderboardService.getUserScore(walletAddress);
 };
 
-// Admin wallet addresses - in production, this would be stored securely
-export const ADMIN_WALLETS = [
-  'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU', // Demo admin wallet
-  '0x1234567890abcdef1234567890abcdef12345678', // Demo admin wallet
-  // Add more admin wallet addresses here
-];
+// Admin password - in production, this would be stored securely and hashed
+export const ADMIN_PASSWORD = "darkhoodie2024";
 
-// Check if a wallet address is an admin
-export function isAdminWallet(walletAddress: string): boolean {
-  if (!walletAddress) return false;
-  
-  return ADMIN_WALLETS.some(adminWallet => 
-    adminWallet.toLowerCase() === walletAddress.toLowerCase()
-  );
+// Check if a password is correct for admin access
+export function isAdminPassword(password: string): boolean {
+  return password === ADMIN_PASSWORD;
 }
 
-// Get connected wallet address from localStorage
+// Check if current user is admin (using session storage)
+export function isCurrentUserAdmin(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  const adminSession = sessionStorage.getItem('adminAuthenticated');
+  return adminSession === 'true';
+}
+
+// Set admin authentication in session
+export function setAdminAuthenticated(authenticated: boolean): void {
+  if (typeof window === 'undefined') return;
+  
+  if (authenticated) {
+    sessionStorage.setItem('adminAuthenticated', 'true');
+  } else {
+    sessionStorage.removeItem('adminAuthenticated');
+  }
+}
+
+// Get connected wallet address from localStorage (for other features)
 export function getConnectedWallet(): string | null {
   if (typeof window === 'undefined') return null;
   
   return localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
-}
-
-// Check if current user is admin
-export function isCurrentUserAdmin(): boolean {
-  const connectedWallet = getConnectedWallet();
-  return connectedWallet ? isAdminWallet(connectedWallet) : false;
 }
