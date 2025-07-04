@@ -1,0 +1,12 @@
+[
+  {
+    "question": "What can you view under Phantom Security Settings?",
+    "options": ["Gas prices", "Recovery phrase", "NFTs", "Fiat balance"],
+    "correct": 1
+  },
+  {
+    "question": "What's the purpose of a recovery phrase?",
+    "options": ["To send crypto", "To buy NFTs", "To restore wallet", "To access support"],
+    "correct": 2
+  }
+] 

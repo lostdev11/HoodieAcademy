@@ -23,9 +23,11 @@ export interface CourseCardProps {
   progress?: number; // New prop for progress percentage
   localStorageKey?: string; // To help identify in arrays
   totalLessons?: number; // To help verify completion
+  isAdmin?: boolean; // New prop for admin mode
+  onResetCourse?: (courseId: string) => void; // New prop for reset function
 }
 
-export function CourseCard({ id, title, description, badge, emoji, pathType, href, riskType, isCompleted, progress }: CourseCardProps) {
+export function CourseCard({ id, title, description, badge, emoji, pathType, href, riskType, isCompleted, progress, isAdmin, onResetCourse }: CourseCardProps) {
   const [showSyllabus, setShowSyllabus] = useState(false);
   const squad = getSquadForCourse(id);
   
@@ -99,6 +101,17 @@ export function CourseCard({ id, title, description, badge, emoji, pathType, hre
                <BookOpen className="w-4 h-4 mr-1" />
                Syllabus
              </Button>
+             {/* Admin Reset Button */}
+             {isAdmin && onResetCourse && (
+               <Button
+                 variant="outline"
+                 size="sm"
+                 onClick={() => onResetCourse(id)}
+                 className="text-orange-400 hover:text-orange-300 border-orange-500/30 hover:bg-orange-500/10"
+               >
+                 Reset
+               </Button>
+             )}
              {/* Begin Button */}
              <Button 
                 asChild={true} 

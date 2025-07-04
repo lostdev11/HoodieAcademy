@@ -1,0 +1,12 @@
+[
+  {
+    "question": "Which feature helps you bridge tokens?",
+    "options": ["dApp Finder", "NFT Explorer", "Cross-Chain Swapper", "Hardware Wallet"],
+    "correct": 2
+  },
+  {
+    "question": "What is DeFi?",
+    "options": ["Online banking", "Decentralized finance", "Trading NFTs", "Crypto gaming"],
+    "correct": 1
+  }
+] 

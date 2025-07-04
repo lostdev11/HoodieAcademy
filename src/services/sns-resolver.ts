@@ -31,16 +31,26 @@ export class MockSNSResolver implements SNSResolver {
   }
 
   async resolve(connection: Connection, domain: string): Promise<PublicKey | null> {
-    const address = this.mockDomains[domain];
-    if (address) {
-      // Convert mock address to PublicKey (this is simplified)
-      return new PublicKey(address);
+    try {
+      const address = this.mockDomains[domain];
+      if (address) {
+        // Convert mock address to PublicKey (this is simplified)
+        return new PublicKey(address);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error in mock SNS resolve:', error);
+      return null;
     }
-    return null;
   }
 
   async reverseResolve(connection: Connection, walletAddress: string): Promise<string | null> {
-    return this.reverseLookup[walletAddress] || null;
+    try {
+      return this.reverseLookup[walletAddress] || null;
+    } catch (error) {
+      console.error('Error in mock SNS reverse resolve:', error);
+      return null;
+    }
   }
 }
 

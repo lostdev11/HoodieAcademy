@@ -2,12 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Web3 from 'web3'; 
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { useSwipeable } from 'react-swipeable';
 import { motion } from 'framer-motion';
-import { LockKeyhole, AlertTriangle, ArrowLeft, CheckCircle, XCircle, Award, Wallet, ChevronDown, ChevronUp, Clock, Calendar, BookOpen } from 'lucide-react';
+import { LockKeyhole, AlertTriangle, ArrowLeft, CheckCircle, Award, Wallet, BookOpen } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,8 +17,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import TokenGate from "@/components/TokenGate"; 
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,123 +27,53 @@ declare global {
   interface Window {
     ethereum?: any;
     solana?: any;
-    solflare?: any;
   }
 }
 
-type WalletProviderOption = 'metamask' | 'phantom' | 'solflare' | 'jup' | 'magic-eden'; 
+type WalletProviderOption = 'metamask' | 'phantom' | 'jup' | 'magic-eden'; 
 
-interface QuizOption {
-  id: string;
-  text: string;
-}
 
-interface QuizQuestion {
-  id: string;
-  text: string;
-  options: QuizOption[];
-  correctAnswerId: string;
-  explanation?: string;
-}
 
-interface Lesson {
-  id: string;
-  title: string;
-  content: React.ReactNode;
-  quiz: QuizQuestion[];
-  pitfallWarning?: React.ReactNode;
-}
-
-const lessonsData: Lesson[] = [ 
+const tiers = [
   {
-    id: 'l1',
-    title: '1. Wallet Types',
-    content: (
-      <>
-        <p className="text-foreground mt-2">
-          Wallets are essential for managing your Web3 assets. <strong>Hot wallets</strong> (e.g., MetaMask) are
-          software-based, connected to the internet, and convenient for daily use. <strong>Cold wallets</strong>
-          (e.g., Ledger) are hardware-based, offline, and offer maximum security for long-term storage.
-        </p>
-      </>
-    ),
-    quiz: [
-        { id: 'q1l1', text: 'What is a hot wallet?', options: [{id: 'o1', text: 'A hardware wallet like Ledger'}, {id: 'o2', text: 'A software wallet connected to the internet'}, {id: 'o3', text: 'A wallet for storing NFTs only'}, {id: 'o4', text: 'A wallet that requires no internet'}], correctAnswerId: 'o2', explanation: 'Hot wallets are connected to the internet, making them convenient but potentially less secure than cold (offline) wallets.'}
-    ],
+    id: 'tier-1',
+    title: 'Tier 1: Introduction to Crypto Wallets',
+    description: 'Learn the basics of crypto wallets and their importance',
+    path: '/wallet-wizardry/tier-1',
+    status: 'unlocked' as 'locked' | 'unlocked' | 'completed'
   },
   {
-    id: 'l2',
-    title: '2. Setup Guide',
-    content: (
-      <>
-        <p className="text-foreground mt-2">
-          Setting up a wallet is your first step in Web3. For <strong>MetaMask</strong>, install the browser
-          extension, create a new wallet, and securely save your seed phrase. For <strong>Phantom</strong> or
-          <strong>Solflare</strong>, download the app and follow similar steps.
-        </p>
-      </>
-    ),
-    quiz: [
-        { id: 'q1l2', text: 'What is the first step in setting up MetaMask?', options: [{id: 'o1', text: 'Share your seed phrase'}, {id: 'o2', text: 'Install the browser extension'}, {id: 'o3', text: 'Buy a hardware wallet'}, {id: 'o4', text: 'Connect to a DAO'}], correctAnswerId: 'o2', explanation: 'You need to install the MetaMask browser extension or mobile app before you can create or import a wallet.'}
-    ],
+    id: 'tier-2',
+    title: 'Tier 2: Custodial vs Non-Custodial Wallets',
+    description: 'Understand the difference between custodial and non-custodial wallets',
+    path: '/wallet-wizardry/tier-2',
+    status: 'locked' as 'locked' | 'unlocked' | 'completed'
   },
   {
-    id: 'l3',
-    title: '3. Security Best Practices',
-    content: (
-      <>
-        <p className="text-foreground mt-2">
-        Protecting your Web3 assets requires vigilance. Your seed phrase is paramount – guard it. Never share it. Store it offline, ideally in multiple secure locations.
-        When interacting with dApps, always double-check URLs and permissions. Understand transaction signatures.
-        For enhanced security, consider multi-signature (multi-sig) wallets, requiring multiple approvals.
-        </p>
-      </>
-    ),
-    quiz: [
-         { id: 'q1l3', text: 'What is the most secure way to store your seed phrase?', options: [{id: 'o1', text: 'In a password manager'}, {id: 'o2', text: 'On a cloud storage service'}, {id: 'o3', text: 'Written down offline and stored securely'}, {id: 'o4', text: 'Shared with a trusted friend'}], correctAnswerId: 'o3', explanation: 'Storing your seed phrase offline (e.g., on paper, in a safe) is the most secure method as it protects against online hacking attempts.'}
-    ],
+    id: 'tier-3',
+    title: 'Tier 3: Understanding Keys & Phantom Interface',
+    description: 'Master private keys, recovery phrases, and Phantom wallet interface',
+    path: '/wallet-wizardry/tier-3',
+    status: 'locked' as 'locked' | 'unlocked' | 'completed'
   },
   {
-    id: 'l4',
-    title: '4. Phishing & Scam Awareness',
-    content: (
-      <>
-        <p className="text-foreground mt-2">
-        The Web3 space is rife with phishing. Scammers create fake sites mimicking legitimate dApps or wallets to steal credentials or trick you into malicious transactions.
-        Beware unsolicited DMs/emails promising free crypto or airdrops if you connect your wallet or send funds. Always verify via official channels.
-        </p>
-      </>
-    ),
-    pitfallWarning: (
-        <div className="mt-6 p-4 border border-red-500/50 bg-red-900/30 rounded-lg">
-            <h4 className="text-lg font-semibold text-red-400 flex items-center mb-2"><AlertTriangle size={20} className="mr-2"/>Phishing Trap Warning!</h4>
-            <p className="text-sm text-red-300">
-            Always be extremely cautious when connecting your wallet. Verify website URLs, never share your seed phrase, and be wary of unsolicited requests or offers. Scammers create fake sites that look identical to real ones. Double-check everything!
-            </p>
-        </div>
-    ),
-    quiz: [
-        { id: 'q1l4', text: 'A common sign of a phishing website is:', options: [{id: 'o1', text: 'A professional design and fast loading speed'}, {id: 'o2', text: 'A slightly misspelled URL of a legitimate service'}, {id: 'o3', text: 'Clear contact information and a support team'}, {id: 'o4', text: 'An SSL certificate (HTTPS)'}], correctAnswerId: 'o2', explanation: 'Scammers often use URLs that are very similar to legitimate ones, hoping users won\'t notice the slight difference.'}
-    ],
-  },
+    id: 'tier-4',
+    title: 'Tier 4: NFTs, dApps, DeFi, and Bridges',
+    description: 'Explore NFTs, decentralized apps, DeFi, and cross-chain functionality',
+    path: '/wallet-wizardry/tier-4',
+    status: 'locked' as 'locked' | 'unlocked' | 'completed'
+  }
 ];
 
-const PASSING_PERCENTAGE = 0.75;
+
 const LOCAL_STORAGE_KEY = 'walletWizardryProgress';
 const WIFHOODIE_COLLECTION_ADDRESS = "6bRhotj6T2ducLXdMneXCXUYW1ye4bRZCTHatxZKutS5";
 
 
 export default function WalletWizardryPage() {
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [lessonStatus, setLessonStatus] = useState<Array<'locked' | 'unlocked' | 'completed'>>(
-    lessonsData.map((_, index) => (index === 0 ? 'unlocked' : 'locked'))
+  const [tierStatus, setTierStatus] = useState<Array<'locked' | 'unlocked' | 'completed'>>(
+    tiers.map((_, index) => (index === 0 ? 'unlocked' : 'locked'))
   );
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [quizPassed, setQuizPassed] = useState(false);
-  const [currentScore, setCurrentScore] = useState(0);
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [feedbackModalContent, setFeedbackModalContent] = useState({ title: "", description: "" });
   const [showSyllabus, setShowSyllabus] = useState(false);
 
   const [courseAccount, setCourseAccount] = useState<string | null>(null);
@@ -160,8 +87,7 @@ export default function WalletWizardryPage() {
   const solanaNetwork = "https://api.mainnet-beta.solana.com";
   const solanaConnection = new Connection(solanaNetwork);
 
-  const currentLessonData = lessonsData[currentLessonIndex];
-  const allLessonsCompleted = lessonStatus.every(status => status === 'completed');
+  const allTiersCompleted = tierStatus.every(status => status === 'completed');
   
   const [currentTime, setCurrentTime] = useState<string>("");
 
@@ -170,10 +96,7 @@ export default function WalletWizardryPage() {
       const savedStatus = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (savedStatus) {
         const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
-        setLessonStatus(parsedStatus);
-        const lastCompletedIndex = parsedStatus.lastIndexOf('completed');
-        const newCurrentIndex = parsedStatus.findIndex(status => status === 'unlocked');
-        setCurrentLessonIndex(newCurrentIndex !== -1 ? newCurrentIndex : (lastCompletedIndex + 1 < lessonsData.length ? lastCompletedIndex + 1 : lastCompletedIndex));
+        setTierStatus(parsedStatus);
       }
     }
   }, []);
@@ -192,7 +115,7 @@ export default function WalletWizardryPage() {
     }
   };
 
-  const progressPercentage = (lessonStatus.filter(s => s === 'completed').length / lessonsData.length) * 100;
+  const progressPercentage = (tierStatus.filter(s => s === 'completed').length / tiers.length) * 100;
 
   const resetCourseWalletState = () => {
     setCourseAccount(null);
@@ -240,7 +163,6 @@ export default function WalletWizardryPage() {
           break;
 
         case 'phantom':
-        case 'solflare':
         case 'jup':
         case 'magic-eden':
           let solProvider;
@@ -251,19 +173,11 @@ export default function WalletWizardryPage() {
               return;
             }
             solProvider = window.solana;
-          } else if (providerName === 'solflare') {
-             if (!(window.solflare && window.solflare.isSolflare) && !(window.solana && window.solana.isSolflare)) {
-                setCourseWalletAlertConfig({ title: "Solflare Not Detected", description: "Please install Solflare wallet to continue." });
-                setShowCourseWalletAlert(true);
-                return;
-            }
-            solProvider = window.solflare || window.solana;
           } else {
              if (window.solana && window.solana.isPhantom) solProvider = window.solana;
-             else if (window.solflare && window.solflare.isSolflare) solProvider = window.solflare;
              else if (window.solana) solProvider = window.solana;
              else {
-                setCourseWalletAlertConfig({ title: "Solana Wallet Not Detected", description: `Please install a compatible Solana wallet (e.g., Phantom, Solflare) for ${providerName}.` });
+                setCourseWalletAlertConfig({ title: "Solana Wallet Not Detected", description: `Please install a compatible Solana wallet (e.g., Phantom) for ${providerName}.` });
                 setShowCourseWalletAlert(true);
                 return;
              }
@@ -277,8 +191,8 @@ export default function WalletWizardryPage() {
           setCourseMockNftStatus(Math.random() > 0.5 ? 'Mock Solana NFT: Owned!' : 'Mock Solana NFT: None found.');
           
           let successTitle = `${providerName.charAt(0).toUpperCase() + providerName.slice(1)} Connected`;
-          if (providerName === 'jup') successTitle = `Connected via ${solProvider.isPhantom ? 'Phantom' : solProvider.isSolflare ? 'Solflare' : 'Solana Wallet'} for JUP`;
-          if (providerName === 'magic-eden') successTitle = `Connected via ${solProvider.isPhantom ? 'Phantom' : solProvider.isSolflare ? 'Solflare' : 'Solana Wallet'} for Magic Eden`;
+          if (providerName === 'jup') successTitle = `Connected via ${solProvider.isPhantom ? 'Phantom' : 'Solana Wallet'} for JUP`;
+          if (providerName === 'magic-eden') successTitle = `Connected via ${solProvider.isPhantom ? 'Phantom' : 'Solana Wallet'} for Magic Eden`;
           
           setCourseWalletAlertConfig({ title: successTitle, description: `Successfully connected: ${solAccount.slice(0, 4)}...${solAccount.slice(-4)}` });
 
@@ -306,80 +220,13 @@ export default function WalletWizardryPage() {
     setShowCourseWalletSelector(false);
   };
 
-  const handleOptionChange = (questionId: string, optionId: string) => {
-    setSelectedAnswers(prev => ({ ...prev, [questionId]: optionId }));
-    if (quizSubmitted) {
-      setQuizSubmitted(false);
-    }
-  };
 
-  const handleSubmitQuiz = useCallback(() => {
-    if (!currentLessonData) return;
-    let score = 0;
-    currentLessonData.quiz.forEach(q => {
-      if (selectedAnswers[q.id] === q.correctAnswerId) {
-        score++;
-      }
-    });
-    const totalQuestions = currentLessonData.quiz.length;
-    const percentage = totalQuestions > 0 ? score / totalQuestions : 0;
-    const passed = percentage >= PASSING_PERCENTAGE;
-
-    setCurrentScore(score);
-    setQuizPassed(passed);
-    setQuizSubmitted(true);
-
-    if (passed) {
-      setFeedbackModalContent({ title: "Quiz Passed!", description: `You scored ${score}/${totalQuestions}. Excellent! You can proceed.` });
-      const newLessonStatus = [...lessonStatus];
-      newLessonStatus[currentLessonIndex] = 'completed';
-      if (currentLessonIndex < lessonsData.length - 1) {
-        newLessonStatus[currentLessonIndex + 1] = 'unlocked';
-         setTimeout(() => {
-            setCurrentLessonIndex(prev => prev + 1);
-            setSelectedAnswers({});
-            setQuizSubmitted(false);
-            setQuizPassed(false);
-            setCurrentScore(0);
-            setShowFeedbackModal(false);
-        }, 1500);
-      } else {
-         setTimeout(() => setShowFeedbackModal(false), 3000);
-      }
-      setLessonStatus(newLessonStatus);
-      saveProgress(newLessonStatus);
-    } else {
-      setFeedbackModalContent({ title: "Quiz Failed", description: `You scored ${score}/${totalQuestions}. Please review the material and try again. You need at least ${Math.ceil(PASSING_PERCENTAGE * totalQuestions)} correct answers.` });
-       setTimeout(() => setShowFeedbackModal(false), 3000);
-    }
-    setShowFeedbackModal(true);
-  }, [selectedAnswers, currentLessonData, currentLessonIndex, lessonStatus, PASSING_PERCENTAGE]);
-  
-
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => {
-      if (allQuestionsAnswered && currentLessonData && lessonStatus[currentLessonIndex] !== 'completed') {
-        handleSubmitQuiz();
-      }
-    },
-    onSwipedRight: () => {
-      setSelectedAnswers({});
-      setQuizSubmitted(false);
-      setQuizPassed(false);
-      setCurrentScore(0);
-    },
-    preventScrollOnSwipe: true,
-    trackMouse: true,
-  });
-  
-  const allQuestionsAnswered = currentLessonData?.quiz.every(q => selectedAnswers[q.id]);
 
   const courseWalletProviders: { name: WalletProviderOption; label: string; icon?: JSX.Element }[] = [
     { name: 'metamask', label: 'MetaMask', icon: <Wallet size={20} className="mr-2 text-orange-500" /> },
     { name: 'phantom', label: 'Phantom', icon: <Wallet size={20} className="mr-2 text-purple-500" /> },
-    { name: 'solflare', label: 'Solflare', icon: <Wallet size={20} className="mr-2 text-yellow-500" /> },
-    { name: 'jup', label: 'JUP Wallet', icon: <Wallet size={20} className="mr-2 text-green-500" /> },
-    { name: 'magic-eden', label: 'Magic Eden Wallet', icon: <Wallet size={20} className="mr-2 text-blue-500" /> },
+    { name: 'jup', label: 'Jupiter', icon: <Wallet size={20} className="mr-2 text-blue-500" /> },
+    { name: 'magic-eden', label: 'Magic Eden', icon: <Wallet size={20} className="mr-2 text-green-500" /> },
   ];
 
   return (
@@ -454,125 +301,116 @@ export default function WalletWizardryPage() {
                       className="w-full max-w-3xl mb-8 bg-purple-900/50 [&>div]:bg-purple-500"
                   />
 
-                  {!allLessonsCompleted && currentLessonData && lessonStatus[currentLessonIndex] !== 'locked' ? (
-                      <motion.section
-                          key={currentLessonIndex}
-                          initial={{ opacity: 0, y: 50 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.5 }}
-                          className={`w-full bg-card p-6 md:p-8 rounded-xl shadow-lg border border-purple-600 neon-border-purple hover:shadow-[0_0_25px_rgba(168,85,247,1)] transition-all duration-300`}
-                          {...swipeHandlers}
+                  {/* Tiers Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+                    {tiers.map((tier, index) => (
+                      <motion.div
+                        key={tier.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1, duration: 0.5 }}
+                        className={`relative p-6 rounded-xl shadow-lg border-2 transition-all duration-300 ${
+                          tierStatus[index] === 'completed'
+                            ? 'bg-green-900/30 border-green-500 neon-border-green'
+                            : tierStatus[index] === 'unlocked'
+                            ? 'bg-card border-purple-600 neon-border-purple hover:shadow-[0_0_25px_rgba(168,85,247,1)]'
+                            : 'bg-slate-800/50 border-slate-600 opacity-50'
+                        }`}
                       >
-                          <h2 className="text-2xl md:text-3xl font-semibold text-primary mb-4">{currentLessonData.title}</h2>
-                          <div className="text-md md:text-lg text-foreground leading-relaxed mb-6 prose prose-invert max-w-none">
-                              {currentLessonData.content}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-xl font-semibold text-primary mb-2">{tier.title}</h3>
+                            <p className="text-sm text-muted-foreground mb-4">{tier.description}</p>
                           </div>
-
-                          {currentLessonData.pitfallWarning && lessonStatus[currentLessonIndex] !== 'completed' && (
-                              <div className="my-4">{currentLessonData.pitfallWarning}</div>
-                          )}
-
-                          {lessonStatus[currentLessonIndex] !== 'completed' && (
-                          <motion.div
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              transition={{ delay: 0.2, duration: 0.5 }}
-                              className="mt-8"
-                          >
-                              <h3 className="text-xl md:text-2xl font-semibold text-secondary mt-8 mb-4">Knowledge Check! (Swipe Left to Submit / Right to Reset)</h3>
-                               <RadioGroup className="space-y-6">
-                                  {currentLessonData.quiz.map((q, qIndex) => (
-                                      <div key={q.id} className={`p-4 rounded-md border-2 ${quizSubmitted ? (selectedAnswers[q.id] === q.correctAnswerId ? 'border-green-500 bg-green-500/10 neon-border-green' : 'border-red-500 bg-red-500/10 neon-border-red') : 'border-green-900 hover:border-green-600'}`}>
-                                      <p className="font-medium mb-2 text-foreground">{qIndex + 1}. {q.text}</p>
-                                      {q.options.map(opt => (
-                                          <motion.div 
-                                              key={opt.id}
-                                              whileHover={{ scale: 1.02 }}
-                                              whileTap={{ scale: 0.98 }}
-                                              className={`flex items-center space-x-3 p-3 bg-muted/30 rounded-lg border-2 hover:border-green-600 cursor-pointer transition-all duration-150 ${selectedAnswers[q.id] === opt.id ? 'border-green-500 ring-2 ring-green-500 neon-border-green' : 'border-green-900'}`}
-                                              onClick={() => handleOptionChange(q.id, opt.id)}
-                                          >
-                                          <RadioGroupItem
-                                              value={opt.id}
-                                              id={`${q.id}-${opt.id}`}
-                                              checked={selectedAnswers[q.id] === opt.id}
-                                              disabled={quizSubmitted && quizPassed}
-                                              className="border-green-600 text-green-600 focus:ring-green-500 data-[state=checked]:bg-green-600 data-[state=checked]:border-green-500"
-                                          />
-                                          <Label htmlFor={`${q.id}-${opt.id}`} className="cursor-pointer flex-1">{opt.text}</Label>
-                                          {quizSubmitted && selectedAnswers[q.id] === opt.id && selectedAnswers[q.id] !== q.correctAnswerId && (
-                                              <XCircle className="h-5 w-5 text-red-500 ml-2" />
-                                          )}
-                                          {quizSubmitted && selectedAnswers[q.id] === opt.id && selectedAnswers[q.id] === q.correctAnswerId && (
-                                              <CheckCircle className="h-5 w-5 text-green-500 ml-2" />
-                                          )}
-                                          {quizSubmitted && opt.id === q.correctAnswerId && selectedAnswers[q.id] !== q.correctAnswerId && (
-                                              <span className="text-xs text-green-400 ml-2">(Correct Answer)</span>
-                                          )}
-                                          </motion.div>
-                                      ))}
-                                      {quizSubmitted && selectedAnswers[q.id] !== q.correctAnswerId && q.explanation && (
-                                          <p className="text-sm text-muted-foreground mt-1">💡 {q.explanation}</p>
-                                      )}
-                                      </div>
-                                  ))}
-                              </RadioGroup>
-                              <Button
-                              onClick={handleSubmitQuiz}
-                              className="mt-6 w-full bg-purple-600 hover:bg-green-700 text-white shadow-[0_0_10px_theme(colors.purple.600)] hover:shadow-[0_0_15px_theme(colors.green.500)] transition-all duration-300"
-                              disabled={!allQuestionsAnswered || (quizSubmitted && quizPassed)}
-                              >
-                              Submit Quiz (or Swipe Left)
-                              </Button>
-                          </motion.div>
-                          )}
-                      </motion.section>
-                  ) : (
-                      <motion.section
-                          className="bg-card p-6 md:p-8 rounded-xl shadow-lg border-2 border-green-500 neon-border-green hover:shadow-[0_0_30px_rgba(34,197,94,1)] w-full text-center"
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.5 }}
-                      >
-                          <Award className="w-20 h-20 text-green-400 mx-auto mb-4" />
-                          <h2 className="text-3xl md:text-4xl font-bold text-green-300 mb-3">Congratulations! Vault Keeper!</h2>
-                          <p className="text-xl text-foreground mb-4">You've completed Wallet Wizardry and earned the{' '} <span className="text-purple-400 font-semibold">'Vault Keeper' NFT badge!</span></p>
-                          <div className="flex items-center justify-center space-x-3 my-6">
-                              <LockKeyhole className="w-12 h-12 text-purple-400" data-ai-hint="lock vault" />
-                              <div>
-                                  <p className="text-lg md:text-xl font-semibold text-primary">REWARD: Vault Keeper NFT</p>
-                                  <p className="text-md text-muted-foreground">Your understanding of wallet security is certified!</p>
+                          <div className="ml-4">
+                            {tierStatus[index] === 'completed' ? (
+                              <CheckCircle className="w-8 h-8 text-green-400" />
+                            ) : tierStatus[index] === 'unlocked' ? (
+                              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                                <span className="text-white text-sm font-bold">{index + 1}</span>
                               </div>
+                            ) : (
+                              <LockKeyhole className="w-8 h-8 text-slate-400" />
+                            )}
                           </div>
-                           {lessonsData.find(l => l.pitfallWarning && lessonStatus[lessonsData.indexOf(l)] === 'completed')?.pitfallWarning}
-                          <Button asChild className="mt-6 w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_10px_theme(colors.blue.600)] hover:shadow-[0_0_15px_theme(colors.blue.500)] transition-all duration-300">
-                              <Link href="/nft-mastery">Advance to NFT Mastery</Link>
+                        </div>
+                        
+                        {tierStatus[index] === 'completed' ? (
+                          <div className="text-center">
+                            <p className="text-green-400 font-semibold mb-3">✓ Completed</p>
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                              className="border-green-500 text-green-400 hover:bg-green-500/10"
+                            >
+                              <Link href={tier.path}>Review</Link>
+                            </Button>
+                          </div>
+                        ) : tierStatus[index] === 'unlocked' ? (
+                          <Button
+                            asChild
+                            className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                          >
+                            <Link href={tier.path}>Start Tier</Link>
                           </Button>
-                      </motion.section>
+                        ) : (
+                          <div className="text-center">
+                            <p className="text-slate-400 text-sm">Complete previous tiers to unlock</p>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Final Exam Section */}
+                  {allTiersCompleted && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5 }}
+                      className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 p-8 rounded-xl shadow-lg border-2 border-purple-500 neon-border-purple w-full max-w-4xl text-center"
+                    >
+                      <Award className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                      <h2 className="text-3xl font-bold text-purple-300 mb-4">Ready for the Final Exam?</h2>
+                      <p className="text-lg text-foreground mb-6">
+                        You've completed all tiers! Test your knowledge with the comprehensive final exam.
+                      </p>
+                      <Button
+                        asChild
+                        className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-3 text-lg font-semibold"
+                      >
+                        <Link href="/wallet-wizardry/final-exam">Take Final Exam</Link>
+                      </Button>
+                    </motion.div>
                   )}
 
-                  <AlertDialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
-                  <AlertDialogContent>
-                      <AlertDialogHeader>
-                      <AlertDialogTitle>{feedbackModalContent.title}</AlertDialogTitle>
-                      <AlertDialogDescription>
-                          {feedbackModalContent.description}
-                      </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                      {quizPassed && currentLessonIndex < lessonsData.length - 1 ? (
-                          null
-                      ) : quizPassed && allLessonsCompleted ? (
-                          <AlertDialogAction onClick={() => setShowFeedbackModal(false)} className="bg-green-600 hover:bg-green-700">Wizardry Mastered!</AlertDialogAction>
-                      ) : (
-                          <>
-                          <AlertDialogCancel onClick={() => setShowFeedbackModal(false)}>Review Lesson</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => {setSelectedAnswers({}); setQuizSubmitted(false); setQuizPassed(false); setCurrentScore(0); setShowFeedbackModal(false);}} className="bg-purple-600 hover:bg-purple-700">Retry Quiz</AlertDialogAction>
-                          </>
-                      )}
-                      </AlertDialogFooter>
-                  </AlertDialogContent>
-                  </AlertDialog>
+                  {!allTiersCompleted && (
+                                              <motion.section
+                            className="bg-card p-6 md:p-8 rounded-xl shadow-lg border-2 border-green-500 neon-border-green hover:shadow-[0_0_30px_rgba(34,197,94,1)] w-full text-center"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.5 }}
+                        >
+                            <Award className="w-20 h-20 text-green-400 mx-auto mb-4" />
+                            <h2 className="text-3xl md:text-4xl font-bold text-green-300 mb-3">Welcome to Wallet Wizardry!</h2>
+                            <p className="text-xl text-foreground mb-4">Complete all tiers to unlock the final exam and earn your{' '} <span className="text-purple-400 font-semibold">'Vault Keeper' NFT badge!</span></p>
+                            <div className="flex items-center justify-center space-x-3 my-6">
+                                <LockKeyhole className="w-12 h-12 text-purple-400" data-ai-hint="lock vault" />
+                                <div>
+                                    <p className="text-lg md:text-xl font-semibold text-primary">REWARD: Vault Keeper NFT</p>
+                                    <p className="text-md text-muted-foreground">Master wallet security to earn your certification!</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-col md:flex-row gap-4 mt-6">
+                                <Button asChild className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-[0_0_10px_theme(colors.blue.600)] hover:shadow-[0_0_15px_theme(colors.blue.500)] transition-all duration-300">
+                                    <Link href="/nft-mastery">Advance to NFT Mastery</Link>
+                                </Button>
+                            </div>
+                        </motion.section>
+                  )}
+
+
 
                   <AlertDialog open={showCourseWalletAlert} onOpenChange={setShowCourseWalletAlert}>
                       <AlertDialogContent>
@@ -583,7 +421,7 @@ export default function WalletWizardryPage() {
                           </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                          {courseWalletAlertConfig.title !== "MetaMask Connected" && courseWalletAlertConfig.title !== "Phantom Connected" && courseWalletAlertConfig.title !== "Solflare Connected" && !courseWalletAlertConfig.title.includes("Connected via") && <AlertDialogCancel>Cancel</AlertDialogCancel> }
+                          {courseWalletAlertConfig.title !== "MetaMask Connected" && courseWalletAlertConfig.title !== "Phantom Connected" && !courseWalletAlertConfig.title.includes("Connected via") && <AlertDialogCancel>Cancel</AlertDialogCancel> }
                           <AlertDialogAction onClick={() => setShowCourseWalletAlert(false)} className="bg-purple-600 hover:bg-purple-700">OK</AlertDialogAction>
                           </AlertDialogFooter>
                       </AlertDialogContent>
@@ -598,7 +436,6 @@ export default function WalletWizardryPage() {
                       >
                           <Wallet size={18} className="mr-2"/>
                           {courseConnectedWalletProvider ? `Connected: ${courseConnectedWalletProvider}` : "Select Wallet"}
-                          {showCourseWalletSelector ? <ChevronUp size={18} className="ml-2" /> : <ChevronDown size={18} className="ml-2" />}
                       </Button>
                       </div>
 

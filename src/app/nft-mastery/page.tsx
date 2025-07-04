@@ -8,6 +8,7 @@ import { useSwipeable } from 'react-swipeable';
 import { motion } from 'framer-motion';
 import { PixelHoodieIcon } from "@/components/icons/PixelHoodieIcon";
 import { ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
+import { updateScoreForQuizCompletion } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,20 +27,18 @@ import { Card, CardContent } from "@/components/ui/card";
 declare global {
   interface Window {
     solana?: any;
-    solflare?: any;
   }
 }
 
 // Interface for Solana wallet provider to fix type errors
 interface SolanaProvider {
   isPhantom?: boolean;
-  isSolflare?: boolean;
   isConnected: boolean;
-  connect: () => Promise<void>;
-  publicKey: PublicKey;
+  connect(): Promise<void>;
+  publicKey: { toString(): string };
 }
 
-type WalletProviderOption = 'phantom' | 'solflare';
+type WalletProviderOption = 'phantom';
 
 interface QuizOption {
   id: string;
@@ -216,22 +215,12 @@ export default function NftMasteryPage() {
           return;
         }
         solProvider = window.solana;
-      } else if (providerName === 'solflare') {
-        if (!(window.solflare && window.solflare.isSolflare) && !(window.solana && window.solana.isSolflare)) {
-          setWalletAlertConfig({
-            title: "Solflare Not Detected",
-            description: "Please install Solflare wallet to view your NFT status. Download it from https://solflare.com.",
-          });
-          setShowWalletAlert(true);
-          return;
-        }
-        solProvider = window.solflare || window.solana;
       }
 
       if (!solProvider) {
         setWalletAlertConfig({
           title: "Wallet Not Detected",
-          description: `Please install a compatible Solana wallet (e.g., Phantom or Solflare).`,
+          description: `Please install a compatible Solana wallet (e.g., Phantom).`,
         });
         setShowWalletAlert(true);
         return;
@@ -308,6 +297,11 @@ export default function NftMasteryPage() {
     setQuizSubmitted(true);
 
     if (passed) {
+      // Update leaderboard score
+      const walletAddress = localStorage.getItem('walletAddress') || 'demo-wallet';
+      const percentageScore = Math.round(percentage * 100);
+      updateScoreForQuizCompletion(walletAddress, 'nft-mastery', percentageScore, totalQuestions, currentLessonIndex + 1, lessonsData.length);
+      
       setFeedbackModalContent({ title: "Quiz Passed!", description: `You scored ${score}/${totalQuestions}. Excellent! You can proceed.` });
       const newLessonStatus = [...lessonStatus];
       newLessonStatus[currentLessonIndex] = 'completed';
@@ -353,7 +347,6 @@ export default function NftMasteryPage() {
 
   const walletProviders: { name: WalletProviderOption; label: string; icon?: JSX.Element }[] = [
     { name: 'phantom', label: 'Phantom', icon: <Wallet size={20} className="mr-2 text-purple-500" /> },
-    { name: 'solflare', label: 'Solflare', icon: <Wallet size={20} className="mr-2 text-yellow-500" /> },
   ];
 
   return (
@@ -576,7 +569,7 @@ export default function NftMasteryPage() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                {walletAlertConfig.title !== "Phantom Connected" && walletAlertConfig.title !== "Solflare Connected" && <AlertDialogCancel>Cancel</AlertDialogCancel>}
+                {walletAlertConfig.title !== "Phantom Connected" && <AlertDialogCancel>Cancel</AlertDialogCancel> }
                 <AlertDialogAction onClick={() => setShowWalletAlert(false)} className="bg-purple-600 hover:bg-purple-700">OK</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

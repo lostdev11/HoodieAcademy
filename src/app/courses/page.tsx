@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Home, ArrowDown, ArrowRight, LockKeyhole, CheckCircle, LineChart, Clock, Filter } from "lucide-react";
+import { Home, ArrowDown, ArrowRight, LockKeyhole, CheckCircle, LineChart, Clock, Filter, Shield } from "lucide-react";
 import { MilestoneBadge } from "@/components/course-roadmap/MilestoneBadge";
 import { RiskArt } from "@/components/course-roadmap/RiskArt";
 import { HoodieIcon } from "@/components/icons/HoodieIcon";
@@ -16,6 +16,7 @@ import { GlowingCoinIcon } from "@/components/icons/GlowingCoinIcon";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { squadTracks, getSquadForCourse, getCoursesForSquad } from "@/lib/squadData";
+import { isCurrentUserAdmin } from "@/lib/utils";
 
 // Simple course data
 const allCourses: Array<{
@@ -111,6 +112,8 @@ export default function CoursesPage() {
   const [passwordError, setPasswordError] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedSquad, setSelectedSquad] = useState<string | null>(null);
+  const [userSquad, setUserSquad] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -121,6 +124,20 @@ export default function CoursesPage() {
   }, []);
 
   useEffect(() => {
+    // Check if user is admin
+    setIsAdmin(isCurrentUserAdmin());
+
+    // Get user's squad assignment
+    const squadResult = localStorage.getItem('userSquad');
+    if (squadResult) {
+      try {
+        const result = JSON.parse(squadResult);
+        setUserSquad(result.id || result);
+      } catch (error) {
+        setUserSquad(squadResult);
+      }
+    }
+
     const getCompletionInfo = (key: string): { completed: boolean, progress: number } => {
       if (typeof window !== 'undefined') {
         const savedStatus = localStorage.getItem(key);
@@ -152,13 +169,15 @@ export default function CoursesPage() {
     console.log('Courses page loaded:', {
       totalCourses: allCourses.length,
       courseStatus: status,
+      userSquad: userSquad,
+      isAdmin: isAdmin,
       isLoading: false,
       allCourses: allCourses.map(c => ({ id: c.id, title: c.title }))
     });
     
     setCourseCompletionStatus(status);
     setIsLoading(false);
-  }, []);
+  }, [userSquad, isAdmin]);
 
   const handlePasswordSubmit = () => {
     if (passwordAttempt === ADMIN_PASSWORD) {
@@ -170,21 +189,70 @@ export default function CoursesPage() {
     }
   };
 
-  // Filter courses based on active filter and selected squad
+  const resetAllCourses = () => {
+    if (window.confirm('Are you sure you want to reset all course progress? This action cannot be undone.')) {
+      // Clear all course progress from localStorage
+      allCourses.forEach(course => {
+        if (course.localStorageKey) {
+          localStorage.removeItem(course.localStorageKey);
+        }
+      });
+      
+      // Clear final exam results
+      localStorage.removeItem('walletWizardryFinalExamPassed');
+      
+      // Clear placement test results
+      localStorage.removeItem('userSquad');
+      
+      // Clear onboarding completion
+      localStorage.removeItem('onboardingCompleted');
+      
+      // Refresh the page to update the UI
+      window.location.reload();
+    }
+  };
+
+  const resetIndividualCourse = (courseId: string) => {
+    const course = allCourses.find(c => c.id === courseId);
+    if (!course || !course.localStorageKey) return;
+    
+    if (window.confirm(`Are you sure you want to reset progress for "${course.title}"? This action cannot be undone.`)) {
+      localStorage.removeItem(course.localStorageKey);
+      
+      // If it's wallet wizardry, also clear the final exam
+      if (courseId === 'wallet-wizardry') {
+        localStorage.removeItem('walletWizardryFinalExamPassed');
+      }
+      
+      // Refresh the page to update the UI
+      window.location.reload();
+    }
+  };
+
+  // Filter courses based on active filter, selected squad, and user's squad
   const getFilteredCourses = () => {
+    let filteredCourses = allCourses;
+
+    // If user is not admin and has a squad, filter by squad
+    if (!isAdmin && !isAdminBypass && userSquad) {
+      const squadCourseIds = getCoursesForSquad(userSquad);
+      filteredCourses = allCourses.filter(course => squadCourseIds.includes(course.id));
+    }
+
+    // Apply additional filters
     switch (activeFilter) {
       case 'completed':
-        return allCourses.filter(course => 
+        return filteredCourses.filter(course => 
           course.localStorageKey && courseCompletionStatus[course.localStorageKey]?.completed
         );
       case 'squads':
         if (selectedSquad) {
           const squadCourseIds = getCoursesForSquad(selectedSquad);
-          return allCourses.filter(course => squadCourseIds.includes(course.id));
+          return filteredCourses.filter(course => squadCourseIds.includes(course.id));
         }
-        return allCourses;
+        return filteredCourses;
       default:
-        return allCourses;
+        return filteredCourses;
     }
   };
 
@@ -231,6 +299,68 @@ export default function CoursesPage() {
             <p className="text-cyan-300 text-lg">
               Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
             </p>
+
+            {/* Squad Information */}
+            {userSquad && !isAdmin && (
+              <div className="mt-6">
+                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-yellow-500/30 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-center space-x-3">
+                      <span className="text-yellow-400 text-lg">🎯</span>
+                      <div className="text-center">
+                        <p className="text-yellow-400 font-semibold">Your Squad Track</p>
+                        <p className="text-gray-300 text-sm">
+                          {squadTracks.find(s => s.id === userSquad)?.name || userSquad}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Admin Access Notice */}
+            {isAdmin && (
+              <div className="mt-6">
+                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-purple-500/30 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-center space-x-3">
+                      <Shield className="w-5 h-5 text-purple-400" />
+                      <div className="text-center">
+                        <p className="text-purple-400 font-semibold">Admin Access</p>
+                        <p className="text-gray-300 text-sm">Viewing all courses</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* No Squad Notice */}
+            {!userSquad && !isAdmin && (
+              <div className="mt-6">
+                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-orange-500/30 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-center space-x-3">
+                      <span className="text-orange-400 text-lg">⚠️</span>
+                      <div className="text-center">
+                        <p className="text-orange-400 font-semibold">Squad Assignment Required</p>
+                        <p className="text-gray-300 text-sm">Take the placement test to unlock your courses</p>
+                        <Button
+                          asChild
+                          size="sm"
+                          className="mt-2 bg-orange-600 hover:bg-orange-700"
+                        >
+                          <Link href="/placement/squad-test">
+                            Take Placement Test
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
 
           {/* Filter Tabs */}
@@ -313,7 +443,7 @@ export default function CoursesPage() {
 
           {/* Revoke bypass section */}
           {isAdminBypass && (
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 space-y-4">
               <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-green-500/30 backdrop-blur-sm">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-center space-x-3">
@@ -327,6 +457,27 @@ export default function CoursesPage() {
                     >
                       Revoke Bypass
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Reset Courses Button */}
+              <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-orange-500/30 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex flex-col items-center space-y-3">
+                    <span className="text-orange-400 text-lg">⚠️</span>
+                    <span className="text-orange-400 font-semibold text-center">Admin Actions</span>
+                    <Button
+                      onClick={resetAllCourses}
+                      variant="outline"
+                      size="sm"
+                      className="bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 hover:text-orange-300 border-orange-500/50 hover:border-orange-400/50"
+                    >
+                      Reset All Course Progress
+                    </Button>
+                    <p className="text-xs text-gray-400 text-center">
+                      This will clear all course progress, exam results, and squad placement
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -392,6 +543,8 @@ export default function CoursesPage() {
                         href={course.href}
                         isCompleted={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.completed : false}
                         progress={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.progress : 0}
+                        isAdmin={isAdminBypass}
+                        onResetCourse={resetIndividualCourse}
                       />
                     ))}
                   </div>
@@ -413,6 +566,8 @@ export default function CoursesPage() {
                   href={course.href}
                   isCompleted={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.completed : false}
                   progress={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.progress : 0}
+                  isAdmin={isAdminBypass}
+                  onResetCourse={resetIndividualCourse}
                 />
               ))}
             </div>

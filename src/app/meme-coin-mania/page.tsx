@@ -26,11 +26,10 @@ import { Card, CardContent } from "@/components/ui/card";
 declare global {
   interface Window {
     solana?: any;
-    solflare?: any;
   }
 }
 
-type WalletProviderOption = 'phantom' | 'solflare';
+type WalletProviderOption = 'phantom';
 
 interface QuizOption {
   id: string;
@@ -199,91 +198,60 @@ const MemeCoinManiaPage = () => {
     setConnectedWalletProvider(providerName);
 
     try {
-      switch (providerName) {
-        case 'phantom':
-        case 'solflare':
-          let solProvider: any;
-          let walletName = providerName;
+      let solProvider: any;
+      let walletName = providerName;
 
-           if (providerName === 'phantom') {
-            if (!(window.solana && window.solana.isPhantom)) {
-              setWalletAlertConfig({
-                title: "Phantom Not Detected",
-                description: "Please install Phantom wallet to view your NFT status. Download it from https://phantom.app.",
-              });
-              setShowWalletAlert(true);
-              return;
-            }
-            solProvider = window.solana;
-          } else if (providerName === 'solflare') {
-             if (!(window.solflare && window.solflare.isSolflare) && !(window.solana && window.solana.isSolflare)) {
-              setWalletAlertConfig({
-                title: "Solflare Not Detected",
-                description: "Please install Solflare wallet to view your NFT status. Download it from https://solflare.com.",
-              });
-                setShowWalletAlert(true);
-                return;
-            }
-            solProvider = window.solflare || window.solana;
-          }
-
-          // Check if wallet is already connected or attempt to connect
-          if (!solProvider.isConnected) {
-            try {
-              await solProvider.connect();
-            } catch (error: any) {
-              if (error.message?.includes('rejected') || error.code === 4001) {
-                setWalletAlertConfig({
-                  title: "Connection Rejected",
-                  description: "You rejected the connection request. Please approve in your wallet to view your NFT status.",
-                });
-              } else if (error.message?.includes('locked')) {
-                setWalletAlertConfig({
-                  title: "Wallet Locked",
-                  description: "Your wallet is locked. Please unlock it and try again.",
-                });
-          } else { 
-                setWalletAlertConfig({
-                  title: "Connection Error",
-                  description: `Failed to connect ${walletName}: ${error.message || 'Unknown error'}`,
-                });
-              }
-                setShowWalletAlert(true);
-                return;
-             }
-          }
-
-          const solAccount = solProvider.publicKey.toString();
-          setAccount(solAccount);
-
-          // Fetch balance
-          try {
-          const solBalanceLamports = await solanaConnection.getBalance(new PublicKey(solAccount));
-          setBalance(`${(solBalanceLamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
-          } catch (error: any) {
-            console.error("Failed to fetch Solana balance:", error);
-            setBalance("Error fetching balance");
-            setWalletAlertConfig({
-              title: "Balance Fetch Error",
-              description: "Failed to retrieve your SOL balance. The Solana network may be congested. Please try again later.",
-            });
-            setShowWalletAlert(true);
-          }
-
-          // Mock NFT status (deterministic for consistency)
-          const hash = (str: string) => str.split('').reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0);
-          const hasMockNFT = hash(solAccount) % 2 === 0;
-          setMockNftStatus(hasMockNFT ? 'Meme Coin Master NFT: Owned!' : 'Meme Coin Master NFT: None found.');
-
+       if (providerName === 'phantom') {
+        if (!(window.solana && window.solana.isPhantom)) {
           setWalletAlertConfig({
-            title: `${walletName.charAt(0).toUpperCase() + walletName.slice(1)} Connected`,
-            description: `Successfully connected: ${solAccount.slice(0, 4)}...${solAccount.slice(-4)}`,
+            title: "Phantom Not Detected",
+            description: "Please install Phantom wallet to view your NFT status. Download it from https://phantom.app.",
           });
-          break;
-
-        default:
-          setWalletAlertConfig({ title: "Unsupported Wallet", description: "This wallet provider is not supported." });
+          setShowWalletAlert(true);
+          return;
+        }
+        solProvider = window.solana;
       }
+
+      if (!solProvider) {
+        setWalletAlertConfig({
+          title: "Wallet Not Detected",
+          description: `Please install a compatible Solana wallet (e.g., Phantom).`,
+        });
+        setShowWalletAlert(true);
+        return;
+      }
+
+      if (!solProvider.isConnected) {
+        await solProvider.connect();
+      }
+
+      const solAccount = solProvider.publicKey.toString();
+      setAccount(solAccount);
+
+      // Fetch balance
+      try {
+      const solBalanceLamports = await solanaConnection.getBalance(new PublicKey(solAccount));
+      setBalance(`${(solBalanceLamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+      } catch (error: any) {
+        console.error("Failed to fetch Solana balance:", error);
+        setBalance("Error fetching balance");
+        setWalletAlertConfig({
+          title: "Balance Fetch Error",
+          description: "Failed to retrieve your SOL balance. The Solana network may be congested. Please try again later.",
+        });
+        setShowWalletAlert(true);
+      }
+
+      // Mock NFT status (deterministic for consistency)
+      const hash = (str: string) => str.split('').reduce((a, c) => ((a << 5) - a) + c.charCodeAt(0), 0);
+      const hasMockNFT = hash(solAccount) % 2 === 0;
+      setMockNftStatus(hasMockNFT ? 'Meme Coin Master NFT: Owned!' : 'Meme Coin Master NFT: None found.');
+
+      setWalletAlertConfig({
+        title: `${walletName.charAt(0).toUpperCase() + walletName.slice(1)} Connected`,
+        description: `Successfully connected: ${solAccount.slice(0, 4)}...${solAccount.slice(-4)}`,
+      });
     } catch (error: any) {
       console.error("Wallet connection error:", error);
       setWalletAlertConfig({
@@ -363,7 +331,6 @@ const MemeCoinManiaPage = () => {
 
   const walletProviders: { name: WalletProviderOption; label: string; icon?: JSX.Element }[] = [
     { name: 'phantom', label: 'Phantom', icon: <Wallet size={20} className="mr-2 text-purple-500" /> },
-    { name: 'solflare', label: 'Solflare', icon: <Wallet size={20} className="mr-2 text-yellow-500" /> },
   ];
 
   useEffect(() => {
@@ -612,7 +579,7 @@ const MemeCoinManiaPage = () => {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              {walletAlertConfig.title !== "Phantom Connected" && walletAlertConfig.title !== "Solflare Connected" && <AlertDialogCancel>Cancel</AlertDialogCancel> }
+              {walletAlertConfig.title !== "Phantom Connected" && <AlertDialogCancel>Cancel</AlertDialogCancel> }
               <AlertDialogAction onClick={() => setShowWalletAlert(false)} className="bg-blue-600 hover:bg-blue-700">OK</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

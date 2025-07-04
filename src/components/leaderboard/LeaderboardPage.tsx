@@ -18,9 +18,10 @@ import {
   Award
 } from 'lucide-react';
 import { LeaderboardCard } from './LeaderboardCard';
-import { getTop20Users, LeaderboardUser, getUserRank } from '@/lib/leaderboardData';
+import { LeaderboardUser } from '@/lib/leaderboardData';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import TokenGate from '@/components/TokenGate';
+import { LeaderboardService } from '@/services/leaderboard-service';
 
 type SortOption = 'rank' | 'score' | 'courses' | 'badges' | 'recent';
 type FilterOption = 'all' | 'top10' | 'top50' | 'recent' | 'achievements';
@@ -36,21 +37,32 @@ export default function LeaderboardPage() {
   const [currentUserRank, setCurrentUserRank] = useState<number>(-1);
   const [isLoading, setIsLoading] = useState(true);
 
+  const leaderboardService = LeaderboardService.getInstance();
+
   useEffect(() => {
-    // Load leaderboard data
-    const leaderboardData = getTop20Users();
-    setUsers(leaderboardData);
-    setFilteredUsers(leaderboardData);
-    setIsLoading(false);
+    // Load real-time leaderboard data
+    const loadLeaderboardData = () => {
+      const leaderboardData = leaderboardService.getLeaderboard();
+      setUsers(leaderboardData);
+      setFilteredUsers(leaderboardData);
+      setIsLoading(false);
+    };
+
+    loadLeaderboardData();
 
     // Get current user's wallet from localStorage
     const walletAddress = localStorage.getItem('walletAddress');
     if (walletAddress) {
       setCurrentUserWallet(walletAddress);
-      const rank = getUserRank(walletAddress);
+      const rank = leaderboardService.getUserRank(walletAddress);
       setCurrentUserRank(rank);
     }
-  }, []);
+
+    // Set up real-time updates (polling every 30 seconds)
+    const interval = setInterval(loadLeaderboardData, 30000);
+
+    return () => clearInterval(interval);
+  }, [leaderboardService]);
 
   useEffect(() => {
     let filtered = [...users];
@@ -70,7 +82,7 @@ export default function LeaderboardPage() {
         filtered = filtered.slice(0, 10);
         break;
       case 'top50':
-        // For demo, we only have 5 users, but this would work with more data
+        // For demo, we only have limited users, but this would work with more data
         break;
       case 'recent':
         filtered = filtered.filter(user => {
@@ -108,12 +120,18 @@ export default function LeaderboardPage() {
 
   const handleRefresh = () => {
     setIsLoading(true);
-    // Simulate refresh
-    setTimeout(() => {
-      const leaderboardData = getTop20Users();
-      setUsers(leaderboardData);
-      setIsLoading(false);
-    }, 1000);
+    // Load fresh data
+    const leaderboardData = leaderboardService.getLeaderboard();
+    setUsers(leaderboardData);
+    setFilteredUsers(leaderboardData);
+    
+    // Update current user rank
+    if (currentUserWallet) {
+      const rank = leaderboardService.getUserRank(currentUserWallet);
+      setCurrentUserRank(rank);
+    }
+    
+    setIsLoading(false);
   };
 
   const getCurrentUserStats = () => {
@@ -142,7 +160,7 @@ export default function LeaderboardPage() {
                   <Trophy className="w-8 h-8" />
                   Hoodie Academy Leaderboard
                 </h1>
-                <p className="text-gray-300">Top performers in the Web3 learning community</p>
+                <p className="text-gray-300">Real-time rankings based on actual user progress</p>
               </div>
               <div className="text-right">
                 <div className="text-sm text-gray-400">Last Updated</div>
@@ -180,7 +198,9 @@ export default function LeaderboardPage() {
                     <div>
                       <p className="text-sm text-gray-400">Avg Score</p>
                       <p className="text-2xl font-bold text-purple-400">
-                        {Math.round(users.reduce((acc, user) => acc + user.averageQuizScore, 0) / users.length)}%
+                        {users.length > 0 
+                          ? Math.round(users.reduce((acc, user) => acc + user.averageQuizScore, 0) / users.length)
+                          : 0}%
                       </p>
                     </div>
                   </div>
@@ -207,16 +227,16 @@ export default function LeaderboardPage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-pink-500/30">
+              <Card className="bg-slate-800/50 border-blue-500/30">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-pink-500/20 rounded-lg">
-                      <Award className="w-6 h-6 text-pink-400" />
+                    <div className="p-2 bg-blue-500/20 rounded-lg">
+                      <Target className="w-6 h-6 text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">Total Badges</p>
-                      <p className="text-2xl font-bold text-pink-400">
-                        {users.reduce((acc, user) => acc + user.badgesEarned, 0)}
+                      <p className="text-sm text-gray-400">Your Rank</p>
+                      <p className="text-2xl font-bold text-blue-400">
+                        {currentUserRank > 0 ? `#${currentUserRank}` : 'N/A'}
                       </p>
                     </div>
                   </div>
@@ -226,30 +246,30 @@ export default function LeaderboardPage() {
 
             {/* Current User Stats */}
             {currentUser && (
-              <Card className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/30">
+              <Card className="bg-gradient-to-r from-cyan-900/50 to-purple-900/50 border-cyan-500/50">
                 <CardHeader>
                   <CardTitle className="text-cyan-400 flex items-center gap-2">
-                    <Target className="w-5 h-5" />
-                    Your Performance
+                    <Award className="w-5 h-5" />
+                    Your Stats
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-cyan-400">#{currentUser.rank}</div>
-                      <div className="text-sm text-gray-400">Your Rank</div>
+                      <p className="text-sm text-gray-400">Total Score</p>
+                      <p className="text-xl font-bold text-cyan-400">{currentUser.totalScore.toLocaleString()}</p>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-400">{currentUser.totalScore.toLocaleString()}</div>
-                      <div className="text-sm text-gray-400">Total Score</div>
+                      <p className="text-sm text-gray-400">Courses Completed</p>
+                      <p className="text-xl font-bold text-purple-400">{currentUser.coursesCompleted}</p>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-400">{currentUser.coursesCompleted}</div>
-                      <div className="text-sm text-gray-400">Courses Completed</div>
+                      <p className="text-sm text-gray-400">Lessons Completed</p>
+                      <p className="text-xl font-bold text-green-400">{currentUser.totalLessons}</p>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-pink-400">{currentUser.badgesEarned}</div>
-                      <div className="text-sm text-gray-400">Badges Earned</div>
+                      <p className="text-sm text-gray-400">Achievements</p>
+                      <p className="text-xl font-bold text-yellow-400">{currentUser.achievements.length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -257,97 +277,86 @@ export default function LeaderboardPage() {
             )}
 
             {/* Filters and Search */}
-            <Card className="bg-slate-800/50 border-slate-600/30">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row gap-4 items-center">
-                  {/* Search */}
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input
-                      placeholder="Search by name, wallet, or squad..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 bg-slate-700/50 border-slate-600/30 text-white placeholder-gray-400"
-                    />
-                  </div>
-
-                  {/* Sort */}
-                  <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                    <SelectTrigger className="w-40 bg-slate-700/50 border-slate-600/30 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-600">
-                      <SelectItem value="rank">Sort by Rank</SelectItem>
-                      <SelectItem value="score">Sort by Score</SelectItem>
-                      <SelectItem value="courses">Sort by Courses</SelectItem>
-                      <SelectItem value="badges">Sort by Badges</SelectItem>
-                      <SelectItem value="recent">Sort by Recent</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {/* Filter */}
-                  <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
-                    <SelectTrigger className="w-40 bg-slate-700/50 border-slate-600/30 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-600">
-                      <SelectItem value="all">All Users</SelectItem>
-                      <SelectItem value="top10">Top 10</SelectItem>
-                      <SelectItem value="top50">Top 50</SelectItem>
-                      <SelectItem value="recent">Recently Active</SelectItem>
-                      <SelectItem value="achievements">With Achievements</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {/* Refresh */}
-                  <Button
-                    onClick={handleRefresh}
-                    disabled={isLoading}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white"
-                  >
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </Button>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search by name, wallet, or squad..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 bg-slate-800/50 border-cyan-500/30 text-white"
+                  />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              
+              <div className="flex gap-2">
+                <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
+                  <SelectTrigger className="w-32 bg-slate-800/50 border-cyan-500/30 text-white">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    <SelectItem value="top10">Top 10</SelectItem>
+                    <SelectItem value="top50">Top 50</SelectItem>
+                    <SelectItem value="recent">Recent Activity</SelectItem>
+                    <SelectItem value="achievements">With Achievements</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                  <SelectTrigger className="w-32 bg-slate-800/50 border-cyan-500/30 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rank">By Rank</SelectItem>
+                    <SelectItem value="score">By Score</SelectItem>
+                    <SelectItem value="courses">By Courses</SelectItem>
+                    <SelectItem value="badges">By Badges</SelectItem>
+                    <SelectItem value="recent">By Recent</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button 
+                  onClick={handleRefresh} 
+                  disabled={isLoading}
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
+            </div>
 
             {/* Leaderboard */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-white">Top Performers</h2>
-                <Badge variant="outline" className="text-cyan-400 border-cyan-500/30">
-                  {filteredUsers.length} users
-                </Badge>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin mr-3" />
+                <span className="text-cyan-400">Loading leaderboard...</span>
               </div>
-
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-400">Loading leaderboard...</p>
-                  </div>
-                </div>
-              ) : filteredUsers.length === 0 ? (
-                <Card className="bg-slate-800/50 border-slate-600/30">
-                  <CardContent className="p-12 text-center">
-                    <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-300 mb-2">No users found</h3>
-                    <p className="text-gray-400">Try adjusting your search or filter criteria</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {filteredUsers.map((user) => (
-                    <LeaderboardCard
-                      key={user.walletAddress}
-                      user={user}
-                      isCurrentUser={user.walletAddress === currentUserWallet}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            ) : filteredUsers.length === 0 ? (
+              <Card className="bg-slate-800/50 border-cyan-500/30">
+                <CardContent className="p-12 text-center">
+                  <Trophy className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-300 mb-2">No Users Found</h3>
+                  <p className="text-gray-400">
+                    {searchTerm ? 'Try adjusting your search criteria.' : 'Be the first to join the leaderboard!'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {filteredUsers.map((user, index) => (
+                  <LeaderboardCard 
+                    key={user.walletAddress} 
+                    user={user} 
+                    isCurrentUser={user.walletAddress === currentUserWallet}
+                    highlight={index < 3}
+                  />
+                ))}
+              </div>
+            )}
           </main>
         </div>
       </div>

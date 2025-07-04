@@ -1,0 +1,12 @@
+[
+  {
+    "question": "Who controls a custodial wallet?",
+    "options": ["You", "A third party", "A validator", "A smart contract"],
+    "correct": 1
+  },
+  {
+    "question": "What is a risk of non-custodial wallets?",
+    "options": ["No access if phrase lost", "Poor security", "Hard to fund", "Require hardware"],
+    "correct": 0
+  }
+] 

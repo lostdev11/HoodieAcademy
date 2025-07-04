@@ -12,6 +12,7 @@ import { squadTracks } from '@/lib/squadData';
 import Link from 'next/link';
 import { getSNSResolver, formatWalletAddress, isValidSolanaAddress, isSolDomain } from '@/services/sns-resolver';
 import { Connection } from '@solana/web3.js';
+import SquadBadge from '@/components/SquadBadge';
 
 // Mock user data - in production, this would come from user profile/backend
 const mockUser = {
@@ -33,12 +34,21 @@ const mockUser = {
 
 export function ProfileView() {
   const [editMode, setEditMode] = useState(false);
-  const [displayName, setDisplayName] = useState(mockUser.displayName);
+  const [displayName, setDisplayName] = useState(() => {
+    // Get display name from localStorage or use mock data
+    return localStorage.getItem('userDisplayName') || mockUser.displayName;
+  });
+  const [originalDisplayName, setOriginalDisplayName] = useState(() => {
+    // Store original value for cancel functionality
+    return localStorage.getItem('userDisplayName') || mockUser.displayName;
+  });
   const [squad, setSquad] = useState(mockUser.squad);
   const [wallet, setWallet] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [solDomain, setSolDomain] = useState<string | null>(null);
   const [isLoadingDomain, setIsLoadingDomain] = useState(false);
+  const [userSquad, setUserSquad] = useState<any>(null);
+  const [placementTestCompleted, setPlacementTestCompleted] = useState(false);
 
   const snsResolver = getSNSResolver();
   const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
@@ -60,6 +70,25 @@ export function ProfileView() {
       }
     };
 
+    // Check for squad placement result
+    const squadResult = localStorage.getItem('userSquad');
+    const testCompleted = localStorage.getItem('placementTestCompleted');
+    
+    if (squadResult) {
+      try {
+        const result = JSON.parse(squadResult);
+        setUserSquad(result);
+      } catch (error) {
+        console.error('Error parsing squad result:', error);
+        // If parsing fails, treat it as a string
+        setUserSquad(squadResult);
+      }
+    }
+    
+    if (testCompleted) {
+      setPlacementTestCompleted(true);
+    }
+
     detectConnectedWallet();
   }, []);
 
@@ -73,6 +102,7 @@ export function ProfileView() {
           setSolDomain(domain);
         } catch (error) {
           console.error('Error resolving .sol domain:', error);
+          setSolDomain(null);
         } finally {
           setIsLoadingDomain(false);
         }
@@ -87,13 +117,59 @@ export function ProfileView() {
   }, [wallet, snsResolver, connection]);
 
   const handleSave = () => {
-    setEditMode(false);
-    // Save logic here
+    if (displayName.trim()) {
+      const trimmedName = displayName.trim();
+      localStorage.setItem('userDisplayName', trimmedName);
+      setOriginalDisplayName(trimmedName);
+      setEditMode(false);
+      // Optional: Add a success message or toast notification here
+    } else {
+      // Don't save if display name is empty
+      alert('Display name cannot be empty');
+    }
   };
 
   const getSquadName = (squadId: string) => {
     const squad = squadTracks.find(s => s.id === squadId);
     return squad ? squad.name : squadId;
+  };
+
+  const getSquadDisplayName = () => {
+    if (userSquad && typeof userSquad === 'object' && userSquad.name) {
+      return userSquad.name;
+    } else if (userSquad && typeof userSquad === 'string') {
+      return getSquadName(userSquad);
+    } else {
+      return getSquadName(squad);
+    }
+  };
+
+  const getSquadForBadge = () => {
+    if (userSquad && typeof userSquad === 'object' && userSquad.name) {
+      // Remove emoji prefix if present
+      return userSquad.name.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '');
+    } else if (userSquad && typeof userSquad === 'string') {
+      return userSquad;
+    } else {
+      return squad;
+    }
+  };
+
+  const getSquadDescription = () => {
+    if (userSquad && typeof userSquad === 'object' && userSquad.description) {
+      return userSquad.description;
+    } else {
+      const squadData = squadTracks.find(s => s.id === squad);
+      return squadData ? squadData.description : 'No description available';
+    }
+  };
+
+  const getSquadSpecialties = () => {
+    if (userSquad && typeof userSquad === 'object' && userSquad.specialties) {
+      return userSquad.specialties;
+    } else {
+      return [];
+    }
   };
 
   const handleCopyWallet = async () => {
@@ -116,13 +192,8 @@ export function ProfileView() {
     sessionStorage.removeItem('wifhoodie_verification_session');
     
     // Disconnect from wallet providers
-    if (typeof window !== 'undefined') {
-      if (window.solana?.disconnect) {
-        window.solana.disconnect();
-      }
-      if (window.solflare?.disconnect) {
-        window.solflare.disconnect();
-      }
+    if (window.solana?.disconnect) {
+      window.solana.disconnect();
     }
   };
 
@@ -158,6 +229,33 @@ export function ProfileView() {
   const overallProgress = Math.round(
     mockUser.completedCourses.reduce((acc, c) => acc + c.progress, 0) / (mockUser.completedCourses.length * 100) * 100
   );
+
+  // Add error boundary for rendering
+  if (!wallet) {
+    return (
+      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="flex-1 flex flex-col items-center justify-center py-12 px-4">
+          <Card className="w-full max-w-2xl bg-slate-800/60 border-red-500/30">
+            <CardContent className="p-6 text-center">
+              <h2 className="text-xl font-bold text-red-400 mb-4">Wallet Not Connected</h2>
+              <p className="text-gray-300 mb-4">
+                Please connect your wallet to view your profile.
+              </p>
+              <Button
+                asChild
+                className="bg-cyan-600 hover:bg-cyan-700"
+              >
+                <Link href="/">
+                  <Home className="w-4 h-4 mr-2" />
+                  Go to Dashboard
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -210,7 +308,9 @@ export function ProfileView() {
                       </SelectContent>
                     </Select>
                   ) : (
-                    <span className="text-yellow-400 font-semibold">{getSquadName(squad)}</span>
+                    <span className="text-yellow-400 font-semibold">
+                      {getSquadDisplayName()}
+                    </span>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -268,11 +368,31 @@ export function ProfileView() {
                 </div>
                 <div className="mt-4">
                   {editMode ? (
-                    <Button onClick={handleSave} className="bg-cyan-600 hover:bg-cyan-700 text-white mr-2">
-                      <Save className="w-4 h-4 mr-1" /> Save
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button onClick={handleSave} className="bg-cyan-600 hover:bg-cyan-700 text-white">
+                        <Save className="w-4 h-4 mr-1" /> Save
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          setEditMode(false);
+                          // Reset display name to original value
+                          setDisplayName(originalDisplayName);
+                        }} 
+                        variant="outline" 
+                        className="border-gray-500/30 text-gray-400 hover:text-gray-300 hover:bg-gray-500/10"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   ) : (
-                    <Button onClick={() => setEditMode(true)} variant="outline" className="text-cyan-400 border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10">
+                    <Button 
+                      onClick={() => {
+                        setOriginalDisplayName(displayName);
+                        setEditMode(true);
+                      }} 
+                      variant="outline" 
+                      className="text-cyan-400 border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10"
+                    >
                       <Pencil className="w-4 h-4 mr-1" /> Edit
                     </Button>
                   )}
@@ -282,6 +402,14 @@ export function ProfileView() {
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-400 to-pink-400 flex items-center justify-center text-4xl font-bold text-white shadow-lg">
                   🧑‍🎓
                 </div>
+                
+                {/* Squad Badge */}
+                {userSquad && (
+                  <div className="text-center">
+                    <SquadBadge squad={getSquadForBadge()} />
+                  </div>
+                )}
+                
                 <div className="flex flex-wrap gap-2 justify-center">
                   {mockUser.badges.map(badge => (
                     <Badge key={badge.id} className="flex items-center gap-1 px-3 py-1 border border-cyan-500/30 bg-slate-900/60 text-cyan-300">
@@ -293,6 +421,103 @@ export function ProfileView() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Squad Information Card */}
+        {userSquad && (
+          <Card className="w-full max-w-2xl bg-slate-800/60 border-yellow-500/30 mb-8">
+            <CardHeader>
+              <CardTitle className="text-yellow-400 flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Squad Assignment
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Squad Badge and Info */}
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <div className="text-center">
+                    <SquadBadge squad={getSquadForBadge()} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-yellow-400 mb-2">{getSquadDisplayName()}</h3>
+                    <p className="text-gray-300 mb-3">{getSquadDescription()}</p>
+                    
+                    {/* Specialties */}
+                    <div className="mb-3">
+                      <h4 className="text-sm font-semibold text-cyan-400 mb-2">Specialties:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {getSquadSpecialties().map((specialty: string, index: number) => (
+                          <Badge key={index} variant="outline" className="text-xs bg-slate-700/50 border-cyan-500/30 text-cyan-300">
+                            {specialty}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Test Info */}
+                    {userSquad.assignedAt && (
+                      <div className="text-xs text-gray-400">
+                        <p>Assigned: {new Date(userSquad.assignedAt).toLocaleDateString()}</p>
+                        {userSquad.testVersion && <p>Test Version: {userSquad.testVersion}</p>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-600/30">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="border-cyan-500/30 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                  >
+                    <Link href="/courses">
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      View Recommended Courses
+                    </Link>
+                  </Button>
+                  
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="border-orange-500/30 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
+                  >
+                    <Link href="/placement/squad-test">
+                      <Users className="w-4 h-4 mr-2" />
+                      Retake Placement Test
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* No Squad Assignment Card */}
+        {!userSquad && (
+          <Card className="w-full max-w-2xl bg-slate-800/60 border-orange-500/30 mb-8">
+            <CardHeader>
+              <CardTitle className="text-orange-400 flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Squad Assignment
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+              <p className="text-gray-300 mb-4">
+                You haven't taken the squad placement test yet. Take the test to get assigned to a squad and unlock personalized course recommendations.
+              </p>
+              <Button
+                asChild
+                className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+              >
+                <Link href="/placement/squad-test">
+                  <Users className="w-4 h-4 mr-2" />
+                  Take Placement Test
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="w-full max-w-2xl bg-slate-800/60 border-green-500/30 mb-8">
           <CardHeader>

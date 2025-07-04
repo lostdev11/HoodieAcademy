@@ -27,11 +27,10 @@ declare global {
   interface Window {
     ethereum?: any;
     solana?: any;
-    solflare?: any;
   }
 }
 
-type WalletProviderOption = 'metamask' | 'phantom' | 'solflare' | 'jup' | 'magic-eden';
+type WalletProviderOption = 'metamask' | 'phantom' | 'jup' | 'magic-eden';
 
 interface QuizOption {
   id: string;
@@ -232,7 +231,6 @@ export default function TechnicalAnalysisPage() {
           break;
 
         case 'phantom':
-        case 'solflare':
         case 'jup': 
         case 'magic-eden':
           let solProvider;
@@ -243,19 +241,11 @@ export default function TechnicalAnalysisPage() {
               return;
             }
             solProvider = window.solana;
-          } else if (providerName === 'solflare') {
-             if (!(window.solflare && window.solflare.isSolflare) && !(window.solana && window.solana.isSolflare)) {
-                setWalletAlertConfig({ title: "Solflare Not Detected", description: "Please install Solflare wallet to continue." });
-                setShowWalletAlert(true);
-                return;
-            }
-            solProvider = window.solflare || window.solana;
           } else { 
              if (window.solana && window.solana.isPhantom) solProvider = window.solana;
-             else if (window.solflare && window.solflare.isSolflare) solProvider = window.solflare;
              else if (window.solana) solProvider = window.solana;
              else {
-                setWalletAlertConfig({ title: "Solana Wallet Not Detected", description: `Please install a compatible Solana wallet (e.g., Phantom, Solflare) for ${providerName}.` });
+                setWalletAlertConfig({ title: "Solana Wallet Not Detected", description: `Please install a compatible Solana wallet (e.g., Phantom) for ${providerName}.` });
                 setShowWalletAlert(true);
                 return;
              }
@@ -268,8 +258,8 @@ export default function TechnicalAnalysisPage() {
           setMockNftStatus(Math.random() > 0.5 ? 'Mock Solana NFT: Owned!' : 'Mock Solana NFT: None found.');
           
           let successTitle = `${providerName.charAt(0).toUpperCase() + providerName.slice(1)} Connected`;
-          if (providerName === 'jup') successTitle = `Connected via ${solProvider.isPhantom ? 'Phantom' : solProvider.isSolflare ? 'Solflare' : 'Solana Wallet'} for JUP`;
-          if (providerName === 'magic-eden') successTitle = `Connected via ${solProvider.isPhantom ? 'Phantom' : solProvider.isSolflare ? 'Solflare' : 'Solana Wallet'} for Magic Eden`;
+          if (providerName === 'jup') successTitle = `Connected via ${solProvider.isPhantom ? 'Phantom' : 'Solana Wallet'} for JUP`;
+          if (providerName === 'magic-eden') successTitle = `Connected via ${solProvider.isPhantom ? 'Phantom' : 'Solana Wallet'} for Magic Eden`;
 
           setWalletAlertConfig({ title: successTitle, description: `Successfully connected: ${solAccount.slice(0, 4)}...${solAccount.slice(-4)}` });
           
@@ -367,9 +357,8 @@ export default function TechnicalAnalysisPage() {
   const walletProviders: { name: WalletProviderOption; label: string; icon?: JSX.Element }[] = [
     { name: 'metamask', label: 'MetaMask', icon: <Wallet size={20} className="mr-2 text-orange-500" /> },
     { name: 'phantom', label: 'Phantom', icon: <Wallet size={20} className="mr-2 text-purple-500" /> },
-    { name: 'solflare', label: 'Solflare', icon: <Wallet size={20} className="mr-2 text-yellow-500" /> },
-    { name: 'jup', label: 'JUP Wallet', icon: <Wallet size={20} className="mr-2 text-green-500" /> },
-    { name: 'magic-eden', label: 'Magic Eden Wallet', icon: <Wallet size={20} className="mr-2 text-blue-500" /> },
+    { name: 'jup', label: 'Jupiter', icon: <Wallet size={20} className="mr-2 text-blue-500" /> },
+    { name: 'magic-eden', label: 'Magic Eden', icon: <Wallet size={20} className="mr-2 text-green-500" /> },
   ];
 
 
@@ -605,7 +594,7 @@ export default function TechnicalAnalysisPage() {
                   </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                  {walletAlertConfig.title !== "MetaMask Connected" && walletAlertConfig.title !== "Phantom Connected" && walletAlertConfig.title !== "Solflare Connected" && !walletAlertConfig.title.includes("Connected via") && <AlertDialogCancel>Cancel</AlertDialogCancel> }
+                  {walletAlertConfig.title !== "MetaMask Connected" && walletAlertConfig.title !== "Phantom Connected" && !walletAlertConfig.title.includes("Connected via") && <AlertDialogCancel>Cancel</AlertDialogCancel> }
                   <AlertDialogAction onClick={() => setShowWalletAlert(false)} className="bg-orange-500 hover:bg-orange-600 text-background">OK</AlertDialogAction>
                   </AlertDialogFooter>
               </AlertDialogContent>
