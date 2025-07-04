@@ -14,7 +14,8 @@ import {
   Home,
   BookOpen,
   Trophy,
-  TrendingUp
+  TrendingUp,
+  Shield
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -73,6 +74,12 @@ const sidebarItems: SidebarItem[] = [
     label: 'Achievements',
     icon: <Trophy className="w-5 h-5" />,
     href: '/achievements'
+  },
+  {
+    id: 'admin',
+    label: 'Admin',
+    icon: <Shield className="w-5 h-5" />,
+    href: '/admin'
   }
 ];
 

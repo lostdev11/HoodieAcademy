@@ -24,9 +24,10 @@ import { formatWalletAddress } from '@/services/sns-resolver';
 interface LeaderboardCardProps {
   user: LeaderboardUser;
   isCurrentUser?: boolean;
+  highlight?: boolean;
 }
 
-export function LeaderboardCard({ user, isCurrentUser = false }: LeaderboardCardProps) {
+export function LeaderboardCard({ user, isCurrentUser = false, highlight = false }: LeaderboardCardProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -52,7 +53,7 @@ export function LeaderboardCard({ user, isCurrentUser = false }: LeaderboardCard
       case 3:
         return 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 border-amber-500/30';
       default:
-        return 'bg-slate-800/50 border-slate-600/30';
+        return highlight ? 'bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/30' : 'bg-slate-800/50 border-slate-600/30';
     }
   };
 

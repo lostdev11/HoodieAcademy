@@ -36,7 +36,7 @@ A comprehensive Next.js educational platform focused on Web3, Solana, and NFTs, 
 6. **Technical Analysis** - Advanced trading strategies
 
 ### 🔐 Authentication & Security
-- **Multi-wallet support** (MetaMask, Solflare, Phantom)
+- **Multi-wallet support** (MetaMask, Phantom)
 - **NFT verification** via Helius API
 - **Session management** with secure storage
 - **Wallet address validation** and SNS resolution
@@ -85,7 +85,7 @@ src/
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn
-- Solana wallet (MetaMask, Solflare, or Phantom)
+- Solana wallet (MetaMask or Phantom)
 - WifHoodie NFT for access
 
 ### Installation
@@ -121,7 +121,7 @@ src/
 ## 🎮 How to Use
 
 ### For Learners
-1. **Connect your wallet** - Use MetaMask, Solflare, or Phantom
+1. **Connect your wallet** - Use MetaMask or Phantom
 2. **Verify NFT ownership** - Ensure you own a WifHoodie NFT
 3. **Access courses** - Browse the course catalog and start learning
 4. **Track progress** - Monitor your completion and quiz scores

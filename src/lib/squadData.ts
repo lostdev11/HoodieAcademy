@@ -51,6 +51,15 @@ export const squadTracks: SquadTrack[] = [
     icon: '⚔️'
   },
   {
+    id: 'rangers',
+    name: 'Hoodie Rangers',
+    color: 'text-purple-400',
+    borderColor: 'border-purple-500/50',
+    bgColor: 'bg-purple-500/10',
+    description: 'Versatile generalists who want a bit of everything',
+    icon: '🦅'
+  },
+  {
     id: 'treasury',
     name: 'Treasury Builders',
     color: 'text-green-400',

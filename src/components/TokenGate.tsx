@@ -12,11 +12,10 @@ interface TokenGateProps {
 declare global {
   interface Window {
     solana?: any;
-    solflare?: any;
   }
 }
 
-type WalletProvider = 'phantom' | 'solflare';
+type WalletProvider = 'phantom';
 
 const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -46,6 +45,7 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
             setWalletAddress(sessionWallet);
             setIsHolder(true);
             setHasBeenConnected(true);
+            setShowSuccess(false); // Ensure success message is not shown for existing sessions
             console.log('Using existing verification session');
             return; // Exit early if we have a valid session
           } else {
@@ -84,13 +84,6 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         setError("Phantom wallet is not installed.");
         return;
       }
-    } else if (providerName === 'solflare') {
-      if (window.solflare?.isSolflare) {
-        provider = window.solflare;
-      } else {
-        setError("Solflare wallet is not installed.");
-        return;
-      }
     }
 
     if (!provider) {
@@ -126,12 +119,9 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
     if (window.solana?.disconnect) {
       window.solana.disconnect();
     }
-    if (window.solflare?.disconnect) {
-      window.solflare.disconnect();
-    }
   };
 
-  const checkWifHoodieOwnership = async () => {
+  const checkWifHoodieOwnership = async (showSuccessMessage: boolean = true) => {
     if (!walletAddress) return;
     setLoading(true);
     setError(null);
@@ -197,10 +187,25 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         localStorage.setItem('walletAddress', walletAddress);
         localStorage.setItem('connectedWallet', walletAddress);
         
-        setShowSuccess(true);
         setHasBeenConnected(true);
-        // Hide success message after 2 seconds and show courses
-        setTimeout(() => setShowSuccess(false), 2000);
+        // Only show success message for fresh verifications
+        if (showSuccessMessage) {
+          // Check if user needs to complete onboarding
+          const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
+          const hasDisplayName = localStorage.getItem('userDisplayName');
+          
+          if (!hasCompletedOnboarding || !hasDisplayName) {
+            // Redirect to onboarding for new users
+            setTimeout(() => {
+              window.location.href = '/onboarding';
+            }, 2000);
+          } else {
+            // Existing user - show success message
+            setShowSuccess(true);
+            // Hide success message after 2 seconds
+            setTimeout(() => setShowSuccess(false), 2000);
+          }
+        }
       }
     } catch (error: any) {
       console.error("NFT check failed:", error);
@@ -211,7 +216,9 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
 
   useEffect(() => {
     if (walletAddress) {
-      checkWifHoodieOwnership();
+      // Only show success message if this is a fresh verification (not from existing session)
+      const isFreshVerification = !sessionStorage.getItem(VERIFICATION_SESSION_KEY);
+      checkWifHoodieOwnership(isFreshVerification);
     }
   }, [walletAddress]);
 
@@ -225,6 +232,11 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
   }
 
   if (walletAddress && !loading && isHolder && showSuccess) {
+    // Check if this is a new user
+    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
+    const hasDisplayName = localStorage.getItem('userDisplayName');
+    const isNewUser = !hasCompletedOnboarding || !hasDisplayName;
+    
     return (
       <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900">
         <motion.div
@@ -238,7 +250,11 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
             WifHoodie NFT verified in wallet: <br/>
             <span className="font-mono text-xs text-amber-300">{walletAddress}</span>
           </p>
-          <p className="text-green-300">Access granted to Hoodie Academy courses!</p>
+          {isNewUser ? (
+            <p className="text-cyan-300">Redirecting to complete your profile setup...</p>
+          ) : (
+            <p className="text-green-300">Access granted to Hoodie Academy courses!</p>
+          )}
         </motion.div>
       </div>
     );
@@ -320,12 +336,6 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
                 className="bg-purple-600 hover:bg-purple-700 text-white w-64"
              >
                 Connect Phantom
-             </Button>
-             <Button
-                onClick={() => connectWallet('solflare')}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white w-64"
-             >
-                Connect Solflare
              </Button>
              <Button variant="ghost" onClick={() => setShowWalletSelector(false)} className="text-gray-400">
                 Cancel

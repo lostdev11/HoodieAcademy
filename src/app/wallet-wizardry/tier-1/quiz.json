@@ -1,0 +1,12 @@
+[
+  {
+    "question": "What does a crypto wallet store?",
+    "options": ["Your crypto", "Blockchain code", "Private key", "Your email"],
+    "correct": 2
+  },
+  {
+    "question": "Which is more secure but less convenient?",
+    "options": ["Hardware wallet", "Software wallet", "Browser wallet", "Mobile wallet"],
+    "correct": 0
+  }
+] 

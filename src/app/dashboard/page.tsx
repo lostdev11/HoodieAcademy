@@ -127,6 +127,8 @@ export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
   const [overallProgress, setOverallProgress] = useState(65);
+  const [showProfileSuggestion, setShowProfileSuggestion] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -134,6 +136,23 @@ export default function DashboardPage() {
       setCurrentTime(new Date().toLocaleTimeString());
     }, 1000);
     return () => clearInterval(timerId);
+  }, []);
+
+  useEffect(() => {
+    // Check for profile suggestions and onboarding status
+    const suggestDisplayName = localStorage.getItem('suggestDisplayName');
+    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+    const placementTestCompleted = localStorage.getItem('placementTestCompleted');
+    
+    setShowProfileSuggestion(suggestDisplayName === 'true');
+    setHasCompletedOnboarding(onboardingCompleted === 'true');
+    
+    // Clear the suggestion flag if user has set a display name
+    const displayName = localStorage.getItem('userDisplayName');
+    if (displayName && suggestDisplayName === 'true') {
+      localStorage.removeItem('suggestDisplayName');
+      setShowProfileSuggestion(false);
+    }
   }, []);
 
   const getPriorityColor = (priority: string) => {
@@ -184,6 +203,46 @@ export default function DashboardPage() {
 
           {/* Dashboard Content */}
           <main className="flex-1 p-6 space-y-6">
+            {/* Profile Suggestions */}
+            {showProfileSuggestion && (
+              <Card className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500/30">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <AlertCircle className="w-6 h-6 text-orange-400" />
+                      <div>
+                        <h3 className="text-lg font-semibold text-orange-400">Complete Your Profile</h3>
+                        <p className="text-gray-300">You've completed the squad placement test! Set a display name to personalize your experience.</p>
+                      </div>
+                    </div>
+                    <Button
+                      asChild
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      <Link href="/profile">
+                        Set Display Name
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Welcome Message for New Users */}
+            {hasCompletedOnboarding && !showProfileSuggestion && (
+              <Card className="bg-gradient-to-r from-green-500/20 to-cyan-500/20 border-green-500/30">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-green-400" />
+                    <div>
+                      <h3 className="text-lg font-semibold text-green-400">Welcome to Hoodie Academy!</h3>
+                      <p className="text-gray-300">Your profile setup is complete. Start exploring courses and join your squad community!</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <Card className="bg-slate-800/50 border-cyan-500/30">

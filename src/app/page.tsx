@@ -18,11 +18,15 @@ import {
   AlertCircle,
   Trophy,
   LogOut,
-  User
+  User,
+  Users,
+  Shield
 } from "lucide-react"
 import Link from "next/link"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import TokenGate from "@/components/TokenGate"
+import SquadBadge from "@/components/SquadBadge"
+import { getUserRank, getUserScore, isCurrentUserAdmin } from '@/lib/utils'
 
 interface Announcement {
   id: string;
@@ -131,12 +135,57 @@ export default function HoodieAcademy() {
   const [currentTime, setCurrentTime] = useState<string>("");
   const [overallProgress, setOverallProgress] = useState(65);
   const [walletAddress, setWalletAddress] = useState<string>("");
+  const [userSquad, setUserSquad] = useState<string | null>(null);
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
+  const [userRank, setUserRank] = useState<number>(-1);
+  const [userScore, setUserScore] = useState<number>(0);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     // Get wallet address from localStorage
     const storedWallet = localStorage.getItem('walletAddress');
     if (storedWallet) {
       setWalletAddress(storedWallet);
+    }
+
+    // Check if user is admin
+    setIsAdmin(isCurrentUserAdmin());
+
+    // Get squad placement result
+    const squadResult = localStorage.getItem('userSquad');
+    if (squadResult) {
+      try {
+        const result = JSON.parse(squadResult);
+        setUserSquad(result.name);
+      } catch (error) {
+        console.error('Error parsing squad result:', error);
+      }
+    }
+
+    // Check if user needs to complete onboarding
+    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
+    const hasDisplayName = localStorage.getItem('userDisplayName');
+    
+    if (storedWallet && (!hasCompletedOnboarding || !hasDisplayName)) {
+      // Redirect to onboarding if wallet is connected but onboarding is not complete
+      window.location.href = '/onboarding';
+    }
+    
+    // Show welcome message for new users who just completed onboarding
+    const justCompletedOnboarding = sessionStorage.getItem('justCompletedOnboarding');
+    if (justCompletedOnboarding === 'true') {
+      setShowWelcomeMessage(true);
+      sessionStorage.removeItem('justCompletedOnboarding');
+      // Hide welcome message after 5 seconds
+      setTimeout(() => setShowWelcomeMessage(false), 5000);
+    }
+
+    // Load leaderboard data for current user
+    if (storedWallet) {
+      const rank = getUserRank(storedWallet);
+      const score = getUserScore(storedWallet);
+      setUserRank(rank);
+      setUserScore(score);
     }
   }, []);
 
@@ -176,16 +225,8 @@ export default function HoodieAcademy() {
     sessionStorage.removeItem('wifhoodie_verification_session');
     
     // Disconnect from wallet providers
-    if (typeof window !== 'undefined') {
-      if (window.solana?.disconnect) {
-        window.solana.disconnect();
-      }
-      if (window.solflare?.disconnect) {
-        window.solflare.disconnect();
-      }
-      if (window.ethereum?.disconnect) {
-        window.ethereum.disconnect();
-      }
+    if (window.solana?.disconnect) {
+      window.solana.disconnect();
     }
     
     // Clear the wallet address state to trigger re-render
@@ -214,9 +255,18 @@ export default function HoodieAcademy() {
           {/* Header */}
           <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-cyan-400">Welcome to Hoodie Academy</h1>
-                <p className="text-gray-300">Your Web3 learning journey starts here!</p>
+              <div className="flex items-center space-x-6">
+                <div>
+                  <h1 className="text-3xl font-bold text-cyan-400">Welcome to Hoodie Academy</h1>
+                  <p className="text-gray-300">Your Web3 learning journey starts here!</p>
+                </div>
+                
+                {/* Squad Badge */}
+                {userSquad && (
+                  <div className="hidden md:block">
+                    <SquadBadge squad={userSquad.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '')} />
+                  </div>
+                )}
               </div>
               <div className="flex items-center space-x-4">
                 {/* Wallet Info */}
@@ -251,8 +301,37 @@ export default function HoodieAcademy() {
 
           {/* Dashboard Content */}
           <main className="flex-1 p-6 space-y-6">
+            {/* Welcome Message for New Users */}
+            {showWelcomeMessage && (
+              <Card className="bg-gradient-to-r from-green-500/20 to-cyan-500/20 border-green-500/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-3 bg-green-500/20 rounded-full">
+                      <Trophy className="w-8 h-8 text-green-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-green-400 mb-2">
+                        Welcome to Hoodie Academy! 🎉
+                      </h3>
+                      <p className="text-gray-300">
+                        Your profile is set up and you're ready to start your Web3 learning journey. 
+                        Explore the courses below and begin your path to becoming a Hoodie Scholar!
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowWelcomeMessage(false)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <Card className="bg-slate-800/50 border-cyan-500/30">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
@@ -295,6 +374,22 @@ export default function HoodieAcademy() {
                 </CardContent>
               </Card>
 
+              <Card className="bg-slate-800/50 border-yellow-500/30">
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-yellow-500/20 rounded-lg">
+                      <Trophy className="w-6 h-6 text-yellow-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-400">Your Rank</p>
+                      <p className="text-2xl font-bold text-yellow-400">
+                        {userRank > 0 ? `#${userRank}` : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card className="bg-slate-800/50 border-pink-500/30">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-3">
@@ -302,13 +397,107 @@ export default function HoodieAcademy() {
                       <Video className="w-6 h-6 text-pink-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">Hours Watched</p>
-                      <p className="text-2xl font-bold text-pink-400">12.5</p>
+                      <p className="text-sm text-gray-400">Total Score</p>
+                      <p className="text-2xl font-bold text-pink-400">{userScore.toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Admin Dashboard Access */}
+            {isAdmin && (
+              <Card className="bg-slate-800/50 border-purple-500/30 mb-6">
+                <CardHeader>
+                  <CardTitle className="text-purple-400 flex items-center space-x-2">
+                    <Shield className="w-5 h-5" />
+                    <span>Admin Dashboard</span>
+                    <Badge variant="outline" className="ml-auto text-purple-400 border-purple-500/30">
+                      Admin Access
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-300 mb-2">
+                        Manage users, approve exams, and monitor course progress.
+                      </p>
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-purple-400">Full admin privileges</span>
+                      </div>
+                    </div>
+                    <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
+                      <Link href="/admin">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Access Dashboard
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Squad Placement Test */}
+            <Card className="bg-slate-800/50 border-cyan-500/30 mb-6">
+              <CardHeader>
+                <CardTitle className="text-cyan-400 flex items-center space-x-2">
+                  <User className="w-5 h-5" />
+                  <span>Find Your Squad</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-300 mb-2">
+                      Take our personality test to discover which Hoodie squad aligns with your skills and interests!
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      <Badge variant="outline" className="text-yellow-400 border-yellow-500/30">🎨 Creators</Badge>
+                      <Badge variant="outline" className="text-gray-300 border-gray-500/30">🧠 Decoders</Badge>
+                      <Badge variant="outline" className="text-red-400 border-red-500/30">🎤 Speakers</Badge>
+                      <Badge variant="outline" className="text-blue-400 border-blue-500/30">⚔️ Raiders</Badge>
+                      <Badge variant="outline" className="text-purple-400 border-purple-500/30">🦅 Rangers</Badge>
+                    </div>
+                  </div>
+                  <Button asChild className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700">
+                    <Link href="/placement/squad-test">Take Test</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Squad Chat */}
+            {userSquad && (
+              <Card className="bg-slate-800/50 border-green-500/30 mb-6">
+                <CardHeader>
+                  <CardTitle className="text-green-400 flex items-center space-x-2">
+                    <Users className="w-5 h-5" />
+                    <span>Your Squad Chat</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-300 mb-2">
+                        Connect with your {userSquad} squad members in real-time.
+                      </p>
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span className="text-sm text-green-400">Live messaging</span>
+                      </div>
+                    </div>
+                    <Button asChild className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
+                      <Link href={`/squads/${userSquad}/chat`}>
+                        <Users className="w-4 h-4 mr-2" />
+                        Join Chat
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Leaderboard Preview */}

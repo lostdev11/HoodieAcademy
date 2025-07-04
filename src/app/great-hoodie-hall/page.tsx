@@ -151,11 +151,6 @@ const categorizedResources: ChainResources[] = [
         url: "https://phantom.app",
       },
       {
-        name: "Solflare",
-        description: "Solana wallet with staking and hardware support.",
-        url: "https://solflare.com",
-      },
-      {
         name: "Magic Eden",
         description: "Solana's top NFT marketplace with cross-chain support.",
         url: "https://magiceden.io",
@@ -291,15 +286,12 @@ export default function GreatHoodieHall() {
       if (selectedWallet === "Phantom" && solana && solana.isPhantom) {
         const response = await solana.connect();
         setWalletAddress(response.publicKey.toString());
-      } else if (selectedWallet === "Solflare" && solana && solana.isSolflare) {
-        const response = await solana.connect();
-        setWalletAddress(response.publicKey.toString());
       } else if (selectedWallet === "MagicEden" && solana) {
-        if (solana.isPhantom || solana.isSolflare || solana.isBackpack ) {
+        if (solana.isPhantom || solana.isBackpack ) {
             const response = await solana.connect();
             setWalletAddress(response.publicKey.toString());
         } else {
-            alert("Compatible Solana wallet (like Phantom or Solflare) needed for Magic Eden connection not found.");
+            alert("Compatible Solana wallet (like Phantom) needed for Magic Eden connection not found.");
         }
       } else {
         alert(`Please install or select a compatible ${selectedWallet} wallet!`);

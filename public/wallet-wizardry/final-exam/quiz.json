@@ -1,0 +1,277 @@
+{
+  "title": "Wallet Wizardry Final Exam",
+  "description": "Test your mastery of wallet security, setup, and best practices",
+  "passingScore": 80,
+  "questions": [
+    {
+      "id": "q1",
+      "text": "What is the primary purpose of a crypto wallet?",
+      "options": [
+        {
+          "id": "a",
+          "text": "To store cryptocurrency physically",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "To store private keys that control crypto assets",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "To connect to exchanges",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "To mine cryptocurrency",
+          "correct": false
+        }
+      ],
+      "explanation": "A crypto wallet stores private keys, not the actual cryptocurrency. The private key gives you control over your assets on the blockchain."
+    },
+    {
+      "id": "q2",
+      "text": "Which type of wallet is considered more secure for long-term storage?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Hot wallet (software wallet)",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Cold wallet (hardware wallet)",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "Exchange wallet",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Mobile wallet",
+          "correct": false
+        }
+      ],
+      "explanation": "Hardware wallets (cold wallets) are more secure because they keep private keys offline and are not connected to the internet."
+    },
+    {
+      "id": "q3",
+      "text": "What is the most secure way to store your seed phrase?",
+      "options": [
+        {
+          "id": "a",
+          "text": "In a password manager",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "On your computer's desktop",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "Written down offline and stored in multiple secure locations",
+          "correct": true
+        },
+        {
+          "id": "d",
+          "text": "Shared with a trusted friend",
+          "correct": false
+        }
+      ],
+      "explanation": "Storing your seed phrase offline on paper in multiple secure locations is the most secure method."
+    },
+    {
+      "id": "q4",
+      "text": "What should you do if you receive an unsolicited DM promising free crypto?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Connect your wallet immediately",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Share your seed phrase to verify",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "Ignore it and report as spam",
+          "correct": true
+        },
+        {
+          "id": "d",
+          "text": "Send them some crypto first",
+          "correct": false
+        }
+      ],
+      "explanation": "Unsolicited offers of free crypto are almost always scams. Never connect your wallet or share private information."
+    },
+    {
+      "id": "q5",
+      "text": "What is the first step in setting up MetaMask?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Buy cryptocurrency",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Install the browser extension",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "Connect to an exchange",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Share your seed phrase",
+          "correct": false
+        }
+      ],
+      "explanation": "The first step is to install the MetaMask browser extension or mobile app."
+    },
+    {
+      "id": "q6",
+      "text": "What is a common sign of a phishing website?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Professional design and fast loading",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Slightly misspelled URL of a legitimate service",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "Clear contact information",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "SSL certificate (HTTPS)",
+          "correct": false
+        }
+      ],
+      "explanation": "Scammers often use URLs that are very similar to legitimate ones, hoping users won't notice the slight difference."
+    },
+    {
+      "id": "q7",
+      "text": "What is multi-signature (multi-sig) security?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Using multiple wallets",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Requiring multiple approvals for transactions",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "Having multiple seed phrases",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Using multiple exchanges",
+          "correct": false
+        }
+      ],
+      "explanation": "Multi-signature wallets require multiple private keys to approve transactions, adding an extra layer of security."
+    },
+    {
+      "id": "q8",
+      "text": "What should you always do before connecting your wallet to a dApp?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Share your seed phrase",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Verify the website URL and reputation",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "Transfer all your assets",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "Disconnect from other dApps",
+          "correct": false
+        }
+      ],
+      "explanation": "Always verify the website URL and check the dApp's reputation before connecting your wallet."
+    },
+    {
+      "id": "q9",
+      "text": "What is the purpose of a testnet?",
+      "options": [
+        {
+          "id": "a",
+          "text": "To earn real cryptocurrency",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "To test dApps without using real funds",
+          "correct": true
+        },
+        {
+          "id": "c",
+          "text": "To mine cryptocurrency faster",
+          "correct": false
+        },
+        {
+          "id": "d",
+          "text": "To avoid taxes",
+          "correct": false
+        }
+      ],
+      "explanation": "Testnets allow you to test dApps and transactions without using real cryptocurrency or risking real funds."
+    },
+    {
+      "id": "q10",
+      "text": "What is the best practice for wallet security?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Use the same password everywhere",
+          "correct": false
+        },
+        {
+          "id": "b",
+          "text": "Keep all funds in one wallet",
+          "correct": false
+        },
+        {
+          "id": "c",
+          "text": "Diversify across multiple wallets and use strong security measures",
+          "correct": true
+        },
+        {
+          "id": "d",
+          "text": "Share access with trusted friends",
+          "correct": false
+        }
+      ],
+      "explanation": "Diversifying across multiple wallets and using strong security measures like hardware wallets and multi-sig is the best practice."
+    }
+  ]
+} 
