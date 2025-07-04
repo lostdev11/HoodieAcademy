@@ -16,7 +16,7 @@ import { GlowingCoinIcon } from "@/components/icons/GlowingCoinIcon";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { squadTracks, getSquadForCourse, getCoursesForSquad } from "@/lib/squadData";
-import { isCurrentUserAdmin } from "@/lib/utils";
+import { isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet } from "@/lib/utils";
 
 // Simple course data
 const allCourses: Array<{
@@ -114,6 +114,7 @@ export default function CoursesPage() {
   const [selectedSquad, setSelectedSquad] = useState<string | null>(null);
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isDemoWallet, setIsDemoWallet] = useState(false);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -127,12 +128,25 @@ export default function CoursesPage() {
     // Check if user is admin
     setIsAdmin(isCurrentUserAdmin());
 
+    // Check if this is the demo wallet
+    const connectedWallet = getConnectedWallet();
+    if (connectedWallet && connectedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
+      setIsDemoWallet(true);
+    }
+
     // Get user's squad assignment
     const squadResult = localStorage.getItem('userSquad');
     if (squadResult) {
       try {
         const result = JSON.parse(squadResult);
-        setUserSquad(result.id || result);
+        // Handle both object and string formats
+        if (typeof result === 'object' && result.id) {
+          setUserSquad(result.id);
+        } else if (typeof result === 'object' && result.name) {
+          setUserSquad(result.name);
+        } else if (typeof result === 'string') {
+          setUserSquad(result);
+        }
       } catch (error) {
         setUserSquad(squadResult);
       }
@@ -234,7 +248,8 @@ export default function CoursesPage() {
     let filteredCourses = allCourses;
 
     // If user is not admin and has a squad, filter by squad
-    if (!isAdmin && !isAdminBypass && userSquad) {
+    // Demo wallet should be treated as a regular user (no admin bypass)
+    if (!isAdmin && !isAdminBypass && userSquad && !isDemoWallet) {
       const squadCourseIds = getCoursesForSquad(userSquad);
       filteredCourses = allCourses.filter(course => squadCourseIds.includes(course.id));
     }
@@ -310,7 +325,10 @@ export default function CoursesPage() {
                       <div className="text-center">
                         <p className="text-yellow-400 font-semibold">Your Squad Track</p>
                         <p className="text-gray-300 text-sm">
-                          {squadTracks.find(s => s.id === userSquad)?.name || userSquad}
+                          {typeof userSquad === 'string' 
+                            ? (squadTracks.find(s => s.id === userSquad)?.name || userSquad)
+                            : 'Unknown Squad'
+                          }
                         </p>
                       </div>
                     </div>
@@ -320,7 +338,7 @@ export default function CoursesPage() {
             )}
 
             {/* Admin Access Notice */}
-            {isAdmin && (
+            {isAdmin && !isDemoWallet && (
               <div className="mt-6">
                 <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-purple-500/30 backdrop-blur-sm">
                   <CardContent className="p-4">
@@ -329,6 +347,23 @@ export default function CoursesPage() {
                       <div className="text-center">
                         <p className="text-purple-400 font-semibold">Admin Access</p>
                         <p className="text-gray-300 text-sm">Password authenticated - viewing all courses</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Demo Wallet Notice */}
+            {isDemoWallet && (
+              <div className="mt-6">
+                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-yellow-500/30 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-center space-x-3">
+                      <span className="text-yellow-400 text-lg">🔧</span>
+                      <div className="text-center">
+                        <p className="text-yellow-400 font-semibold">Demo Mode Active</p>
+                        <p className="text-gray-300 text-sm">Admin access disabled - viewing all courses for testing</p>
                       </div>
                     </div>
                   </CardContent>

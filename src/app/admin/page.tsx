@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { isCurrentUserAdmin, isAdminPassword, setAdminAuthenticated } from '@/lib/utils';
+import { isCurrentUserAdmin, isAdminPassword, setAdminAuthenticated, DEMO_WALLET, removeDemoWalletAdminAccess, getConnectedWallet } from '@/lib/utils';
 
 // Admin authentication is now password-based
 
@@ -78,10 +78,12 @@ export default function AdminDashboard() {
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [isDemoWallet, setIsDemoWallet] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     checkAdminAccess();
+    checkDemoWallet();
   }, []);
 
   const checkAdminAccess = () => {
@@ -104,6 +106,15 @@ export default function AdminDashboard() {
       setShowPasswordInput(true);
     } finally {
       setCheckingAuth(false);
+    }
+  };
+
+  const checkDemoWallet = () => {
+    const connectedWallet = getConnectedWallet();
+    if (connectedWallet && connectedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
+      setIsDemoWallet(true);
+      // Automatically remove admin access for demo wallet
+      removeDemoWalletAdminAccess();
     }
   };
 
@@ -496,6 +507,41 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Demo Wallet Warning Banner */}
+        {isDemoWallet && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-yellow-900/50 to-orange-900/50 border border-yellow-500/30 rounded-lg shadow-[0_0_20px_rgba(234,179,8,0.3)]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-6 h-6 text-yellow-400" />
+                <div>
+                  <h3 className="text-lg font-semibold text-yellow-400">Demo Wallet Detected</h3>
+                  <p className="text-yellow-200 text-sm">
+                    You are using the demo wallet ({DEMO_WALLET.slice(0, 6)}...{DEMO_WALLET.slice(-4)}). 
+                    Admin access has been automatically removed to allow live data testing.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className="border-yellow-500 text-yellow-400">
+                  Demo Mode
+                </Badge>
+                <Button
+                  onClick={() => {
+                    removeDemoWalletAdminAccess();
+                    setIsDemoWallet(false);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/10"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh Status
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">

@@ -101,6 +101,9 @@ export const getUserScore = (walletAddress: string): number => {
 // Admin password - in production, this would be stored securely and hashed
 export const ADMIN_PASSWORD = "darkhoodie2024";
 
+// Demo wallet that should NOT have admin access (for live data testing)
+export const DEMO_WALLET = "JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU";
+
 // Check if a password is correct for admin access
 export function isAdminPassword(password: string): boolean {
   return password === ADMIN_PASSWORD;
@@ -111,6 +114,13 @@ export function isCurrentUserAdmin(): boolean {
   if (typeof window === 'undefined') return false;
   
   const adminSession = sessionStorage.getItem('adminAuthenticated');
+  const connectedWallet = getConnectedWallet();
+  
+  // If user is using demo wallet, they should NOT have admin access
+  if (connectedWallet && connectedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
+    return false;
+  }
+  
   return adminSession === 'true';
 }
 
@@ -118,10 +128,29 @@ export function isCurrentUserAdmin(): boolean {
 export function setAdminAuthenticated(authenticated: boolean): void {
   if (typeof window === 'undefined') return;
   
+  const connectedWallet = getConnectedWallet();
+  
+  // Prevent demo wallet from getting admin access
+  if (connectedWallet && connectedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
+    console.log('Demo wallet detected - admin access denied for live data testing');
+    return;
+  }
+  
   if (authenticated) {
     sessionStorage.setItem('adminAuthenticated', 'true');
   } else {
     sessionStorage.removeItem('adminAuthenticated');
+  }
+}
+
+// Force remove admin access for demo wallet
+export function removeDemoWalletAdminAccess(): void {
+  if (typeof window === 'undefined') return;
+  
+  const connectedWallet = getConnectedWallet();
+  if (connectedWallet && connectedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
+    sessionStorage.removeItem('adminAuthenticated');
+    console.log('Admin access removed for demo wallet');
   }
 }
 
