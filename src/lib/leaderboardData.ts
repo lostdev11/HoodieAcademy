@@ -38,481 +38,77 @@ export interface CourseProgress {
   totalQuizzes: number;
 }
 
-// Mock leaderboard data - in production this would come from a database
-export const mockLeaderboardData: LeaderboardUser[] = [
-  {
-    walletAddress: "JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU",
-    displayName: "HoodieScholar",
-    rank: 1,
-    totalScore: 2850,
-    coursesCompleted: 6,
-    totalLessons: 22,
-    totalQuizzes: 18,
-    averageQuizScore: 94.2,
-    badgesEarned: 6,
-    joinDate: "2024-01-15",
-    lastActive: "2024-12-19T10:30:00Z",
-    squad: "hoodie-creators",
-    achievements: [
-      {
-        id: "first-course",
-        name: "First Steps",
-        description: "Completed your first course",
-        icon: "🎯",
-        earnedDate: "2024-01-20",
-        points: 100
-      },
-      {
-        id: "perfect-score",
-        name: "Perfect Score",
-        description: "Achieved 100% on a quiz",
-        icon: "⭐",
-        earnedDate: "2024-02-15",
-        points: 200
-      }
-    ],
-    courseProgress: [
-      {
-        courseId: "wallet-wizardry",
-        courseName: "Wallet Wizardry",
-        progress: 100,
-        score: 95,
-        completed: true,
-        completedDate: "2024-01-20",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "nft-mastery",
-        courseName: "NFT Mastery",
-        progress: 100,
-        score: 92,
-        completed: true,
-        completedDate: "2024-02-10",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "meme-coin-mania",
-        courseName: "Meme Coin Mania",
-        progress: 100,
-        score: 98,
-        completed: true,
-        completedDate: "2024-03-05",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "community-strategy",
-        courseName: "Community Strategy",
-        progress: 100,
-        score: 89,
-        completed: true,
-        completedDate: "2024-04-12",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "sns",
-        courseName: "SNS Simplified",
-        progress: 100,
-        score: 96,
-        completed: true,
-        completedDate: "2024-05-20",
-        lessonsCompleted: 2,
-        totalLessons: 2,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "technical-analysis",
-        courseName: "Technical Analysis Tactics",
-        progress: 100,
-        score: 91,
-        completed: true,
-        completedDate: "2024-06-15",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      }
-    ]
-  },
-  {
-    walletAddress: "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM",
-    displayName: "CryptoNinja",
-    rank: 2,
-    totalScore: 2720,
-    coursesCompleted: 5,
-    totalLessons: 18,
-    totalQuizzes: 15,
-    averageQuizScore: 91.8,
-    badgesEarned: 5,
-    joinDate: "2024-02-01",
-    lastActive: "2024-12-19T09:15:00Z",
-    squad: "hoodie-creators",
-    achievements: [
-      {
-        id: "speed-learner",
-        name: "Speed Learner",
-        description: "Completed 3 courses in one week",
-        icon: "⚡",
-        earnedDate: "2024-03-10",
-        points: 300
-      }
-    ],
-    courseProgress: [
-      {
-        courseId: "wallet-wizardry",
-        courseName: "Wallet Wizardry",
-        progress: 100,
-        score: 88,
-        completed: true,
-        completedDate: "2024-02-10",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "nft-mastery",
-        courseName: "NFT Mastery",
-        progress: 100,
-        score: 95,
-        completed: true,
-        completedDate: "2024-03-05",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "meme-coin-mania",
-        courseName: "Meme Coin Mania",
-        progress: 100,
-        score: 92,
-        completed: true,
-        completedDate: "2024-04-01",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "community-strategy",
-        courseName: "Community Strategy",
-        progress: 100,
-        score: 89,
-        completed: true,
-        completedDate: "2024-05-15",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "sns",
-        courseName: "SNS Simplified",
-        progress: 100,
-        score: 94,
-        completed: true,
-        completedDate: "2024-06-10",
-        lessonsCompleted: 2,
-        totalLessons: 2,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "technical-analysis",
-        courseName: "Technical Analysis Tactics",
-        progress: 75,
-        score: 0,
-        completed: false,
-        lessonsCompleted: 3,
-        totalLessons: 4,
-        quizzesPassed: 0,
-        totalQuizzes: 1
-      }
-    ]
-  },
-  {
-    walletAddress: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
-    displayName: "Web3Wizard",
-    rank: 3,
-    totalScore: 2580,
-    coursesCompleted: 4,
-    totalLessons: 16,
-    totalQuizzes: 12,
-    averageQuizScore: 89.5,
-    badgesEarned: 4,
-    joinDate: "2024-01-20",
-    lastActive: "2024-12-19T08:45:00Z",
-    squad: "hoodie-creators",
-    achievements: [
-      {
-        id: "consistency",
-        name: "Consistency King",
-        description: "Logged in for 30 consecutive days",
-        icon: "🔥",
-        earnedDate: "2024-04-20",
-        points: 250
-      }
-    ],
-    courseProgress: [
-      {
-        courseId: "wallet-wizardry",
-        courseName: "Wallet Wizardry",
-        progress: 100,
-        score: 90,
-        completed: true,
-        completedDate: "2024-02-05",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "nft-mastery",
-        courseName: "NFT Mastery",
-        progress: 100,
-        score: 87,
-        completed: true,
-        completedDate: "2024-03-20",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "meme-coin-mania",
-        courseName: "Meme Coin Mania",
-        progress: 100,
-        score: 93,
-        completed: true,
-        completedDate: "2024-05-01",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "community-strategy",
-        courseName: "Community Strategy",
-        progress: 100,
-        score: 85,
-        completed: true,
-        completedDate: "2024-06-05",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "sns",
-        courseName: "SNS Simplified",
-        progress: 50,
-        score: 0,
-        completed: false,
-        lessonsCompleted: 1,
-        totalLessons: 2,
-        quizzesPassed: 0,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "technical-analysis",
-        courseName: "Technical Analysis Tactics",
-        progress: 25,
-        score: 0,
-        completed: false,
-        lessonsCompleted: 1,
-        totalLessons: 4,
-        quizzesPassed: 0,
-        totalQuizzes: 1
-      }
-    ]
-  },
-  {
-    walletAddress: "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
-    displayName: "DeFiDragon",
-    rank: 4,
-    totalScore: 2450,
-    coursesCompleted: 4,
-    totalLessons: 14,
-    totalQuizzes: 10,
-    averageQuizScore: 87.2,
-    badgesEarned: 4,
-    joinDate: "2024-02-10",
-    lastActive: "2024-12-19T07:30:00Z",
-    squad: "hoodie-creators",
-    achievements: [],
-    courseProgress: [
-      {
-        courseId: "wallet-wizardry",
-        courseName: "Wallet Wizardry",
-        progress: 100,
-        score: 85,
-        completed: true,
-        completedDate: "2024-03-01",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "nft-mastery",
-        courseName: "NFT Mastery",
-        progress: 100,
-        score: 89,
-        completed: true,
-        completedDate: "2024-04-10",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "meme-coin-mania",
-        courseName: "Meme Coin Mania",
-        progress: 100,
-        score: 91,
-        completed: true,
-        completedDate: "2024-05-20",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "community-strategy",
-        courseName: "Community Strategy",
-        progress: 100,
-        score: 83,
-        completed: true,
-        completedDate: "2024-06-25",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "sns",
-        courseName: "SNS Simplified",
-        progress: 0,
-        score: 0,
-        completed: false,
-        lessonsCompleted: 0,
-        totalLessons: 2,
-        quizzesPassed: 0,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "technical-analysis",
-        courseName: "Technical Analysis Tactics",
-        progress: 0,
-        score: 0,
-        completed: false,
-        lessonsCompleted: 0,
-        totalLessons: 4,
-        quizzesPassed: 0,
-        totalQuizzes: 1
-      }
-    ]
-  },
-  {
-    walletAddress: "3xNweLHLqrxN9QwHqJqkqJqkqJqkqJqkqJqkqJqkqJqk",
-    displayName: "BlockchainBabe",
-    rank: 5,
-    totalScore: 2320,
-    coursesCompleted: 3,
-    totalLessons: 12,
-    totalQuizzes: 8,
-    averageQuizScore: 84.8,
-    badgesEarned: 3,
-    joinDate: "2024-03-01",
-    lastActive: "2024-12-19T06:15:00Z",
-    squad: "hoodie-creators",
-    achievements: [],
-    courseProgress: [
-      {
-        courseId: "wallet-wizardry",
-        courseName: "Wallet Wizardry",
-        progress: 100,
-        score: 82,
-        completed: true,
-        completedDate: "2024-03-15",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "nft-mastery",
-        courseName: "NFT Mastery",
-        progress: 100,
-        score: 86,
-        completed: true,
-        completedDate: "2024-04-25",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "meme-coin-mania",
-        courseName: "Meme Coin Mania",
-        progress: 100,
-        score: 88,
-        completed: true,
-        completedDate: "2024-06-01",
-        lessonsCompleted: 4,
-        totalLessons: 4,
-        quizzesPassed: 1,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "community-strategy",
-        courseName: "Community Strategy",
-        progress: 50,
-        score: 0,
-        completed: false,
-        lessonsCompleted: 2,
-        totalLessons: 4,
-        quizzesPassed: 0,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "sns",
-        courseName: "SNS Simplified",
-        progress: 0,
-        score: 0,
-        completed: false,
-        lessonsCompleted: 0,
-        totalLessons: 2,
-        quizzesPassed: 0,
-        totalQuizzes: 1
-      },
-      {
-        courseId: "technical-analysis",
-        courseName: "Technical Analysis Tactics",
-        progress: 0,
-        score: 0,
-        completed: false,
-        lessonsCompleted: 0,
-        totalLessons: 4,
-        quizzesPassed: 0,
-        totalQuizzes: 1
-      }
-    ]
+// Real data functions - get data from localStorage
+export const getRealLeaderboardData = (): LeaderboardUser[] => {
+  const userProgress = localStorage.getItem('userProgress');
+  const userProfiles = localStorage.getItem('userProfiles');
+  
+  if (!userProgress) return [];
+  
+  try {
+    const progress = JSON.parse(userProgress);
+    const profiles = userProfiles ? JSON.parse(userProfiles) : {};
+    
+    return Object.entries(progress).map(([walletAddress, userData]: [string, any]) => {
+      const profile = profiles[walletAddress] || {};
+      const courses = userData.courses || {};
+      
+      // Calculate stats from real data
+      const completedCourses = Object.values(courses).filter((course: any) => 
+        course.progress && course.progress.every((p: string) => p === 'completed')
+      ).length;
+      
+      const totalLessons = Object.values(courses).reduce((total: number, course: any) => 
+        total + (course.progress?.length || 0), 0
+      );
+      
+      const totalQuizzes = Object.values(courses).filter((course: any) => 
+        course.finalExam?.taken
+      ).length;
+      
+      const quizScores = Object.values(courses)
+        .filter((course: any) => course.finalExam?.score)
+        .map((course: any) => course.finalExam.score);
+      
+      const averageQuizScore = quizScores.length > 0 
+        ? quizScores.reduce((sum, score) => sum + score, 0) / quizScores.length 
+        : 0;
+      
+      const courseProgress = Object.entries(courses).map(([courseId, courseData]: [string, any]) => ({
+        courseId,
+        courseName: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        progress: courseData.progress ? (courseData.progress.filter((p: string) => p === 'completed').length / courseData.progress.length) * 100 : 0,
+        score: courseData.finalExam?.score || 0,
+        completed: courseData.progress ? courseData.progress.every((p: string) => p === 'completed') : false,
+        completedDate: courseData.finalExam?.submittedAt,
+        lessonsCompleted: courseData.progress ? courseData.progress.filter((p: string) => p === 'completed').length : 0,
+        totalLessons: courseData.progress?.length || 0,
+        quizzesPassed: courseData.finalExam?.passed ? 1 : 0,
+        totalQuizzes: courseData.finalExam?.taken ? 1 : 0
+      }));
+      
+      return {
+        walletAddress,
+        displayName: profile.displayName || `User ${walletAddress.slice(0, 6)}...`,
+        rank: 0, // Will be calculated by sorting
+        totalScore: 0, // Will be calculated
+        coursesCompleted: completedCourses,
+        totalLessons,
+        totalQuizzes,
+        averageQuizScore,
+        badgesEarned: 0, // Would be calculated based on achievements
+        joinDate: profile.createdAt || new Date().toISOString(),
+        lastActive: profile.lastActive || new Date().toISOString(),
+        squad: profile.squad || 'Unassigned',
+        achievements: [], // Would be calculated based on user actions
+        courseProgress
+      };
+    });
+  } catch (error) {
+    console.error('Error parsing leaderboard data:', error);
+    return [];
   }
-];
+};
 
 // Helper function to calculate user score based on performance
 export const calculateUserScore = (user: LeaderboardUser): number => {
@@ -543,13 +139,46 @@ export const calculateUserScore = (user: LeaderboardUser): number => {
 
 // Helper function to get user rank
 export const getUserRank = (walletAddress: string): number => {
-  const user = mockLeaderboardData.find(u => u.walletAddress === walletAddress);
-  return user ? user.rank : -1;
+  const users = getRealLeaderboardData();
+  
+  // Calculate scores for all users
+  const usersWithScores = users.map(user => ({
+    ...user,
+    totalScore: calculateUserScore(user)
+  }));
+  
+  // Sort by score (descending)
+  usersWithScores.sort((a, b) => b.totalScore - a.totalScore);
+  
+  // Find user and return rank
+  const userIndex = usersWithScores.findIndex(u => u.walletAddress === walletAddress);
+  return userIndex !== -1 ? userIndex + 1 : -1;
+};
+
+// Helper function to get user score
+export const getUserScore = (walletAddress: string): number => {
+  const users = getRealLeaderboardData();
+  const user = users.find(u => u.walletAddress === walletAddress);
+  return user ? calculateUserScore(user) : 0;
 };
 
 // Helper function to get top 20 users
 export const getTop20Users = (): LeaderboardUser[] => {
-  return mockLeaderboardData.slice(0, 20);
+  const users = getRealLeaderboardData();
+  
+  // Calculate scores for all users
+  const usersWithScores = users.map(user => ({
+    ...user,
+    totalScore: calculateUserScore(user)
+  }));
+  
+  // Sort by score (descending) and assign ranks
+  usersWithScores.sort((a, b) => b.totalScore - a.totalScore);
+  
+  return usersWithScores.slice(0, 20).map((user, index) => ({
+    ...user,
+    rank: index + 1
+  }));
 };
 
 // Helper function to update user progress (for when courses are completed)
@@ -560,10 +189,10 @@ export const updateUserProgress = (
   score: number,
   completed: boolean
 ): void => {
-  const userIndex = mockLeaderboardData.findIndex(u => u.walletAddress === walletAddress);
+  const userIndex = getRealLeaderboardData().findIndex(u => u.walletAddress === walletAddress);
   
   if (userIndex !== -1) {
-    const user = mockLeaderboardData[userIndex];
+    const user = getRealLeaderboardData()[userIndex];
     const courseIndex = user.courseProgress.findIndex(c => c.courseId === courseId);
     
     if (courseIndex !== -1) {
