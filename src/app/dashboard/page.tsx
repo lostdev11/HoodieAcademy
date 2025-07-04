@@ -49,79 +49,65 @@ interface UpcomingClass {
   type: 'live' | 'recorded';
 }
 
-const mockAnnouncements: Announcement[] = [
-  {
-    id: '1',
-    title: 'New Course: Advanced DeFi Strategies',
-    content: 'Learn advanced DeFi protocols and yield farming strategies. Course starts next week!',
-    timestamp: '2 hours ago',
-    type: 'info',
-    priority: 'medium'
-  },
-  {
-    id: '2',
-    title: 'System Maintenance Tonight',
-    content: 'Hoodie Academy will be offline for maintenance from 2-4 AM UTC.',
-    timestamp: '4 hours ago',
-    type: 'warning',
-    priority: 'high'
-  },
-  {
-    id: '3',
-    title: 'Congratulations to Graduates!',
-    content: '50 new Hoodie Scholars have completed their first course this week!',
-    timestamp: '1 day ago',
-    type: 'success',
-    priority: 'low'
-  }
-];
+// Real data functions
+const getRealAnnouncements = (): Announcement[] => {
+  // For now, return empty array - announcements would come from backend
+  return [];
+};
 
-const mockTodos: TodoItem[] = [
-  {
-    id: '1',
-    title: 'Complete Wallet Security Quiz',
-    type: 'quiz',
-    dueDate: 'Today',
-    course: 'Wallet Wizardry',
-    completed: false
-  },
-  {
-    id: '2',
-    title: 'Watch NFT Creation Video',
-    type: 'lesson',
-    course: 'NFT Mastery',
-    completed: false
-  },
-  {
-    id: '3',
-    title: 'Submit Meme Coin Analysis',
-    type: 'assignment',
-    dueDate: 'Tomorrow',
-    course: 'Meme Coin Mania',
-    completed: true
+const getRealTodos = (walletAddress: string): TodoItem[] => {
+  if (!walletAddress) return [];
+  
+  const todos: TodoItem[] = [];
+  
+  // Check course progress and create todos based on incomplete items
+  const userProgress = localStorage.getItem('userProgress');
+  if (userProgress) {
+    try {
+      const progress = JSON.parse(userProgress);
+      const userData = progress[walletAddress];
+      
+      if (userData && userData.courses) {
+        Object.entries(userData.courses).forEach(([courseId, courseData]: [string, any]) => {
+          if (courseData.progress) {
+            const incompleteLessons = courseData.progress.filter((p: string) => p !== 'completed');
+            incompleteLessons.forEach((status: string, index: number) => {
+              if (status === 'unlocked') {
+                todos.push({
+                  id: `${courseId}-lesson-${index}`,
+                  title: `Complete ${courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} Lesson ${index + 1}`,
+                  type: 'lesson',
+                  course: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                  completed: false
+                });
+              }
+            });
+            
+            // Check for incomplete final exams
+            if (courseData.finalExam && courseData.finalExam.taken && !courseData.finalExam.approved) {
+              todos.push({
+                id: `${courseId}-exam`,
+                title: `Final Exam Pending Approval`,
+                type: 'quiz',
+                course: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                completed: false
+              });
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error parsing user progress:', error);
+    }
   }
-];
+  
+  return todos;
+};
 
-const mockUpcomingClasses: UpcomingClass[] = [
-  {
-    id: '1',
-    title: 'Live Q&A: Technical Analysis',
-    course: 'Technical Analysis Tactics',
-    startTime: 'Today, 3:00 PM',
-    duration: '45 min',
-    instructor: 'Hoodie Sensei',
-    type: 'live'
-  },
-  {
-    id: '2',
-    title: 'Community Building Workshop',
-    course: 'Community Strategy',
-    startTime: 'Tomorrow, 2:00 PM',
-    duration: '60 min',
-    instructor: 'Hoodie Speaker',
-    type: 'live'
-  }
-];
+const getRealUpcomingClasses = (): UpcomingClass[] => {
+  // For now, return empty array - classes would come from backend
+  return [];
+};
 
 export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -129,6 +115,10 @@ export default function DashboardPage() {
   const [overallProgress, setOverallProgress] = useState(65);
   const [showProfileSuggestion, setShowProfileSuggestion] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string>("");
+  const [realTodos, setRealTodos] = useState<TodoItem[]>([]);
+  const [realAnnouncements, setRealAnnouncements] = useState<Announcement[]>([]);
+  const [realUpcomingClasses, setRealUpcomingClasses] = useState<UpcomingClass[]>([]);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -153,6 +143,15 @@ export default function DashboardPage() {
       localStorage.removeItem('suggestDisplayName');
       setShowProfileSuggestion(false);
     }
+
+    // Get wallet address and load real data
+    const storedWallet = localStorage.getItem('walletAddress');
+    if (storedWallet) {
+      setWalletAddress(storedWallet);
+      setRealTodos(getRealTodos(storedWallet));
+      setRealAnnouncements(getRealAnnouncements());
+      setRealUpcomingClasses(getRealUpcomingClasses());
+    }
   }, []);
 
   const getPriorityColor = (priority: string) => {
@@ -173,8 +172,8 @@ export default function DashboardPage() {
     }
   };
 
-  const completedTodos = mockTodos.filter(todo => todo.completed).length;
-  const totalTodos = mockTodos.length;
+  const completedTodos = realTodos.filter(todo => todo.completed).length;
+  const totalTodos = realTodos.length;
 
   return (
     <TokenGate>
@@ -312,28 +311,35 @@ export default function DashboardPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockUpcomingClasses.map((classItem) => (
-                    <div key={classItem.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white">{classItem.title}</h4>
-                          <p className="text-sm text-gray-400">{classItem.course}</p>
-                          <div className="flex items-center space-x-4 mt-2">
-                            <span className="text-xs text-cyan-400 flex items-center">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {classItem.startTime}
-                            </span>
-                            <Badge variant={classItem.type === 'live' ? 'default' : 'secondary'} className="text-xs">
-                              {classItem.type}
-                            </Badge>
+                  {realUpcomingClasses.length > 0 ? (
+                    realUpcomingClasses.map((classItem) => (
+                      <div key={classItem.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-white">{classItem.title}</h4>
+                            <p className="text-sm text-gray-400">{classItem.course}</p>
+                            <div className="flex items-center space-x-4 mt-2">
+                              <span className="text-xs text-cyan-400 flex items-center">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {classItem.startTime}
+                              </span>
+                              <Badge variant={classItem.type === 'live' ? 'default' : 'secondary'} className="text-xs">
+                                {classItem.type}
+                              </Badge>
+                            </div>
                           </div>
+                          <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700">
+                            Join
+                          </Button>
                         </div>
-                        <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700">
-                          Join
-                        </Button>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Calendar className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400 text-sm">No upcoming classes scheduled</p>
                     </div>
-                  ))}
+                  )}
                 </CardContent>
               </Card>
 
@@ -349,39 +355,46 @@ export default function DashboardPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {mockTodos.map((todo) => (
-                    <div key={todo.id} className={`p-3 rounded-lg border transition-all duration-200 ${
-                      todo.completed 
-                        ? 'bg-green-500/10 border-green-500/30' 
-                        : 'bg-slate-700/30 border-slate-600/30 hover:border-green-500/30'
-                    }`}>
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-1 rounded ${
-                          todo.completed ? 'bg-green-500/20' : 'bg-slate-600/20'
-                        }`}>
-                          {getTypeIcon(todo.type)}
-                        </div>
-                        <div className="flex-1">
-                          <p className={`font-medium ${
-                            todo.completed ? 'text-green-400 line-through' : 'text-white'
+                  {realTodos.length > 0 ? (
+                    realTodos.map((todo) => (
+                      <div key={todo.id} className={`p-3 rounded-lg border transition-all duration-200 ${
+                        todo.completed 
+                          ? 'bg-green-500/10 border-green-500/30' 
+                          : 'bg-slate-700/30 border-slate-600/30 hover:border-green-500/30'
+                      }`}>
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-1 rounded ${
+                            todo.completed ? 'bg-green-500/20' : 'bg-slate-600/20'
                           }`}>
-                            {todo.title}
-                          </p>
-                          <p className="text-sm text-gray-400">{todo.course}</p>
-                          {todo.dueDate && (
-                            <p className="text-xs text-yellow-400">Due: {todo.dueDate}</p>
-                          )}
+                            {getTypeIcon(todo.type)}
+                          </div>
+                          <div className="flex-1">
+                            <p className={`font-medium ${
+                              todo.completed ? 'text-green-400 line-through' : 'text-white'
+                            }`}>
+                              {todo.title}
+                            </p>
+                            <p className="text-sm text-gray-400">{todo.course}</p>
+                            {todo.dueDate && (
+                              <p className="text-xs text-yellow-400">Due: {todo.dueDate}</p>
+                            )}
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant={todo.completed ? "outline" : "default"}
+                            className={todo.completed ? "border-green-500 text-green-400" : "bg-green-600 hover:bg-green-700"}
+                          >
+                            {todo.completed ? 'Done' : 'Complete'}
+                          </Button>
                         </div>
-                        <Button 
-                          size="sm" 
-                          variant={todo.completed ? "outline" : "default"}
-                          className={todo.completed ? "border-green-500 text-green-400" : "bg-green-600 hover:bg-green-700"}
-                        >
-                          {todo.completed ? 'Done' : 'Complete'}
-                        </Button>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <CheckCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400 text-sm">No pending tasks</p>
                     </div>
-                  ))}
+                  )}
                 </CardContent>
               </Card>
 
@@ -394,20 +407,27 @@ export default function DashboardPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockAnnouncements.map((announcement) => (
-                    <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                      <div className="flex items-start space-x-3">
-                        <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
-                          <AlertCircle className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white">{announcement.title}</h4>
-                          <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
-                          <p className="text-xs text-gray-400 mt-2">{announcement.timestamp}</p>
+                  {realAnnouncements.length > 0 ? (
+                    realAnnouncements.map((announcement) => (
+                      <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                        <div className="flex items-start space-x-3">
+                          <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
+                            <AlertCircle className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-white">{announcement.title}</h4>
+                            <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
+                            <p className="text-xs text-gray-400 mt-2">{announcement.timestamp}</p>
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Bell className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400 text-sm">No announcements</p>
                     </div>
-                  ))}
+                  )}
                 </CardContent>
               </Card>
             </div>

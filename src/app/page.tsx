@@ -130,6 +130,66 @@ const mockUpcomingClasses: UpcomingClass[] = [
   }
 ];
 
+// Real data functions
+const getRealAnnouncements = (): Announcement[] => {
+  // For now, return empty array - announcements would come from backend
+  return [];
+};
+
+const getRealTodos = (walletAddress: string): TodoItem[] => {
+  if (!walletAddress) return [];
+  
+  const todos: TodoItem[] = [];
+  
+  // Check course progress and create todos based on incomplete items
+  const userProgress = localStorage.getItem('userProgress');
+  if (userProgress) {
+    try {
+      const progress = JSON.parse(userProgress);
+      const userData = progress[walletAddress];
+      
+      if (userData && userData.courses) {
+        Object.entries(userData.courses).forEach(([courseId, courseData]: [string, any]) => {
+          if (courseData.progress) {
+            const incompleteLessons = courseData.progress.filter((p: string) => p !== 'completed');
+            incompleteLessons.forEach((status: string, index: number) => {
+              if (status === 'unlocked') {
+                todos.push({
+                  id: `${courseId}-lesson-${index}`,
+                  title: `Complete ${courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} Lesson ${index + 1}`,
+                  type: 'lesson',
+                  course: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                  completed: false
+                });
+              }
+            });
+            
+            // Check for incomplete final exams
+            if (courseData.finalExam && courseData.finalExam.taken && !courseData.finalExam.approved) {
+              todos.push({
+                id: `${courseId}-exam`,
+                title: `Final Exam Pending Approval`,
+                type: 'quiz',
+                course: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                completed: false
+              });
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error parsing user progress:', error);
+    }
+  }
+  
+  return todos;
+};
+
+const getRealUpcomingClasses = (): UpcomingClass[] => {
+  // For now, return empty array - classes would come from backend
+  return [];
+};
+
 export default function HoodieAcademy() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
@@ -141,6 +201,9 @@ export default function HoodieAcademy() {
   const [userScore, setUserScore] = useState<number>(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isDemoWallet, setIsDemoWallet] = useState(false);
+  const [realTodos, setRealTodos] = useState<TodoItem[]>([]);
+  const [realAnnouncements, setRealAnnouncements] = useState<Announcement[]>([]);
+  const [realUpcomingClasses, setRealUpcomingClasses] = useState<UpcomingClass[]>([]);
 
   useEffect(() => {
     // Get wallet address from localStorage
@@ -199,6 +262,11 @@ export default function HoodieAcademy() {
       if (storedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
         setIsDemoWallet(true);
       }
+      
+      // Load real data
+      setRealTodos(getRealTodos(storedWallet));
+      setRealAnnouncements(getRealAnnouncements());
+      setRealUpcomingClasses(getRealUpcomingClasses());
     }
   }, []);
 
@@ -228,8 +296,8 @@ export default function HoodieAcademy() {
     }
   };
 
-  const completedTodos = mockTodos.filter(todo => todo.completed).length;
-  const totalTodos = mockTodos.length;
+  const completedTodos = realTodos.filter(todo => todo.completed).length;
+  const totalTodos = realTodos.length;
 
   const handleDisconnect = () => {
     // Clear wallet data from storage
@@ -590,36 +658,23 @@ export default function HoodieAcademy() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between p-2 bg-yellow-500/10 rounded border border-yellow-500/20">
-                    <div className="flex items-center space-x-2">
-                      <Trophy className="w-4 h-4 text-yellow-400" />
-                      <span className="text-sm font-medium text-white">HoodieScholar</span>
+                  {userRank > 0 ? (
+                    <div className="flex items-center justify-between p-2 bg-yellow-500/10 rounded border border-yellow-500/20">
+                      <div className="flex items-center space-x-2">
+                        <Trophy className="w-4 h-4 text-yellow-400" />
+                        <span className="text-sm font-medium text-white">Your Rank</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-yellow-400">#{userRank}</div>
+                        <div className="text-xs text-gray-400">{userScore.toLocaleString()} pts</div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-yellow-400">2,850</div>
-                      <div className="text-xs text-gray-400">pts</div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Trophy className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400 text-sm">Complete courses to join leaderboard</p>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-gray-500/10 rounded border border-gray-500/20">
-                    <div className="flex items-center space-x-2">
-                      <Award className="w-4 h-4 text-gray-300" />
-                      <span className="text-sm font-medium text-white">CryptoNinja</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-gray-300">2,720</div>
-                      <div className="text-xs text-gray-400">pts</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-amber-500/10 rounded border border-amber-500/20">
-                    <div className="flex items-center space-x-2">
-                      <Award className="w-4 h-4 text-amber-600" />
-                      <span className="text-sm font-medium text-white">Web3Wizard</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-amber-600">2,580</div>
-                      <div className="text-xs text-gray-400">pts</div>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -632,28 +687,35 @@ export default function HoodieAcademy() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockUpcomingClasses.map((classItem) => (
-                    <div key={classItem.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white">{classItem.title}</h4>
-                          <p className="text-sm text-gray-400">{classItem.course}</p>
-                          <div className="flex items-center space-x-4 mt-2">
-                            <span className="text-xs text-cyan-400 flex items-center">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {classItem.startTime}
-                            </span>
-                            <Badge variant={classItem.type === 'live' ? 'default' : 'secondary'} className="text-xs">
-                              {classItem.type}
-                            </Badge>
+                  {realUpcomingClasses.length > 0 ? (
+                    realUpcomingClasses.map((classItem) => (
+                      <div key={classItem.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-white">{classItem.title}</h4>
+                            <p className="text-sm text-gray-400">{classItem.course}</p>
+                            <div className="flex items-center space-x-4 mt-2">
+                              <span className="text-xs text-cyan-400 flex items-center">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {classItem.startTime}
+                              </span>
+                              <Badge variant={classItem.type === 'live' ? 'default' : 'secondary'} className="text-xs">
+                                {classItem.type}
+                              </Badge>
+                            </div>
                           </div>
+                          <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700">
+                            Join
+                          </Button>
                         </div>
-                        <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700">
-                          Join
-                        </Button>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Calendar className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400 text-sm">No upcoming classes scheduled</p>
                     </div>
-                  ))}
+                  )}
                 </CardContent>
               </Card>
 
@@ -669,39 +731,46 @@ export default function HoodieAcademy() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {mockTodos.map((todo) => (
-                    <div key={todo.id} className={`p-3 rounded-lg border transition-all duration-200 ${
-                      todo.completed 
-                        ? 'bg-green-500/10 border-green-500/30' 
-                        : 'bg-slate-700/30 border-slate-600/30 hover:border-green-500/30'
-                    }`}>
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-1 rounded ${
-                          todo.completed ? 'bg-green-500/20' : 'bg-slate-600/20'
-                        }`}>
-                          {getTypeIcon(todo.type)}
-                        </div>
-                        <div className="flex-1">
-                          <p className={`font-medium ${
-                            todo.completed ? 'text-green-400 line-through' : 'text-white'
+                  {realTodos.length > 0 ? (
+                    realTodos.map((todo) => (
+                      <div key={todo.id} className={`p-3 rounded-lg border transition-all duration-200 ${
+                        todo.completed 
+                          ? 'bg-green-500/10 border-green-500/30' 
+                          : 'bg-slate-700/30 border-slate-600/30 hover:border-green-500/30'
+                      }`}>
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-1 rounded ${
+                            todo.completed ? 'bg-green-500/20' : 'bg-slate-600/20'
                           }`}>
-                            {todo.title}
-                          </p>
-                          <p className="text-sm text-gray-400">{todo.course}</p>
-                          {todo.dueDate && (
-                            <p className="text-xs text-yellow-400">Due: {todo.dueDate}</p>
-                          )}
+                            {getTypeIcon(todo.type)}
+                          </div>
+                          <div className="flex-1">
+                            <p className={`font-medium ${
+                              todo.completed ? 'text-green-400 line-through' : 'text-white'
+                            }`}>
+                              {todo.title}
+                            </p>
+                            <p className="text-sm text-gray-400">{todo.course}</p>
+                            {todo.dueDate && (
+                              <p className="text-xs text-yellow-400">Due: {todo.dueDate}</p>
+                            )}
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant={todo.completed ? "outline" : "default"}
+                            className={todo.completed ? "border-green-500 text-green-400" : "bg-green-600 hover:bg-green-700"}
+                          >
+                            {todo.completed ? 'Done' : 'Complete'}
+                          </Button>
                         </div>
-                        <Button 
-                          size="sm" 
-                          variant={todo.completed ? "outline" : "default"}
-                          className={todo.completed ? "border-green-500 text-green-400" : "bg-green-600 hover:bg-green-700"}
-                        >
-                          {todo.completed ? 'Done' : 'Complete'}
-                        </Button>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <CheckCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400 text-sm">No pending tasks</p>
                     </div>
-                  ))}
+                  )}
                 </CardContent>
               </Card>
 
@@ -714,20 +783,27 @@ export default function HoodieAcademy() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {mockAnnouncements.map((announcement) => (
-                    <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                      <div className="flex items-start space-x-3">
-                        <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
-                          <AlertCircle className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white">{announcement.title}</h4>
-                          <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
-                          <p className="text-xs text-gray-400 mt-2">{announcement.timestamp}</p>
+                  {realAnnouncements.length > 0 ? (
+                    realAnnouncements.map((announcement) => (
+                      <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                        <div className="flex items-start space-x-3">
+                          <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
+                            <AlertCircle className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-white">{announcement.title}</h4>
+                            <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
+                            <p className="text-xs text-gray-400 mt-2">{announcement.timestamp}</p>
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Bell className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-400 text-sm">No announcements</p>
                     </div>
-                  ))}
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -748,20 +824,20 @@ export default function HoodieAcademy() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
-                      <p className="text-2xl font-bold text-cyan-400">3</p>
+                      <p className="text-2xl font-bold text-cyan-400">{userScore > 0 ? Math.floor(userScore / 300) : 0}</p>
                       <p className="text-sm text-gray-400">Courses Completed</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-green-400">15</p>
-                      <p className="text-sm text-gray-400">Lessons Finished</p>
+                      <p className="text-2xl font-bold text-green-400">{realTodos.length}</p>
+                      <p className="text-sm text-gray-400">Pending Tasks</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-yellow-400">8</p>
-                      <p className="text-sm text-gray-400">Quizzes Passed</p>
+                      <p className="text-2xl font-bold text-yellow-400">{userRank > 0 ? userRank : 'N/A'}</p>
+                      <p className="text-sm text-gray-400">Leaderboard Rank</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-pink-400">5</p>
-                      <p className="text-sm text-gray-400">NFT Badges</p>
+                      <p className="text-2xl font-bold text-pink-400">{userScore.toLocaleString()}</p>
+                      <p className="text-sm text-gray-400">Total Score</p>
                     </div>
                   </div>
                 </div>

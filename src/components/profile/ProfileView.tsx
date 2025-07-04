@@ -14,41 +14,61 @@ import { getSNSResolver, formatWalletAddress, isValidSolanaAddress, isSolDomain 
 import { Connection } from '@solana/web3.js';
 import SquadBadge from '@/components/SquadBadge';
 
-// Mock user data - in production, this would come from user profile/backend
-const mockUser = {
-  displayName: 'HoodieScholar',
-  squad: 'hoodie-creators',
-  joined: '2024-06-01',
-  rank: 'Scholar',
-  completedCourses: [
-    { id: 'wallet-wizardry', title: 'Wallet Wizardry', progress: 100, score: 92 },
-    { id: 'nft-mastery', title: 'NFT Mastery', progress: 100, score: 88 },
-    { id: 'meme-coin-mania', title: 'Meme Coin Mania', progress: 100, score: 95 }
-  ],
-  badges: [
-    { id: 'vault-keeper', label: 'Vault Keeper', icon: <Award className="w-4 h-4 text-yellow-400" /> },
-    { id: 'nft-ninja', label: 'NFT Ninja', icon: <Award className="w-4 h-4 text-pink-400" /> },
-    { id: 'moon-merchant', label: 'Moon Merchant', icon: <Award className="w-4 h-4 text-cyan-400" /> }
-  ]
+// Real data functions
+const getRealUserData = (walletAddress: string) => {
+  if (!walletAddress) return null;
+  
+  const userProgress = localStorage.getItem('userProgress');
+  const userProfiles = localStorage.getItem('userProfiles');
+  
+  if (userProgress) {
+    try {
+      const progress = JSON.parse(userProgress);
+      const profiles = userProfiles ? JSON.parse(userProfiles) : {};
+      const userData = progress[walletAddress];
+      const profile = profiles[walletAddress] || {};
+      
+      if (userData) {
+        return {
+          displayName: profile.displayName || `User ${walletAddress.slice(0, 6)}...`,
+          squad: profile.squad || 'Unassigned',
+          joined: profile.createdAt || new Date().toISOString(),
+          rank: profile.rank || 'Scholar',
+          completedCourses: Object.entries(userData.courses || {}).map(([courseId, courseData]: [string, any]) => ({
+            id: courseId,
+            title: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            progress: courseData.progress ? (courseData.progress.filter((p: string) => p === 'completed').length / courseData.progress.length) * 100 : 0,
+            score: courseData.finalExam?.score || 0
+          })),
+          badges: [] // Badges would be calculated based on achievements
+        };
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+    }
+  }
+  
+  return null;
 };
 
 export function ProfileView() {
   const [editMode, setEditMode] = useState(false);
   const [displayName, setDisplayName] = useState(() => {
-    // Get display name from localStorage or use mock data
-    return localStorage.getItem('userDisplayName') || mockUser.displayName;
+    // Get display name from localStorage
+    return localStorage.getItem('userDisplayName') || 'Hoodie Scholar';
   });
   const [originalDisplayName, setOriginalDisplayName] = useState(() => {
     // Store original value for cancel functionality
-    return localStorage.getItem('userDisplayName') || mockUser.displayName;
+    return localStorage.getItem('userDisplayName') || 'Hoodie Scholar';
   });
-  const [squad, setSquad] = useState(mockUser.squad);
+  const [squad, setSquad] = useState('Unassigned');
   const [wallet, setWallet] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [solDomain, setSolDomain] = useState<string | null>(null);
   const [isLoadingDomain, setIsLoadingDomain] = useState(false);
   const [userSquad, setUserSquad] = useState<any>(null);
   const [placementTestCompleted, setPlacementTestCompleted] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
 
   const snsResolver = getSNSResolver();
   const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
@@ -91,6 +111,14 @@ export function ProfileView() {
 
     detectConnectedWallet();
   }, []);
+
+  // Load real user data when wallet changes
+  useEffect(() => {
+    if (wallet) {
+      const realData = getRealUserData(wallet);
+      setUserData(realData);
+    }
+  }, [wallet]);
 
   // Resolve .sol domain when wallet changes
   useEffect(() => {
@@ -226,9 +254,9 @@ export function ProfileView() {
     return <span className="text-green-400 font-mono">{formatWalletAddress(wallet)}</span>;
   };
 
-  const overallProgress = Math.round(
-    mockUser.completedCourses.reduce((acc, c) => acc + c.progress, 0) / (mockUser.completedCourses.length * 100) * 100
-  );
+  const overallProgress = userData?.completedCourses?.length > 0 
+    ? Math.round(userData.completedCourses.reduce((acc, c) => acc + c.progress, 0) / userData.completedCourses.length)
+    : 0;
 
   // Add error boundary for rendering
   if (!wallet) {
@@ -360,11 +388,11 @@ export function ProfileView() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400">Joined:</span>
-                  <span className="text-cyan-400 font-mono">{mockUser.joined}</span>
+                  <span className="text-cyan-400 font-mono">{userData?.joined || 'Unknown'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400">Rank:</span>
-                  <span className="text-pink-400 font-semibold">{mockUser.rank}</span>
+                  <span className="text-pink-400 font-semibold">{userData?.rank || 'Scholar'}</span>
                 </div>
                 <div className="mt-4">
                   {editMode ? (
@@ -411,11 +439,15 @@ export function ProfileView() {
                 )}
                 
                 <div className="flex flex-wrap gap-2 justify-center">
-                  {mockUser.badges.map(badge => (
-                    <Badge key={badge.id} className="flex items-center gap-1 px-3 py-1 border border-cyan-500/30 bg-slate-900/60 text-cyan-300">
-                      {badge.icon} {badge.label}
-                    </Badge>
-                  ))}
+                  {userData?.badges?.length > 0 ? (
+                    userData.badges.map(badge => (
+                      <Badge key={badge.id} className="flex items-center gap-1 px-3 py-1 border border-cyan-500/30 bg-slate-900/60 text-cyan-300">
+                        {badge.icon} {badge.label}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-gray-400 text-sm">No badges earned yet</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -528,24 +560,33 @@ export function ProfileView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockUser.completedCourses.map(course => (
-                <div key={course.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                  <div className="flex items-center gap-3">
-                    <BookOpen className="w-5 h-5 text-cyan-400" />
-                    <span className="font-semibold text-white">{course.title}</span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-green-400 font-semibold">{course.progress}%</span>
+              {userData?.completedCourses?.length > 0 ? (
+                userData.completedCourses.map(course => (
+                  <div key={course.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-cyan-500/20 rounded-lg">
+                        <BookOpen className="w-5 h-5 text-cyan-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-white">{course.title}</h4>
+                        <p className="text-sm text-gray-400">Progress: {Math.round(course.progress)}%</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Award className="w-4 h-4 text-yellow-400" />
-                      <span className="text-yellow-400 font-semibold">{course.score}%</span>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-cyan-400">{course.score}%</p>
+                        <p className="text-xs text-gray-400">Final Score</p>
+                      </div>
+                      <CheckCircle className="w-5 h-5 text-green-400" />
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <BookOpen className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-400 text-sm">No courses completed yet</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
