@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { 
   Users, 
   BookOpen, 
@@ -20,18 +21,15 @@ import {
   RefreshCw,
   ArrowLeft,
   Lock,
-  AlertCircle
+  AlertCircle,
+  Key,
+  LogOut
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { isCurrentUserAdmin, getConnectedWallet } from '@/lib/utils';
+import { isCurrentUserAdmin, isAdminPassword, setAdminAuthenticated } from '@/lib/utils';
 
-// Admin wallet addresses - in production, this would be stored securely
-const ADMIN_WALLETS = [
-  'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU', // Demo admin wallet
-  '0x1234567890abcdef1234567890abcdef12345678', // Demo admin wallet
-  // Add more admin wallet addresses here
-];
+// Admin authentication is now password-based
 
 interface User {
   walletAddress: string;
@@ -77,6 +75,9 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [showPasswordInput, setShowPasswordInput] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -91,6 +92,7 @@ export default function AdminDashboard() {
       if (!isAdminUser) {
         setIsAdmin(false);
         setCheckingAuth(false);
+        setShowPasswordInput(true);
         return;
       }
 
@@ -99,9 +101,30 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error checking admin access:', error);
       setIsAdmin(false);
+      setShowPasswordInput(true);
     } finally {
       setCheckingAuth(false);
     }
+  };
+
+  const handlePasswordSubmit = () => {
+    if (isAdminPassword(password)) {
+      setAdminAuthenticated(true);
+      setIsAdmin(true);
+      setPasswordError("");
+      setShowPasswordInput(false);
+      loadUsers();
+    } else {
+      setPasswordError("Incorrect password. Please try again.");
+    }
+  };
+
+  const handleLogout = () => {
+    setAdminAuthenticated(false);
+    setIsAdmin(false);
+    setShowPasswordInput(true);
+    setPassword("");
+    setPasswordError("");
   };
 
   const loadUsers = async () => {
@@ -322,7 +345,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !showPasswordInput) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="max-w-md mx-auto p-8">
@@ -330,37 +353,90 @@ export default function AdminDashboard() {
             <CardContent className="p-8 text-center">
               <div className="mb-6">
                 <Lock className="w-16 h-16 text-red-400 mx-auto mb-4" />
-                <h1 className="text-2xl font-bold text-red-400 mb-2">Access Denied</h1>
+                <h1 className="text-2xl font-bold text-red-400 mb-2">Admin Access Required</h1>
                 <p className="text-gray-300 mb-4">
-                  You don't have permission to access the admin dashboard. Only authorized admin wallets can view this page.
+                  You need to authenticate with the admin password to access the dashboard.
                 </p>
                 <div className="bg-slate-700/50 p-4 rounded-lg mb-6">
-                  <h3 className="text-sm font-semibold text-cyan-400 mb-2">Admin Access Required</h3>
+                  <h3 className="text-sm font-semibold text-cyan-400 mb-2">Password Authentication</h3>
                   <p className="text-xs text-gray-400">
-                    Connect with an authorized admin wallet to access the dashboard.
+                    Enter the admin password to access the dashboard.
                   </p>
                 </div>
               </div>
               <div className="space-y-3">
                 <Button
-                  asChild
+                  onClick={() => setShowPasswordInput(true)}
                   className="w-full bg-cyan-600 hover:bg-cyan-700"
                 >
-                  <Link href="/dashboard">
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back to Dashboard
-                  </Link>
+                  <Key className="w-4 h-4 mr-2" />
+                  Enter Password
                 </Button>
                 <Button
                   asChild
                   variant="outline"
                   className="w-full border-gray-500/30 text-gray-400 hover:text-gray-300"
                 >
-                  <Link href="/profile">
-                    <Shield className="w-4 h-4 mr-2" />
-                    View Profile
+                  <Link href="/dashboard">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Dashboard
                   </Link>
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (showPasswordInput) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="max-w-md mx-auto p-8">
+          <Card className="bg-slate-800/60 border-cyan-500/30">
+            <CardContent className="p-8 text-center">
+              <div className="mb-6">
+                <Key className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
+                <h1 className="text-2xl font-bold text-cyan-400 mb-2">Admin Authentication</h1>
+                <p className="text-gray-300 mb-4">
+                  Enter the admin password to access the dashboard.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <Input
+                    type="password"
+                    placeholder="Enter admin password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                    className="w-full bg-slate-700/50 border-cyan-500/30 text-white placeholder-gray-400"
+                  />
+                  {passwordError && (
+                    <p className="text-red-400 text-sm mt-2">{passwordError}</p>
+                  )}
+                </div>
+                <div className="flex space-x-3">
+                  <Button
+                    onClick={handlePasswordSubmit}
+                    className="flex-1 bg-cyan-600 hover:bg-cyan-700"
+                  >
+                    <Key className="w-4 h-4 mr-2" />
+                    Login
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowPasswordInput(false);
+                      setPassword("");
+                      setPasswordError("");
+                    }}
+                    variant="outline"
+                    className="border-gray-500/30 text-gray-400 hover:text-gray-300"
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -402,6 +478,14 @@ export default function AdminDashboard() {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Dashboard
                 </Link>
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="bg-slate-800/50 hover:bg-slate-700/50 text-red-400 hover:text-red-300 border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] transition-all duration-300"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
               </Button>
               <div className="flex items-center gap-2">
                 <Shield className="w-6 h-6 text-purple-400" />

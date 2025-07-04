@@ -148,7 +148,7 @@ export default function HoodieAcademy() {
       setWalletAddress(storedWallet);
     }
 
-    // Check if user is admin
+    // Check if user is admin (now password-based)
     setIsAdmin(isCurrentUserAdmin());
 
     // Get squad placement result
@@ -425,7 +425,7 @@ export default function HoodieAcademy() {
                       </p>
                       <div className="flex items-center gap-2 mb-4">
                         <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-purple-400">Full admin privileges</span>
+                        <span className="text-sm text-purple-400">Password authenticated</span>
                       </div>
                     </div>
                     <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">

@@ -328,7 +328,7 @@ export default function CoursesPage() {
                       <Shield className="w-5 h-5 text-purple-400" />
                       <div className="text-center">
                         <p className="text-purple-400 font-semibold">Admin Access</p>
-                        <p className="text-gray-300 text-sm">Viewing all courses</p>
+                        <p className="text-gray-300 text-sm">Password authenticated - viewing all courses</p>
                       </div>
                     </div>
                   </CardContent>
