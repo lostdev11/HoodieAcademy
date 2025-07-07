@@ -21,15 +21,7 @@ import {
 import TokenGate from '@/components/TokenGate';
 import Link from 'next/link';
 import CalendarComponent from '@/components/Calendar';
-
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  timestamp: string;
-  type: 'info' | 'warning' | 'success';
-  priority: 'low' | 'medium' | 'high';
-}
+import { getActiveAnnouncements, Announcement } from '@/lib/utils';
 
 interface TodoItem {
   id: string;
@@ -51,39 +43,6 @@ interface UpcomingClass {
 }
 
 // Real data functions
-const getRealAnnouncements = (): Announcement[] => {
-  try {
-    const storedAnnouncements = localStorage.getItem('announcements');
-    if (storedAnnouncements) {
-      const parsedAnnouncements = JSON.parse(storedAnnouncements);
-      const activeAnnouncements = parsedAnnouncements.filter((announcement: any) => {
-        if (!announcement.isActive) return false;
-        const startDate = new Date(announcement.startDate);
-        const today = new Date();
-        if (startDate > today) return false;
-        if (announcement.endDate) {
-          const endDate = new Date(announcement.endDate);
-          return endDate >= today;
-        }
-        return true;
-      });
-      
-      // Convert to the format expected by the dashboard
-      return activeAnnouncements.slice(0, 3).map((announcement: any) => ({
-        id: announcement.id,
-        title: announcement.title,
-        content: announcement.content,
-        timestamp: new Date(announcement.createdAt).toLocaleDateString(),
-        type: announcement.type,
-        priority: announcement.priority
-      }));
-    }
-  } catch (error) {
-    console.error('Error loading announcements:', error);
-  }
-  return [];
-};
-
 const getRealTodos = (walletAddress: string): TodoItem[] => {
   if (!walletAddress) return [];
   
@@ -178,9 +137,22 @@ export default function DashboardPage() {
     if (storedWallet) {
       setWalletAddress(storedWallet);
       setRealTodos(getRealTodos(storedWallet));
-      setRealAnnouncements(getRealAnnouncements());
+      setRealAnnouncements(getActiveAnnouncements());
       setRealUpcomingClasses(getRealUpcomingClasses());
     }
+  }, []);
+
+  // Listen for real-time updates
+  useEffect(() => {
+    const handleAnnouncementsUpdate = () => {
+      setRealAnnouncements(getActiveAnnouncements());
+    };
+
+    window.addEventListener('announcementsUpdated', handleAnnouncementsUpdate);
+    
+    return () => {
+      window.removeEventListener('announcementsUpdated', handleAnnouncementsUpdate);
+    };
   }, []);
 
   const getPriorityColor = (priority: string) => {

@@ -5,84 +5,47 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarIcon, AlertTriangle, Clock, MapPin, Users } from 'lucide-react';
-
-interface CalendarEvent {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  time?: string;
-  type: 'class' | 'event' | 'announcement' | 'holiday';
-  recurring?: boolean;
-  recurringPattern?: 'weekly' | 'monthly' | 'yearly';
-  location?: string;
-  maxParticipants?: number;
-  currentParticipants?: number;
-  createdBy: string;
-  createdAt: string;
-}
-
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  type: 'info' | 'warning' | 'success' | 'important';
-  priority: 'low' | 'medium' | 'high';
-  startDate: string;
-  endDate?: string;
-  isActive: boolean;
-  createdBy: string;
-  createdAt: string;
-}
+import { 
+  getUpcomingEvents, 
+  getActiveAnnouncements, 
+  CalendarEvent, 
+  Announcement 
+} from '@/lib/utils';
 
 export default function Calendar() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadCalendarData();
-  }, []);
-
   const loadCalendarData = () => {
     try {
-      // Load calendar events
-      const storedEvents = localStorage.getItem('calendarEvents');
-      if (storedEvents) {
-        const parsedEvents = JSON.parse(storedEvents);
-        // Filter for upcoming events (within next 30 days)
-        const upcomingEvents = parsedEvents.filter((event: CalendarEvent) => {
-          const eventDate = new Date(event.date);
-          const today = new Date();
-          const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
-          return eventDate >= today && eventDate <= thirtyDaysFromNow;
-        });
-        setEvents(upcomingEvents);
-      }
-
-      // Load active announcements
-      const storedAnnouncements = localStorage.getItem('announcements');
-      if (storedAnnouncements) {
-        const parsedAnnouncements = JSON.parse(storedAnnouncements);
-        const activeAnnouncements = parsedAnnouncements.filter((announcement: Announcement) => {
-          if (!announcement.isActive) return false;
-          const startDate = new Date(announcement.startDate);
-          const today = new Date();
-          if (startDate > today) return false;
-          if (announcement.endDate) {
-            const endDate = new Date(announcement.endDate);
-            return endDate >= today;
-          }
-          return true;
-        });
-        setAnnouncements(activeAnnouncements);
-      }
+      setEvents(getUpcomingEvents());
+      setAnnouncements(getActiveAnnouncements());
     } catch (error) {
       console.error('Error loading calendar data:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadCalendarData();
+  }, []);
+
+  // Listen for real-time updates
+  useEffect(() => {
+    const handleCalendarUpdate = () => {
+      loadCalendarData();
+    };
+
+    window.addEventListener('calendarEventsUpdated', handleCalendarUpdate);
+    window.addEventListener('announcementsUpdated', handleCalendarUpdate);
+    
+    return () => {
+      window.removeEventListener('calendarEventsUpdated', handleCalendarUpdate);
+      window.removeEventListener('announcementsUpdated', handleCalendarUpdate);
+    };
+  }, []);
 
   const getEventTypeColor = (type: string) => {
     switch (type) {

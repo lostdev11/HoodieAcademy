@@ -26,16 +26,9 @@ import Link from "next/link"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
-import { getUserRank, getUserScore, isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet } from '@/lib/utils'
+import { getUserRank, getUserScore, isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet, getActiveAnnouncements, Announcement } from '@/lib/utils'
 
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  timestamp: string;
-  type: 'info' | 'warning' | 'success';
-  priority: 'low' | 'medium' | 'high';
-}
+
 
 interface TodoItem {
   id: string;
@@ -55,33 +48,6 @@ interface UpcomingClass {
   instructor: string;
   type: 'live' | 'recorded';
 }
-
-const mockAnnouncements: Announcement[] = [
-  {
-    id: '1',
-    title: 'New Course: Advanced DeFi Strategies',
-    content: 'Learn advanced DeFi protocols and yield farming strategies. Course starts next week!',
-    timestamp: '2 hours ago',
-    type: 'info',
-    priority: 'medium'
-  },
-  {
-    id: '2',
-    title: 'System Maintenance Tonight',
-    content: 'Hoodie Academy will be offline for maintenance from 2-4 AM UTC.',
-    timestamp: '4 hours ago',
-    type: 'warning',
-    priority: 'high'
-  },
-  {
-    id: '3',
-    title: 'Congratulations to Graduates!',
-    content: '50 new Hoodie Scholars have completed their first course this week!',
-    timestamp: '1 day ago',
-    type: 'success',
-    priority: 'low'
-  }
-];
 
 const mockTodos: TodoItem[] = [
   {
@@ -132,8 +98,7 @@ const mockUpcomingClasses: UpcomingClass[] = [
 
 // Real data functions
 const getRealAnnouncements = (): Announcement[] => {
-  // For now, return empty array - announcements would come from backend
-  return [];
+  return getActiveAnnouncements();
 };
 
 const getRealTodos = (walletAddress: string): TodoItem[] => {
@@ -276,6 +241,19 @@ export default function HoodieAcademy() {
       setCurrentTime(new Date().toLocaleTimeString());
     }, 1000);
     return () => clearInterval(timerId);
+  }, []);
+
+  // Listen for real-time updates
+  useEffect(() => {
+    const handleAnnouncementsUpdate = () => {
+      setRealAnnouncements(getRealAnnouncements());
+    };
+
+    window.addEventListener('announcementsUpdated', handleAnnouncementsUpdate);
+    
+    return () => {
+      window.removeEventListener('announcementsUpdated', handleAnnouncementsUpdate);
+    };
   }, []);
 
   const getPriorityColor = (priority: string) => {
