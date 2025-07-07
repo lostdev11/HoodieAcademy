@@ -158,7 +158,14 @@ export default function Calendar() {
               ))}
               {events.length > 5 && (
                 <div className="text-center">
-                  <Button variant="outline" className="border-purple-500 text-purple-400">
+                  <Button 
+                    variant="outline" 
+                    className="border-purple-500 text-purple-400"
+                    onClick={() => {
+                      // For now, just show a message - could be expanded to show more events
+                      alert(`Showing ${events.length} total events. This feature will be expanded soon!`);
+                    }}
+                  >
                     View All Events ({events.length})
                   </Button>
                 </div>
@@ -210,7 +217,14 @@ export default function Calendar() {
               ))}
               {announcements.length > 3 && (
                 <div className="text-center">
-                  <Button variant="outline" className="border-purple-500 text-purple-400">
+                  <Button 
+                    variant="outline" 
+                    className="border-purple-500 text-purple-400"
+                    onClick={() => {
+                      // For now, just show a message - could be expanded to show more announcements
+                      alert(`Showing ${announcements.length} total announcements. This feature will be expanded soon!`);
+                    }}
+                  >
                     View All Announcements ({announcements.length})
                   </Button>
                 </div>
