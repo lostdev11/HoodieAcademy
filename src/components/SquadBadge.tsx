@@ -4,6 +4,34 @@ import { useState } from 'react';
 export default function SquadBadge({ squad }: { squad: string }) {
   const [imageError, setImageError] = useState(false);
   
+  // Fallback badge with emoji and styling
+  const getFallbackBadge = (squadName: string) => {
+    const emojiMap: Record<string, string> = {
+      Creators: '🎨',
+      Decoders: '🧠',
+      Raiders: '⚔️',
+      Speakers: '🎤',
+      Ranger: '🦅',
+    };
+    
+    const colorMap: Record<string, string> = {
+      Creators: 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400',
+      Decoders: 'bg-gray-500/20 border-gray-500/50 text-gray-300',
+      Raiders: 'bg-blue-500/20 border-blue-500/50 text-blue-400',
+      Speakers: 'bg-red-500/20 border-red-500/50 text-red-400',
+      Ranger: 'bg-purple-500/20 border-purple-500/50 text-purple-400',
+    };
+
+    return (
+      <div className="text-center">
+        <div className={`w-40 h-40 rounded-xl border-2 ${colorMap[squadName] || 'bg-slate-500/20 border-slate-500/50 text-slate-300'} flex items-center justify-center text-6xl shadow-xl`}>
+          {emojiMap[squadName] || '🏆'}
+        </div>
+        <p className="mt-3 text-lg font-bold">{squadName} Badge</p>
+      </div>
+    );
+  };
+
   // Normalize squad name to match badge map
   const normalizeSquadName = (squadName: string): string => {
     const normalized = squadName
@@ -39,34 +67,6 @@ export default function SquadBadge({ squad }: { squad: string }) {
     // Return fallback badge if no matching badge found
     return getFallbackBadge(normalizedSquad);
   }
-
-  // Fallback badge with emoji and styling
-  const getFallbackBadge = (squadName: string) => {
-    const emojiMap: Record<string, string> = {
-      Creators: '🎨',
-      Decoders: '🧠',
-      Raiders: '⚔️',
-      Speakers: '🎤',
-      Ranger: '🦅',
-    };
-    
-    const colorMap: Record<string, string> = {
-      Creators: 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400',
-      Decoders: 'bg-gray-500/20 border-gray-500/50 text-gray-300',
-      Raiders: 'bg-blue-500/20 border-blue-500/50 text-blue-400',
-      Speakers: 'bg-red-500/20 border-red-500/50 text-red-400',
-      Ranger: 'bg-purple-500/20 border-purple-500/50 text-purple-400',
-    };
-
-    return (
-      <div className="text-center">
-        <div className={`w-40 h-40 rounded-xl border-2 ${colorMap[squadName] || 'bg-slate-500/20 border-slate-500/50 text-slate-300'} flex items-center justify-center text-6xl shadow-xl`}>
-          {emojiMap[squadName] || '🏆'}
-        </div>
-        <p className="mt-3 text-lg font-bold">{squadName} Badge</p>
-      </div>
-    );
-  };
 
   if (imageError) {
     return getFallbackBadge(normalizedSquad);

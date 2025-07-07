@@ -345,6 +345,113 @@ export default function AdminDashboard() {
     }
   };
 
+  const resetCourses = async (walletAddress: string, courseName?: string) => {
+    try {
+      // Add confirmation dialog
+      const user = users.find(u => u.walletAddress === walletAddress);
+      const userName = user?.displayName || walletAddress.slice(0, 6) + '...';
+      
+      let confirmMessage = '';
+      if (courseName) {
+        confirmMessage = `Are you sure you want to reset the "${courseName.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}" course for ${userName}? This will reset all progress and exam results.`;
+      } else {
+        confirmMessage = `Are you sure you want to reset ALL courses for ${userName}? This will reset all progress and exam results for all courses.`;
+      }
+      
+      if (!confirm(confirmMessage)) {
+        return;
+      }
+
+      // Reset course progress in localStorage
+      const userProgress = localStorage.getItem('userProgress');
+      if (userProgress) {
+        const progress = JSON.parse(userProgress);
+        if (progress[walletAddress]) {
+          if (courseName) {
+            // Reset specific course
+            if (progress[walletAddress].courses[courseName]) {
+              progress[walletAddress].courses[courseName] = {
+                progress: ['unlocked', 'locked', 'locked', 'locked'],
+                finalExam: undefined
+              };
+            }
+          } else {
+            // Reset all courses
+            Object.keys(progress[walletAddress].courses).forEach(course => {
+              progress[walletAddress].courses[course] = {
+                progress: ['unlocked', 'locked', 'locked', 'locked'],
+                finalExam: undefined
+              };
+            });
+          }
+          localStorage.setItem('userProgress', JSON.stringify(progress));
+        }
+      }
+
+      // Reset leaderboard data for this user
+      const leaderboardData = localStorage.getItem('leaderboardData');
+      if (leaderboardData) {
+        const leaderboard = JSON.parse(leaderboardData);
+        if (leaderboard[walletAddress]) {
+          // Reset course-specific score or all scores
+          if (courseName) {
+            delete leaderboard[walletAddress].courseScores[courseName];
+          } else {
+            leaderboard[walletAddress].courseScores = {};
+          }
+          // Recalculate total score
+          leaderboard[walletAddress].totalScore = Object.values(leaderboard[walletAddress].courseScores).reduce((acc: number, score: any) => acc + score, 0);
+          localStorage.setItem('leaderboardData', JSON.stringify(leaderboard));
+        }
+      }
+
+      // Reset wallet wizardry progress if applicable
+      if (!courseName || courseName === 'wallet-wizardry') {
+        localStorage.setItem('walletWizardryProgress', JSON.stringify(['unlocked', 'locked', 'locked', 'locked']));
+      }
+
+      // Update local state
+      setUsers(prevUsers => 
+        prevUsers.map(user => {
+          if (user.walletAddress === walletAddress) {
+            if (courseName) {
+              // Reset specific course
+              return {
+                ...user,
+                courses: {
+                  ...user.courses,
+                  [courseName]: {
+                    progress: ['unlocked', 'locked', 'locked', 'locked'],
+                    finalExam: undefined
+                  }
+                }
+              };
+            } else {
+              // Reset all courses
+              const resetCourses: any = {};
+              Object.keys(user.courses).forEach(course => {
+                resetCourses[course] = {
+                  progress: ['unlocked', 'locked', 'locked', 'locked'],
+                  finalExam: undefined
+                };
+              });
+              return {
+                ...user,
+                courses: resetCourses
+              };
+            }
+          }
+          return user;
+        })
+      );
+      
+      // Recalculate stats
+      loadUsers();
+    } catch (error) {
+      console.error('Error resetting courses:', error);
+    }
+  };
+
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
@@ -746,7 +853,22 @@ export default function AdminDashboard() {
           <TabsContent value="courses" className="mt-6">
             <Card className="bg-slate-800/50 border-purple-500/30">
               <CardHeader>
-                <CardTitle className="text-white">Course Management</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white">Course Management</CardTitle>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      if (confirm('Are you sure you want to reset ALL courses for ALL users? This action cannot be undone.')) {
+                        users.forEach(user => resetCourses(user.walletAddress));
+                      }
+                    }}
+                    className="border-red-500 text-red-400 hover:bg-red-500/10"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Reset All Users
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -776,6 +898,15 @@ export default function AdminDashboard() {
                             >
                               <Award className="w-4 h-4 mr-2" />
                               Confirm Completion
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => resetCourses(user.walletAddress, courseName)}
+                              className="border-red-500 text-red-400 hover:bg-red-500/10"
+                            >
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Reset
                             </Button>
                           </div>
                         </div>
@@ -830,9 +961,19 @@ export default function AdminDashboard() {
                           <h4 className="font-medium text-white">
                             {courseName.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                           </h4>
-                          <Badge variant={course.progress.every(p => p === 'completed') ? "default" : "secondary"}>
-                            {course.progress.filter(p => p === 'completed').length}/{course.progress.length} Complete
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={course.progress.every(p => p === 'completed') ? "default" : "secondary"}>
+                              {course.progress.filter(p => p === 'completed').length}/{course.progress.length} Complete
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => resetCourses(selectedUser.walletAddress, courseName)}
+                              className="h-6 px-2 text-xs"
+                            >
+                              Reset
+                            </Button>
+                          </div>
                         </div>
                         {course.finalExam && (
                           <div className="text-sm text-gray-300">
@@ -842,6 +983,18 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     ))}
+                  </div>
+                  
+                  {/* Reset All Courses Button */}
+                  <div className="mt-4 pt-4 border-t border-slate-600">
+                    <Button
+                      variant="destructive"
+                      onClick={() => resetCourses(selectedUser.walletAddress)}
+                      className="w-full"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Reset All Courses for {selectedUser.displayName}
+                    </Button>
                   </div>
                 </div>
               </div>

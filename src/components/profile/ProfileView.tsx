@@ -255,7 +255,7 @@ export function ProfileView() {
   };
 
   const overallProgress = userData?.completedCourses?.length > 0 
-    ? Math.round(userData.completedCourses.reduce((acc, c) => acc + c.progress, 0) / userData.completedCourses.length)
+    ? Math.round(userData.completedCourses.reduce((acc: number, c: any) => acc + c.progress, 0) / userData.completedCourses.length)
     : 0;
 
   // Add error boundary for rendering
@@ -440,7 +440,7 @@ export function ProfileView() {
                 
                 <div className="flex flex-wrap gap-2 justify-center">
                   {userData?.badges?.length > 0 ? (
-                    userData.badges.map(badge => (
+                    userData.badges.map((badge: any) => (
                       <Badge key={badge.id} className="flex items-center gap-1 px-3 py-1 border border-cyan-500/30 bg-slate-900/60 text-cyan-300">
                         {badge.icon} {badge.label}
                       </Badge>
@@ -561,7 +561,7 @@ export function ProfileView() {
           <CardContent>
             <div className="space-y-4">
               {userData?.completedCourses?.length > 0 ? (
-                userData.completedCourses.map(course => (
+                userData.completedCourses.map((course: any) => (
                   <div key={course.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-cyan-500/20 rounded-lg">
