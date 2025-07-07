@@ -120,12 +120,24 @@ export default function Tier1() {
               Mark as Completed
             </Button>
           ) : (
-            <div className="bg-green-900/30 border border-green-500/50 p-4 rounded-lg">
-              <div className="flex items-center justify-center gap-2 text-green-400">
-                <CheckCircle className="w-6 h-6" />
-                <span className="text-lg font-semibold">Tier 1 Completed!</span>
+            <div className="space-y-4">
+              <div className="bg-green-900/30 border border-green-500/50 p-4 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-green-400">
+                  <CheckCircle className="w-6 h-6" />
+                  <span className="text-lg font-semibold">Tier 1 Completed!</span>
+                </div>
+                <p className="text-green-300 mt-2">You can now proceed to Tier 2</p>
               </div>
-              <p className="text-green-300 mt-2">You can now proceed to Tier 2</p>
+              
+              {/* Next Tier Button */}
+              <Button
+                asChild
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 text-lg font-semibold"
+              >
+                <Link href="/wallet-wizardry/tier-2">
+                  Continue to Tier 2: Custodial vs Non-Custodial Wallets
+                </Link>
+              </Button>
             </div>
           )}
         </div>

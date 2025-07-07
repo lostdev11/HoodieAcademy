@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { updateScoreForLessonCompletion } from '@/lib/utils';
 
 export default function Tier4() {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -35,6 +36,11 @@ export default function Tier4() {
       parsedStatus[3] = 'completed';
       
       localStorage.setItem('walletWizardryProgress', JSON.stringify(parsedStatus));
+      
+      // Update leaderboard score
+      const walletAddress = localStorage.getItem('walletAddress') || 'demo-wallet';
+      updateScoreForLessonCompletion(walletAddress, 'wallet-wizardry', 3, 4); // tier-4 is lesson 3 of 4
+      
       setIsCompleted(true);
     }
   };
@@ -126,12 +132,24 @@ export default function Tier4() {
               Mark as Completed
             </Button>
           ) : (
-            <div className="bg-green-900/30 border border-green-500/50 p-4 rounded-lg">
-              <div className="flex items-center justify-center gap-2 text-green-400">
-                <CheckCircle className="w-6 h-6" />
-                <span className="text-lg font-semibold">Tier 4 Completed!</span>
+            <div className="space-y-4">
+              <div className="bg-green-900/30 border border-green-500/50 p-4 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-green-400">
+                  <CheckCircle className="w-6 h-6" />
+                  <span className="text-lg font-semibold">Tier 4 Completed!</span>
+                </div>
+                <p className="text-green-300 mt-2">You can now take the Final Exam</p>
               </div>
-              <p className="text-green-300 mt-2">You can now take the Final Exam</p>
+              
+              {/* Next Tier Button */}
+              <Button
+                asChild
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 text-lg font-semibold"
+              >
+                <Link href="/wallet-wizardry/final-exam">
+                  Take Final Exam: Complete Your Wallet Wizardry Journey
+                </Link>
+              </Button>
             </div>
           )}
         </div>

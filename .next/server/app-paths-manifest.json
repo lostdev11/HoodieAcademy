@@ -1,7 +1,7 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/courses/page": "app/courses/page.js",
-  "/leaderboard/page": "app/leaderboard/page.js",
   "/page": "app/page.js",
-  "/squads/[squad]/chat/page": "app/squads/[squad]/chat/page.js"
+  "/wallet-wizardry/page": "app/wallet-wizardry/page.js",
+  "/courses/page": "app/courses/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/wallet-wizardry/tier-1/page": "app/wallet-wizardry/tier-1/page.js"
 }
