@@ -28,7 +28,10 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { isCurrentUserAdmin, isAdminPassword, setAdminAuthenticated, DEMO_WALLET, removeDemoWalletAdminAccess, getConnectedWallet } from '@/lib/utils';
+import { isCurrentUserAdmin, isAdminPassword, setAdminAuthenticated, DEMO_WALLET, removeDemoWalletAdminAccess, getConnectedWallet, 
+  CalendarEvent, Announcement, getCalendarEvents, getAnnouncements, saveCalendarEvents, saveAnnouncements, 
+  updateCalendarEvent, deleteCalendarEvent as deleteEventUtil, updateAnnouncement, deleteAnnouncement as deleteAnnouncementUtil, 
+  toggleAnnouncementActive as toggleAnnouncementUtil } from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -70,35 +73,6 @@ interface AdminStats {
   completedCourses: number;
   pendingApprovals: number;
   totalExamsTaken: number;
-}
-
-interface CalendarEvent {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  time?: string;
-  type: 'class' | 'event' | 'announcement' | 'holiday';
-  recurring?: boolean;
-  recurringPattern?: 'weekly' | 'monthly' | 'yearly';
-  location?: string;
-  maxParticipants?: number;
-  currentParticipants?: number;
-  createdBy: string;
-  createdAt: string;
-}
-
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  type: 'info' | 'warning' | 'success' | 'important';
-  priority: 'low' | 'medium' | 'high';
-  startDate: string;
-  endDate?: string;
-  isActive: boolean;
-  createdBy: string;
-  createdAt: string;
 }
 
 export default function AdminDashboard() {
@@ -623,17 +597,8 @@ export default function AdminDashboard() {
 
   const loadCalendarData = () => {
     try {
-      // Load calendar events
-      const storedEvents = localStorage.getItem('calendarEvents');
-      if (storedEvents) {
-        setCalendarEvents(JSON.parse(storedEvents));
-      }
-
-      // Load announcements
-      const storedAnnouncements = localStorage.getItem('announcements');
-      if (storedAnnouncements) {
-        setAnnouncements(JSON.parse(storedAnnouncements));
-      }
+      setCalendarEvents(getCalendarEvents());
+      setAnnouncements(getAnnouncements());
     } catch (error) {
       console.error('Error loading calendar data:', error);
     }
@@ -641,12 +606,15 @@ export default function AdminDashboard() {
 
   const saveCalendarEvent = (event: CalendarEvent) => {
     try {
-      const updatedEvents = editingEvent 
-        ? calendarEvents.map(e => e.id === event.id ? event : e)
-        : [...calendarEvents, event];
-      
-      setCalendarEvents(updatedEvents);
-      localStorage.setItem('calendarEvents', JSON.stringify(updatedEvents));
+      if (editingEvent) {
+        updateCalendarEvent(event.id, event);
+        setCalendarEvents(getCalendarEvents());
+      } else {
+        const events = getCalendarEvents();
+        events.push(event);
+        saveCalendarEvents(events);
+        setCalendarEvents(events);
+      }
       
       setShowEventForm(false);
       setEditingEvent(null);
@@ -658,9 +626,8 @@ export default function AdminDashboard() {
   const deleteCalendarEvent = (eventId: string) => {
     if (confirm('Are you sure you want to delete this event?')) {
       try {
-        const updatedEvents = calendarEvents.filter(e => e.id !== eventId);
-        setCalendarEvents(updatedEvents);
-        localStorage.setItem('calendarEvents', JSON.stringify(updatedEvents));
+        deleteEventUtil(eventId);
+        setCalendarEvents(getCalendarEvents());
       } catch (error) {
         console.error('Error deleting calendar event:', error);
       }
@@ -669,12 +636,15 @@ export default function AdminDashboard() {
 
   const saveAnnouncement = (announcement: Announcement) => {
     try {
-      const updatedAnnouncements = editingAnnouncement 
-        ? announcements.map(a => a.id === announcement.id ? announcement : a)
-        : [...announcements, announcement];
-      
-      setAnnouncements(updatedAnnouncements);
-      localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
+      if (editingAnnouncement) {
+        updateAnnouncement(announcement.id, announcement);
+        setAnnouncements(getAnnouncements());
+      } else {
+        const announcements = getAnnouncements();
+        announcements.push(announcement);
+        saveAnnouncements(announcements);
+        setAnnouncements(announcements);
+      }
       
       setShowAnnouncementForm(false);
       setEditingAnnouncement(null);
@@ -686,9 +656,8 @@ export default function AdminDashboard() {
   const deleteAnnouncement = (announcementId: string) => {
     if (confirm('Are you sure you want to delete this announcement?')) {
       try {
-        const updatedAnnouncements = announcements.filter(a => a.id !== announcementId);
-        setAnnouncements(updatedAnnouncements);
-        localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
+        deleteAnnouncementUtil(announcementId);
+        setAnnouncements(getAnnouncements());
       } catch (error) {
         console.error('Error deleting announcement:', error);
       }
@@ -697,11 +666,8 @@ export default function AdminDashboard() {
 
   const toggleAnnouncementActive = (announcementId: string) => {
     try {
-      const updatedAnnouncements = announcements.map(a => 
-        a.id === announcementId ? { ...a, isActive: !a.isActive } : a
-      );
-      setAnnouncements(updatedAnnouncements);
-      localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
+      toggleAnnouncementUtil(announcementId);
+      setAnnouncements(getAnnouncements());
     } catch (error) {
       console.error('Error toggling announcement:', error);
     }
