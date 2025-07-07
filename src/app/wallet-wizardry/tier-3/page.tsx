@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { updateScoreForLessonCompletion } from '@/lib/utils';
 
 export default function Tier3() {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -38,6 +39,11 @@ export default function Tier3() {
       }
       
       localStorage.setItem('walletWizardryProgress', JSON.stringify(parsedStatus));
+      
+      // Update leaderboard score
+      const walletAddress = localStorage.getItem('walletAddress') || 'demo-wallet';
+      updateScoreForLessonCompletion(walletAddress, 'wallet-wizardry', 2, 4); // tier-3 is lesson 2 of 4
+      
       setIsCompleted(true);
     }
   };
@@ -119,12 +125,24 @@ export default function Tier3() {
               Mark as Completed
             </Button>
           ) : (
-            <div className="bg-green-900/30 border border-green-500/50 p-4 rounded-lg">
-              <div className="flex items-center justify-center gap-2 text-green-400">
-                <CheckCircle className="w-6 h-6" />
-                <span className="text-lg font-semibold">Tier 3 Completed!</span>
+            <div className="space-y-4">
+              <div className="bg-green-900/30 border border-green-500/50 p-4 rounded-lg">
+                <div className="flex items-center justify-center gap-2 text-green-400">
+                  <CheckCircle className="w-6 h-6" />
+                  <span className="text-lg font-semibold">Tier 3 Completed!</span>
+                </div>
+                <p className="text-green-300 mt-2">You can now proceed to Tier 4</p>
               </div>
-              <p className="text-green-300 mt-2">You can now proceed to Tier 4</p>
+              
+              {/* Next Tier Button */}
+              <Button
+                asChild
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3 text-lg font-semibold"
+              >
+                <Link href="/wallet-wizardry/tier-4">
+                  Continue to Tier 4: NFTs, dApps, DeFi, and Bridges
+                </Link>
+              </Button>
             </div>
           )}
         </div>
