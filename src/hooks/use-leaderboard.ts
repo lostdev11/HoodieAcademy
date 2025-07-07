@@ -56,7 +56,9 @@ export const useLeaderboard = (walletAddress?: string) => {
 
   const getAchievements = () => {
     if (!walletAddress) return [];
-    return leaderboardService.checkAchievements(walletAddress);
+    const userProgress = leaderboardService.getUserProgress(walletAddress);
+    if (!userProgress) return [];
+    return leaderboardService.checkAchievements(userProgress);
   };
 
   const exportUserData = () => {

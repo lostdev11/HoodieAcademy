@@ -1192,7 +1192,7 @@ export default function AdminDashboard() {
                               </div>
                               <p className="text-sm text-gray-300 mb-2">{event.description}</p>
                               <div className="text-xs text-gray-400 space-y-1">
-                                <p>Date: {new Date(event.date).toLocaleDateString()}</p>
+                                <p>Date: {new Date(event.date + 'T00:00:00').toLocaleDateString()}</p>
                                 {event.time && <p>Time: {event.time}</p>}
                                 {event.location && <p>Location: {event.location}</p>}
                                 {event.maxParticipants && (
@@ -1277,9 +1277,9 @@ export default function AdminDashboard() {
                               </div>
                               <p className="text-sm text-gray-300 mb-2">{announcement.content}</p>
                               <div className="text-xs text-gray-400 space-y-1">
-                                <p>Start: {new Date(announcement.startDate).toLocaleDateString()}</p>
+                                <p>Start: {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}</p>
                                 {announcement.endDate && (
-                                  <p>End: {new Date(announcement.endDate).toLocaleDateString()}</p>
+                                  <p>End: {new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}</p>
                                 )}
                               </div>
                             </div>

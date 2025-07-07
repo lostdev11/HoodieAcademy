@@ -200,8 +200,8 @@ export class LeaderboardService {
   }
 
   // Check if user earned any achievements
-  checkAchievements(user: UserProgress): AchievementEarned[] {
-    const newAchievements: AchievementEarned[] = [];
+  checkAchievements(user: UserProgress): Achievement[] {
+    const newAchievements: Achievement[] = [];
     const existingAchievementIds = user.achievements.map(a => a.id);
 
     // Check for first course completion
@@ -211,6 +211,7 @@ export class LeaderboardService {
         name: 'First Steps',
         description: 'Completed your first course',
         icon: '🎯',
+        earnedDate: new Date().toISOString(),
         points: 100
       });
     }
@@ -223,6 +224,7 @@ export class LeaderboardService {
         name: 'Perfect Score',
         description: 'Achieved 100% on a quiz',
         icon: '⭐',
+        earnedDate: new Date().toISOString(),
         points: 200
       });
     }
@@ -240,6 +242,7 @@ export class LeaderboardService {
         name: 'Speed Learner',
         description: 'Completed 3 courses in one week',
         icon: '⚡',
+        earnedDate: new Date().toISOString(),
         points: 300
       });
     }
@@ -253,6 +256,7 @@ export class LeaderboardService {
         name: 'Consistency King',
         description: 'Logged in for 30 consecutive days',
         icon: '🔥',
+        earnedDate: new Date().toISOString(),
         points: 250
       });
     }

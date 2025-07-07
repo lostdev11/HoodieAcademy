@@ -638,8 +638,8 @@ export default function HoodieAcademy() {
                             <h4 className="font-semibold text-white">{announcement.title}</h4>
                             <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
                             <p className="text-xs text-gray-400 mt-2">
-                              Active from {new Date(announcement.startDate).toLocaleDateString()}
-                              {announcement.endDate && ` to ${new Date(announcement.endDate).toLocaleDateString()}`}
+                              Active from {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
+                              {announcement.endDate && ` to ${new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}`}
                             </p>
                           </div>
                         </div>
