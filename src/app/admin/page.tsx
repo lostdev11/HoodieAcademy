@@ -23,11 +23,21 @@ import {
   Lock,
   AlertCircle,
   Key,
-  LogOut
+  LogOut,
+  Calendar
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { isCurrentUserAdmin, isAdminPassword, setAdminAuthenticated, DEMO_WALLET, removeDemoWalletAdminAccess, getConnectedWallet } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 // Admin authentication is now password-based
 
@@ -62,6 +72,35 @@ interface AdminStats {
   totalExamsTaken: number;
 }
 
+interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time?: string;
+  type: 'class' | 'event' | 'announcement' | 'holiday';
+  recurring?: boolean;
+  recurringPattern?: 'weekly' | 'monthly' | 'yearly';
+  location?: string;
+  maxParticipants?: number;
+  currentParticipants?: number;
+  createdBy: string;
+  createdAt: string;
+}
+
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  type: 'info' | 'warning' | 'success' | 'important';
+  priority: 'low' | 'medium' | 'high';
+  startDate: string;
+  endDate?: string;
+  isActive: boolean;
+  createdBy: string;
+  createdAt: string;
+}
+
 export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<AdminStats>({
@@ -80,6 +119,14 @@ export default function AdminDashboard() {
   const [passwordError, setPasswordError] = useState("");
   const [isDemoWallet, setIsDemoWallet] = useState(false);
   const router = useRouter();
+
+  // Calendar and Announcements state
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
 
   useEffect(() => {
     checkAdminAccess();
@@ -141,11 +188,11 @@ export default function AdminDashboard() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      // Load users from localStorage (replace with actual API call)
+      let users: User[] = [];
+      
+      // Method 1: Load from userProgress and userProfiles (existing method)
       const userProgress = localStorage.getItem('userProgress');
       const userProfiles = localStorage.getItem('userProfiles');
-      
-      let users: User[] = [];
       
       if (userProgress) {
         const progress = JSON.parse(userProgress);
@@ -166,6 +213,91 @@ export default function AdminDashboard() {
           };
           users.push(user);
         });
+      }
+
+      // Method 2: Load from leaderboard service (for users who completed onboarding)
+      const leaderboardService = (await import('@/services/leaderboard-service')).leaderboardService;
+      const leaderboardData = leaderboardService.getLeaderboard();
+      
+      leaderboardData.forEach((leaderboardUser: any) => {
+        // Check if this user is already in the list
+        const existingUser = users.find(u => u.walletAddress === leaderboardUser.walletAddress);
+        if (!existingUser) {
+          // Create user from leaderboard data
+          const user: User = {
+            walletAddress: leaderboardUser.walletAddress,
+            displayName: leaderboardUser.displayName || `User ${leaderboardUser.walletAddress.slice(0, 6)}...`,
+            squad: leaderboardUser.squad || 'Unassigned',
+            profileCompleted: true, // If they're in leaderboard, they completed profile
+            squadTestCompleted: true, // If they're in leaderboard, they completed squad test
+            courses: {}, // Will be populated from other sources
+            createdAt: leaderboardUser.joinDate || new Date().toISOString(),
+            lastActive: leaderboardUser.lastActive || new Date().toISOString()
+          };
+          users.push(user);
+        }
+      });
+
+      // Method 3: Load from individual localStorage keys (wallet address, display name, squad)
+      const walletAddress = localStorage.getItem('walletAddress');
+      const displayName = localStorage.getItem('userDisplayName');
+      const squadResult = localStorage.getItem('userSquad');
+      
+      if (walletAddress && !users.find(u => u.walletAddress === walletAddress)) {
+        let squad = 'Unassigned';
+        if (squadResult) {
+          try {
+            const squadData = JSON.parse(squadResult);
+            squad = squadData.name || squadData.id || squadResult;
+          } catch (error) {
+            squad = squadResult;
+          }
+        }
+        
+        const user: User = {
+          walletAddress,
+          displayName: displayName || `User ${walletAddress.slice(0, 6)}...`,
+          squad,
+          profileCompleted: !!displayName,
+          squadTestCompleted: !!squadResult,
+          courses: {}, // Will be populated from other sources
+          createdAt: new Date().toISOString(),
+          lastActive: new Date().toISOString()
+        };
+        users.push(user);
+      }
+
+      // Method 4: Load course progress from individual course localStorage keys
+      users.forEach(user => {
+        // Check for wallet wizardry progress
+        const walletWizardryProgress = localStorage.getItem('walletWizardryProgress');
+        if (walletWizardryProgress) {
+          try {
+            const progress = JSON.parse(walletWizardryProgress);
+            user.courses['wallet-wizardry'] = {
+              progress: progress,
+              finalExam: undefined
+            };
+          } catch (error) {
+            console.error('Error parsing wallet wizardry progress:', error);
+          }
+        }
+
+        // Check for final exam results
+        const finalExamResult = localStorage.getItem('walletWizardryFinalExam');
+        if (finalExamResult && user.courses['wallet-wizardry']) {
+          try {
+            const examData = JSON.parse(finalExamResult);
+            user.courses['wallet-wizardry'].finalExam = examData;
+          } catch (error) {
+            console.error('Error parsing final exam result:', error);
+          }
+        }
+      });
+
+      // Remove demo user if we have real users
+      if (users.length > 1) {
+        users = users.filter(user => user.walletAddress !== "0x1234567890abcdef1234567890abcdef12345678");
       }
       
       // Add demo users if no real users exist
@@ -198,6 +330,7 @@ export default function AdminDashboard() {
 
       setUsers(users);
       calculateStats(users);
+      loadCalendarData();
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -405,9 +538,45 @@ export default function AdminDashboard() {
         }
       }
 
-      // Reset wallet wizardry progress if applicable
+      // Reset individual course localStorage keys
       if (!courseName || courseName === 'wallet-wizardry') {
         localStorage.setItem('walletWizardryProgress', JSON.stringify(['unlocked', 'locked', 'locked', 'locked']));
+        localStorage.removeItem('walletWizardryFinalExam');
+        localStorage.removeItem('walletWizardryGraduated');
+      }
+
+      // Reset leaderboard service data
+      try {
+        const leaderboardService = (await import('@/services/leaderboard-service')).leaderboardService;
+        if (courseName) {
+          // Reset specific course in leaderboard
+          leaderboardService.updateProgress({
+            walletAddress,
+            courseId: courseName,
+            progress: 0,
+            score: 0,
+            completed: false,
+            lessonsCompleted: 0,
+            totalLessons: 4,
+            quizzesPassed: 0,
+            totalQuizzes: 1
+          });
+        } else {
+          // Reset all courses in leaderboard
+          const user = leaderboardService.getUserProgress(walletAddress);
+          if (user) {
+            user.courseProgress = [];
+            user.totalScore = 0;
+            user.coursesCompleted = 0;
+            user.totalLessons = 0;
+            user.totalQuizzes = 0;
+            user.averageQuizScore = 0;
+            leaderboardService['saveUserProgress'](walletAddress, user);
+            leaderboardService['updateLeaderboard']();
+          }
+        }
+      } catch (error) {
+        console.error('Error resetting leaderboard data:', error);
       }
 
       // Update local state
@@ -449,6 +618,92 @@ export default function AdminDashboard() {
       loadUsers();
     } catch (error) {
       console.error('Error resetting courses:', error);
+    }
+  };
+
+  const loadCalendarData = () => {
+    try {
+      // Load calendar events
+      const storedEvents = localStorage.getItem('calendarEvents');
+      if (storedEvents) {
+        setCalendarEvents(JSON.parse(storedEvents));
+      }
+
+      // Load announcements
+      const storedAnnouncements = localStorage.getItem('announcements');
+      if (storedAnnouncements) {
+        setAnnouncements(JSON.parse(storedAnnouncements));
+      }
+    } catch (error) {
+      console.error('Error loading calendar data:', error);
+    }
+  };
+
+  const saveCalendarEvent = (event: CalendarEvent) => {
+    try {
+      const updatedEvents = editingEvent 
+        ? calendarEvents.map(e => e.id === event.id ? event : e)
+        : [...calendarEvents, event];
+      
+      setCalendarEvents(updatedEvents);
+      localStorage.setItem('calendarEvents', JSON.stringify(updatedEvents));
+      
+      setShowEventForm(false);
+      setEditingEvent(null);
+    } catch (error) {
+      console.error('Error saving calendar event:', error);
+    }
+  };
+
+  const deleteCalendarEvent = (eventId: string) => {
+    if (confirm('Are you sure you want to delete this event?')) {
+      try {
+        const updatedEvents = calendarEvents.filter(e => e.id !== eventId);
+        setCalendarEvents(updatedEvents);
+        localStorage.setItem('calendarEvents', JSON.stringify(updatedEvents));
+      } catch (error) {
+        console.error('Error deleting calendar event:', error);
+      }
+    }
+  };
+
+  const saveAnnouncement = (announcement: Announcement) => {
+    try {
+      const updatedAnnouncements = editingAnnouncement 
+        ? announcements.map(a => a.id === announcement.id ? announcement : a)
+        : [...announcements, announcement];
+      
+      setAnnouncements(updatedAnnouncements);
+      localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
+      
+      setShowAnnouncementForm(false);
+      setEditingAnnouncement(null);
+    } catch (error) {
+      console.error('Error saving announcement:', error);
+    }
+  };
+
+  const deleteAnnouncement = (announcementId: string) => {
+    if (confirm('Are you sure you want to delete this announcement?')) {
+      try {
+        const updatedAnnouncements = announcements.filter(a => a.id !== announcementId);
+        setAnnouncements(updatedAnnouncements);
+        localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
+      } catch (error) {
+        console.error('Error deleting announcement:', error);
+      }
+    }
+  };
+
+  const toggleAnnouncementActive = (announcementId: string) => {
+    try {
+      const updatedAnnouncements = announcements.map(a => 
+        a.id === announcementId ? { ...a, isActive: !a.isActive } : a
+      );
+      setAnnouncements(updatedAnnouncements);
+      localStorage.setItem('announcements', JSON.stringify(updatedAnnouncements));
+    } catch (error) {
+      console.error('Error toggling announcement:', error);
     }
   };
 
@@ -715,7 +970,7 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
+          <TabsList className="grid w-full grid-cols-5 bg-slate-800/50">
             <TabsTrigger value="users" className="data-[state=active]:bg-purple-600">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -727,6 +982,14 @@ export default function AdminDashboard() {
             <TabsTrigger value="courses" className="data-[state=active]:bg-purple-600">
               <BookOpen className="w-4 h-4 mr-2" />
               Course Management
+            </TabsTrigger>
+            <TabsTrigger value="calendar" className="data-[state=active]:bg-purple-600">
+              <Calendar className="w-4 h-4 mr-2" />
+              Calendar & Announcements
+            </TabsTrigger>
+            <TabsTrigger value="debug" className="data-[state=active]:bg-purple-600">
+              <AlertCircle className="w-4 h-4 mr-2" />
+              Debug
             </TabsTrigger>
           </TabsList>
 
@@ -922,6 +1185,264 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Calendar & Announcements Tab */}
+          <TabsContent value="calendar" className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Calendar Events Section */}
+              <Card className="bg-slate-800/50 border-purple-500/30">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-white">Calendar Events</CardTitle>
+                    <Button
+                      onClick={() => {
+                        setEditingEvent(null);
+                        setShowEventForm(true);
+                      }}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      <Calendar className="w-4 h-4 mr-2" />
+                      Add Event
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {calendarEvents.length > 0 ? (
+                      calendarEvents.map((event) => (
+                        <div key={event.id} className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-semibold text-white">{event.title}</h4>
+                                <Badge variant="outline" className="border-purple-500 text-purple-400">
+                                  {event.type}
+                                </Badge>
+                                {event.recurring && (
+                                  <Badge variant="outline" className="border-green-500 text-green-400">
+                                    Recurring
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-300 mb-2">{event.description}</p>
+                              <div className="text-xs text-gray-400 space-y-1">
+                                <p>Date: {new Date(event.date).toLocaleDateString()}</p>
+                                {event.time && <p>Time: {event.time}</p>}
+                                {event.location && <p>Location: {event.location}</p>}
+                                {event.maxParticipants && (
+                                  <p>Participants: {event.currentParticipants || 0}/{event.maxParticipants}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingEvent(event);
+                                  setShowEventForm(true);
+                                }}
+                                className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteCalendarEvent(event.id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-400">
+                        <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No calendar events yet</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Announcements Section */}
+              <Card className="bg-slate-800/50 border-purple-500/30">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-white">Announcements</CardTitle>
+                    <Button
+                      onClick={() => {
+                        setEditingAnnouncement(null);
+                        setShowAnnouncementForm(true);
+                      }}
+                      className="bg-purple-600 hover:bg-purple-700"
+                    >
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Add Announcement
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {announcements.length > 0 ? (
+                      announcements.map((announcement) => (
+                        <div key={announcement.id} className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-semibold text-white">{announcement.title}</h4>
+                                <Badge 
+                                  variant={announcement.isActive ? "default" : "secondary"}
+                                  className={announcement.isActive ? "bg-green-600" : "bg-gray-600"}
+                                >
+                                  {announcement.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`border-${announcement.type === 'important' ? 'red' : announcement.type === 'warning' ? 'yellow' : announcement.type === 'success' ? 'green' : 'blue'}-500 text-${announcement.type === 'important' ? 'red' : announcement.type === 'warning' ? 'yellow' : announcement.type === 'success' ? 'green' : 'blue'}-400`}
+                                >
+                                  {announcement.type}
+                                </Badge>
+                                <Badge variant="outline" className="border-purple-500 text-purple-400">
+                                  {announcement.priority}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-300 mb-2">{announcement.content}</p>
+                              <div className="text-xs text-gray-400 space-y-1">
+                                <p>Start: {new Date(announcement.startDate).toLocaleDateString()}</p>
+                                {announcement.endDate && (
+                                  <p>End: {new Date(announcement.endDate).toLocaleDateString()}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => toggleAnnouncementActive(announcement.id)}
+                                className={`${announcement.isActive ? 'border-yellow-500 text-yellow-400' : 'border-green-500 text-green-400'}`}
+                              >
+                                {announcement.isActive ? 'Deactivate' : 'Activate'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingAnnouncement(announcement);
+                                  setShowAnnouncementForm(true);
+                                }}
+                                className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteAnnouncement(announcement.id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-400">
+                        <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No announcements yet</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Debug Tab */}
+          <TabsContent value="debug" className="mt-6">
+            <Card className="bg-slate-800/50 border-purple-500/30">
+              <CardHeader>
+                <CardTitle className="text-white">Debug Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-white mb-2">localStorage Keys</h3>
+                    <div className="bg-slate-700/50 p-3 rounded text-sm font-mono">
+                      {Array.from({ length: localStorage.length }, (_, i) => {
+                        const key = localStorage.key(i);
+                        const value = key ? localStorage.getItem(key) : null;
+                        return (
+                          <div key={key} className="mb-2">
+                            <div className="text-cyan-400">{key}</div>
+                            <div className="text-gray-300 text-xs break-all">
+                              {value ? (value.length > 100 ? value.substring(0, 100) + '...' : value) : 'null'}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-white mb-2">Current Users Data</h3>
+                    <div className="bg-slate-700/50 p-3 rounded text-sm font-mono">
+                      <pre className="text-gray-300 text-xs overflow-auto">
+                        {JSON.stringify(users, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-white mb-2">Connected Wallet</h3>
+                    <div className="bg-slate-700/50 p-3 rounded">
+                      <p className="text-gray-300">
+                        Wallet Address: {localStorage.getItem('walletAddress') || 'Not connected'}
+                      </p>
+                      <p className="text-gray-300">
+                        Display Name: {localStorage.getItem('userDisplayName') || 'Not set'}
+                      </p>
+                      <p className="text-gray-300">
+                        Squad: {localStorage.getItem('userSquad') || 'Not assigned'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        loadUsers();
+                        alert('Users data refreshed!');
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Refresh Users
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        console.log('localStorage data:', {
+                          walletAddress: localStorage.getItem('walletAddress'),
+                          displayName: localStorage.getItem('userDisplayName'),
+                          squad: localStorage.getItem('userSquad'),
+                          userProgress: localStorage.getItem('userProgress'),
+                          userProfiles: localStorage.getItem('userProfiles'),
+                          leaderboardData: localStorage.getItem('leaderboardData'),
+                          walletWizardryProgress: localStorage.getItem('walletWizardryProgress'),
+                          finalExam: localStorage.getItem('walletWizardryFinalExam')
+                        });
+                        alert('Check browser console for detailed localStorage data');
+                      }}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Log localStorage to Console
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
 
         {/* User Detail Modal */}
@@ -1001,7 +1522,329 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Calendar Event Form Modal */}
+        {showEventForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+              <EventForm
+                event={editingEvent}
+                onSave={saveCalendarEvent}
+                onCancel={() => {
+                  setShowEventForm(false);
+                  setEditingEvent(null);
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Announcement Form Modal */}
+        {showAnnouncementForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+              <AnnouncementForm
+                announcement={editingAnnouncement}
+                onSave={saveAnnouncement}
+                onCancel={() => {
+                  setShowAnnouncementForm(false);
+                  setEditingAnnouncement(null);
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-} 
+}
+
+// Event Form Component
+const EventForm = ({ event, onSave, onCancel }: { 
+  event: CalendarEvent | null; 
+  onSave: (event: CalendarEvent) => void; 
+  onCancel: () => void; 
+}) => {
+  const [formData, setFormData] = useState({
+    title: event?.title || '',
+    description: event?.description || '',
+    date: event?.date || new Date().toISOString().split('T')[0],
+    time: event?.time || '',
+    type: event?.type || 'class' as 'class' | 'event' | 'announcement' | 'holiday',
+    recurring: event?.recurring || false,
+    recurringPattern: event?.recurringPattern || 'weekly' as 'weekly' | 'monthly' | 'yearly',
+    location: event?.location || '',
+    maxParticipants: event?.maxParticipants || 0
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newEvent: CalendarEvent = {
+      id: event?.id || Date.now().toString(),
+      ...formData,
+      currentParticipants: event?.currentParticipants || 0,
+      createdBy: 'Admin',
+      createdAt: event?.createdAt || new Date().toISOString()
+    };
+    onSave(newEvent);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-white">
+          {event ? 'Edit Event' : 'Add New Event'}
+        </h2>
+        <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-400">
+          ×
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
+          <Input
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
+          <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
+            <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="class">Class</SelectItem>
+              <SelectItem value="event">Event</SelectItem>
+              <SelectItem value="announcement">Announcement</SelectItem>
+              <SelectItem value="holiday">Holiday</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Date</label>
+          <Input
+            type="date"
+            value={formData.date}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Time (Optional)</label>
+          <Input
+            type="time"
+            value={formData.time}
+            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Location (Optional)</label>
+          <Input
+            value={formData.location}
+            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Max Participants (Optional)</label>
+          <Input
+            type="number"
+            value={formData.maxParticipants}
+            onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) || 0 })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+        <textarea
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-md p-3 min-h-[100px]"
+          required
+        />
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="recurring"
+            checked={formData.recurring}
+            onChange={(e) => setFormData({ ...formData, recurring: e.target.checked })}
+            className="rounded border-slate-600 bg-slate-700"
+          />
+          <label htmlFor="recurring" className="text-sm text-gray-300">Recurring Event</label>
+        </div>
+
+        {formData.recurring && (
+          <Select value={formData.recurringPattern} onValueChange={(value: any) => setFormData({ ...formData, recurringPattern: value })}>
+            <SelectTrigger className="w-32 bg-slate-700/50 border-slate-600 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="yearly">Yearly</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      <div className="flex gap-3 pt-4">
+        <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+          {event ? 'Update Event' : 'Create Event'}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-400">
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+// Announcement Form Component
+const AnnouncementForm = ({ announcement, onSave, onCancel }: { 
+  announcement: Announcement | null; 
+  onSave: (announcement: Announcement) => void; 
+  onCancel: () => void; 
+}) => {
+  const [formData, setFormData] = useState({
+    title: announcement?.title || '',
+    content: announcement?.content || '',
+    type: announcement?.type || 'info' as 'info' | 'warning' | 'success' | 'important',
+    priority: announcement?.priority || 'medium' as 'low' | 'medium' | 'high',
+    startDate: announcement?.startDate || new Date().toISOString().split('T')[0],
+    endDate: announcement?.endDate || '',
+    isActive: announcement?.isActive ?? true
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newAnnouncement: Announcement = {
+      id: announcement?.id || Date.now().toString(),
+      ...formData,
+      endDate: formData.endDate || undefined,
+      createdBy: 'Admin',
+      createdAt: announcement?.createdAt || new Date().toISOString()
+    };
+    onSave(newAnnouncement);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-white">
+          {announcement ? 'Edit Announcement' : 'Add New Announcement'}
+        </h2>
+        <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-400">
+          ×
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
+          <Input
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
+          <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
+            <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="info">Info</SelectItem>
+              <SelectItem value="warning">Warning</SelectItem>
+              <SelectItem value="success">Success</SelectItem>
+              <SelectItem value="important">Important</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Priority</label>
+          <Select value={formData.priority} onValueChange={(value: any) => setFormData({ ...formData, priority: value })}>
+            <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Start Date</label>
+          <Input
+            type="date"
+            value={formData.startDate}
+            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">End Date (Optional)</label>
+          <Input
+            type="date"
+            value={formData.endDate}
+            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="isActive"
+            checked={formData.isActive}
+            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+            className="rounded border-slate-600 bg-slate-700"
+          />
+          <label htmlFor="isActive" className="text-sm text-gray-300">Active</label>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Content</label>
+        <textarea
+          value={formData.content}
+          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+          className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-md p-3 min-h-[150px]"
+          required
+        />
+      </div>
+
+      <div className="flex gap-3 pt-4">
+        <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+          {announcement ? 'Update Announcement' : 'Create Announcement'}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-400">
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}; 

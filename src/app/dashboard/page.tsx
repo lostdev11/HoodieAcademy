@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import TokenGate from '@/components/TokenGate';
 import Link from 'next/link';
+import CalendarComponent from '@/components/Calendar';
 
 interface Announcement {
   id: string;
@@ -51,7 +52,35 @@ interface UpcomingClass {
 
 // Real data functions
 const getRealAnnouncements = (): Announcement[] => {
-  // For now, return empty array - announcements would come from backend
+  try {
+    const storedAnnouncements = localStorage.getItem('announcements');
+    if (storedAnnouncements) {
+      const parsedAnnouncements = JSON.parse(storedAnnouncements);
+      const activeAnnouncements = parsedAnnouncements.filter((announcement: any) => {
+        if (!announcement.isActive) return false;
+        const startDate = new Date(announcement.startDate);
+        const today = new Date();
+        if (startDate > today) return false;
+        if (announcement.endDate) {
+          const endDate = new Date(announcement.endDate);
+          return endDate >= today;
+        }
+        return true;
+      });
+      
+      // Convert to the format expected by the dashboard
+      return activeAnnouncements.slice(0, 3).map((announcement: any) => ({
+        id: announcement.id,
+        title: announcement.title,
+        content: announcement.content,
+        timestamp: new Date(announcement.createdAt).toLocaleDateString(),
+        type: announcement.type,
+        priority: announcement.priority
+      }));
+    }
+  } catch (error) {
+    console.error('Error loading announcements:', error);
+  }
   return [];
 };
 
@@ -302,46 +331,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Upcoming Classes */}
-              <Card className="bg-slate-800/50 border-cyan-500/30 lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="text-cyan-400 flex items-center space-x-2">
-                    <Calendar className="w-5 h-5" />
-                    <span>Upcoming Classes</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {realUpcomingClasses.length > 0 ? (
-                    realUpcomingClasses.map((classItem) => (
-                      <div key={classItem.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-white">{classItem.title}</h4>
-                            <p className="text-sm text-gray-400">{classItem.course}</p>
-                            <div className="flex items-center space-x-4 mt-2">
-                              <span className="text-xs text-cyan-400 flex items-center">
-                                <Clock className="w-3 h-3 mr-1" />
-                                {classItem.startTime}
-                              </span>
-                              <Badge variant={classItem.type === 'live' ? 'default' : 'secondary'} className="text-xs">
-                                {classItem.type}
-                              </Badge>
-                            </div>
-                          </div>
-                          <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700">
-                            Join
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Calendar className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-400 text-sm">No upcoming classes scheduled</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              {/* Calendar & Events */}
+              <div className="lg:col-span-1">
+                <CalendarComponent />
+              </div>
 
               {/* To-Do List */}
               <Card className="bg-slate-800/50 border-green-500/30 lg:col-span-1">
