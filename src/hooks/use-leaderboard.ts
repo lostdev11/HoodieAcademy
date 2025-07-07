@@ -24,7 +24,7 @@ export const useLeaderboard = (walletAddress?: string) => {
 
       setUserRank(rank);
       setUserScore(score);
-      setUserProgress(progress);
+      setUserProgress(progress ? [progress] : []);
     } catch (error) {
       console.error('Error loading user data:', error);
     } finally {

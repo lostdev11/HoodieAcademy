@@ -1,7 +1,6 @@
 {
   "/page": "app/page.js",
-  "/wallet-wizardry/page": "app/wallet-wizardry/page.js",
-  "/courses/page": "app/courses/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/wallet-wizardry/tier-1/page": "app/wallet-wizardry/tier-1/page.js"
+  "/admin/page": "app/admin/page.js",
+  "/profile/page": "app/profile/page.js"
 }
