@@ -11,7 +11,6 @@ import {
   Bell, 
   CheckCircle, 
   Play, 
-  Calendar,
   TrendingUp,
   Award,
   BookOpen,
@@ -20,8 +19,7 @@ import {
 } from 'lucide-react';
 import TokenGate from '@/components/TokenGate';
 import Link from 'next/link';
-import CalendarComponent from '@/components/Calendar';
-import { getActiveAnnouncements, Announcement } from '@/lib/utils';
+import { getActiveAnnouncements, Announcement, getScheduledAnnouncements } from '@/lib/utils';
 
 interface TodoItem {
   id: string;
@@ -107,6 +105,7 @@ export default function DashboardPage() {
   const [realTodos, setRealTodos] = useState<TodoItem[]>([]);
   const [realAnnouncements, setRealAnnouncements] = useState<Announcement[]>([]);
   const [realUpcomingClasses, setRealUpcomingClasses] = useState<UpcomingClass[]>([]);
+  const [profileImage, setProfileImage] = useState<string>("🧑‍🎓");
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -137,20 +136,38 @@ export default function DashboardPage() {
     if (storedWallet) {
       setWalletAddress(storedWallet);
       setRealTodos(getRealTodos(storedWallet));
-      setRealAnnouncements(getActiveAnnouncements());
+      
+      // Debug announcements
+      console.log('Dashboard: Loading announcements...');
+      const announcements = getActiveAnnouncements();
+      console.log('Dashboard: Active announcements:', announcements);
+      setRealAnnouncements(announcements);
+      
       setRealUpcomingClasses(getRealUpcomingClasses());
+    }
+
+    // Load saved profile image
+    const savedProfileImage = localStorage.getItem('userProfileImage');
+    if (savedProfileImage) {
+      setProfileImage(savedProfileImage);
     }
   }, []);
 
   // Listen for real-time updates
   useEffect(() => {
     const handleAnnouncementsUpdate = () => {
-      setRealAnnouncements(getActiveAnnouncements());
+      console.log('Dashboard: announcementsUpdated event received');
+      const newAnnouncements = getActiveAnnouncements();
+      console.log('Dashboard: new announcements:', newAnnouncements);
+      console.log('Dashboard: Setting realAnnouncements state to:', newAnnouncements);
+      setRealAnnouncements(newAnnouncements);
     };
 
+    console.log('Dashboard: Setting up event listeners');
     window.addEventListener('announcementsUpdated', handleAnnouncementsUpdate);
     
     return () => {
+      console.log('Dashboard: Cleaning up event listeners');
       window.removeEventListener('announcementsUpdated', handleAnnouncementsUpdate);
     };
   }, []);
@@ -190,13 +207,91 @@ export default function DashboardPage() {
           {/* Header */}
           <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-cyan-400">Dashboard</h1>
-                <p className="text-gray-300">Welcome back, Hoodie Scholar!</p>
+              <div className="flex items-center gap-4">
+                {/* Profile Picture */}
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-lg">
+                    {profileImage && profileImage !== '🧑‍🎓' ? (
+                      <img 
+                        src={profileImage} 
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className={`w-full h-full bg-gradient-to-br from-cyan-400 to-pink-400 flex items-center justify-center text-xl ${profileImage && profileImage !== '🧑‍🎓' ? 'hidden' : ''}`}>
+                      🧑‍🎓
+                    </div>
+                  </div>
+                  {profileImage && profileImage !== '🧑‍🎓' && (
+                    <div className="absolute -top-1 -right-1">
+                      <div className="w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">✨</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <h1 className="text-3xl font-bold text-cyan-400">Dashboard</h1>
+                  <p className="text-gray-300">Welcome back, Hoodie Scholar!</p>
+                </div>
               </div>
               <div className="text-right">
                 <div className="text-sm text-gray-400">Current Time</div>
                 <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="mt-2 text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
+                  onClick={() => {
+                    console.log('=== Dashboard Debug ===');
+                    console.log('realAnnouncements state:', realAnnouncements);
+                    console.log('localStorage announcements:', localStorage.getItem('announcements'));
+                    console.log('getActiveAnnouncements():', getActiveAnnouncements());
+                    console.log('======================');
+                  }}
+                >
+                  Debug Announcements
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="mt-2 text-xs border-green-500/30 text-green-400 hover:bg-green-500/20"
+                  onClick={() => {
+                    // Create a test announcement
+                    const testAnnouncement = {
+                      id: Date.now().toString(),
+                      title: 'Test Announcement',
+                      content: 'This is a test announcement to debug the system.',
+                      type: 'info' as const,
+                      priority: 'medium' as const,
+                      startDate: new Date().toISOString().split('T')[0], // Today
+                      endDate: undefined,
+                      isActive: true,
+                      createdBy: 'Debug',
+                      createdAt: new Date().toISOString()
+                    };
+                    
+                    console.log('Creating test announcement:', testAnnouncement);
+                    
+                    // Add to localStorage directly
+                    const existingAnnouncements = JSON.parse(localStorage.getItem('announcements') || '[]');
+                    existingAnnouncements.push(testAnnouncement);
+                    localStorage.setItem('announcements', JSON.stringify(existingAnnouncements));
+                    
+                    // Trigger the event
+                    window.dispatchEvent(new CustomEvent('announcementsUpdated'));
+                    
+                    console.log('Test announcement created and event dispatched');
+                  }}
+                >
+                  Create Test Announcement
+                </Button>
               </div>
             </div>
           </header>
@@ -302,103 +397,134 @@ export default function DashboardPage() {
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Calendar & Events */}
-              <div className="lg:col-span-1">
-                <CalendarComponent />
-              </div>
+            {/* To-Do List */}
+            <Card className="bg-slate-800/50 border-green-500/30">
+              <CardHeader>
+                <CardTitle className="text-green-400 flex items-center space-x-2">
+                  <CheckCircle className="w-5 h-5" />
+                  <span>To-Do List</span>
+                  <Badge variant="secondary" className="ml-auto">
+                    {completedTodos}/{totalTodos}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {realTodos.length > 0 ? (
+                  realTodos.map((todo) => (
+                    <div key={todo.id} className={`p-3 rounded-lg border transition-all duration-200 ${
+                      todo.completed 
+                        ? 'bg-green-500/10 border-green-500/30' 
+                        : 'bg-slate-700/30 border-slate-600/30 hover:border-green-500/30'
+                    }`}>
+                      <div className="flex items-center space-x-3">
+                        <div className={`p-1 rounded ${
+                          todo.completed ? 'bg-green-500/20' : 'bg-slate-600/20'
+                        }`}>
+                          {getTypeIcon(todo.type)}
+                        </div>
+                        <div className="flex-1">
+                          <p className={`font-medium ${
+                            todo.completed ? 'text-green-400 line-through' : 'text-white'
+                          }`}>
+                            {todo.title}
+                          </p>
+                          <p className="text-sm text-gray-400">{todo.course}</p>
+                          {todo.dueDate && (
+                            <p className="text-xs text-yellow-400">Due: {todo.dueDate}</p>
+                          )}
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant={todo.completed ? "outline" : "default"}
+                          className={todo.completed ? "border-green-500 text-green-400" : "bg-green-600 hover:bg-green-700"}
+                        >
+                          {todo.completed ? 'Done' : 'Complete'}
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <CheckCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-400 text-sm">No pending tasks</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-              {/* To-Do List */}
-              <Card className="bg-slate-800/50 border-green-500/30 lg:col-span-1">
+            {/* Announcements */}
+            <Card className="bg-slate-800/50 border-blue-500/30">
+              <CardHeader>
+                <CardTitle className="text-blue-400 flex items-center space-x-2">
+                  <Bell className="w-5 h-5" />
+                  <span>Announcements</span>
+                  <Badge variant="secondary" className="ml-auto">
+                    {realAnnouncements.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {realAnnouncements.length > 0 ? (
+                  realAnnouncements.map((announcement) => (
+                    <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
+                          <Bell className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white">{announcement.title}</h4>
+                          <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
+                          <p className="text-xs text-gray-400 mt-2">
+                            Active from {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
+                            {announcement.endDate && ` to ${new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}`}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Bell className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-400 text-sm">No announcements</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Scheduled Announcements */}
+            {getScheduledAnnouncements().length > 0 && (
+              <Card className="bg-slate-800/50 border-cyan-500/30">
                 <CardHeader>
-                  <CardTitle className="text-green-400 flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5" />
-                    <span>To-Do List</span>
-                    <Badge variant="secondary" className="ml-auto">
-                      {completedTodos}/{totalTodos}
+                  <CardTitle className="text-cyan-400 flex items-center space-x-2">
+                    <Clock className="w-5 h-5" />
+                    <span>Upcoming Announcements</span>
+                    <Badge variant="outline" className="ml-auto border-cyan-500 text-cyan-400">
+                      {getScheduledAnnouncements().length}
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {realTodos.length > 0 ? (
-                    realTodos.map((todo) => (
-                      <div key={todo.id} className={`p-3 rounded-lg border transition-all duration-200 ${
-                        todo.completed 
-                          ? 'bg-green-500/10 border-green-500/30' 
-                          : 'bg-slate-700/30 border-slate-600/30 hover:border-green-500/30'
-                      }`}>
-                        <div className="flex items-center space-x-3">
-                          <div className={`p-1 rounded ${
-                            todo.completed ? 'bg-green-500/20' : 'bg-slate-600/20'
-                          }`}>
-                            {getTypeIcon(todo.type)}
-                          </div>
-                          <div className="flex-1">
-                            <p className={`font-medium ${
-                              todo.completed ? 'text-green-400 line-through' : 'text-white'
-                            }`}>
-                              {todo.title}
-                            </p>
-                            <p className="text-sm text-gray-400">{todo.course}</p>
-                            {todo.dueDate && (
-                              <p className="text-xs text-yellow-400">Due: {todo.dueDate}</p>
-                            )}
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant={todo.completed ? "outline" : "default"}
-                            className={todo.completed ? "border-green-500 text-green-400" : "bg-green-600 hover:bg-green-700"}
-                          >
-                            {todo.completed ? 'Done' : 'Complete'}
-                          </Button>
+                  {getScheduledAnnouncements().map((announcement) => (
+                    <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-cyan-500/30">
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
+                          <Clock className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-white">{announcement.title}</h4>
+                          <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
+                          <p className="text-xs text-cyan-400 mt-2">
+                            <Clock className="w-3 h-3 inline mr-1" />
+                            Starts: {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
+                            {announcement.endDate && ` • Ends: ${new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}`}
+                          </p>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <CheckCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-400 text-sm">No pending tasks</p>
                     </div>
-                  )}
+                  ))}
                 </CardContent>
               </Card>
-
-              {/* Announcements */}
-              <Card className="bg-slate-800/50 border-pink-500/30 lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="text-pink-400 flex items-center space-x-2">
-                    <Bell className="w-5 h-5" />
-                    <span>Announcements</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {realAnnouncements.length > 0 ? (
-                    realAnnouncements.map((announcement) => (
-                      <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                        <div className="flex items-start space-x-3">
-                          <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
-                            <AlertCircle className="w-4 h-4" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-white">{announcement.title}</h4>
-                            <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
-                            <p className="text-xs text-gray-400 mt-2">
-                              Active from {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
-                              {announcement.endDate && ` to ${new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}`}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Bell className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-400 text-sm">No announcements</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            )}
 
             {/* Progress Overview */}
             <Card className="bg-slate-800/50 border-purple-500/30">

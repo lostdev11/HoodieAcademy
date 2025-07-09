@@ -1,0 +1,1 @@
+console.log('Announcements in localStorage:', localStorage.getItem('announcements')); console.log('Active announcements:', JSON.parse(localStorage.getItem('announcements') || '[]').filter(a => a.isActive));

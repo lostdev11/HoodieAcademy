@@ -102,24 +102,24 @@ export function LeaderboardCard({ user, isCurrentUser = false, highlight = false
           
           {/* Score */}
           <div className="text-right">
-            <div className="text-2xl font-bold text-cyan-400">{user.totalScore.toLocaleString()}</div>
-            <div className="text-sm text-gray-400">Total Score</div>
+            <div className="text-2xl font-bold text-cyan-400">{user.overallCompletionPercentage.toFixed(1)}%</div>
+            <div className="text-sm text-gray-400">Completion</div>
           </div>
         </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-4 gap-4 mb-4">
           <div className="text-center">
-            <div className="text-lg font-semibold text-green-400">{user.coursesCompleted}</div>
-            <div className="text-xs text-gray-400">Courses</div>
+            <div className="text-lg font-semibold text-green-400">{user.coursesStarted}</div>
+            <div className="text-xs text-gray-400">Started</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-semibold text-purple-400">{user.badgesEarned}</div>
-            <div className="text-xs text-gray-400">Badges</div>
+            <div className="text-lg font-semibold text-purple-400">{user.coursesCompleted}</div>
+            <div className="text-xs text-gray-400">Completed</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-semibold text-pink-400">{user.averageQuizScore.toFixed(1)}%</div>
-            <div className="text-xs text-gray-400">Avg Score</div>
+            <div className="text-lg font-semibold text-pink-400">{user.totalLessonsCompleted}</div>
+            <div className="text-xs text-gray-400">Lessons</div>
           </div>
           <div className="text-center">
             <div className="text-lg font-semibold text-yellow-400">{user.achievements.length}</div>
@@ -131,9 +131,9 @@ export function LeaderboardCard({ user, isCurrentUser = false, highlight = false
         <div className="mb-4">
           <div className="flex justify-between text-sm mb-1">
             <span className="text-gray-300">Overall Progress</span>
-            <span className="text-cyan-400">{overallProgress}%</span>
+            <span className="text-cyan-400">{user.overallCompletionPercentage.toFixed(1)}%</span>
           </div>
-          <Progress value={overallProgress} className="h-2 bg-slate-700 [&>div]:bg-gradient-to-r [&>div]:from-cyan-500 [&>div]:to-pink-500" />
+          <Progress value={user.overallCompletionPercentage} className="h-2 bg-slate-700 [&>div]:bg-gradient-to-r [&>div]:from-cyan-500 [&>div]:to-pink-500" />
         </div>
 
         {/* Action Buttons */}

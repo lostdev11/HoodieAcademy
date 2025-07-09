@@ -7,12 +7,14 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Save, User, Award, BookOpen, Wallet, Users, Calendar, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink } from 'lucide-react';
+import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink } from 'lucide-react';
 import { squadTracks } from '@/lib/squadData';
 import Link from 'next/link';
 import { getSNSResolver, formatWalletAddress, isValidSolanaAddress, isSolDomain } from '@/services/sns-resolver';
 import { Connection } from '@solana/web3.js';
 import SquadBadge from '@/components/SquadBadge';
+import { NFTProfileSelector } from '@/components/profile/NFTProfileSelector';
+import { NFT } from '@/services/nft-service';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -69,6 +71,8 @@ export function ProfileView() {
   const [userSquad, setUserSquad] = useState<any>(null);
   const [placementTestCompleted, setPlacementTestCompleted] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [profileImage, setProfileImage] = useState<string>('🧑‍🎓');
+  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
 
   const snsResolver = getSNSResolver();
   const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
@@ -107,6 +111,23 @@ export function ProfileView() {
     
     if (testCompleted) {
       setPlacementTestCompleted(true);
+    }
+
+    // Load saved profile image and NFT data
+    const savedProfileImage = localStorage.getItem('userProfileImage');
+    const savedNFT = localStorage.getItem('userSelectedNFT');
+    
+    if (savedProfileImage) {
+      setProfileImage(savedProfileImage);
+    }
+    
+    if (savedNFT) {
+      try {
+        const nftData = JSON.parse(savedNFT);
+        setSelectedNFT(nftData);
+      } catch (error) {
+        console.error('Error parsing saved NFT data:', error);
+      }
     }
 
     detectConnectedWallet();
@@ -222,6 +243,19 @@ export function ProfileView() {
     // Disconnect from wallet providers
     if (window.solana?.disconnect) {
       window.solana.disconnect();
+    }
+  };
+
+  const handleProfileImageChange = (imageUrl: string, nftData?: NFT) => {
+    setProfileImage(imageUrl);
+    setSelectedNFT(nftData || null);
+    
+    // Save to localStorage
+    localStorage.setItem('userProfileImage', imageUrl);
+    if (nftData) {
+      localStorage.setItem('userSelectedNFT', JSON.stringify(nftData));
+    } else {
+      localStorage.removeItem('userSelectedNFT');
     }
   };
 
@@ -427,9 +461,11 @@ export function ProfileView() {
                 </div>
               </div>
               <div className="flex flex-col items-center gap-4">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cyan-400 to-pink-400 flex items-center justify-center text-4xl font-bold text-white shadow-lg">
-                  🧑‍🎓
-                </div>
+                  <NFTProfileSelector 
+                    walletAddress={wallet} 
+                    currentProfileImage={profileImage}
+                    onProfileImageChange={handleProfileImageChange} 
+                  />
                 
                 {/* Squad Badge */}
                 {userSquad && (
@@ -449,6 +485,31 @@ export function ProfileView() {
                     <p className="text-gray-400 text-sm">No badges earned yet</p>
                   )}
                 </div>
+
+                {/* NFT Profile Information */}
+                {selectedNFT && (
+                  <div className="text-center space-y-2 p-3 bg-slate-700/30 rounded-lg border border-purple-500/30">
+                    <h4 className="font-semibold text-purple-400 text-sm">Profile NFT</h4>
+                    <p className="text-white text-sm">{selectedNFT.name}</p>
+                    {selectedNFT.collection && (
+                      <p className="text-gray-400 text-xs">{selectedNFT.collection}</p>
+                    )}
+                    {selectedNFT.attributes && selectedNFT.attributes.length > 0 && (
+                      <div className="flex flex-wrap gap-1 justify-center">
+                        {selectedNFT.attributes.slice(0, 3).map((attr, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs bg-slate-600/50 border-purple-500/30 text-purple-300">
+                            {attr.trait_type}: {attr.value}
+                          </Badge>
+                        ))}
+                        {selectedNFT.attributes.length > 3 && (
+                          <Badge variant="outline" className="text-xs bg-slate-600/50 border-gray-500/30 text-gray-300">
+                            +{selectedNFT.attributes.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

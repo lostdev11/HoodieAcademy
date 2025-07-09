@@ -14,7 +14,6 @@ import {
   Users, 
   Target,
   RefreshCw,
-  Calendar,
   Award
 } from 'lucide-react';
 import { LeaderboardCard } from './LeaderboardCard';
@@ -23,14 +22,14 @@ import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import TokenGate from '@/components/TokenGate';
 import { LeaderboardService } from '@/services/leaderboard-service';
 
-type SortOption = 'rank' | 'score' | 'courses' | 'badges' | 'recent';
+type SortOption = 'rank' | 'completion' | 'score' | 'courses' | 'badges' | 'recent';
 type FilterOption = 'all' | 'top10' | 'top50' | 'recent' | 'achievements';
 
 export default function LeaderboardPage() {
   const [users, setUsers] = useState<LeaderboardUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<LeaderboardUser[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<SortOption>('rank');
+  const [sortBy, setSortBy] = useState<SortOption>('completion');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentUserWallet, setCurrentUserWallet] = useState<string>('');
@@ -101,6 +100,9 @@ export default function LeaderboardPage() {
       case 'rank':
         filtered.sort((a, b) => a.rank - b.rank);
         break;
+      case 'completion':
+        filtered.sort((a, b) => b.overallCompletionPercentage - a.overallCompletionPercentage);
+        break;
       case 'score':
         filtered.sort((a, b) => b.totalScore - a.totalScore);
         break;
@@ -160,7 +162,7 @@ export default function LeaderboardPage() {
                   <Trophy className="w-8 h-8" />
                   Hoodie Academy Leaderboard
                 </h1>
-                <p className="text-gray-300">Real-time rankings based on actual user progress</p>
+                <p className="text-gray-300">Real-time rankings based on course completion percentage</p>
               </div>
               <div className="text-right">
                 <div className="text-sm text-gray-400">Last Updated</div>
@@ -196,10 +198,10 @@ export default function LeaderboardPage() {
                       <TrendingUp className="w-6 h-6 text-purple-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">Avg Score</p>
+                      <p className="text-sm text-gray-400">Avg Completion</p>
                       <p className="text-2xl font-bold text-purple-400">
                         {users.length > 0 
-                          ? Math.round(users.reduce((acc, user) => acc + user.averageQuizScore, 0) / users.length)
+                          ? Math.round(users.reduce((acc, user) => acc + user.overallCompletionPercentage, 0) / users.length)
                           : 0}%
                       </p>
                     </div>
@@ -256,16 +258,16 @@ export default function LeaderboardPage() {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center">
-                      <p className="text-sm text-gray-400">Total Score</p>
-                      <p className="text-xl font-bold text-cyan-400">{currentUser.totalScore.toLocaleString()}</p>
+                      <p className="text-sm text-gray-400">Completion</p>
+                      <p className="text-xl font-bold text-cyan-400">{currentUser.overallCompletionPercentage.toFixed(1)}%</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-400">Courses Completed</p>
-                      <p className="text-xl font-bold text-purple-400">{currentUser.coursesCompleted}</p>
+                      <p className="text-sm text-gray-400">Courses Started</p>
+                      <p className="text-xl font-bold text-purple-400">{currentUser.coursesStarted}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-sm text-gray-400">Lessons Completed</p>
-                      <p className="text-xl font-bold text-green-400">{currentUser.totalLessons}</p>
+                      <p className="text-xl font-bold text-green-400">{currentUser.totalLessonsCompleted}</p>
                     </div>
                     <div className="text-center">
                       <p className="text-sm text-gray-400">Achievements</p>
@@ -311,6 +313,7 @@ export default function LeaderboardPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="rank">By Rank</SelectItem>
+                    <SelectItem value="completion">By Completion</SelectItem>
                     <SelectItem value="score">By Score</SelectItem>
                     <SelectItem value="courses">By Courses</SelectItem>
                     <SelectItem value="badges">By Badges</SelectItem>

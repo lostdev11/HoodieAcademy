@@ -14,6 +14,11 @@ export interface LeaderboardUser {
   squad?: string;
   achievements: Achievement[];
   courseProgress: CourseProgress[];
+  // New fields for completion-based ranking
+  coursesStarted: number;
+  overallCompletionPercentage: number;
+  totalLessonsCompleted: number;
+  totalLessonsAvailable: number;
 }
 
 export interface Achievement {
@@ -36,6 +41,7 @@ export interface CourseProgress {
   totalLessons: number;
   quizzesPassed: number;
   totalQuizzes: number;
+  started: boolean; // New field to track if user has started the course
 }
 
 // Real data functions - get data from localStorage
@@ -49,7 +55,7 @@ export const getRealLeaderboardData = (): LeaderboardUser[] => {
     const progress = JSON.parse(userProgress);
     const profiles = userProfiles ? JSON.parse(userProfiles) : {};
     
-    return Object.entries(progress).map(([walletAddress, userData]: [string, any]) => {
+    const users = Object.entries(progress).map(([walletAddress, userData]: [string, any]) => {
       const profile = profiles[walletAddress] || {};
       const courses = userData.courses || {};
       
@@ -84,8 +90,19 @@ export const getRealLeaderboardData = (): LeaderboardUser[] => {
         lessonsCompleted: courseData.progress ? courseData.progress.filter((p: string) => p === 'completed').length : 0,
         totalLessons: courseData.progress?.length || 0,
         quizzesPassed: courseData.finalExam?.passed ? 1 : 0,
-        totalQuizzes: courseData.finalExam?.taken ? 1 : 0
+        totalQuizzes: courseData.finalExam?.taken ? 1 : 0,
+        started: courseData.progress && courseData.progress.length > 0 // User has started if they have any progress
       }));
+      
+      // Calculate completion-based metrics
+      const coursesStarted = courseProgress.filter(course => course.started).length;
+      const totalLessonsCompleted = courseProgress.reduce((total, course) => total + course.lessonsCompleted, 0);
+      const totalLessonsAvailable = courseProgress.reduce((total, course) => total + course.totalLessons, 0);
+      
+      // Calculate overall completion percentage
+      const overallCompletionPercentage = totalLessonsAvailable > 0 
+        ? (totalLessonsCompleted / totalLessonsAvailable) * 100 
+        : 0;
       
       return {
         walletAddress,
@@ -101,28 +118,38 @@ export const getRealLeaderboardData = (): LeaderboardUser[] => {
         lastActive: profile.lastActive || new Date().toISOString(),
         squad: profile.squad || 'Unassigned',
         achievements: [], // Would be calculated based on user actions
-        courseProgress
+        courseProgress,
+        coursesStarted,
+        overallCompletionPercentage,
+        totalLessonsCompleted,
+        totalLessonsAvailable
       };
     });
+    
+    // Filter to only include users who have started at least one course
+    return users.filter(user => user.coursesStarted > 0);
   } catch (error) {
     console.error('Error parsing leaderboard data:', error);
     return [];
   }
 };
 
-// Helper function to calculate user score based on performance
+// Helper function to calculate user score based on completion percentage
 export const calculateUserScore = (user: LeaderboardUser): number => {
   let score = 0;
   
-  // Base points for completed courses
-  score += user.coursesCompleted * 300;
+  // Base points for completion percentage (primary ranking factor)
+  score += Math.round(user.overallCompletionPercentage * 10); // 10 points per 1% completion
+  
+  // Bonus points for completed courses
+  score += user.coursesCompleted * 100;
   
   // Points for lessons completed
-  score += user.totalLessons * 50;
+  score += user.totalLessonsCompleted * 20;
   
   // Points for quiz performance
-  score += user.totalQuizzes * 100;
-  score += Math.round(user.averageQuizScore * 10);
+  score += user.totalQuizzes * 50;
+  score += Math.round(user.averageQuizScore * 5);
   
   // Points for badges
   score += user.badgesEarned * 150;
@@ -132,26 +159,20 @@ export const calculateUserScore = (user: LeaderboardUser): number => {
   
   // Bonus for consistency (days since joining)
   const daysSinceJoining = Math.floor((Date.now() - new Date(user.joinDate).getTime()) / (1000 * 60 * 60 * 24));
-  score += Math.min(daysSinceJoining * 5, 500); // Max 500 points for consistency
+  score += Math.min(daysSinceJoining * 2, 200); // Max 200 points for consistency
   
   return score;
 };
 
-// Helper function to get user rank
+// Helper function to get user rank based on completion percentage
 export const getUserRank = (walletAddress: string): number => {
   const users = getRealLeaderboardData();
   
-  // Calculate scores for all users
-  const usersWithScores = users.map(user => ({
-    ...user,
-    totalScore: calculateUserScore(user)
-  }));
-  
-  // Sort by score (descending)
-  usersWithScores.sort((a, b) => b.totalScore - a.totalScore);
+  // Sort by completion percentage (descending)
+  users.sort((a, b) => b.overallCompletionPercentage - a.overallCompletionPercentage);
   
   // Find user and return rank
-  const userIndex = usersWithScores.findIndex(u => u.walletAddress === walletAddress);
+  const userIndex = users.findIndex(u => u.walletAddress === walletAddress);
   return userIndex !== -1 ? userIndex + 1 : -1;
 };
 
@@ -162,20 +183,14 @@ export const getUserScore = (walletAddress: string): number => {
   return user ? calculateUserScore(user) : 0;
 };
 
-// Helper function to get top 20 users
+// Helper function to get top 20 users based on completion percentage
 export const getTop20Users = (): LeaderboardUser[] => {
   const users = getRealLeaderboardData();
   
-  // Calculate scores for all users
-  const usersWithScores = users.map(user => ({
-    ...user,
-    totalScore: calculateUserScore(user)
-  }));
+  // Sort by completion percentage (descending) and assign ranks
+  users.sort((a, b) => b.overallCompletionPercentage - a.overallCompletionPercentage);
   
-  // Sort by score (descending) and assign ranks
-  usersWithScores.sort((a, b) => b.totalScore - a.totalScore);
-  
-  return usersWithScores.slice(0, 20).map((user, index) => ({
+  return users.slice(0, 20).map((user, index) => ({
     ...user,
     rank: index + 1
   }));

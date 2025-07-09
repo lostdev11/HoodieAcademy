@@ -521,17 +521,19 @@ export default function TechnicalAnalysisPage() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 overflow-hidden"
+                      className="flex justify-center mt-4 overflow-hidden"
                   >
-                      {walletProviders.map(wallet => (
-                          <Button
-                              key={wallet.name}
-                              onClick={() => handleWalletConnection(wallet.name)}
-                              className="w-full px-6 py-3 rounded-lg shadow-lg bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700 text-white transition-all duration-300 flex items-center justify-center"
-                          >
-                             {wallet.icon} {wallet.label}
-                          </Button>
-                      ))}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-md">
+                          {walletProviders.map(wallet => (
+                              <Button
+                                  key={wallet.name}
+                                  onClick={() => handleWalletConnection(wallet.name)}
+                                  className="w-full px-6 py-3 rounded-lg shadow-lg bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700 text-white transition-all duration-300 flex items-center justify-center"
+                              >
+                                 {wallet.icon} {wallet.label}
+                              </Button>
+                          ))}
+                      </div>
                   </motion.div>
               )}
 

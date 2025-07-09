@@ -161,22 +161,21 @@ export function getConnectedWallet(): string | null {
   return localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
 }
 
-// Calendar and Announcements utilities
-export const CALENDAR_EVENTS_KEY = 'calendarEvents';
+// Events and Announcements utilities
+export const EVENTS_KEY = 'events';
 export const ANNOUNCEMENTS_KEY = 'announcements';
 
-export interface CalendarEvent {
+export interface Event {
   id: string;
   title: string;
   description: string;
   date: string;
   time?: string;
-  type: 'class' | 'event' | 'announcement' | 'holiday';
-  recurring?: boolean;
-  recurringPattern?: 'weekly' | 'monthly' | 'yearly';
+  type: 'class' | 'event' | 'workshop' | 'meetup';
   location?: string;
   maxParticipants?: number;
   currentParticipants?: number;
+  isActive: boolean;
   createdBy: string;
   createdAt: string;
 }
@@ -194,20 +193,20 @@ export interface Announcement {
   createdAt: string;
 }
 
-// Get all calendar events
-export const getCalendarEvents = (): CalendarEvent[] => {
+// Get all events
+export const getEvents = (): Event[] => {
   try {
-    const stored = localStorage.getItem(CALENDAR_EVENTS_KEY);
+    const stored = localStorage.getItem(EVENTS_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
-    console.error('Error loading calendar events:', error);
+    console.error('Error loading events:', error);
     return [];
   }
 };
 
-// Get upcoming calendar events (within next 30 days)
-export const getUpcomingEvents = (): CalendarEvent[] => {
-  const events = getCalendarEvents();
+// Get upcoming events (within next 30 days)
+export const getUpcomingEvents = (): Event[] => {
+  const events = getEvents();
   const today = new Date();
   const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
   
@@ -232,27 +231,51 @@ export const getAnnouncements = (): Announcement[] => {
 export const getActiveAnnouncements = (): Announcement[] => {
   const announcements = getAnnouncements();
   const today = new Date();
+  const todayString = today.toISOString().split('T')[0]; // Get today's date as YYYY-MM-DD
   
   return announcements.filter((announcement) => {
     if (!announcement.isActive) return false;
-    const startDate = new Date(announcement.startDate);
-    if (startDate > today) return false;
+    
+    // Compare dates as strings to avoid timezone issues
+    const startDateString = announcement.startDate;
+    if (startDateString > todayString) return false;
+    
     if (announcement.endDate) {
-      const endDate = new Date(announcement.endDate);
-      return endDate >= today;
+      const endDateString = announcement.endDate;
+      return endDateString >= todayString;
     }
     return true;
   });
 };
 
-// Save calendar events
-export const saveCalendarEvents = (events: CalendarEvent[]): void => {
+// Get scheduled (future) announcements
+export const getScheduledAnnouncements = (): Announcement[] => {
+  const announcements = getAnnouncements();
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0];
+  
+  return announcements.filter((announcement) => {
+    if (!announcement.isActive) return false;
+    
+    const startDateString = announcement.startDate;
+    return startDateString > todayString; // Future start date
+  });
+};
+
+// Get all active announcements (current + scheduled) for admin view
+export const getAllActiveAnnouncements = (): Announcement[] => {
+  const announcements = getAnnouncements();
+  return announcements.filter((announcement) => announcement.isActive);
+};
+
+// Save events
+export const saveEvents = (events: Event[]): void => {
   try {
-    localStorage.setItem(CALENDAR_EVENTS_KEY, JSON.stringify(events));
+    localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
     // Dispatch custom event for real-time updates
-    window.dispatchEvent(new CustomEvent('calendarEventsUpdated', { detail: events }));
+    window.dispatchEvent(new CustomEvent('eventsUpdated', { detail: events }));
   } catch (error) {
-    console.error('Error saving calendar events:', error);
+    console.error('Error saving events:', error);
   }
 };
 
@@ -261,31 +284,32 @@ export const saveAnnouncements = (announcements: Announcement[]): void => {
   try {
     localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(announcements));
     // Dispatch custom event for real-time updates
-    window.dispatchEvent(new CustomEvent('announcementsUpdated', { detail: announcements }));
+    const event = new CustomEvent('announcementsUpdated', { detail: announcements });
+    window.dispatchEvent(event);
   } catch (error) {
     console.error('Error saving announcements:', error);
   }
 };
 
-// Add calendar event
-export const addCalendarEvent = (event: CalendarEvent): void => {
-  const events = getCalendarEvents();
+// Add event
+export const addEvent = (event: Event): void => {
+  const events = getEvents();
   events.push(event);
-  saveCalendarEvents(events);
+  saveEvents(events);
 };
 
-// Update calendar event
-export const updateCalendarEvent = (eventId: string, updatedEvent: CalendarEvent): void => {
-  const events = getCalendarEvents();
+// Update event
+export const updateEvent = (eventId: string, updatedEvent: Event): void => {
+  const events = getEvents();
   const updatedEvents = events.map(e => e.id === eventId ? updatedEvent : e);
-  saveCalendarEvents(updatedEvents);
+  saveEvents(updatedEvents);
 };
 
-// Delete calendar event
-export const deleteCalendarEvent = (eventId: string): void => {
-  const events = getCalendarEvents();
+// Delete event
+export const deleteEvent = (eventId: string): void => {
+  const events = getEvents();
   const updatedEvents = events.filter(e => e.id !== eventId);
-  saveCalendarEvents(updatedEvents);
+  saveEvents(updatedEvents);
 };
 
 // Add announcement
@@ -318,15 +342,31 @@ export const toggleAnnouncementActive = (announcementId: string): void => {
   saveAnnouncements(updatedAnnouncements);
 };
 
+// Debug function to help troubleshoot announcement issues
+export const debugAnnouncements = (): void => {
+  if (typeof window === 'undefined') return;
+  
+  const allAnnouncements = getAnnouncements();
+  const activeAnnouncements = getActiveAnnouncements();
+  const today = new Date().toISOString().split('T')[0];
+  
+  console.log('=== Announcement Debug Info ===');
+  console.log('Today (YYYY-MM-DD):', today);
+  console.log('All announcements:', allAnnouncements);
+  console.log('Active announcements:', activeAnnouncements);
+  console.log('localStorage announcements key:', localStorage.getItem(ANNOUNCEMENTS_KEY));
+  console.log('================================');
+};
+
 // Hook for real-time updates (can be used in components)
-export const useCalendarUpdates = (callback: () => void) => {
+export const useEventsAndAnnouncementsUpdates = (callback: () => void) => {
   if (typeof window !== 'undefined') {
     const handleUpdate = () => callback();
-    window.addEventListener('calendarEventsUpdated', handleUpdate);
+    window.addEventListener('eventsUpdated', handleUpdate);
     window.addEventListener('announcementsUpdated', handleUpdate);
     
     return () => {
-      window.removeEventListener('calendarEventsUpdated', handleUpdate);
+      window.removeEventListener('eventsUpdated', handleUpdate);
       window.removeEventListener('announcementsUpdated', handleUpdate);
     };
   }

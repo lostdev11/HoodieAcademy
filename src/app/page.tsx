@@ -6,27 +6,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { 
-  Clock, 
-  Bell, 
+  BookOpen, 
+  Trophy, 
+  Users, 
+  Target, 
+  TrendingUp, 
+  Award, 
+  Star, 
   CheckCircle, 
-  Play, 
-  Calendar,
-  TrendingUp,
-  Award,
-  BookOpen,
-  Video,
-  AlertCircle,
-  Trophy,
+  ArrowRight,
+  ChevronRight,
+  RefreshCw,
+  Plus,
+  X,
+  Edit,
+  Trash2,
+  Bell,
+  Megaphone,
+  User, 
   LogOut,
-  User,
-  Users,
-  Shield
-} from "lucide-react"
+  AlertCircle,
+  Video,
+  Shield,
+  Clock
+} from 'lucide-react';
 import Link from "next/link"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
-import { getUserRank, getUserScore, isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet, getActiveAnnouncements, getUpcomingEvents, Announcement } from '@/lib/utils'
+import { getUserRank, getUserScore, isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
 
 
 
@@ -173,19 +181,27 @@ export default function HoodieAcademy() {
   // Listen for real-time updates
   useEffect(() => {
     const handleAnnouncementsUpdate = () => {
-      setRealAnnouncements(getRealAnnouncements());
+      console.log('Home page: announcementsUpdated event received');
+      const newAnnouncements = getRealAnnouncements();
+      console.log('Home page: new announcements:', newAnnouncements);
+      setRealAnnouncements(newAnnouncements);
     };
 
-    const handleCalendarUpdate = () => {
-      setRealUpcomingClasses(getRealUpcomingClasses());
+    const handleEventsUpdate = () => {
+      console.log('Home page: eventsUpdated event received');
+      const newEvents = getRealUpcomingClasses();
+      console.log('Home page: new events:', newEvents);
+      setRealUpcomingClasses(newEvents);
     };
 
+    console.log('Home page: Setting up event listeners');
     window.addEventListener('announcementsUpdated', handleAnnouncementsUpdate);
-    window.addEventListener('calendarEventsUpdated', handleCalendarUpdate);
+    window.addEventListener('eventsUpdated', handleEventsUpdate);
     
     return () => {
+      console.log('Home page: Cleaning up event listeners');
       window.removeEventListener('announcementsUpdated', handleAnnouncementsUpdate);
-      window.removeEventListener('calendarEventsUpdated', handleCalendarUpdate);
+      window.removeEventListener('eventsUpdated', handleEventsUpdate);
     };
   }, []);
 
@@ -219,6 +235,12 @@ export default function HoodieAcademy() {
   const formatWalletAddress = (address: string) => {
     if (!address) return '';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  // Helper function to normalize squad names for URL generation
+  const normalizeSquadNameForUrl = (name: string): string => {
+    // Remove emojis and extra spaces, convert to URL-friendly format
+    return name.replace(/^[🎨🧠🎤⚔️🦅🏦]+\s*/, '').toLowerCase().trim().replace(/\s+/g, '-');
   };
 
   return (
@@ -534,7 +556,7 @@ export default function HoodieAcademy() {
                       </div>
                     </div>
                     <Button asChild className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
-                      <Link href={`/squads/${userSquad}/chat`}>
+                      <Link href={`/squads/${normalizeSquadNameForUrl(userSquad)}/chat`}>
                         <Users className="w-4 h-4 mr-2" />
                         Join Chat
                       </Link>
@@ -581,7 +603,7 @@ export default function HoodieAcademy() {
               <Card className="bg-slate-800/50 border-cyan-500/30 lg:col-span-1">
                 <CardHeader>
                   <CardTitle className="text-cyan-400 flex items-center space-x-2">
-                    <Calendar className="w-5 h-5" />
+                    <Clock className="w-5 h-5" />
                     <span>Upcoming Classes</span>
                   </CardTitle>
                 </CardHeader>
@@ -611,7 +633,7 @@ export default function HoodieAcademy() {
                     ))
                   ) : (
                     <div className="text-center py-8">
-                      <Calendar className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-gray-400 text-sm">No upcoming classes scheduled</p>
                     </div>
                   )}
@@ -621,10 +643,25 @@ export default function HoodieAcademy() {
               {/* Announcements */}
               <Card className="bg-slate-800/50 border-pink-500/30 lg:col-span-1">
                 <CardHeader>
-                  <CardTitle className="text-pink-400 flex items-center space-x-2">
-                    <Bell className="w-5 h-5" />
-                    <span>Announcements</span>
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-pink-400 flex items-center space-x-2">
+                      <Bell className="w-5 h-5" />
+                      <span>Announcements</span>
+                    </CardTitle>
+                    <Button
+                      onClick={() => {
+                        console.log('Manual refresh clicked');
+                        const newAnnouncements = getRealAnnouncements();
+                        console.log('Manual refresh - announcements:', newAnnouncements);
+                        setRealAnnouncements(newAnnouncements);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="border-pink-500 text-pink-400 hover:bg-pink-500/10"
+                    >
+                      Refresh
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {realAnnouncements.length > 0 ? (
@@ -654,6 +691,43 @@ export default function HoodieAcademy() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Scheduled Announcements */}
+            {getScheduledAnnouncements().length > 0 && (
+              <Card className="bg-slate-800/50 border-cyan-500/30 mb-6">
+                <CardHeader>
+                  <CardTitle className="text-cyan-400 flex items-center space-x-2">
+                    <Clock className="w-5 h-5" />
+                    <span>Upcoming Announcements</span>
+                    <Badge variant="outline" className="ml-auto border-cyan-500 text-cyan-400">
+                      {getScheduledAnnouncements().length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {getScheduledAnnouncements().map((announcement) => (
+                      <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-cyan-500/30">
+                        <div className="flex items-start space-x-3">
+                          <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
+                            <Clock className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-white">{announcement.title}</h4>
+                            <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
+                            <p className="text-xs text-cyan-400 mt-2">
+                              <Clock className="w-3 h-3 inline mr-1" />
+                              Starts: {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
+                              {announcement.endDate && ` • Ends: ${new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}`}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Progress Overview */}
             <Card className="bg-slate-800/50 border-purple-500/30">

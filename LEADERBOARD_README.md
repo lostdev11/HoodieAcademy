@@ -1,226 +1,145 @@
-# Hoodie Academy Leaderboard System
+# Hoodie Academy Leaderboard System - Completion-Based Ranking
 
 ## Overview
 
-The Hoodie Academy Leaderboard System tracks user performance based on wallet addresses and ranks them according to their achievements in the academy. The system automatically updates when users complete courses, lessons, and quizzes.
+The Hoodie Academy leaderboard has been updated to focus on **course completion percentage** rather than total score. This change ensures that users are ranked based on their actual learning progress and engagement with the course material.
 
-## Features
+## Key Changes
 
-### 🏆 Top 20 Leaderboard
-- Real-time ranking based on user performance
-- Detailed user profiles with progress tracking
-- Achievement system with points
-- Search and filter functionality
-- Responsive design with beautiful UI
+### 1. Completion-Based Ranking
+- **Primary Metric**: Overall completion percentage across all started courses
+- **Filtering**: Only users who have started at least one course are shown
+- **Sorting**: Users are ranked by completion percentage (highest to lowest)
 
-### 📊 Performance Tracking
-- **Course Completion**: 300 points per completed course
-- **Lesson Progress**: 50 points per completed lesson
-- **Quiz Performance**: 100 points per passed quiz + score multiplier
-- **Badge System**: 150 points per earned NFT badge
-- **Achievements**: Variable points based on achievement type
-- **Consistency Bonus**: Up to 500 points for consistent participation
+### 2. New Data Fields
 
-### 🎯 Achievement System
-- **First Steps**: Complete your first course (100 points)
-- **Perfect Score**: Achieve 100% on any quiz (200 points)
-- **Speed Learner**: Complete 3 courses in one week (300 points)
-- **Consistency King**: Log in for 30 consecutive days (250 points)
-
-## File Structure
-
-```
-src/
-├── lib/
-│   └── leaderboardData.ts          # Data structures and mock data
-├── components/
-│   └── leaderboard/
-│       ├── LeaderboardCard.tsx     # Individual user card component
-│       └── LeaderboardPage.tsx     # Main leaderboard page
-├── services/
-│   └── leaderboard-service.ts      # Business logic and data management
-├── hooks/
-│   └── use-leaderboard.ts          # React hook for leaderboard integration
-└── app/
-    └── leaderboard/
-        └── page.tsx                # Leaderboard route
-```
-
-## Data Models
-
-### LeaderboardUser
+#### LeaderboardUser Interface
 ```typescript
 interface LeaderboardUser {
-  walletAddress: string;
-  displayName: string;
-  rank: number;
-  totalScore: number;
-  coursesCompleted: number;
-  totalLessons: number;
-  totalQuizzes: number;
-  averageQuizScore: number;
-  badgesEarned: number;
-  joinDate: string;
-  lastActive: string;
-  profileImage?: string;
-  squad?: string;
-  achievements: Achievement[];
-  courseProgress: CourseProgress[];
+  // ... existing fields ...
+  coursesStarted: number;                    // Number of courses user has started
+  overallCompletionPercentage: number;      // Overall completion % across all courses
+  totalLessonsCompleted: number;            // Total lessons completed
+  totalLessonsAvailable: number;            // Total lessons available in started courses
 }
 ```
 
-### CourseProgress
+#### CourseProgress Interface
 ```typescript
 interface CourseProgress {
-  courseId: string;
-  courseName: string;
-  progress: number;
-  score: number;
-  completed: boolean;
-  completedDate?: string;
-  lessonsCompleted: number;
-  totalLessons: number;
-  quizzesPassed: number;
-  totalQuizzes: number;
+  // ... existing fields ...
+  started: boolean;                         // Whether user has started this course
 }
 ```
 
-## Usage
+### 3. Updated Scoring Algorithm
 
-### 1. Accessing the Leaderboard
-- Navigate to `/leaderboard` in the application
-- Accessible from the sidebar navigation
-- Preview available on the main dashboard
+The scoring system now prioritizes completion percentage:
 
-### 2. Integration with Course Completion
 ```typescript
-import { useLeaderboard } from '@/hooks/use-leaderboard';
+// Base points for completion percentage (primary ranking factor)
+score += Math.round(overallCompletionPercentage * 10); // 10 points per 1% completion
 
-const { updateProgress } = useLeaderboard(walletAddress);
+// Bonus points for completed courses
+score += coursesCompleted * 100;
 
-// When a user completes a course
-updateProgress({
-  walletAddress: 'user-wallet-address',
-  courseId: 'wallet-wizardry',
-  progress: 100,
-  score: 95,
-  completed: true,
-  lessonsCompleted: 4,
-  totalLessons: 4,
-  quizzesPassed: 1,
-  totalQuizzes: 1
+// Points for lessons completed
+score += totalLessonsCompleted * 20;
+
+// Points for quiz performance
+score += quizScore * 5 + 50;
+
+// Achievement and consistency bonuses
+score += achievements + consistencyBonus;
+```
+
+### 4. UI Updates
+
+#### Leaderboard Page
+- **Header**: Updated description to "Real-time rankings based on course completion percentage"
+- **Stats Overview**: 
+  - Shows "Avg Completion" instead of "Avg Score"
+  - Displays completion percentage prominently
+- **Sorting Options**: Added "By Completion" as default sort option
+- **User Cards**: Display completion percentage instead of total score
+
+#### Leaderboard Cards
+- **Main Display**: Shows completion percentage prominently
+- **Stats Row**: 
+  - Courses Started
+  - Courses Completed  
+  - Lessons Completed
+  - Achievements
+- **Progress Bar**: Uses actual completion percentage
+
+#### Current User Stats
+- Shows completion percentage instead of total score
+- Displays courses started vs completed
+- Shows lessons completed count
+
+## How It Works
+
+### 1. User Progress Tracking
+- When a user starts a course (any lesson progress), `started: true` is set
+- Progress is calculated as: `(lessonsCompleted / totalLessons) * 100`
+- Overall completion: `(totalLessonsCompleted / totalLessonsAvailable) * 100`
+
+### 2. Leaderboard Filtering
+```typescript
+// Only include users who have started at least one course
+const activeUsers = users.filter(user => {
+  const hasStartedCourses = user.courseProgress.some(course => course.started);
+  return hasStartedCourses;
 });
 ```
 
-### 3. User Initialization
+### 3. Ranking Algorithm
 ```typescript
-const { initializeUser } = useLeaderboard(walletAddress);
-
-// Initialize new user
-initializeUser('HoodieScholar');
+// Sort by completion percentage (descending)
+activeUsers.sort((a, b) => b.overallCompletionPercentage - a.overallCompletionPercentage);
 ```
 
-## Scoring System
+## Benefits
 
-### Base Points
-- **Course Completion**: 300 points
-- **Lesson Completion**: 50 points per lesson
-- **Quiz Pass**: 100 points + (score × 2)
-- **Badge Earned**: 150 points
-- **Achievement**: Variable (100-300 points)
+1. **Fair Ranking**: Users are ranked based on actual learning progress
+2. **Encourages Engagement**: Rewards consistent course participation
+3. **Clear Metrics**: Easy to understand completion percentages
+4. **Motivates Learning**: Focuses on educational achievement rather than gaming the system
 
-### Bonus Points
-- **Consistency**: Up to 500 points for daily participation
-- **Perfect Scores**: Additional multipliers for 100% quiz scores
-- **Speed Learning**: Bonus for rapid course completion
+## Testing
 
-## Features
+Use the test page at `/test-leaderboard` to:
+- Initialize test users
+- Simulate lesson completions
+- Test quiz completions
+- View real-time leaderboard updates
+- Reset data for testing
 
-### Search & Filter
-- Search by display name, wallet address, or squad
-- Filter by rank range (Top 10, Top 50)
-- Filter by recent activity
-- Filter by achievement status
+## Migration Notes
 
-### User Profiles
-- Detailed progress breakdown
-- Achievement history
-- Course completion status
-- Performance statistics
-
-### Real-time Updates
-- Automatic score recalculation
-- Rank updates based on performance
-- Achievement unlocking
-- Last active tracking
+- Existing user data will be automatically migrated
+- New fields will be calculated from existing progress data
+- Users without any course progress will not appear in the leaderboard
+- All existing functionality (achievements, badges, etc.) remains intact
 
 ## Technical Implementation
 
-### Data Persistence
-- Local storage for user progress
-- Mock data for demonstration
-- Ready for database integration
+### Files Modified
+- `src/lib/leaderboardData.ts` - Updated interfaces and calculation functions
+- `src/services/leaderboard-service.ts` - Updated service logic
+- `src/components/leaderboard/LeaderboardPage.tsx` - Updated UI
+- `src/components/leaderboard/LeaderboardCard.tsx` - Updated card display
+- `src/app/test-leaderboard/page.tsx` - Updated test interface
 
-### Performance Optimization
-- Efficient score calculation
-- Cached user data
-- Optimized re-renders
-
-### Error Handling
-- Graceful fallbacks for missing data
-- Error logging and recovery
-- User-friendly error messages
+### Key Functions
+- `getRealLeaderboardData()` - Filters and calculates completion metrics
+- `calculateUserScore()` - Updated scoring algorithm
+- `getUserRank()` - Now based on completion percentage
+- `recalculateUserStats()` - Calculates new completion fields
 
 ## Future Enhancements
 
-### Planned Features
-- [ ] Real-time WebSocket updates
-- [ ] Database integration (PostgreSQL/MongoDB)
-- [ ] Social features (following, sharing)
-- [ ] Seasonal competitions
-- [ ] NFT rewards for top performers
-- [ ] Team/Clan leaderboards
-- [ ] API endpoints for external integration
-
-### Scalability Considerations
-- Database indexing for fast queries
-- Caching layer for frequently accessed data
-- Pagination for large leaderboards
-- CDN for static assets
-
-## API Integration
-
-### Endpoints (Future Implementation)
-```typescript
-// GET /api/leaderboard
-// Returns top 20 users
-
-// GET /api/leaderboard/user/:walletAddress
-// Returns specific user data
-
-// POST /api/leaderboard/progress
-// Updates user progress
-
-// GET /api/leaderboard/achievements/:walletAddress
-// Returns user achievements
-```
-
-## Contributing
-
-1. Follow the existing code structure
-2. Add TypeScript types for new features
-3. Include error handling
-4. Test with different wallet addresses
-5. Update documentation for new features
-
-## Support
-
-For questions or issues with the leaderboard system:
-1. Check the console for error messages
-2. Verify wallet connection status
-3. Ensure proper data initialization
-4. Review the scoring algorithm
-
----
-
-**Note**: This is a demonstration implementation using mock data. In production, integrate with a real database and implement proper authentication and authorization. 
+1. **Course-Specific Rankings**: Separate leaderboards by course category
+2. **Time-Based Metrics**: Weekly/monthly completion challenges
+3. **Achievement Integration**: Tie achievements to completion milestones
+4. **Social Features**: Course completion sharing and celebrations 

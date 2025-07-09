@@ -153,7 +153,23 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         console.error('Error details:', error.message, error.details, error.hint);
         
         // Provide more specific error messages
-        if (error.message.includes('permission')) {
+        if (error.message.includes('row-level security policy')) {
+          alert('Database permission error: Row-level security policy is blocking message insertion. Please contact the administrator to configure database permissions.');
+          
+          // Fallback: Store message locally
+          const localMessage: Message = {
+            id: Date.now().toString(),
+            text: messageData.text,
+            sender: messageData.sender,
+            squad: messageData.squad,
+            timestamp: new Date().toISOString(),
+            created_at: new Date().toISOString()
+          };
+          
+          setMessages(prev => [...prev, localMessage]);
+          setNewMessage('');
+          alert('Message stored locally. Database permissions need to be configured for persistent storage.');
+        } else if (error.message.includes('permission')) {
           alert('Permission denied. You may not have access to send messages in this squad.');
         } else if (error.message.includes('network')) {
           alert('Network error. Please check your connection and try again.');

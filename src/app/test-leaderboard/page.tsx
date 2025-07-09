@@ -121,12 +121,12 @@ export default function TestLeaderboardPage() {
                   <p className="text-lg font-semibold text-white">{currentUser.displayName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Total Score</p>
-                  <p className="text-lg font-semibold text-cyan-400">{currentUser.totalScore}</p>
+                  <p className="text-sm text-gray-400">Completion</p>
+                  <p className="text-lg font-semibold text-cyan-400">{currentUser.overallCompletionPercentage?.toFixed(1) || 0}%</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Courses Completed</p>
-                  <p className="text-lg font-semibold text-purple-400">{currentUser.coursesCompleted}</p>
+                  <p className="text-sm text-gray-400">Courses Started</p>
+                  <p className="text-lg font-semibold text-purple-400">{currentUser.coursesStarted || 0}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">Rank</p>
@@ -168,8 +168,8 @@ export default function TestLeaderboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-cyan-400">{user.totalScore}</p>
-                      <p className="text-sm text-gray-400">points</p>
+                      <p className="text-lg font-bold text-cyan-400">{user.overallCompletionPercentage?.toFixed(1) || 0}%</p>
+                      <p className="text-sm text-gray-400">completion</p>
                     </div>
                   </div>
                 ))}
