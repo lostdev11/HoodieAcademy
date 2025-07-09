@@ -5,17 +5,17 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { 
-  LayoutDashboard, 
-  Calendar, 
+  Home, 
+  BookOpen, 
+  Trophy, 
+  Users, 
+  Settings, 
   User, 
-  Video, 
-  ChevronLeft, 
+  LogOut,
+  ChevronLeft,
   ChevronRight,
-  Home,
-  BookOpen,
-  Trophy,
-  TrendingUp,
-  Shield
+  BarChart3,
+  Video
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -36,7 +36,7 @@ const sidebarItems: SidebarItem[] = [
   {
     id: 'dashboard',
     label: 'Dashboard',
-    icon: <LayoutDashboard className="w-5 h-5" />,
+    icon: <BarChart3 className="w-5 h-5" />,
     href: '/dashboard'
   },
   {
@@ -48,14 +48,8 @@ const sidebarItems: SidebarItem[] = [
   {
     id: 'leaderboard',
     label: 'Leaderboard',
-    icon: <TrendingUp className="w-5 h-5" />,
+    icon: <BarChart3 className="w-5 h-5" />,
     href: '/leaderboard'
-  },
-  {
-    id: 'calendar',
-    label: 'Calendar',
-    icon: <Calendar className="w-5 h-5" />,
-    href: '/calendar'
   },
   {
     id: 'profile',
@@ -78,7 +72,7 @@ const sidebarItems: SidebarItem[] = [
   {
     id: 'admin',
     label: 'Admin',
-    icon: <Shield className="w-5 h-5" />,
+    icon: <Settings className="w-5 h-5" />,
     href: '/admin'
   }
 ];

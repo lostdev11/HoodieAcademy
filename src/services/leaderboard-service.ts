@@ -34,6 +34,11 @@ export interface UserProgress {
   squad?: string;
   achievements: Achievement[];
   courseProgress: CourseProgress[];
+  // New fields for completion-based ranking
+  coursesStarted: number;
+  overallCompletionPercentage: number;
+  totalLessonsCompleted: number;
+  totalLessonsAvailable: number;
 }
 
 export class LeaderboardService {
@@ -66,7 +71,11 @@ export class LeaderboardService {
         badgesEarned: 0,
         squad,
         achievements: [],
-        courseProgress: []
+        courseProgress: [],
+        coursesStarted: 0,
+        overallCompletionPercentage: 0,
+        totalLessonsCompleted: 0,
+        totalLessonsAvailable: 0
       };
       
       this.saveUserProgress(walletAddress, newUser);
@@ -96,7 +105,8 @@ export class LeaderboardService {
         lessonsCompleted: update.lessonsCompleted || 0,
         totalLessons: update.totalLessons || 0,
         quizzesPassed: update.quizzesPassed || 0,
-        totalQuizzes: update.totalQuizzes || 0
+        totalQuizzes: update.totalQuizzes || 0,
+        started: true // User has started if they're updating progress
       };
 
       if (courseIndex !== -1) {
@@ -170,17 +180,40 @@ export class LeaderboardService {
     const leaderboardData = localStorage.getItem(LeaderboardService.LEADERBOARD_KEY);
     if (leaderboardData) {
       const users: UserProgress[] = JSON.parse(leaderboardData);
-      return users
-        .map((user, index) => ({
-          ...user,
-          rank: index + 1
-        }))
-        .sort((a, b) => b.totalScore - a.totalScore);
+      
+      // Filter to only include users who have started at least one course
+      const activeUsers = users.filter(user => {
+        const hasStartedCourses = user.courseProgress.some(course => course.started);
+        return hasStartedCourses;
+      });
+      
+      // Sort by completion percentage (descending)
+      activeUsers.sort((a, b) => {
+        const aCompletion = this.calculateCompletionPercentage(a);
+        const bCompletion = this.calculateCompletionPercentage(b);
+        return bCompletion - aCompletion;
+      });
+      
+      return activeUsers.map((user, index) => ({
+        ...user,
+        rank: index + 1,
+        overallCompletionPercentage: this.calculateCompletionPercentage(user)
+      }));
     }
     return [];
   }
 
-  // Get user's current rank
+  // Calculate completion percentage for a user
+  private calculateCompletionPercentage(user: UserProgress): number {
+    if (user.courseProgress.length === 0) return 0;
+    
+    const totalLessonsCompleted = user.courseProgress.reduce((total, course) => total + course.lessonsCompleted, 0);
+    const totalLessonsAvailable = user.courseProgress.reduce((total, course) => total + course.totalLessons, 0);
+    
+    return totalLessonsAvailable > 0 ? (totalLessonsCompleted / totalLessonsAvailable) * 100 : 0;
+  }
+
+  // Get user's current rank based on completion percentage
   getUserRank(walletAddress: string): number {
     const leaderboard = this.getLeaderboard();
     const userIndex = leaderboard.findIndex(user => user.walletAddress === walletAddress);
@@ -267,27 +300,38 @@ export class LeaderboardService {
   // Recalculate user statistics
   private recalculateUserStats(user: UserProgress): void {
     user.coursesCompleted = user.courseProgress.filter(c => c.completed).length;
+    user.coursesStarted = user.courseProgress.filter(c => c.started).length;
     user.totalLessons = user.courseProgress.reduce((acc, c) => acc + c.lessonsCompleted, 0);
+    user.totalLessonsCompleted = user.courseProgress.reduce((acc, c) => acc + c.lessonsCompleted, 0);
+    user.totalLessonsAvailable = user.courseProgress.reduce((acc, c) => acc + c.totalLessons, 0);
     user.totalQuizzes = user.courseProgress.reduce((acc, c) => acc + c.quizzesPassed, 0);
+    
+    // Calculate overall completion percentage
+    user.overallCompletionPercentage = user.totalLessonsAvailable > 0 
+      ? (user.totalLessonsCompleted / user.totalLessonsAvailable) * 100 
+      : 0;
     
     const quizScores = user.courseProgress.filter(c => c.score > 0).map(c => c.score);
     user.averageQuizScore = quizScores.length > 0 
       ? Math.round(quizScores.reduce((acc, score) => acc + score, 0) / quizScores.length)
       : 0;
 
-    // Calculate total score based on scoring algorithm
+    // Calculate total score based on completion percentage (primary factor)
     let totalScore = 0;
     
-    // Course completion points
-    totalScore += user.coursesCompleted * 300;
+    // Base points for completion percentage (primary ranking factor)
+    totalScore += Math.round(user.overallCompletionPercentage * 10); // 10 points per 1% completion
     
-    // Lesson progress points
-    totalScore += user.totalLessons * 50;
+    // Bonus points for completed courses
+    totalScore += user.coursesCompleted * 100;
     
-    // Quiz performance points
+    // Points for lessons completed
+    totalScore += user.totalLessonsCompleted * 20;
+    
+    // Points for quiz performance
     user.courseProgress.forEach(course => {
       if (course.score > 0) {
-        totalScore += 100 + (course.score * 2);
+        totalScore += 50 + (course.score * 5);
       }
     });
     
@@ -297,10 +341,10 @@ export class LeaderboardService {
     // Achievement points
     totalScore += user.achievements.reduce((acc, achievement) => acc + achievement.points, 0);
     
-    // Consistency bonus (up to 500 points for daily participation)
+    // Consistency bonus (up to 200 points for daily participation)
     const lastActive = new Date(user.lastActive);
     const daysSinceJoin = Math.floor((Date.now() - new Date(user.joinDate).getTime()) / (24 * 60 * 60 * 1000));
-    const consistencyBonus = Math.min(daysSinceJoin * 10, 500);
+    const consistencyBonus = Math.min(daysSinceJoin * 2, 200);
     totalScore += consistencyBonus;
 
     user.totalScore = totalScore;
@@ -375,19 +419,47 @@ export class LeaderboardService {
 
   // Reset all leaderboard data (admin function)
   resetLeaderboard(): void {
-    // Clear all user progress
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.startsWith(LeaderboardService.USER_PROGRESS_PREFIX) || 
-                  key.startsWith(LeaderboardService.LAST_ACTIVE_PREFIX) ||
-                  key === LeaderboardService.LEADERBOARD_KEY)) {
-        keysToRemove.push(key);
-      }
+    localStorage.removeItem(LeaderboardService.LEADERBOARD_KEY);
+    console.log('Leaderboard has been reset');
+  }
+
+  // Badge reset methods
+  resetUserBadges(walletAddress: string): void {
+    const user = this.getUserProgress(walletAddress);
+    if (user) {
+      user.badgesEarned = 0;
+      user.achievements = [];
+      this.recalculateUserStats(user);
+      this.saveUserProgress(walletAddress, user);
+      this.updateLeaderboard();
+      console.log(`Badges reset for user: ${walletAddress}`);
     }
-    
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-    console.log('Leaderboard data reset successfully');
+  }
+
+  resetAllBadges(): void {
+    const leaderboardData = localStorage.getItem(LeaderboardService.LEADERBOARD_KEY);
+    if (leaderboardData) {
+      const users: UserProgress[] = JSON.parse(leaderboardData);
+      users.forEach(user => {
+        user.badgesEarned = 0;
+        user.achievements = [];
+        this.recalculateUserStats(user);
+        this.saveUserProgress(user.walletAddress, user);
+      });
+      this.updateLeaderboard();
+      console.log('All user badges have been reset');
+    }
+  }
+
+  resetUserCourse(walletAddress: string, courseId: string): void {
+    const user = this.getUserProgress(walletAddress);
+    if (user) {
+      user.courseProgress = user.courseProgress.filter(course => course.courseId !== courseId);
+      this.recalculateUserStats(user);
+      this.saveUserProgress(walletAddress, user);
+      this.updateLeaderboard();
+      console.log(`Course ${courseId} reset for user: ${walletAddress}`);
+    }
   }
 }
 

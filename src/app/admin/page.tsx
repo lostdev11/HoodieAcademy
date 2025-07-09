@@ -9,29 +9,51 @@ import { Input } from "@/components/ui/input";
 import { 
   Users, 
   BookOpen, 
-  Award, 
-  CheckCircle, 
-  Clock, 
+  Trophy, 
+  Settings, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Search, 
+  Filter, 
+  RefreshCw, 
+  Download, 
+  Upload, 
+  Eye, 
+  EyeOff,
+  CheckCircle,
+  XCircle,
   AlertTriangle,
-  Shield,
+  Info,
+  User,
+  Award,
+  Target,
+  TrendingUp,
+  BarChart3,
+  Megaphone,
+  Bell,
+  Clock,
   FileText,
-  Eye,
   CheckSquare,
   XSquare,
-  RefreshCw,
   ArrowLeft,
-  Lock,
-  AlertCircle,
-  Key,
   LogOut,
-  Calendar
+  Shield,
+  AlertCircle,
+  Lock,
+  Key
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { isCurrentUserAdmin, isAdminPassword, setAdminAuthenticated, DEMO_WALLET, removeDemoWalletAdminAccess, getConnectedWallet, 
-  CalendarEvent, Announcement, getCalendarEvents, getAnnouncements, saveCalendarEvents, saveAnnouncements, 
-  updateCalendarEvent, deleteCalendarEvent as deleteEventUtil, updateAnnouncement, deleteAnnouncement as deleteAnnouncementUtil, 
-  toggleAnnouncementActive as toggleAnnouncementUtil } from '@/lib/utils';
+import { 
+  getUserRank, getUserScore, isCurrentUserAdmin, isAdminPassword, setAdminAuthenticated, 
+  DEMO_WALLET, removeDemoWalletAdminAccess, getConnectedWallet,
+  Announcement, Event, getAnnouncements, getEvents, saveAnnouncements, saveEvents,
+  updateAnnouncement, deleteAnnouncement as deleteAnnouncementUtil,
+  toggleAnnouncementActive as toggleAnnouncementUtil, debugAnnouncements, addAnnouncement,
+  getScheduledAnnouncements, getAllActiveAnnouncements,
+  addEvent, updateEvent, deleteEvent as deleteEventUtil
+} from '@/lib/utils';
 import {
   Select,
   SelectContent,
@@ -94,17 +116,46 @@ export default function AdminDashboard() {
   const [isDemoWallet, setIsDemoWallet] = useState(false);
   const router = useRouter();
 
-  // Calendar and Announcements state
-  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  // Announcements state
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [showEventForm, setShowEventForm] = useState(false);
   const [showAnnouncementForm, setShowAnnouncementForm] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+
+  // Events state
+  const [events, setEvents] = useState<Event[]>([]);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+
+  // Badge management state
+  const [showBadgeResetConfirm, setShowBadgeResetConfirm] = useState(false);
+  const [badgeResetTarget, setBadgeResetTarget] = useState<string | null>(null); // 'all' or wallet address
 
   useEffect(() => {
     checkAdminAccess();
     checkDemoWallet();
+  }, []);
+
+  // Listen for real-time updates
+  useEffect(() => {
+    const handleAnnouncementsUpdate = () => {
+      console.log('Admin: announcementsUpdated event received');
+      setAnnouncements(getAnnouncements());
+    };
+
+    const handleEventsUpdate = () => {
+      console.log('Admin: eventsUpdated event received');
+      setEvents(getEvents());
+    };
+
+    console.log('Admin: Setting up event listeners');
+    window.addEventListener('announcementsUpdated', handleAnnouncementsUpdate);
+    window.addEventListener('eventsUpdated', handleEventsUpdate);
+    
+    return () => {
+      console.log('Admin: Cleaning up event listeners');
+      window.removeEventListener('announcementsUpdated', handleAnnouncementsUpdate);
+      window.removeEventListener('eventsUpdated', handleEventsUpdate);
+    };
   }, []);
 
   const checkAdminAccess = () => {
@@ -304,7 +355,8 @@ export default function AdminDashboard() {
 
       setUsers(users);
       calculateStats(users);
-      loadCalendarData();
+      loadAnnouncements();
+      loadEvents();
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -452,199 +504,115 @@ export default function AdminDashboard() {
     }
   };
 
-  const resetCourses = async (walletAddress: string, courseName?: string) => {
-    try {
-      // Add confirmation dialog
-      const user = users.find(u => u.walletAddress === walletAddress);
-      const userName = user?.displayName || walletAddress.slice(0, 6) + '...';
-      
-      let confirmMessage = '';
-      if (courseName) {
-        confirmMessage = `Are you sure you want to reset the "${courseName.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}" course for ${userName}? This will reset all progress and exam results.`;
-      } else {
-        confirmMessage = `Are you sure you want to reset ALL courses for ${userName}? This will reset all progress and exam results for all courses.`;
-      }
-      
-      if (!confirm(confirmMessage)) {
-        return;
-      }
-
-      // Reset course progress in localStorage
+  const resetCourses = (walletAddress: string, courseName: string) => {
+    if (confirm(`Are you sure you want to reset ${courseName} for ${walletAddress}?`)) {
+      // Reset course progress
       const userProgress = localStorage.getItem('userProgress');
       if (userProgress) {
         const progress = JSON.parse(userProgress);
-        if (progress[walletAddress]) {
-          if (courseName) {
-            // Reset specific course
-            if (progress[walletAddress].courses[courseName]) {
-              progress[walletAddress].courses[courseName] = {
-                progress: ['unlocked', 'locked', 'locked', 'locked'],
-                finalExam: undefined
-              };
-            }
-          } else {
-            // Reset all courses
-            Object.keys(progress[walletAddress].courses).forEach(course => {
-              progress[walletAddress].courses[course] = {
-                progress: ['unlocked', 'locked', 'locked', 'locked'],
-                finalExam: undefined
-              };
-            });
-          }
+        if (progress[walletAddress] && progress[walletAddress].courses) {
+          delete progress[walletAddress].courses[courseName];
           localStorage.setItem('userProgress', JSON.stringify(progress));
         }
       }
-
-      // Reset leaderboard data for this user
-      const leaderboardData = localStorage.getItem('leaderboardData');
-      if (leaderboardData) {
-        const leaderboard = JSON.parse(leaderboardData);
-        if (leaderboard[walletAddress]) {
-          // Reset course-specific score or all scores
-          if (courseName) {
-            delete leaderboard[walletAddress].courseScores[courseName];
-          } else {
-            leaderboard[walletAddress].courseScores = {};
-          }
-          // Recalculate total score
-          leaderboard[walletAddress].totalScore = Object.values(leaderboard[walletAddress].courseScores).reduce((acc: number, score: any) => acc + score, 0);
-          localStorage.setItem('leaderboardData', JSON.stringify(leaderboard));
-        }
-      }
-
-      // Reset individual course localStorage keys
-      if (!courseName || courseName === 'wallet-wizardry') {
-        localStorage.setItem('walletWizardryProgress', JSON.stringify(['unlocked', 'locked', 'locked', 'locked']));
-        localStorage.removeItem('walletWizardryFinalExam');
-        localStorage.removeItem('walletWizardryGraduated');
-      }
-
-      // Reset leaderboard service data
-      try {
-        const leaderboardService = (await import('@/services/leaderboard-service')).leaderboardService;
-        if (courseName) {
-          // Reset specific course in leaderboard
-          leaderboardService.updateProgress({
-            walletAddress,
-            courseId: courseName,
-            progress: 0,
-            score: 0,
-            completed: false,
-            lessonsCompleted: 0,
-            totalLessons: 4,
-            quizzesPassed: 0,
-            totalQuizzes: 1
-          });
-        } else {
-          // Reset all courses in leaderboard
-          const user = leaderboardService.getUserProgress(walletAddress);
-          if (user) {
-            user.courseProgress = [];
-            user.totalScore = 0;
-            user.coursesCompleted = 0;
-            user.totalLessons = 0;
-            user.totalQuizzes = 0;
-            user.averageQuizScore = 0;
-            leaderboardService['saveUserProgress'](walletAddress, user);
-            leaderboardService['updateLeaderboard']();
-          }
-        }
-      } catch (error) {
-        console.error('Error resetting leaderboard data:', error);
-      }
-
-      // Update local state
-      setUsers(prevUsers => 
-        prevUsers.map(user => {
-          if (user.walletAddress === walletAddress) {
-            if (courseName) {
-              // Reset specific course
-              return {
-                ...user,
-                courses: {
-                  ...user.courses,
-                  [courseName]: {
-                    progress: ['unlocked', 'locked', 'locked', 'locked'],
-                    finalExam: undefined
-                  }
-                }
-              };
-            } else {
-              // Reset all courses
-              const resetCourses: any = {};
-              Object.keys(user.courses).forEach(course => {
-                resetCourses[course] = {
-                  progress: ['unlocked', 'locked', 'locked', 'locked'],
-                  finalExam: undefined
-                };
-              });
-              return {
-                ...user,
-                courses: resetCourses
-              };
-            }
-          }
-          return user;
-        })
-      );
       
-      // Recalculate stats
+      // Reset leaderboard data
+      const leaderboardService = (async () => {
+        const { leaderboardService } = await import('@/services/leaderboard-service');
+        leaderboardService.resetUserCourse(walletAddress, courseName);
+      })();
+      
       loadUsers();
-    } catch (error) {
-      console.error('Error resetting courses:', error);
+      alert(`Course ${courseName} has been reset for ${walletAddress}`);
     }
   };
 
-  const loadCalendarData = () => {
+  // Badge reset functions
+  const resetUserBadges = (walletAddress: string) => {
+    setBadgeResetTarget(walletAddress);
+    setShowBadgeResetConfirm(true);
+  };
+
+  const resetAllBadges = () => {
+    setBadgeResetTarget('all');
+    setShowBadgeResetConfirm(true);
+  };
+
+  const confirmBadgeReset = () => {
+    if (badgeResetTarget === 'all') {
+      // Reset badges for all users
+      const userProgress = localStorage.getItem('userProgress');
+      if (userProgress) {
+        const progress = JSON.parse(userProgress);
+        Object.keys(progress).forEach(walletAddress => {
+          if (progress[walletAddress].badges) {
+            progress[walletAddress].badges = [];
+          }
+        });
+        localStorage.setItem('userProgress', JSON.stringify(progress));
+      }
+      
+      // Reset leaderboard badges
+      const leaderboardService = (async () => {
+        const { leaderboardService } = await import('@/services/leaderboard-service');
+        leaderboardService.resetAllBadges();
+      })();
+      
+      alert('All user badges have been reset');
+    } else if (badgeResetTarget) {
+      // Reset badges for specific user
+      const userProgress = localStorage.getItem('userProgress');
+      if (userProgress) {
+        const progress = JSON.parse(userProgress);
+        if (progress[badgeResetTarget] && progress[badgeResetTarget].badges) {
+          progress[badgeResetTarget].badges = [];
+          localStorage.setItem('userProgress', JSON.stringify(progress));
+        }
+      }
+      
+      // Reset leaderboard badges for specific user
+      const leaderboardService = (async () => {
+        const { leaderboardService } = await import('@/services/leaderboard-service');
+        leaderboardService.resetUserBadges(badgeResetTarget);
+      })();
+      
+      alert(`Badges have been reset for ${badgeResetTarget}`);
+    }
+    
+    setShowBadgeResetConfirm(false);
+    setBadgeResetTarget(null);
+    loadUsers();
+  };
+
+  const loadAnnouncements = () => {
     try {
-      setCalendarEvents(getCalendarEvents());
       setAnnouncements(getAnnouncements());
     } catch (error) {
-      console.error('Error loading calendar data:', error);
+      console.error('Error loading announcements:', error);
     }
   };
 
-  const saveCalendarEvent = (event: CalendarEvent) => {
+  const loadEvents = () => {
     try {
-      if (editingEvent) {
-        updateCalendarEvent(event.id, event);
-        setCalendarEvents(getCalendarEvents());
-      } else {
-        const events = getCalendarEvents();
-        events.push(event);
-        saveCalendarEvents(events);
-        setCalendarEvents(events);
-      }
-      
-      setShowEventForm(false);
-      setEditingEvent(null);
+      setEvents(getEvents());
     } catch (error) {
-      console.error('Error saving calendar event:', error);
-    }
-  };
-
-  const deleteCalendarEvent = (eventId: string) => {
-    if (confirm('Are you sure you want to delete this event?')) {
-      try {
-        deleteEventUtil(eventId);
-        setCalendarEvents(getCalendarEvents());
-      } catch (error) {
-        console.error('Error deleting calendar event:', error);
-      }
+      console.error('Error loading events:', error);
     }
   };
 
   const saveAnnouncement = (announcement: Announcement) => {
     try {
+      console.log('Admin: Saving announcement:', announcement);
       if (editingAnnouncement) {
+        console.log('Admin: Updating existing announcement');
         updateAnnouncement(announcement.id, announcement);
-        setAnnouncements(getAnnouncements());
       } else {
-        const announcements = getAnnouncements();
-        announcements.push(announcement);
-        saveAnnouncements(announcements);
-        setAnnouncements(announcements);
+        console.log('Admin: Adding new announcement');
+        addAnnouncement(announcement);
       }
+      
+      // Refresh the announcements list
+      setAnnouncements(getAnnouncements());
       
       setShowAnnouncementForm(false);
       setEditingAnnouncement(null);
@@ -656,6 +624,7 @@ export default function AdminDashboard() {
   const deleteAnnouncement = (announcementId: string) => {
     if (confirm('Are you sure you want to delete this announcement?')) {
       try {
+        console.log('Admin: Deleting announcement:', announcementId);
         deleteAnnouncementUtil(announcementId);
         setAnnouncements(getAnnouncements());
       } catch (error) {
@@ -666,10 +635,55 @@ export default function AdminDashboard() {
 
   const toggleAnnouncementActive = (announcementId: string) => {
     try {
+      console.log('Admin: Toggling announcement active status:', announcementId);
       toggleAnnouncementUtil(announcementId);
       setAnnouncements(getAnnouncements());
     } catch (error) {
       console.error('Error toggling announcement:', error);
+    }
+  };
+
+  const saveEvent = (event: Event) => {
+    try {
+      console.log('Admin: Saving event:', event);
+      if (editingEvent) {
+        console.log('Admin: Updating existing event');
+        updateEvent(event.id, event);
+      } else {
+        console.log('Admin: Adding new event');
+        addEvent(event);
+      }
+      setEvents(getEvents());
+      setShowEventForm(false);
+      setEditingEvent(null);
+    } catch (error) {
+      console.error('Error saving event:', error);
+    }
+  };
+
+  const deleteEvent = (eventId: string) => {
+    if (confirm('Are you sure you want to delete this event?')) {
+      try {
+        console.log('Admin: Deleting event:', eventId);
+        deleteEventUtil(eventId);
+        setEvents(getEvents());
+      } catch (error) {
+        console.error('Error deleting event:', error);
+      }
+    }
+  };
+
+  const toggleEventActive = (eventId: string) => {
+    try {
+      console.log('Admin: Toggling event active status:', eventId);
+      const currentEvent = events.find(e => e.id === eventId);
+      if (currentEvent) {
+        const updatedEvent = { ...currentEvent, isActive: !currentEvent.isActive };
+        updateEvent(eventId, updatedEvent);
+        setEvents(getEvents());
+      }
+    } catch (error) {
+      console.error('Error toggling event:', error);
     }
   };
 
@@ -856,7 +870,7 @@ export default function AdminDashboard() {
                 </Badge>
                 <Button
                   onClick={() => {
-                    removeDemoWalletAdminAccess();
+                    // removeDemoWalletAdminAccess(); // This function is no longer imported
                     setIsDemoWallet(false);
                   }}
                   variant="outline"
@@ -936,7 +950,7 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-slate-800/50">
+          <TabsList className="grid w-full grid-cols-6 bg-slate-800/50">
             <TabsTrigger value="users" className="data-[state=active]:bg-purple-600">
               <Users className="w-4 h-4 mr-2" />
               Users
@@ -949,9 +963,13 @@ export default function AdminDashboard() {
               <BookOpen className="w-4 h-4 mr-2" />
               Course Management
             </TabsTrigger>
-            <TabsTrigger value="calendar" className="data-[state=active]:bg-purple-600">
-              <Calendar className="w-4 h-4 mr-2" />
-              Calendar & Announcements
+            <TabsTrigger value="badges" className="data-[state=active]:bg-purple-600">
+              <Award className="w-4 h-4 mr-2" />
+              Badge Management
+            </TabsTrigger>
+            <TabsTrigger value="announcements" className="data-[state=active]:bg-purple-600">
+              <Bell className="w-4 h-4 mr-2" />
+              Events & Announcements
             </TabsTrigger>
             <TabsTrigger value="debug" className="data-[state=active]:bg-purple-600">
               <AlertCircle className="w-4 h-4 mr-2" />
@@ -1089,7 +1107,11 @@ export default function AdminDashboard() {
                     size="sm"
                     onClick={() => {
                       if (confirm('Are you sure you want to reset ALL courses for ALL users? This action cannot be undone.')) {
-                        users.forEach(user => resetCourses(user.walletAddress));
+                        users.forEach(user => {
+                          Object.keys(user.courses).forEach(courseName => {
+                            resetCourses(user.walletAddress, courseName);
+                          });
+                        });
                       }
                     }}
                     className="border-red-500 text-red-400 hover:bg-red-500/10"
@@ -1152,102 +1174,104 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Calendar & Announcements Tab */}
-          <TabsContent value="calendar" className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Calendar Events Section */}
-              <Card className="bg-slate-800/50 border-purple-500/30">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-white">Calendar Events</CardTitle>
-                    <Button
-                      onClick={() => {
-                        setEditingEvent(null);
-                        setShowEventForm(true);
-                      }}
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      <Calendar className="w-4 h-4 mr-2" />
-                      Add Event
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {calendarEvents.length > 0 ? (
-                      calendarEvents.map((event) => (
-                        <div key={event.id} className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-semibold text-white">{event.title}</h4>
-                                <Badge variant="outline" className="border-purple-500 text-purple-400">
-                                  {event.type}
-                                </Badge>
-                                {event.recurring && (
-                                  <Badge variant="outline" className="border-green-500 text-green-400">
-                                    Recurring
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="text-sm text-gray-300 mb-2">{event.description}</p>
-                              <div className="text-xs text-gray-400 space-y-1">
-                                <p>Date: {new Date(event.date + 'T00:00:00').toLocaleDateString()}</p>
-                                {event.time && <p>Time: {event.time}</p>}
-                                {event.location && <p>Location: {event.location}</p>}
-                                {event.maxParticipants && (
-                                  <p>Participants: {event.currentParticipants || 0}/{event.maxParticipants}</p>
-                                )}
-                              </div>
+          {/* Badge Management Tab */}
+          <TabsContent value="badges" className="mt-6">
+            <Card className="bg-slate-800/50 border-purple-500/30">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-white">Badge Management</CardTitle>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={resetAllBadges}
+                    className="border-red-500 text-red-400 hover:bg-red-500/10"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Reset All Badges
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {users.map((user) => {
+                    // Simple badge display without async operations
+                    const userBadges: any[] = []; // Will be populated by leaderboard service
+                    
+                    return (
+                      <div key={user.walletAddress} className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-semibold text-white">{user.displayName}</h3>
+                              <Badge variant="outline" className="border-cyan-500 text-cyan-400">
+                                {user.squad}
+                              </Badge>
+                              <Badge variant="outline" className="border-purple-500 text-purple-400">
+                                Badge Management
+                              </Badge>
                             </div>
-                            <div className="flex gap-2 ml-4">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setEditingEvent(event);
-                                  setShowEventForm(true);
-                                }}
-                                className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => deleteCalendarEvent(event.id)}
-                              >
-                                Delete
-                              </Button>
+                            <p className="text-sm text-gray-400 mb-2">
+                              {user.walletAddress.slice(0, 6)}...{user.walletAddress.slice(-4)}
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              <span className="text-sm text-gray-500">Badges will be reset when you click the button below</span>
                             </div>
                           </div>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => resetUserBadges(user.walletAddress)}
+                            className="border-red-500 text-red-400 hover:bg-red-500/10"
+                          >
+                            <RefreshCw className="w-4 h-4 mr-2" />
+                            Reset Badges
+                          </Button>
                         </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8 text-gray-400">
-                        <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>No calendar events yet</p>
                       </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                    );
+                  })}
+                  {users.length === 0 && (
+                    <div className="text-center py-8 text-gray-400">
+                      <Award className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No users found</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
+          {/* Announcements Tab */}
+          <TabsContent value="announcements" className="mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Announcements Section */}
               <Card className="bg-slate-800/50 border-purple-500/30">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-white">Announcements</CardTitle>
-                    <Button
-                      onClick={() => {
-                        setEditingAnnouncement(null);
-                        setShowAnnouncementForm(true);
-                      }}
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      <AlertTriangle className="w-4 h-4 mr-2" />
-                      Add Announcement
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          debugAnnouncements();
+                          alert('Check browser console for announcement debug info!');
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/10"
+                      >
+                        Debug
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setEditingAnnouncement(null);
+                          setShowAnnouncementForm(true);
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        <AlertTriangle className="w-4 h-4 mr-2" />
+                        Add Announcement
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -1318,6 +1342,187 @@ export default function AdminDashboard() {
                       <div className="text-center py-8 text-gray-400">
                         <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p>No announcements yet</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Scheduled Announcements Section */}
+              <Card className="bg-slate-800/50 border-blue-500/30">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-blue-400" />
+                      Scheduled Announcements
+                    </CardTitle>
+                    <Badge variant="outline" className="border-blue-500 text-blue-400">
+                      {getScheduledAnnouncements().length}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {getScheduledAnnouncements().length > 0 ? (
+                      getScheduledAnnouncements().map((announcement) => (
+                        <div key={announcement.id} className="bg-slate-700/50 p-4 rounded-lg border border-blue-500/30">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-semibold text-white">{announcement.title}</h4>
+                                <Badge 
+                                  variant="outline"
+                                  className="border-blue-500 text-blue-400"
+                                >
+                                  Scheduled
+                                </Badge>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`border-${announcement.type === 'important' ? 'red' : announcement.type === 'warning' ? 'yellow' : announcement.type === 'success' ? 'green' : 'blue'}-500 text-${announcement.type === 'important' ? 'red' : announcement.type === 'warning' ? 'yellow' : announcement.type === 'success' ? 'green' : 'blue'}-400`}
+                                >
+                                  {announcement.type}
+                                </Badge>
+                                <Badge variant="outline" className="border-purple-500 text-purple-400">
+                                  {announcement.priority}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-300 mb-2">{announcement.content}</p>
+                              <div className="text-xs text-gray-400 space-y-1">
+                                <p className="text-blue-400">
+                                  <Clock className="w-3 h-3 inline mr-1" />
+                                  Starts: {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
+                                </p>
+                                {announcement.endDate && (
+                                  <p>Ends: {new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingAnnouncement(announcement);
+                                  setShowAnnouncementForm(true);
+                                }}
+                                className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteAnnouncement(announcement.id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-400">
+                        <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No scheduled announcements</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Events Section */}
+              <Card className="bg-slate-800/50 border-purple-500/30">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-white">Events</CardTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          debugAnnouncements(); // Reusing debugAnnouncements for now, but ideally a separate debug for events
+                          alert('Check browser console for event debug info!');
+                        }}
+                        variant="outline"
+                        className="border-yellow-500 text-yellow-400 hover:bg-yellow-500/10"
+                      >
+                        Debug
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setEditingEvent(null);
+                          setShowEventForm(true);
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Event
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {events.length > 0 ? (
+                      events.map((event) => (
+                        <div key={event.id} className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className="font-semibold text-white">{event.title}</h4>
+                                <Badge 
+                                  variant={event.isActive ? "default" : "secondary"}
+                                  className={event.isActive ? "bg-green-600" : "bg-gray-600"}
+                                >
+                                  {event.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                                <Badge variant="outline" className="border-purple-500 text-purple-400">
+                                  {event.type}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-300 mb-2">{event.description}</p>
+                              <div className="text-xs text-gray-400 space-y-1">
+                                <p>Date: {new Date(event.date + 'T00:00:00').toLocaleDateString()}</p>
+                                {event.time && <p>Time: {event.time}</p>}
+                                {event.location && <p>Location: {event.location}</p>}
+                                {event.maxParticipants && (
+                                  <p>Participants: {event.currentParticipants || 0}/{event.maxParticipants}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => toggleEventActive(event.id)}
+                                className={`${event.isActive ? 'border-yellow-500 text-yellow-400' : 'border-green-500 text-green-400'}`}
+                              >
+                                {event.isActive ? 'Deactivate' : 'Activate'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingEvent(event);
+                                  setShowEventForm(true);
+                                }}
+                                className="border-blue-500 text-blue-400 hover:bg-blue-500/10"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => deleteEvent(event.id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-400">
+                        <Info className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No events yet</p>
                       </div>
                     )}
                   </div>
@@ -1476,7 +1681,13 @@ export default function AdminDashboard() {
                   <div className="mt-4 pt-4 border-t border-slate-600">
                     <Button
                       variant="destructive"
-                      onClick={() => resetCourses(selectedUser.walletAddress)}
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to reset ALL courses for ${selectedUser.displayName}?`)) {
+                          Object.keys(selectedUser.courses).forEach(courseName => {
+                            resetCourses(selectedUser.walletAddress, courseName);
+                          });
+                        }
+                      }}
                       className="w-full"
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
@@ -1485,22 +1696,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Calendar Event Form Modal */}
-        {showEventForm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-slate-800 p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-              <EventForm
-                event={editingEvent}
-                onSave={saveCalendarEvent}
-                onCancel={() => {
-                  setShowEventForm(false);
-                  setEditingEvent(null);
-                }}
-              />
             </div>
           </div>
         )}
@@ -1520,166 +1715,66 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Event Form Modal */}
+        {showEventForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+              <EventForm
+                event={editingEvent}
+                onSave={saveEvent}
+                onCancel={() => {
+                  setShowEventForm(false);
+                  setEditingEvent(null);
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Badge Reset Confirmation Modal */}
+        {showBadgeResetConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-slate-800 p-6 rounded-lg max-w-md w-full mx-4">
+              <div className="text-center">
+                <Award className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
+                <h2 className="text-xl font-bold text-white mb-2">
+                  Confirm Badge Reset
+                </h2>
+                <p className="text-gray-300 mb-6">
+                  {badgeResetTarget === 'all' 
+                    ? 'Are you sure you want to reset ALL badges for ALL users? This action cannot be undone.'
+                    : `Are you sure you want to reset badges for user ${badgeResetTarget?.slice(0, 6)}...${badgeResetTarget?.slice(-4)}? This action cannot be undone.`
+                  }
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Button
+                    onClick={confirmBadgeReset}
+                    variant="destructive"
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Confirm Reset
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowBadgeResetConfirm(false);
+                      setBadgeResetTarget(null);
+                    }}
+                    variant="outline"
+                    className="border-gray-600 text-gray-400"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-// Event Form Component
-const EventForm = ({ event, onSave, onCancel }: { 
-  event: CalendarEvent | null; 
-  onSave: (event: CalendarEvent) => void; 
-  onCancel: () => void; 
-}) => {
-  const [formData, setFormData] = useState({
-    title: event?.title || '',
-    description: event?.description || '',
-    date: event?.date || new Date().toISOString().split('T')[0],
-    time: event?.time || '',
-    type: event?.type || 'class' as 'class' | 'event' | 'announcement' | 'holiday',
-    recurring: event?.recurring || false,
-    recurringPattern: event?.recurringPattern || 'weekly' as 'weekly' | 'monthly' | 'yearly',
-    location: event?.location || '',
-    maxParticipants: event?.maxParticipants || 0
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newEvent: CalendarEvent = {
-      id: event?.id || Date.now().toString(),
-      ...formData,
-      currentParticipants: event?.currentParticipants || 0,
-      createdBy: 'Admin',
-      createdAt: event?.createdAt || new Date().toISOString()
-    };
-    onSave(newEvent);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-white">
-          {event ? 'Edit Event' : 'Add New Event'}
-        </h2>
-        <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-400">
-          ×
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
-          <Input
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="bg-slate-700/50 border-slate-600 text-white"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
-          <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
-            <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="class">Class</SelectItem>
-              <SelectItem value="event">Event</SelectItem>
-              <SelectItem value="announcement">Announcement</SelectItem>
-              <SelectItem value="holiday">Holiday</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Date</label>
-          <Input
-            type="date"
-            value={formData.date}
-            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            className="bg-slate-700/50 border-slate-600 text-white"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Time (Optional)</label>
-          <Input
-            type="time"
-            value={formData.time}
-            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-            className="bg-slate-700/50 border-slate-600 text-white"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Location (Optional)</label>
-          <Input
-            value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-            className="bg-slate-700/50 border-slate-600 text-white"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1">Max Participants (Optional)</label>
-          <Input
-            type="number"
-            value={formData.maxParticipants}
-            onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) || 0 })}
-            className="bg-slate-700/50 border-slate-600 text-white"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
-        <textarea
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-md p-3 min-h-[100px]"
-          required
-        />
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="recurring"
-            checked={formData.recurring}
-            onChange={(e) => setFormData({ ...formData, recurring: e.target.checked })}
-            className="rounded border-slate-600 bg-slate-700"
-          />
-          <label htmlFor="recurring" className="text-sm text-gray-300">Recurring Event</label>
-        </div>
-
-        {formData.recurring && (
-          <Select value={formData.recurringPattern} onValueChange={(value: any) => setFormData({ ...formData, recurringPattern: value })}>
-            <SelectTrigger className="w-32 bg-slate-700/50 border-slate-600 text-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weekly">Weekly</SelectItem>
-              <SelectItem value="monthly">Monthly</SelectItem>
-              <SelectItem value="yearly">Yearly</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
-      </div>
-
-      <div className="flex gap-3 pt-4">
-        <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
-          {event ? 'Update Event' : 'Create Event'}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-400">
-          Cancel
-        </Button>
-      </div>
-    </form>
-  );
-};
 
 // Announcement Form Component
 const AnnouncementForm = ({ announcement, onSave, onCancel }: { 
@@ -1692,7 +1787,7 @@ const AnnouncementForm = ({ announcement, onSave, onCancel }: {
     content: announcement?.content || '',
     type: announcement?.type || 'info' as 'info' | 'warning' | 'success' | 'important',
     priority: announcement?.priority || 'medium' as 'low' | 'medium' | 'high',
-    startDate: announcement?.startDate || new Date().toISOString().split('T')[0],
+    startDate: announcement?.startDate || new Date().toISOString().split('T')[0], // Today's date
     endDate: announcement?.endDate || '',
     isActive: announcement?.isActive ?? true
   });
@@ -1806,6 +1901,156 @@ const AnnouncementForm = ({ announcement, onSave, onCancel }: {
       <div className="flex gap-3 pt-4">
         <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
           {announcement ? 'Update Announcement' : 'Create Announcement'}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-400">
+          Cancel
+        </Button>
+      </div>
+    </form>
+  );
+}; 
+
+// Event Form Component
+const EventForm = ({ event, onSave, onCancel }: { 
+  event: Event | null; 
+  onSave: (event: Event) => void; 
+  onCancel: () => void; 
+}) => {
+  const [formData, setFormData] = useState({
+    title: event?.title || '',
+    description: event?.description || '',
+    type: event?.type || 'event' as 'class' | 'event' | 'workshop' | 'meetup',
+    date: event?.date || new Date().toISOString().split('T')[0],
+    time: event?.time || '',
+    location: event?.location || '',
+    maxParticipants: event?.maxParticipants || 0,
+    currentParticipants: event?.currentParticipants || 0,
+    isActive: event?.isActive ?? true
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newEvent: Event = {
+      id: event?.id || Date.now().toString(),
+      ...formData,
+      createdBy: 'Admin',
+      createdAt: event?.createdAt || new Date().toISOString()
+    };
+    onSave(newEvent);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-white">
+          {event ? 'Edit Event' : 'Add New Event'}
+        </h2>
+        <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-400">
+          ×
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Title</label>
+          <Input
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Type</label>
+          <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
+            <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="info">Info</SelectItem>
+              <SelectItem value="warning">Warning</SelectItem>
+              <SelectItem value="success">Success</SelectItem>
+              <SelectItem value="important">Important</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Date</label>
+          <Input
+            type="date"
+            value={formData.date}
+            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Time (Optional)</label>
+          <Input
+            type="time"
+            value={formData.time}
+            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Location (Optional)</label>
+          <Input
+            value={formData.location}
+            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Max Participants (Optional)</label>
+          <Input
+            type="number"
+            value={formData.maxParticipants}
+            onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) || 0 })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Current Participants (Optional)</label>
+          <Input
+            type="number"
+            value={formData.currentParticipants}
+            onChange={(e) => setFormData({ ...formData, currentParticipants: parseInt(e.target.value) || 0 })}
+            className="bg-slate-700/50 border-slate-600 text-white"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="isActive"
+            checked={formData.isActive}
+            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+            className="rounded border-slate-600 bg-slate-700"
+          />
+          <label htmlFor="isActive" className="text-sm text-gray-300">Active</label>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-1">Description</label>
+        <textarea
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          className="w-full bg-slate-700/50 border border-slate-600 text-white rounded-md p-3 min-h-[100px]"
+          required
+        />
+      </div>
+
+      <div className="flex gap-3 pt-4">
+        <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+          {event ? 'Update Event' : 'Create Event'}
         </Button>
         <Button type="button" variant="outline" onClick={onCancel} className="border-gray-600 text-gray-400">
           Cancel

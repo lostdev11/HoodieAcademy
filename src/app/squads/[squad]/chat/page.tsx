@@ -23,6 +23,26 @@ export default function SquadChatPage({ params }: PageProps) {
 
   const squadName = decodeURIComponent(params.squad);
 
+  // Helper function to normalize squad names for comparison
+  const normalizeSquadName = (name: string): string => {
+    // Remove emojis and extra spaces, convert to lowercase
+    return name.replace(/^[🎨🧠🎤⚔️🦅🏦]+\s*/, '').toLowerCase().trim();
+  };
+
+  // Helper function to get squad ID from name
+  const getSquadId = (name: string): string => {
+    const normalized = normalizeSquadName(name);
+    const squadMapping: { [key: string]: string } = {
+      'hoodie creators': 'creators',
+      'hoodie decoders': 'decoders', 
+      'hoodie speakers': 'speakers',
+      'hoodie raiders': 'raiders',
+      'hoodie rangers': 'rangers',
+      'treasury builders': 'treasury'
+    };
+    return squadMapping[normalized] || normalized;
+  };
+
   useEffect(() => {
     // Check if user has completed onboarding and has a squad
     const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
@@ -38,11 +58,25 @@ export default function SquadChatPage({ params }: PageProps) {
     if (squadResult) {
       try {
         const result = JSON.parse(squadResult);
-        const userSquadName = result.name.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '');
+        let userSquadName: string;
+        
+        // Handle both object and string formats
+        if (typeof result === 'object' && result.name) {
+          userSquadName = result.name;
+        } else if (typeof result === 'string') {
+          userSquadName = result;
+        } else {
+          throw new Error('Invalid squad result format');
+        }
+        
         setUserSquad(userSquadName);
         
+        // Get squad IDs for comparison
+        const userSquadId = getSquadId(userSquadName);
+        const requestedSquadId = getSquadId(squadName);
+        
         // Check if user has access to this squad's chat
-        if (userSquadName.toLowerCase() === squadName.toLowerCase()) {
+        if (userSquadId === requestedSquadId) {
           setHasAccess(true);
         } else {
           setHasAccess(false);
@@ -116,7 +150,7 @@ export default function SquadChatPage({ params }: PageProps) {
                   asChild
                   className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
                 >
-                  <Link href={`/squads/${userSquad}/chat`}>
+                  <Link href={`/squads/${normalizeSquadName(userSquad || '').replace(/\s+/g, '-')}/chat`}>
                     <Users className="w-4 h-4 mr-2" />
                     Go to Your Squad Chat
                   </Link>

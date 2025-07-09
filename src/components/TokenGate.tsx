@@ -322,15 +322,17 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         {error && <p className="text-red-400 mb-4">{error}</p>}
         
         {!showWalletSelector ? (
-          <Button
-            onClick={() => setShowWalletSelector(true)}
-            className="bg-gradient-to-r from-green-600 to-purple-600 text-white hover:from-green-500 hover:to-purple-500 px-8 py-3 w-64"
-          >
-            <Wallet className="mr-2" size={20} />
-            Connect Wallet
-          </Button>
+          <div className="flex justify-center">
+            <Button
+              onClick={() => setShowWalletSelector(true)}
+              className="bg-gradient-to-r from-green-600 to-purple-600 text-white hover:from-green-500 hover:to-purple-500 px-8 py-3 w-64"
+            >
+              <Wallet className="mr-2" size={20} />
+              Connect Wallet
+            </Button>
+          </div>
         ) : (
-          <div className="flex flex-col space-y-3">
+          <div className="flex flex-col items-center space-y-3">
              <Button
                 onClick={() => connectWallet('phantom')}
                 className="bg-purple-600 hover:bg-purple-700 text-white w-64"
