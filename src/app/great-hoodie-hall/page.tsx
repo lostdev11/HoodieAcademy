@@ -309,10 +309,15 @@ export default function GreatHoodieHall() {
     }
     setLoading(true);
     try {
-      // Use Solscan API (free, no API key required)
+      // Use Solscan API (free, no API key required) - updated endpoint
       const response = await axios.get(
-        `https://public-api.solscan.io/account/tokens?account=${walletAddress}`,
-        { headers: { 'Content-Type': 'application/json' } }
+        `https://api.solscan.io/account/tokens?account=${walletAddress}`,
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          } 
+        }
       );
       
       // Filter for NFTs (tokens with 0 decimals)

@@ -114,7 +114,12 @@ export class NFTService {
     try {
       console.log('Using Solscan fallback API...');
       // Fallback to a simpler API or mock data
-      const response = await fetch(`https://public-api.solscan.io/account/tokens?account=${walletAddress}`);
+      const response = await fetch(`https://api.solscan.io/account/tokens?account=${walletAddress}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
       
       console.log('Solscan API response status:', response.status);
       
@@ -245,7 +250,12 @@ export class NFTService {
 
   async getNFTMetadata(mintAddress: string): Promise<NFTMetadata | null> {
     try {
-      const response = await fetch(`https://public-api.solscan.io/token/meta?tokenAddress=${mintAddress}`);
+      const response = await fetch(`https://api.solscan.io/token/meta?tokenAddress=${mintAddress}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        },
+      });
       
       if (!response.ok) {
         return null;

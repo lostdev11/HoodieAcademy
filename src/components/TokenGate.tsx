@@ -131,14 +131,15 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
     console.log('WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
     
     try {
-      // Use Solscan API (free, no API key required)
-      const url = `https://public-api.solscan.io/account/tokens?account=${walletAddress}`;
+      // Use Solscan API (free, no API key required) - updated endpoint
+      const url = `https://api.solscan.io/account/tokens?account=${walletAddress}`;
       console.log('Making request to Solscan API:', url);
       
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
       });
 
@@ -241,13 +242,14 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
     console.log('WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
     
     try {
-      const url = `https://public-api.solscan.io/account/tokens?account=${walletAddress}`;
+      const url = `https://api.solscan.io/account/tokens?account=${walletAddress}`;
       console.log('Requesting URL:', url);
       
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
       });
       
