@@ -309,48 +309,26 @@ export default function GreatHoodieHall() {
     }
     setLoading(true);
     try {
-      // Use Solscan API (free, no API key required) - updated endpoint
-      const response = await axios.get(
-        `https://api.solscan.io/account/tokens?account=${walletAddress}`,
-        { 
-          headers: { 
-            'Content-Type': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          } 
+      // Use our server-side API route to avoid CORS issues
+      const response = await axios.post('/api/nft-verification', {
+        walletAddress
+      }, {
+        headers: { 
+          'Content-Type': 'application/json'
         }
-      );
-      
-      // Filter for NFTs (tokens with 0 decimals)
-      const nfts = response.data.data?.filter((token: any) => token.tokenAmount?.decimals === 0) || [];
-      console.log("NFTs found:", nfts.length);
-      
-      const hasWifHoodie = nfts.some((nft: any) => {
-        // Check by mint address
-        const isWifHoodieByMint = nft.mint === WIFHOODIE_COLLECTION_ADDRESS;
-        
-        // Check by token name
-        const tokenName = nft.tokenInfo?.name || '';
-        const isWifHoodieByName = tokenName.toLowerCase().includes('wifhoodie') || 
-                                  tokenName.toLowerCase().includes('wif hoodie');
-        
-        // Check by symbol
-        const tokenSymbol = nft.tokenInfo?.symbol || '';
-        const isWifHoodieBySymbol = tokenSymbol.toLowerCase().includes('wifhoodie') || 
-                                   tokenSymbol.toLowerCase().includes('wif');
-        
-        return isWifHoodieByMint || isWifHoodieByName || isWifHoodieBySymbol;
       });
       
+      const hasWifHoodie = response.data.isHolder;
+      console.log("Does the wallet hold a WifHoodie NFT?", hasWifHoodie);
+      console.log("NFTs found:", response.data.nftsFound);
+      console.log("API used:", response.data.apiUsed);
+      
       setIsHolder(hasWifHoodie);
-      if (!hasWifHoodie && nfts.length > 0) {
-        console.log("User owns NFTs, but not from the WifHoodie collection:", WIFHOODIE_COLLECTION_ADDRESS);
-        console.log("Owned NFTs:", nfts.map((nft:any) => ({
-          mint: nft.mint,
-          name: nft.tokenInfo?.name,
-          symbol: nft.tokenInfo?.symbol
-        })));
-      } else if (nfts.length === 0) {
-        console.log("User owns no NFTs according to Solscan.");
+      if (!hasWifHoodie && response.data.nftsFound > 0) {
+        console.log("User owns NFTs, but not from the WifHoodie collection");
+        console.log("Sample NFTs:", response.data.nfts);
+      } else if (response.data.nftsFound === 0) {
+        console.log("User owns no NFTs according to the API.");
       }
 
     } catch (error) {

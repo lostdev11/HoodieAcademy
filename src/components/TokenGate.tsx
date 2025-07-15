@@ -131,16 +131,13 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
     console.log('WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
     
     try {
-      // Use Solscan API (free, no API key required) - updated endpoint
-      const url = `https://api.solscan.io/account/tokens?account=${walletAddress}`;
-      console.log('Making request to Solscan API:', url);
-      
-      const response = await fetch(url, {
-        method: 'GET',
+      // Use our server-side API route to avoid CORS issues
+      const response = await fetch('/api/nft-verification', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
+        body: JSON.stringify({ walletAddress }),
       });
 
       console.log('Response status:', response.status);
@@ -148,44 +145,17 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Solscan API error:', errorText);
+        console.error('NFT Verification API error:', errorText);
         throw new Error(`API request failed: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('Raw Solscan API response:', data);
+      console.log('NFT Verification API response:', data);
       
-      // Filter for NFTs (tokens with 0 decimals)
-      const nfts = data.data?.filter((token: any) => token.tokenAmount?.decimals === 0) || [];
-      console.log("NFTs found:", nfts.length);
-
-      // Check for WifHoodie NFT
-      const hasWifHoodie = nfts.some((nft: any) => {
-        console.log("Checking NFT:", nft);
-        
-        // Check by mint address (WIFHOODIE_COLLECTION_ID)
-        const isWifHoodieByMint = nft.mint === WIFHOODIE_COLLECTION_ID;
-        
-        // Check by token name
-        const tokenName = nft.tokenInfo?.name || '';
-        const isWifHoodieByName = tokenName.toLowerCase().includes('wifhoodie') || 
-                                  tokenName.toLowerCase().includes('wif hoodie');
-        
-        // Check by symbol
-        const tokenSymbol = nft.tokenInfo?.symbol || '';
-        const isWifHoodieBySymbol = tokenSymbol.toLowerCase().includes('wifhoodie') || 
-                                   tokenSymbol.toLowerCase().includes('wif');
-        
-        const isWifHoodie = isWifHoodieByMint || isWifHoodieByName || isWifHoodieBySymbol;
-        
-        if (isWifHoodie) {
-          console.log(`Found WifHoodie NFT! Name: ${tokenName}, Symbol: ${tokenSymbol}, Mint: ${nft.mint}`);
-        }
-        
-        return isWifHoodie;
-      });
-
+      const hasWifHoodie = data.isHolder;
       console.log("Does the wallet hold a WifHoodie NFT?", hasWifHoodie);
+      console.log("NFTs found:", data.nftsFound);
+      console.log("API used:", data.apiUsed);
 
       setIsHolder(hasWifHoodie);
       if (hasWifHoodie) {
@@ -237,20 +207,17 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
       return;
     }
     
-    console.log('=== Debugging Solscan API ===');
+    console.log('=== Debugging NFT Verification API ===');
     console.log('Wallet address:', walletAddress);
     console.log('WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
     
     try {
-      const url = `https://api.solscan.io/account/tokens?account=${walletAddress}`;
-      console.log('Requesting URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'GET',
+      const response = await fetch('/api/nft-verification', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
+        body: JSON.stringify({ walletAddress }),
       });
       
       console.log('Response status:', response.status);
@@ -264,21 +231,10 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
       
       const data = await response.json();
       console.log('Full API response:', data);
-      console.log('Response type:', typeof data);
-      console.log('Has data property:', !!data.data);
-      
-      if (data.data) {
-        const nfts = data.data.filter((token: any) => token.tokenAmount?.decimals === 0);
-        console.log('Number of NFTs:', nfts.length);
-        nfts.forEach((nft: any, index: number) => {
-          console.log(`NFT ${index}:`, {
-            mint: nft.mint,
-            name: nft.tokenInfo?.name,
-            symbol: nft.tokenInfo?.symbol,
-            decimals: nft.tokenAmount?.decimals
-          });
-        });
-      }
+      console.log('Is holder:', data.isHolder);
+      console.log('NFTs found:', data.nftsFound);
+      console.log('API used:', data.apiUsed);
+      console.log('Sample NFTs:', data.nfts);
       
     } catch (error) {
       console.error('Debug API call failed:', error);

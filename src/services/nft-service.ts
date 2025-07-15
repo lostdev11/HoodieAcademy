@@ -57,104 +57,38 @@ export class NFTService {
   async getUserNFTs(walletAddress: string): Promise<NFT[]> {
     console.log('Fetching NFTs for wallet:', walletAddress);
     
-    if (!this.heliusApiKey) {
-      console.warn('Helius API key not found, using fallback method');
-      console.warn('Please set NEXT_PUBLIC_HELIUS_API_KEY in your .env.local file');
-      return this.getUserNFTsFallback(walletAddress);
-    }
-
     try {
-      console.log('Using Helius API to fetch NFTs...');
+      console.log('Using server-side NFT verification API...');
       
-      // Try the newer Helius API endpoint first
-      let response = await fetch(`https://api.helius.xyz/v1/addresses/${walletAddress}/nfts?api-key=${this.heliusApiKey}`);
-      
-      console.log('Helius API v1 response status:', response.status);
-      
-      // If v1 fails, try the older v0 endpoint
-      if (!response.ok) {
-        console.log('Helius API v1 failed, trying v0...');
-        response = await fetch(`https://api.helius.xyz/v0/addresses/${walletAddress}/nfts?api-key=${this.heliusApiKey}`);
-        console.log('Helius API v0 response status:', response.status);
-      }
+      // Use our server-side API route to avoid CORS issues
+      const response = await fetch('/api/nft-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ walletAddress }),
+      });
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Helius API error response:', errorText);
+        console.error('NFT Verification API error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('Helius API returned data:', data);
-      console.log('Helius API returned NFTs:', Array.isArray(data) ? data.length : 'Not an array');
+      console.log('NFT Verification API returned data:', data);
       
-      // Handle different response formats
-      let nfts = data;
-      if (data && typeof data === 'object' && data.result) {
-        nfts = data.result;
-      } else if (Array.isArray(data)) {
-        nfts = data;
-      } else {
-        console.warn('Unexpected Helius API response format:', data);
-        nfts = [];
-      }
+      // Convert the API response to our NFT format
+      const nfts = data.nfts || [];
+      console.log('NFTs found:', nfts.length);
       
-      const formattedNFTs = nfts.map((nft: any) => this.formatNFT(nft));
+      const formattedNFTs = nfts.map((nft: any) => this.formatNFTFromAPI(nft));
       console.log('Formatted NFTs:', formattedNFTs.length);
       
       return formattedNFTs;
     } catch (error) {
-      console.error('Error fetching NFTs from Helius:', error);
-      console.log('Falling back to alternative method...');
-      return this.getUserNFTsFallback(walletAddress);
-    }
-  }
-
-  private async getUserNFTsFallback(walletAddress: string): Promise<NFT[]> {
-    try {
-      console.log('Using Solscan fallback API...');
-      // Fallback to a simpler API or mock data
-      const response = await fetch(`https://api.solscan.io/account/tokens?account=${walletAddress}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-      });
-      
-      console.log('Solscan API response status:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Solscan API data:', data);
-      
-      const nfts = data.data?.filter((token: any) => token.tokenAmount?.decimals === 0) || [];
-      console.log('Filtered NFTs from Solscan:', nfts.length);
-      
-      const formattedNFTs = nfts.map((nft: any) => ({
-        mint: nft.mint,
-        name: nft.tokenInfo?.name || 'Unknown NFT',
-        symbol: nft.tokenInfo?.symbol || 'NFT',
-        description: nft.tokenInfo?.description || '',
-        image: nft.tokenInfo?.logoURI || '',
-        collection: nft.tokenInfo?.name || '',
-        tokenStandard: 'NonFungible',
-        amount: nft.tokenAmount?.uiAmount || 1,
-        decimals: nft.tokenAmount?.decimals || 0,
-        isFrozen: false,
-        tokenAccount: nft.tokenAccount || '',
-        metadataAccount: '',
-        updateAuthority: '',
-        attributes: []
-      }));
-      
-      console.log('Formatted NFTs from Solscan:', formattedNFTs.length);
-      return formattedNFTs;
-    } catch (error) {
-      console.error('Error fetching NFTs from fallback API:', error);
-      console.log('Using mock NFTs as final fallback...');
+      console.error('Error fetching NFTs from server API:', error);
+      console.log('Using mock NFTs as fallback...');
       return this.getMockNFTs();
     }
   }
@@ -205,6 +139,26 @@ export class NFTService {
     };
   }
 
+  private formatNFTFromAPI(nft: any): NFT {
+    return {
+      mint: nft.mint,
+      name: nft.name,
+      symbol: nft.symbol,
+      description: nft.description,
+      image: nft.image,
+      collection: nft.collection,
+      attributes: nft.attributes,
+      tokenStandard: nft.tokenStandard,
+      amount: nft.amount,
+      decimals: nft.decimals,
+      isFrozen: nft.isFrozen,
+      tokenAccount: nft.tokenAccount,
+      metadataAccount: nft.metadataAccount,
+      updateAuthority: nft.updateAuthority,
+      creators: nft.creators
+    };
+  }
+
   private getMockNFTs(): NFT[] {
     return [
       {
@@ -250,11 +204,16 @@ export class NFTService {
 
   async getNFTMetadata(mintAddress: string): Promise<NFTMetadata | null> {
     try {
-      const response = await fetch(`https://api.solscan.io/token/meta?tokenAddress=${mintAddress}`, {
+      // Use our server-side API route to avoid CORS issues
+      const response = await fetch('/api/nft-verification', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
+        body: JSON.stringify({ 
+          walletAddress: mintAddress, // We'll need to modify the API to handle metadata requests
+          requestType: 'metadata'
+        }),
       });
       
       if (!response.ok) {
@@ -262,16 +221,13 @@ export class NFTService {
       }
 
       const data = await response.json();
+      // For now, return basic metadata since the API doesn't handle metadata requests yet
       return {
-        name: data.name || 'Unknown NFT',
-        symbol: data.symbol || 'NFT',
-        description: data.description || '',
-        image: data.image || '',
-        attributes: data.attributes || [],
-        collection: data.collection ? {
-          name: data.collection.name,
-          family: data.collection.family
-        } : undefined
+        name: 'Unknown NFT',
+        symbol: 'NFT',
+        description: '',
+        image: '',
+        attributes: [],
       };
     } catch (error) {
       console.error('Error fetching NFT metadata:', error);
@@ -297,40 +253,12 @@ export class NFTService {
     return 'https://via.placeholder.com/400x400/6b7280/ffffff?text=NFT';
   }
 
-  // Test function to debug API key and environment variables
+  // Test function to debug environment variables
   testEnvironment(): void {
     console.log('=== NFT Service Environment Test ===');
-    console.log('NEXT_PUBLIC_HELIUS_API_KEY exists:', !!process.env.NEXT_PUBLIC_HELIUS_API_KEY);
-    console.log('NEXT_PUBLIC_HELIUS_API_KEY length:', process.env.NEXT_PUBLIC_HELIUS_API_KEY?.length || 0);
+    console.log('Using server-side API route for all NFT operations');
     console.log('NEXT_PUBLIC_RPC_URL:', process.env.NEXT_PUBLIC_RPC_URL);
-    console.log('Instance heliusApiKey exists:', !!this.heliusApiKey);
-    console.log('Instance heliusApiKey length:', this.heliusApiKey.length);
     console.log('=====================================');
-  }
-
-  // Test function to test Helius API directly
-  async testHeliusAPI(walletAddress: string): Promise<void> {
-    console.log('=== Testing Helius API ===');
-    console.log('Wallet address:', walletAddress);
-    console.log('API key:', this.heliusApiKey ? `${this.heliusApiKey.substring(0, 8)}...` : 'NOT FOUND');
-    
-    try {
-      const response = await fetch(`https://api.helius.xyz/v1/addresses/${walletAddress}/nfts?api-key=${this.heliusApiKey}`);
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Response data:', data);
-        console.log('NFTs found:', Array.isArray(data) ? data.length : 'Not an array');
-      } else {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-      }
-    } catch (error) {
-      console.error('Test failed:', error);
-    }
-    console.log('=== End Test ===');
   }
 }
 
