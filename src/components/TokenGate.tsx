@@ -64,8 +64,8 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
       
       // If no valid session, check if there's a wallet address in localStorage
       // but no session (indicating a disconnect scenario)
-      const storedWallet = localStorage.getItem('walletAddress');
-      if (storedWallet && !sessionStorage.getItem(VERIFICATION_SESSION_KEY)) {
+      const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
+      if (storedWallet && typeof window !== 'undefined' && !sessionStorage.getItem(VERIFICATION_SESSION_KEY)) {
         // Clear any stale wallet data
         localStorage.removeItem('walletAddress');
         localStorage.removeItem('connectedWallet');
@@ -125,51 +125,64 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
     if (!walletAddress) return;
     setLoading(true);
     setError(null);
+    
+    console.log('=== NFT Verification Debug ===');
+    console.log('Wallet address:', walletAddress);
+    console.log('WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
+    
     try {
-      const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+      // Use Solscan API (free, no API key required)
+      const url = `https://public-api.solscan.io/account/tokens?account=${walletAddress}`;
+      console.log('Making request to Solscan API:', url);
       
       const response = await fetch(url, {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 'my-id',
-          method: 'getAssetsByOwner',
-          params: {
-            ownerAddress: walletAddress,
-            page: 1,
-            limit: 1000,
-          },
-        }),
       });
 
-      const { result } = await response.json();
-      
-      if (!result || !result.items) {
-          console.error("Helius API did not return items:", result);
-          throw new Error("Failed to fetch assets from wallet. The API response was malformed.");
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Solscan API error:', errorText);
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
       }
 
-      console.log("Assets returned by Helius:", result.items);
+      const data = await response.json();
+      console.log('Raw Solscan API response:', data);
+      
+      // Filter for NFTs (tokens with 0 decimals)
+      const nfts = data.data?.filter((token: any) => token.tokenAmount?.decimals === 0) || [];
+      console.log("NFTs found:", nfts.length);
 
-      const hasWifHoodie = result.items.some(
-        (nft: any) => {
-          if (!nft.grouping || !Array.isArray(nft.grouping)) {
-            return false;
-          }
-          
-          return nft.grouping.some((group: any) => {
-            const isCollection = group.group_key === "collection";
-            const isCorrectCollection = group.group_value === WIFHOODIE_COLLECTION_ID;
-            if (isCollection) {
-              console.log(`Found NFT from a collection: ${group.group_value}. Is it the WifHoodie collection? ${isCorrectCollection}`);
-            }
-            return isCollection && isCorrectCollection;
-          });
+      // Check for WifHoodie NFT
+      const hasWifHoodie = nfts.some((nft: any) => {
+        console.log("Checking NFT:", nft);
+        
+        // Check by mint address (WIFHOODIE_COLLECTION_ID)
+        const isWifHoodieByMint = nft.mint === WIFHOODIE_COLLECTION_ID;
+        
+        // Check by token name
+        const tokenName = nft.tokenInfo?.name || '';
+        const isWifHoodieByName = tokenName.toLowerCase().includes('wifhoodie') || 
+                                  tokenName.toLowerCase().includes('wif hoodie');
+        
+        // Check by symbol
+        const tokenSymbol = nft.tokenInfo?.symbol || '';
+        const isWifHoodieBySymbol = tokenSymbol.toLowerCase().includes('wifhoodie') || 
+                                   tokenSymbol.toLowerCase().includes('wif');
+        
+        const isWifHoodie = isWifHoodieByMint || isWifHoodieByName || isWifHoodieBySymbol;
+        
+        if (isWifHoodie) {
+          console.log(`Found WifHoodie NFT! Name: ${tokenName}, Symbol: ${tokenSymbol}, Mint: ${nft.mint}`);
         }
-      );
+        
+        return isWifHoodie;
+      });
 
       console.log("Does the wallet hold a WifHoodie NFT?", hasWifHoodie);
 
@@ -191,13 +204,15 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         // Only show success message for fresh verifications
         if (showSuccessMessage) {
           // Check if user needs to complete onboarding
-          const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-          const hasDisplayName = localStorage.getItem('userDisplayName');
+          const hasCompletedOnboarding = typeof window !== 'undefined' ? localStorage.getItem('onboardingCompleted') : null;
+          const hasDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
           
           if (!hasCompletedOnboarding || !hasDisplayName) {
             // Redirect to onboarding for new users
             setTimeout(() => {
-              window.location.href = '/onboarding';
+              if (typeof window !== 'undefined') {
+                window.location.href = '/onboarding';
+              }
             }, 2000);
           } else {
             // Existing user - show success message
@@ -214,10 +229,73 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
     setLoading(false);
   };
 
+  // Debug function - can be called from browser console
+  const debugHeliusAPI = async () => {
+    if (!walletAddress) {
+      console.log('No wallet address connected');
+      return;
+    }
+    
+    console.log('=== Debugging Solscan API ===');
+    console.log('Wallet address:', walletAddress);
+    console.log('WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
+    
+    try {
+      const url = `https://public-api.solscan.io/account/tokens?account=${walletAddress}`;
+      console.log('Requesting URL:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log('Full API response:', data);
+      console.log('Response type:', typeof data);
+      console.log('Has data property:', !!data.data);
+      
+      if (data.data) {
+        const nfts = data.data.filter((token: any) => token.tokenAmount?.decimals === 0);
+        console.log('Number of NFTs:', nfts.length);
+        nfts.forEach((nft: any, index: number) => {
+          console.log(`NFT ${index}:`, {
+            mint: nft.mint,
+            name: nft.tokenInfo?.name,
+            symbol: nft.tokenInfo?.symbol,
+            decimals: nft.tokenAmount?.decimals
+          });
+        });
+      }
+      
+    } catch (error) {
+      console.error('Debug API call failed:', error);
+    }
+    
+    console.log('=== End Debug ===');
+  };
+
+  // Expose debug function to window for console access
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).debugHeliusAPI = debugHeliusAPI;
+    }
+  }, [walletAddress]);
+
   useEffect(() => {
     if (walletAddress) {
       // Only show success message if this is a fresh verification (not from existing session)
-      const isFreshVerification = !sessionStorage.getItem(VERIFICATION_SESSION_KEY);
+      const isFreshVerification = typeof window !== 'undefined' ? !sessionStorage.getItem(VERIFICATION_SESSION_KEY) : false;
       checkWifHoodieOwnership(isFreshVerification);
     }
   }, [walletAddress]);
@@ -233,8 +311,8 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
 
   if (walletAddress && !loading && isHolder && showSuccess) {
     // Check if this is a new user
-    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-    const hasDisplayName = localStorage.getItem('userDisplayName');
+    const hasCompletedOnboarding = typeof window !== 'undefined' ? localStorage.getItem('onboardingCompleted') : null;
+    const hasDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
     const isNewUser = !hasCompletedOnboarding || !hasDisplayName;
     
     return (

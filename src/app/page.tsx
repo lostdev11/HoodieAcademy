@@ -108,7 +108,7 @@ export default function HoodieAcademy() {
 
   useEffect(() => {
     // Get wallet address from localStorage
-    const storedWallet = localStorage.getItem('walletAddress');
+    const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
     if (storedWallet) {
       setWalletAddress(storedWallet);
     }
@@ -117,7 +117,7 @@ export default function HoodieAcademy() {
     setIsAdmin(isCurrentUserAdmin());
 
     // Get squad placement result
-    const squadResult = localStorage.getItem('userSquad');
+    const squadResult = typeof window !== 'undefined' ? localStorage.getItem('userSquad') : null;
     if (squadResult) {
       try {
         const result = JSON.parse(squadResult);
@@ -135,19 +135,23 @@ export default function HoodieAcademy() {
     }
 
     // Check if user needs to complete onboarding
-    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-    const hasDisplayName = localStorage.getItem('userDisplayName');
+    const hasCompletedOnboarding = typeof window !== 'undefined' ? localStorage.getItem('onboardingCompleted') : null;
+    const hasDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
     
     if (storedWallet && (!hasCompletedOnboarding || !hasDisplayName)) {
       // Redirect to onboarding if wallet is connected but onboarding is not complete
-      window.location.href = '/onboarding';
+      if (typeof window !== 'undefined') {
+        window.location.href = '/onboarding';
+      }
     }
     
     // Show welcome message for new users who just completed onboarding
-    const justCompletedOnboarding = sessionStorage.getItem('justCompletedOnboarding');
+    const justCompletedOnboarding = typeof window !== 'undefined' ? sessionStorage.getItem('justCompletedOnboarding') : null;
     if (justCompletedOnboarding === 'true') {
       setShowWelcomeMessage(true);
-      sessionStorage.removeItem('justCompletedOnboarding');
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('justCompletedOnboarding');
+      }
       // Hide welcome message after 5 seconds
       setTimeout(() => setShowWelcomeMessage(false), 5000);
     }

@@ -303,40 +303,49 @@ export default function GreatHoodieHall() {
   };
 
   const checkWifHoodieOwnership = useCallback(async () => {
-    if (!walletAddress || !HELIUS_API_KEY) {
-      if(!HELIUS_API_KEY) console.error("Helius API key is missing. Ensure NEXT_PUBLIC_HELIUS_API_KEY is set.");
+    if (!walletAddress) {
+      console.error("No wallet address provided.");
       return;
     }
     setLoading(true);
     try {
-      const response = await axios.post(
-        `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, 
-        {
-          jsonrpc: "2.0",
-          id: "my-id",
-          method: "getAssetsByOwner",
-          params: {
-            ownerAddress: walletAddress,
-            page: 1, 
-            limit: 1000,
-            displayOptions: {
-              showCollectionMetadata: true 
-            }
-          },
-        },
+      // Use Solscan API (free, no API key required)
+      const response = await axios.get(
+        `https://public-api.solscan.io/account/tokens?account=${walletAddress}`,
         { headers: { 'Content-Type': 'application/json' } }
       );
       
-      const nfts = response.data.result?.items || [];
-      const hasWifHoodie = nfts.some((nft: any) => 
-        nft.grouping?.find((group: any) => group.group_key === 'collection' && group.group_value === WIFHOODIE_COLLECTION_ADDRESS)
-      );
+      // Filter for NFTs (tokens with 0 decimals)
+      const nfts = response.data.data?.filter((token: any) => token.tokenAmount?.decimals === 0) || [];
+      console.log("NFTs found:", nfts.length);
+      
+      const hasWifHoodie = nfts.some((nft: any) => {
+        // Check by mint address
+        const isWifHoodieByMint = nft.mint === WIFHOODIE_COLLECTION_ADDRESS;
+        
+        // Check by token name
+        const tokenName = nft.tokenInfo?.name || '';
+        const isWifHoodieByName = tokenName.toLowerCase().includes('wifhoodie') || 
+                                  tokenName.toLowerCase().includes('wif hoodie');
+        
+        // Check by symbol
+        const tokenSymbol = nft.tokenInfo?.symbol || '';
+        const isWifHoodieBySymbol = tokenSymbol.toLowerCase().includes('wifhoodie') || 
+                                   tokenSymbol.toLowerCase().includes('wif');
+        
+        return isWifHoodieByMint || isWifHoodieByName || isWifHoodieBySymbol;
+      });
+      
       setIsHolder(hasWifHoodie);
       if (!hasWifHoodie && nfts.length > 0) {
         console.log("User owns NFTs, but not from the WifHoodie collection:", WIFHOODIE_COLLECTION_ADDRESS);
-        console.log("Owned NFTs collections:", nfts.map((nft:any) => nft.grouping?.find((group: any) => group.group_key === 'collection')?.group_value).filter(Boolean));
+        console.log("Owned NFTs:", nfts.map((nft:any) => ({
+          mint: nft.mint,
+          name: nft.tokenInfo?.name,
+          symbol: nft.tokenInfo?.symbol
+        })));
       } else if (nfts.length === 0) {
-        console.log("User owns no NFTs according to Helius.");
+        console.log("User owns no NFTs according to Solscan.");
       }
 
     } catch (error) {
@@ -348,7 +357,7 @@ export default function GreatHoodieHall() {
       alert("Failed to verify WifHoodie NFT.");
     }
     setLoading(false);
-  }, [walletAddress, HELIUS_API_KEY]);
+  }, [walletAddress]);
 
   useEffect(() => {
     if (walletAddress) {

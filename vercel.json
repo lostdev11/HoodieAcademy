@@ -1,37 +1,10 @@
 {
-        "version": 2,
-        "framework": "nextjs",
-        "builds": [
-          {
-            "src": "package.json",
-            "use": "@vercel/next"
-          },
-          {
-            "src": "server.js",
-            "use": "@vercel/node"
-          },
-          {
-            "src": "ProgressAPI.js",
-            "use": "@vercel/node"
-          }
-        ],
-        "routes": [
-          {
-            "src": "/socket.io/(.*)",
-            "dest": "/server.js"
-          },
-          {
-            "src": "/api/(.*)",
-            "dest": "/ProgressAPI.js"
-          },
-          {
-            "src": "/(.*)",
-            "dest": "/"
-          }
-        ],
-        "env": {
-          "NODE_ENV": "production",
-          "HELIUS_API_KEY": "c3038c42-5453-489b-9d14-4b583ab7b2b2",
-          "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com"
-        }
-      }
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "installCommand": "npm install",
+  "env": {
+    "NODE_ENV": "production",
+    "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com"
+  }
+}

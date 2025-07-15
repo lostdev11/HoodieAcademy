@@ -117,22 +117,22 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Check for profile suggestions and onboarding status
-    const suggestDisplayName = localStorage.getItem('suggestDisplayName');
-    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
-    const placementTestCompleted = localStorage.getItem('placementTestCompleted');
+    const suggestDisplayName = typeof window !== 'undefined' ? localStorage.getItem('suggestDisplayName') : null;
+    const onboardingCompleted = typeof window !== 'undefined' ? localStorage.getItem('onboardingCompleted') : null;
+    const placementTestCompleted = typeof window !== 'undefined' ? localStorage.getItem('placementTestCompleted') : null;
     
     setShowProfileSuggestion(suggestDisplayName === 'true');
     setHasCompletedOnboarding(onboardingCompleted === 'true');
     
     // Clear the suggestion flag if user has set a display name
-    const displayName = localStorage.getItem('userDisplayName');
-    if (displayName && suggestDisplayName === 'true') {
+    const displayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
+    if (displayName && suggestDisplayName === 'true' && typeof window !== 'undefined') {
       localStorage.removeItem('suggestDisplayName');
       setShowProfileSuggestion(false);
     }
 
     // Get wallet address and load real data
-    const storedWallet = localStorage.getItem('walletAddress');
+    const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
     if (storedWallet) {
       setWalletAddress(storedWallet);
       setRealTodos(getRealTodos(storedWallet));
@@ -147,7 +147,7 @@ export default function DashboardPage() {
     }
 
     // Load saved profile image
-    const savedProfileImage = localStorage.getItem('userProfileImage');
+    const savedProfileImage = typeof window !== 'undefined' ? localStorage.getItem('userProfileImage') : null;
     if (savedProfileImage) {
       setProfileImage(savedProfileImage);
     }
@@ -251,7 +251,7 @@ export default function DashboardPage() {
                   onClick={() => {
                     console.log('=== Dashboard Debug ===');
                     console.log('realAnnouncements state:', realAnnouncements);
-                    console.log('localStorage announcements:', localStorage.getItem('announcements'));
+                    console.log('localStorage announcements:', typeof window !== 'undefined' ? localStorage.getItem('announcements') : null);
                     console.log('getActiveAnnouncements():', getActiveAnnouncements());
                     console.log('======================');
                   }}
@@ -280,12 +280,16 @@ export default function DashboardPage() {
                     console.log('Creating test announcement:', testAnnouncement);
                     
                     // Add to localStorage directly
-                    const existingAnnouncements = JSON.parse(localStorage.getItem('announcements') || '[]');
+                    const existingAnnouncements = JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('announcements') : '[]') || '[]');
                     existingAnnouncements.push(testAnnouncement);
-                    localStorage.setItem('announcements', JSON.stringify(existingAnnouncements));
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('announcements', JSON.stringify(existingAnnouncements));
+                    }
                     
                     // Trigger the event
-                    window.dispatchEvent(new CustomEvent('announcementsUpdated'));
+                    if (typeof window !== 'undefined') {
+                      window.dispatchEvent(new CustomEvent('announcementsUpdated'));
+                    }
                     
                     console.log('Test announcement created and event dispatched');
                   }}

@@ -161,6 +161,35 @@ export function getConnectedWallet(): string | null {
   return localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
 }
 
+// Safe localStorage utility to prevent SSR errors
+export const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(key);
+    } catch (error) {
+      console.error('Error accessing localStorage:', error);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(key, value);
+    } catch (error) {
+      console.error('Error setting localStorage:', error);
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error('Error removing from localStorage:', error);
+    }
+  }
+};
+
 // Events and Announcements utilities
 export const EVENTS_KEY = 'events';
 export const ANNOUNCEMENTS_KEY = 'announcements';
@@ -196,6 +225,7 @@ export interface Announcement {
 // Get all events
 export const getEvents = (): Event[] => {
   try {
+    if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem(EVENTS_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
@@ -219,6 +249,7 @@ export const getUpcomingEvents = (): Event[] => {
 // Get all announcements
 export const getAnnouncements = (): Announcement[] => {
   try {
+    if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem(ANNOUNCEMENTS_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
