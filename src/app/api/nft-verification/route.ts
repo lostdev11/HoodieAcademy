@@ -9,78 +9,50 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('NFT Verification API: Checking wallet:', walletAddress);
+    // TEMP DEBUG: Log the Helius API key (first 6 chars only for safety)
+    console.log('HELIUS_API_KEY:', process.env.HELIUS_API_KEY ? process.env.HELIUS_API_KEY.slice(0, 6) + '...' : 'NOT SET');
 
-    // Try multiple API endpoints for better reliability
-    const apis = [
-      {
-        name: 'Solscan',
-        url: `https://api.solscan.io/account/tokens?account=${walletAddress}`,
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        } as Record<string, string>
-      },
-      {
-        name: 'Helius (if API key available)',
-        url: `https://api.helius.xyz/v1/addresses/${walletAddress}/nfts?api-key=${process.env.HELIUS_API_KEY}`,
-        headers: {
-          'Content-Type': 'application/json',
-        } as Record<string, string>
-      }
-    ];
-
+    // Only use Helius API for NFT verification
+    const apiUrl = `https://api.helius.xyz/v0/addresses/${walletAddress}/nfts?api-key=${process.env.HELIUS_API_KEY}`;
     let nfts = [];
-    let apiUsed = '';
-
-    for (const api of apis) {
-      try {
-        console.log(`Trying ${api.name} API...`);
-        
-        const response = await fetch(api.url, {
-          method: 'GET',
-          headers: api.headers,
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log(`${api.name} API response:`, data);
-          
-          if (api.name === 'Solscan') {
-            nfts = data.data?.filter((token: any) => token.tokenAmount?.decimals === 0) || [];
-          } else if (api.name.includes('Helius')) {
-            nfts = Array.isArray(data) ? data : [];
-          }
-          
-          apiUsed = api.name;
-          break;
-        } else {
-          console.log(`${api.name} API failed with status:`, response.status);
+    let apiUsed = 'Helius';
+    try {
+      console.log(`Trying Helius API...`);
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`Helius API response:`, data);
+        nfts = Array.isArray(data) ? data : [];
+        console.log(`Helius NFTs found:`, nfts.length);
+        if (nfts.length > 0) {
+          console.log(`First Helius NFT:`, nfts[0]);
         }
-      } catch (error) {
-        console.error(`${api.name} API error:`, error);
+      } else {
+        console.log(`Helius API failed with status:`, response.status);
+        const errorText = await response.text();
+        console.log(`Helius API error response:`, errorText);
       }
+    } catch (error) {
+      console.error(`Helius API error:`, error);
     }
-
     // Check for WifHoodie NFTs
     const WIFHOODIE_COLLECTION_ID = "H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ";
-    
     const hasWifHoodie = nfts.some((nft: any) => {
       // Check by mint address
       const isWifHoodieByMint = nft.mint === WIFHOODIE_COLLECTION_ID;
-      
       // Check by token name
       const tokenName = nft.tokenInfo?.name || nft.content?.metadata?.name || '';
       const isWifHoodieByName = tokenName.toLowerCase().includes('wifhoodie') || 
                                 tokenName.toLowerCase().includes('wif hoodie');
-      
       // Check by symbol
       const tokenSymbol = nft.tokenInfo?.symbol || nft.content?.metadata?.symbol || '';
       const isWifHoodieBySymbol = tokenSymbol.toLowerCase().includes('wifhoodie') || 
                                  tokenSymbol.toLowerCase().includes('wif');
-      
       return isWifHoodieByMint || isWifHoodieByName || isWifHoodieBySymbol;
     });
-
     return NextResponse.json({
       success: true,
       isHolder: hasWifHoodie,
