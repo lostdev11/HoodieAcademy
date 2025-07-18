@@ -12,47 +12,54 @@ export async function POST(request: NextRequest) {
     // TEMP DEBUG: Log the Helius API key (first 6 chars only for safety)
     console.log('HELIUS_API_KEY:', process.env.HELIUS_API_KEY ? process.env.HELIUS_API_KEY.slice(0, 6) + '...' : 'NOT SET');
 
-    // Only use Helius API for NFT verification
-    const apiUrl = `https://api.helius.xyz/v0/addresses/${walletAddress}/nfts?api-key=${process.env.HELIUS_API_KEY}`;
+    // Use Helius searchAssets RPC endpoint for NFT verification
+    const apiUrl = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
     let nfts = [];
-    let apiUsed = 'Helius';
+    let apiUsed = 'Helius searchAssets RPC';
     try {
-      console.log(`Trying Helius API...`);
+      console.log(`Trying Helius searchAssets RPC...`);
       const response = await fetch(apiUrl, {
-        method: 'GET',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 'nft-verification',
+          method: 'searchAssets',
+          params: {
+            ownerAddress: walletAddress,
+            tokenType: 'all',
+            limit: 100
+          }
+        })
       });
       if (response.ok) {
         const data = await response.json();
-        console.log(`Helius API response:`, data);
-        nfts = Array.isArray(data) ? data : [];
+        console.log(`Helius searchAssets RPC response:`, data);
+        console.log(`Helius searchAssets RPC result:`, JSON.stringify(data.result, null, 2));
+        nfts = data.result?.items || [];
         console.log(`Helius NFTs found:`, nfts.length);
+        console.log(`Helius NFTs full items:`, JSON.stringify(nfts, null, 2));
         if (nfts.length > 0) {
           console.log(`First Helius NFT:`, nfts[0]);
         }
       } else {
-        console.log(`Helius API failed with status:`, response.status);
+        console.log(`Helius searchAssets RPC failed with status:`, response.status);
         const errorText = await response.text();
-        console.log(`Helius API error response:`, errorText);
+        console.log(`Helius searchAssets RPC error response:`, errorText);
       }
     } catch (error) {
-      console.error(`Helius API error:`, error);
+      console.error(`Helius searchAssets RPC error:`, error);
     }
     // Check for WifHoodie NFTs
     const WIFHOODIE_COLLECTION_ID = "H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ";
-    const hasWifHoodie = nfts.some((nft: any) => {
-      // Check by mint address
-      const isWifHoodieByMint = nft.mint === WIFHOODIE_COLLECTION_ID;
-      // Check by token name
-      const tokenName = nft.tokenInfo?.name || nft.content?.metadata?.name || '';
-      const isWifHoodieByName = tokenName.toLowerCase().includes('wifhoodie') || 
-                                tokenName.toLowerCase().includes('wif hoodie');
-      // Check by symbol
-      const tokenSymbol = nft.tokenInfo?.symbol || nft.content?.metadata?.symbol || '';
-      const isWifHoodieBySymbol = tokenSymbol.toLowerCase().includes('wifhoodie') || 
-                                 tokenSymbol.toLowerCase().includes('wif');
-      return isWifHoodieByMint || isWifHoodieByName || isWifHoodieBySymbol;
-    });
+    const hasWifHoodie = nfts.some((nft: any) =>
+      Array.isArray(nft.grouping) &&
+      nft.grouping.some(
+        (group: any) =>
+          group.group_key === "collection" &&
+          group.group_value === WIFHOODIE_COLLECTION_ID
+      )
+    );
     return NextResponse.json({
       success: true,
       isHolder: hasWifHoodie,
