@@ -1,5 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/onboarding/page": "app/onboarding/page.js",
-  "/api/nft-verification/route": "app/api/nft-verification/route.js"
-}
