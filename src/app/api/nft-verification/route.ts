@@ -53,6 +53,10 @@ export async function POST(request: NextRequest) {
             nfts = data.result.items;
             apiUsed = 'Helius RPC API';
             console.log(`Helius NFTs found:`, nfts.length);
+            // Debug: Log the first NFT structure
+            if (nfts.length > 0) {
+              console.log(`First NFT structure:`, JSON.stringify(nfts[0], null, 2));
+            }
           }
         } else {
           const errorText = await response.text();
@@ -107,7 +111,8 @@ export async function POST(request: NextRequest) {
     if (apiUsed === 'Test Mode') {
       hasWifHoodie = true;
     } else {
-      hasWifHoodie = nfts.some((nft: any) => {
+      console.log(`Checking ${nfts.length} NFTs for WifHoodie collection: ${WIFHOODIE_COLLECTION_ID}`);
+      hasWifHoodie = nfts.some((nft: any, index: number) => {
         // Check by mint address (Helius format)
         const isWifHoodieByMint = nft.id === WIFHOODIE_COLLECTION_ID || nft.mint === WIFHOODIE_COLLECTION_ID;
         // Check by collection address (Helius format)
@@ -123,7 +128,22 @@ export async function POST(request: NextRequest) {
         const isWifHoodieBySymbol = tokenSymbol.toLowerCase().includes('wifhoodie') || 
                                    tokenSymbol.toLowerCase().includes('wif');
         
-        return isWifHoodieByMint || isWifHoodieByCollection || isWifHoodieByName || isWifHoodieBySymbol;
+        const isWifHoodie = isWifHoodieByMint || isWifHoodieByCollection || isWifHoodieByName || isWifHoodieBySymbol;
+        
+        // Debug: Log each NFT check
+        console.log(`NFT ${index + 1}:`, {
+          id: nft.id,
+          name: tokenName,
+          symbol: tokenSymbol,
+          grouping: nft.grouping,
+          isWifHoodieByMint,
+          isWifHoodieByCollection,
+          isWifHoodieByName,
+          isWifHoodieBySymbol,
+          isWifHoodie
+        });
+        
+        return isWifHoodie;
       });
     }
     return NextResponse.json({
