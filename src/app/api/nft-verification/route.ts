@@ -21,40 +21,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use Helius searchAssets RPC endpoint for NFT verification
-    const apiUrl = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
+    // Use Helius REST API for NFT verification
+    const apiUrl = `https://api.helius.xyz/v0/addresses/${walletAddress}/nfts?api-key=${process.env.HELIUS_API_KEY}`;
     let nfts = [];
-    let apiUsed = 'Helius searchAssets RPC';
+    let apiUsed = 'Helius REST API';
     try {
-      console.log(`Trying Helius searchAssets RPC...`);
+      console.log(`Trying Helius REST API...`);
       const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 'nft-verification',
-          method: 'searchAssets',
-          params: {
-            ownerAddress: walletAddress,
-            tokenType: 'all',
-            limit: 100
-          }
-        })
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
       });
       if (response.ok) {
         const data = await response.json();
-        console.log(`Helius searchAssets RPC response:`, data);
-        console.log(`Helius searchAssets RPC result:`, JSON.stringify(data.result, null, 2));
-        nfts = data.result?.items || [];
+        console.log(`Helius REST API response:`, data);
+        nfts = Array.isArray(data) ? data : [];
         console.log(`Helius NFTs found:`, nfts.length);
-        console.log(`Helius NFTs full items:`, JSON.stringify(nfts, null, 2));
         if (nfts.length > 0) {
           console.log(`First Helius NFT:`, nfts[0]);
         }
       } else {
-        console.log(`Helius searchAssets RPC failed with status:`, response.status);
+        console.log(`Helius REST API failed with status:`, response.status);
         const errorText = await response.text();
-        console.log(`Helius searchAssets RPC error response:`, errorText);
+        console.log(`Helius REST API error response:`, errorText);
         return NextResponse.json(
           { 
             error: 'Helius API request failed',
@@ -65,7 +53,7 @@ export async function POST(request: NextRequest) {
         );
       }
     } catch (error) {
-      console.error(`Helius searchAssets RPC error:`, error);
+      console.error(`Helius REST API error:`, error);
       return NextResponse.json(
         { 
           error: 'Failed to fetch NFT data from Helius API',
@@ -76,14 +64,22 @@ export async function POST(request: NextRequest) {
     }
     // Check for WifHoodie NFTs
     const WIFHOODIE_COLLECTION_ID = "H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ";
-    const hasWifHoodie = nfts.some((nft: any) =>
-      Array.isArray(nft.grouping) &&
-      nft.grouping.some(
-        (group: any) =>
-          group.group_key === "collection" &&
-          group.group_value === WIFHOODIE_COLLECTION_ID
-      )
-    );
+    const hasWifHoodie = nfts.some((nft: any) => {
+      // Check by mint address
+      const isWifHoodieByMint = nft.mint === WIFHOODIE_COLLECTION_ID;
+      // Check by collection address
+      const isWifHoodieByCollection = nft.collection === WIFHOODIE_COLLECTION_ID || nft.collection?.address === WIFHOODIE_COLLECTION_ID;
+      // Check by token name
+      const tokenName = nft.tokenInfo?.name || nft.content?.metadata?.name || nft.name || '';
+      const isWifHoodieByName = tokenName.toLowerCase().includes('wifhoodie') || 
+                                tokenName.toLowerCase().includes('wif hoodie');
+      // Check by symbol
+      const tokenSymbol = nft.tokenInfo?.symbol || nft.content?.metadata?.symbol || nft.symbol || '';
+      const isWifHoodieBySymbol = tokenSymbol.toLowerCase().includes('wifhoodie') || 
+                                 tokenSymbol.toLowerCase().includes('wif');
+      
+      return isWifHoodieByMint || isWifHoodieByCollection || isWifHoodieByName || isWifHoodieBySymbol;
+    });
     return NextResponse.json({
       success: true,
       isHolder: hasWifHoodie,
