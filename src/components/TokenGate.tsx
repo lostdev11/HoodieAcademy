@@ -1,13 +1,10 @@
-"use client";
-import React from 'react';
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import { Wallet } from 'lucide-react';
+"use client"
 
-interface TokenGateProps {
-  children: React.ReactNode;
-}
+import { useState, useEffect, ReactNode } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Wallet, Zap, Shield, CheckCircle, AlertCircle, Home, GraduationCap } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 declare global {
   interface Window {
@@ -15,374 +12,375 @@ declare global {
   }
 }
 
-type WalletProvider = 'phantom';
+interface TokenGateProps {
+  children?: ReactNode;
+}
 
-const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [isHolder, setIsHolder] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showWalletSelector, setShowWalletSelector] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [hasBeenConnected, setHasBeenConnected] = useState(false);
+export default function TokenGate({ children }: TokenGateProps) {
+  const router = useRouter()
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [isConnected, setIsConnected] = useState(false)
+  const [walletAddress, setWalletAddress] = useState<string | null>(null)
+  const [isHolder, setIsHolder] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
-  const WIFHOODIE_COLLECTION_ID = "H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ";
-  const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
-  const VERIFICATION_SESSION_KEY = 'wifhoodie_verification_session';
-
-  // Check for existing verification session on component mount
+  // Check if we're on the client side
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const sessionData = sessionStorage.getItem(VERIFICATION_SESSION_KEY);
-      if (sessionData) {
-        try {
-          const { walletAddress: sessionWallet, isHolder: sessionIsHolder, timestamp } = JSON.parse(sessionData);
-          const now = Date.now();
-          const sessionAge = now - timestamp;
-          const sessionValid = sessionAge < 30 * 60 * 1000; // 30 minutes
+    setIsClient(true)
+  }, [])
 
-          if (sessionValid && sessionIsHolder) {
-            setWalletAddress(sessionWallet);
-            setIsHolder(true);
-            setHasBeenConnected(true);
-            setShowSuccess(false); // Ensure success message is not shown for existing sessions
-            console.log('Using existing verification session');
-            return; // Exit early if we have a valid session
-          } else {
-            // Clear expired session
-            sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
-            localStorage.removeItem('walletAddress');
-            localStorage.removeItem('connectedWallet');
+  // Check if Phantom is installed (only on client)
+  const isPhantomInstalled = isClient && typeof window !== 'undefined' && window.solana?.isPhantom
+
+  // Check if user is already authenticated on mount (only on client)
+  useEffect(() => {
+    if (!isClient) return
+
+    const checkAuthStatus = async () => {
+      try {
+        const storedWallet = localStorage.getItem('walletAddress')
+        if (storedWallet) {
+          setWalletAddress(storedWallet)
+          setIsConnected(true)
+          
+          // Verify NFT ownership for stored wallet
+          const response = await fetch('/api/nft-verification', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ walletAddress: storedWallet }),
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            if (data.isHolder) {
+              setIsHolder(true)
+              setIsAuthenticated(true)
+            }
           }
-        } catch (error) {
-          console.error('Failed to parse verification session:', error);
-          sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
-          localStorage.removeItem('walletAddress');
-          localStorage.removeItem('connectedWallet');
         }
-      }
-      
-      // If no valid session, check if there's a wallet address in localStorage
-      // but no session (indicating a disconnect scenario)
-      const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
-      if (storedWallet && typeof window !== 'undefined' && !sessionStorage.getItem(VERIFICATION_SESSION_KEY)) {
-        // Clear any stale wallet data
-        localStorage.removeItem('walletAddress');
-        localStorage.removeItem('connectedWallet');
-      }
-    }
-  }, []);
-
-  const connectWallet = async (providerName: WalletProvider) => {
-    setError(null);
-    let provider;
-
-    if (providerName === 'phantom') {
-      if (window.solana?.isPhantom) {
-        provider = window.solana;
-      } else {
-        setError("Phantom wallet is not installed.");
-        return;
+      } catch (error) {
+        console.error('Auth check failed:', error)
       }
     }
 
-    if (!provider) {
-        setError("Could not find a compatible Solana wallet.");
-        return;
+    checkAuthStatus()
+  }, [isClient])
+
+  const connectPhantom = async () => {
+    if (!isPhantomInstalled) {
+      setError("Phantom wallet is not installed. Please install it from https://phantom.app/")
+      return
     }
+
+    setIsConnecting(true)
+    setError(null)
 
     try {
-      if (provider.isConnecting) return;
-      const response = await provider.connect();
-      setWalletAddress(response.publicKey.toString());
+      const response = await window.solana.connect()
+      const address = response.publicKey.toString()
+      setWalletAddress(address)
+      setIsConnected(true)
+      
+      // Store wallet address
+      localStorage.setItem('walletAddress', address)
+      
+      // Verify NFT ownership
+      await verifyNFT(address)
     } catch (error: any) {
-      console.error("Wallet connection failed:", error);
-      setError(`Wallet connection failed: ${error.message || 'User rejected the request.'}`);
+      console.error("Wallet connection failed:", error)
+      setError(`Connection failed: ${error.message || 'User rejected the request.'}`)
     } finally {
-      setShowWalletSelector(false);
+      setIsConnecting(false)
     }
-  };
+  }
+
+  const verifyNFT = async (address: string) => {
+    setIsVerifying(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/nft-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ walletAddress: address }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('NFT Verification response:', data)
+      
+      setIsHolder(data.isHolder)
+      
+      if (!data.isHolder) {
+        setError("No WifHoodie NFT found in your wallet. Please purchase one to access the course.")
+      } else {
+        setIsAuthenticated(true)
+        // Auto-redirect to placement test if NFT verification succeeds
+        await handleAutoRedirect(address)
+      }
+    } catch (error: any) {
+      console.error("NFT verification failed:", error)
+      setError(`Verification failed: ${error.message}`)
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleAutoRedirect = async (address: string) => {
+    setIsRedirecting(true)
+    
+    try {
+      // Check if user has completed placement test
+      const hasCompletedPlacement = localStorage.getItem(`placement_completed_${address}`)
+      
+      if (!hasCompletedPlacement) {
+        // Redirect to placement test
+        console.log('Redirecting to placement test...')
+        router.push('/placement/squad-test')
+      } else {
+        // Redirect to main home page if placement test already completed
+        console.log('Placement test already completed, redirecting to home...')
+        router.push('/')
+      }
+    } catch (error) {
+      console.error('Auto-redirect failed:', error)
+      // Fallback to home page
+      router.push('/')
+    }
+  }
 
   const disconnectWallet = () => {
-    setWalletAddress(null);
-    setIsHolder(false);
-    setError(null);
-    setShowSuccess(false);
-    setHasBeenConnected(false);
-    
-    // Clear all wallet-related storage
-    sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
-    localStorage.removeItem('walletAddress');
-    localStorage.removeItem('connectedWallet');
-    
-    // Disconnect from wallet providers
-    if (window.solana?.disconnect) {
-      window.solana.disconnect();
+    if (isClient && window.solana?.disconnect) {
+      window.solana.disconnect()
     }
-  };
-
-  const checkWifHoodieOwnership = async (showSuccessMessage: boolean = true) => {
-    if (!walletAddress) return;
-    setLoading(true);
-    setError(null);
-    
-    console.log('=== NFT Verification Debug ===');
-    console.log('Wallet address:', walletAddress);
-    console.log('WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
-    
-    try {
-      // Use our server-side API route to avoid CORS issues
-      const response = await fetch('/api/nft-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ walletAddress }),
-      });
-
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('NFT Verification API error:', errorText);
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log('NFT Verification API response:', data);
-      
-      const hasWifHoodie = data.isHolder;
-      console.log("Does the wallet hold a WifHoodie NFT?", hasWifHoodie);
-      console.log("NFTs found:", data.nftsFound);
-      console.log("API used:", data.apiUsed);
-
-      setIsHolder(hasWifHoodie);
-      if (hasWifHoodie) {
-        // Store verification session
-        const sessionData = {
-          walletAddress,
-          isHolder: true,
-          timestamp: Date.now()
-        };
-        sessionStorage.setItem(VERIFICATION_SESSION_KEY, JSON.stringify(sessionData));
-        
-        // Store wallet address in localStorage for profile access
-        localStorage.setItem('walletAddress', walletAddress);
-        localStorage.setItem('connectedWallet', walletAddress);
-        
-        setHasBeenConnected(true);
-        // Only show success message for fresh verifications
-        if (showSuccessMessage) {
-          // Check if user needs to complete onboarding
-          const hasCompletedOnboarding = typeof window !== 'undefined' ? localStorage.getItem('onboardingCompleted') : null;
-          const hasDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
-          
-          if (!hasCompletedOnboarding || !hasDisplayName) {
-            // Redirect to onboarding for new users
-            setTimeout(() => {
-              if (typeof window !== 'undefined') {
-                window.location.href = '/onboarding';
-              }
-            }, 2000);
-          } else {
-            // Existing user - show success message
-            setShowSuccess(true);
-            // Hide success message after 2 seconds
-            setTimeout(() => setShowSuccess(false), 2000);
-          }
-        }
-      }
-    } catch (error: any) {
-      console.error("NFT check failed:", error);
-      setError(`NFT verification failed: ${error.message}`);
+    if (isClient) {
+      localStorage.removeItem('walletAddress')
     }
-    setLoading(false);
-  };
+    setWalletAddress(null)
+    setIsConnected(false)
+    setIsHolder(false)
+    setError(null)
+    setIsRedirecting(false)
+    setIsAuthenticated(false)
+  }
 
-  // Debug function - can be called from browser console
-  const debugHeliusAPI = async () => {
-    if (!walletAddress) {
-      console.log('No wallet address connected');
-      return;
-    }
-    
-    console.log('=== Debugging NFT Verification API ===');
-    console.log('Wallet address:', walletAddress);
-    console.log('WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
-    
-    try {
-      const response = await fetch('/api/nft-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ walletAddress }),
-      });
-      
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        return;
-      }
-      
-      const data = await response.json();
-      console.log('Full API response:', data);
-      console.log('Is holder:', data.isHolder);
-      console.log('NFTs found:', data.nftsFound);
-      console.log('API used:', data.apiUsed);
-      console.log('Sample NFTs:', data.nfts);
-      
-    } catch (error) {
-      console.error('Debug API call failed:', error);
-    }
-    
-    console.log('=== End Debug ===');
-  };
+  const handleConnect = async () => {
+    await connectPhantom()
+  }
 
-  // Expose debug function to window for console access
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      (window as any).debugHeliusAPI = debugHeliusAPI;
-    }
-  }, [walletAddress]);
-
-  useEffect(() => {
+  const handleEnterCourse = async () => {
     if (walletAddress) {
-      // Only show success message if this is a fresh verification (not from existing session)
-      const isFreshVerification = typeof window !== 'undefined' ? !sessionStorage.getItem(VERIFICATION_SESSION_KEY) : false;
-      checkWifHoodieOwnership(isFreshVerification);
+      await handleAutoRedirect(walletAddress)
+    } else {
+      router.push('/courses')
     }
-  }, [walletAddress]);
-
-  if (walletAddress && loading) {
-    return (
-      <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900 text-center">
-        <p className="text-gray-300">Verifying your WifHoodie NFT...</p>
-        {error && <p className="text-red-400 mt-4">{error}</p>}
-      </div>
-    );
   }
 
-  if (walletAddress && !loading && isHolder && showSuccess) {
-    // Check if this is a new user
-    const hasCompletedOnboarding = typeof window !== 'undefined' ? localStorage.getItem('onboardingCompleted') : null;
-    const hasDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
-    const isNewUser = !hasCompletedOnboarding || !hasDisplayName;
-    
-    return (
-      <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center p-8 bg-gray-800 rounded-xl shadow-lg"
-        >
-          <h2 className="text-2xl font-bold text-green-400 mb-4">✅ Verification Successful!</h2>
-          <p className="text-gray-300 mb-4">
-            WifHoodie NFT verified in wallet: <br/>
-            <span className="font-mono text-xs text-amber-300">{walletAddress}</span>
-          </p>
-          {isNewUser ? (
-            <p className="text-cyan-300">Redirecting to complete your profile setup...</p>
-          ) : (
-            <p className="text-green-300">Access granted to Hoodie Academy courses!</p>
-          )}
-        </motion.div>
-      </div>
-    );
+  // If user is authenticated, render children
+  if (isAuthenticated && children) {
+    return <>{children}</>
   }
 
-  if (walletAddress && !loading && isHolder) {
+  // Show loading state during hydration
+  if (!isClient) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="w-full"
-      >
-        {children}
-      </motion.div>
-    );
-  }
-
-  if (walletAddress && !loading && !isHolder) {
-      return (
-        <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-              className="text-center p-8 bg-gray-800 rounded-xl shadow-lg"
-            >
-              <h2 className="text-2xl font-bold text-white mb-4">WifHoodie NFT Required</h2>
-              <p className="text-gray-300 mb-6">
-                No WifHoodie NFT found in wallet: <br/> <span className="font-mono text-xs text-amber-300">{walletAddress}</span>
-              </p>
-              {error && <p className="text-red-400 mb-4">{error}</p>}
-              <Button
-                asChild
-                className="bg-gradient-to-r from-cyan-500 to-purple-500 text-white hover:from-cyan-400 hover:to-purple-400 px-8 py-3"
-              >
-                <a href="https://magiceden.us/marketplace/wifhoodies" target="_blank" rel="noopener noreferrer">
-                  Get WifHoodie NFT
-                </a>
-              </Button>
-               <Button variant="link" onClick={disconnectWallet} className="text-gray-400 mt-2">
-                Try a different wallet
-              </Button>
-            </motion.div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading...</p>
         </div>
-      )
+      </div>
+    )
   }
 
+  // Otherwise, show the gate UI
   return (
-    <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center p-8 bg-gray-800 rounded-xl shadow-lg"
-      >
-        <h2 className="text-2xl font-bold text-white mb-4">
-          {hasBeenConnected ? 'Welcome Back!' : 'Course Access Required'}
-        </h2>
-        <p className="text-gray-300 mb-6">
-          {hasBeenConnected 
-            ? 'Please reconnect your wallet to continue your learning journey.'
-            : 'Connect your wallet to verify your WifHoodie NFT and access this course.'
-          }
-        </p>
-        {error && <p className="text-red-400 mb-4">{error}</p>}
-        
-        {!showWalletSelector ? (
-          <div className="flex justify-center">
-            <Button
-              onClick={() => setShowWalletSelector(true)}
-              className="bg-gradient-to-r from-green-600 to-purple-600 text-white hover:from-green-500 hover:to-purple-500 px-8 py-3 w-64"
-            >
-              <Wallet className="mr-2" size={20} />
-              Connect Wallet
-            </Button>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center space-y-3">
-             <Button
-                onClick={() => connectWallet('phantom')}
-                className="bg-purple-600 hover:bg-purple-700 text-white w-64"
-             >
-                Connect Phantom
-             </Button>
-             <Button variant="ghost" onClick={() => setShowWalletSelector(false)} className="text-gray-400">
-                Cancel
-             </Button>
-          </div>
-        )}
-      </motion.div>
-    </div>
-  );
-};
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Cyberpunk background effects */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.1),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.1),transparent_50%)]" />
 
-export default TokenGate;
+      {/* Grid pattern overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
+
+      <Card className="w-full max-w-md bg-slate-800/90 border-slate-700/50 backdrop-blur-xl shadow-2xl relative">
+        {/* Glowing border effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-purple-500/20 to-emerald-500/20 rounded-lg blur-sm" />
+
+        <CardContent className="p-8 relative z-10">
+          <div className="text-center space-y-6">
+            {/* Icon with glow effect */}
+            <div className="flex justify-center">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-purple-500 rounded-full blur-lg opacity-50" />
+                <div className="relative bg-slate-800 p-4 rounded-full border border-slate-600">
+                  {isConnected && isHolder ? (
+                    <CheckCircle className="w-8 h-8 text-emerald-400" />
+                  ) : isConnected && !isHolder ? (
+                    <AlertCircle className="w-8 h-8 text-amber-400" />
+                  ) : (
+                    <Shield className="w-8 h-8 text-slate-300" />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Main heading */}
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold text-white tracking-tight">
+                {isConnected && isHolder ? "Access Granted" : 
+                 isConnected && !isHolder ? "NFT Required" :
+                 "Course Access Required"}
+              </h1>
+              <div className="h-0.5 w-16 bg-gradient-to-r from-emerald-400 to-purple-500 mx-auto rounded-full" />
+            </div>
+
+            {/* Description */}
+            <p className="text-slate-300 text-lg leading-relaxed">
+              {isConnected && isHolder
+                ? isRedirecting 
+                  ? "Redirecting to your personalized learning path..."
+                  : "Your WifHoodie NFT has been verified. Welcome to the course!"
+                : isConnected && !isHolder
+                ? "No WifHoodie NFT found in your wallet. Please purchase one to continue."
+                : "Connect your Phantom wallet to verify your WifHoodie NFT and access this course."}
+            </p>
+
+            {/* Wallet Address Display */}
+            {walletAddress && (
+              <div className="bg-slate-700/50 rounded-lg p-3">
+                <p className="text-xs text-slate-400 mb-1">Connected Wallet:</p>
+                <p className="text-sm text-emerald-400 font-mono break-all">{walletAddress}</p>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            {/* Connect button */}
+            <div className="pt-4">
+              {!isConnected ? (
+                <Button
+                  onClick={handleConnect}
+                  disabled={isConnecting || !isPhantomInstalled}
+                  className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-purple-600 hover:from-emerald-400 hover:to-purple-500 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  <div className="flex items-center gap-3">
+                    {isConnecting ? (
+                      <>
+                        <Zap className="w-5 h-5 animate-pulse" />
+                        Connecting...
+                      </>
+                    ) : !isPhantomInstalled ? (
+                      <>
+                        <AlertCircle className="w-5 h-5" />
+                        Install Phantom
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="w-5 h-5" />
+                        Connect Phantom
+                      </>
+                    )}
+                  </div>
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  {isVerifying || isRedirecting ? (
+                    <Button disabled className="w-full h-14 text-lg font-semibold bg-slate-600 border-0">
+                      <div className="flex items-center gap-3">
+                        <Zap className="w-5 h-5 animate-pulse" />
+                        {isVerifying ? "Verifying NFT..." : "Redirecting..."}
+                      </div>
+                    </Button>
+                  ) : isHolder ? (
+                    <Button
+                      onClick={handleEnterCourse}
+                      className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-purple-600 hover:from-emerald-400 hover:to-purple-500 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                    >
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-5 h-5" />
+                        Enter Course
+                      </div>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 bg-transparent"
+                      onClick={() => window.open('https://magiceden.us/marketplace/wifhoodies', '_blank')}
+                    >
+                      Get WifHoodie NFT
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="ghost"
+                    onClick={disconnectWallet}
+                    className="w-full text-slate-400 hover:text-slate-300 hover:bg-slate-700/50"
+                  >
+                    Disconnect Wallet
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Additional info */}
+            {!isConnected && (
+              <div className="pt-4 space-y-2">
+                <p className="text-xs text-slate-400">Only Phantom wallet is supported</p>
+                {!isPhantomInstalled && (
+                  <p className="text-xs text-amber-400">
+                    <a 
+                      href="https://phantom.app/" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="underline hover:text-amber-300"
+                    >
+                      Download Phantom Wallet
+                    </a>
+                  </p>
+                )}
+                <div className="flex justify-center gap-2">
+                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse delay-100" />
+                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse delay-200" />
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Floating particles effect */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(20)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-emerald-400/30 rounded-full animate-pulse"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${2 + Math.random() * 2}s`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}

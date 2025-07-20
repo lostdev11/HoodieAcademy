@@ -70,9 +70,9 @@ export function NFTProfileSelector({
   };
 
   const filteredNFTs = nfts.filter(nft => 
-    nft.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    nft.collection?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    nft.symbol.toLowerCase().includes(searchTerm.toLowerCase())
+    (nft.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (nft.collection?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (nft.symbol?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   const handleNFTSelect = (nft: NFT) => {
