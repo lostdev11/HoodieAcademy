@@ -1,10 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
-  env: {
-    NEXT_PUBLIC_HELIUS_API_KEY: process.env.NEXT_PUBLIC_HELIUS_API_KEY,
-  },
-}
+  output: 'export',
+  trailingSlash: true,
+};
 
-module.exports = nextConfig 
+module.exports = nextConfig; 
