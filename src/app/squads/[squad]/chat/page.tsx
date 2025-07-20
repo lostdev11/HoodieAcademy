@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Shield, Users } from 'lucide-react';
 import Link from 'next/link';
 import ChatRoom from '@/components/chat/ChatRoom';
+import PinnedMessage from '@/components/chat/PinnedMessage';
 import TokenGate from '@/components/TokenGate';
 
 interface PageProps {
@@ -192,6 +193,9 @@ export default function SquadChatPage({ params }: PageProps) {
 
           {/* Chat Container */}
           <div className="h-[calc(100vh-200px)]">
+            {/* Pinned Message Area */}
+            <PinnedMessage squad={squadName} />
+            
             <ChatRoom squad={squadName} />
           </div>
         </div>

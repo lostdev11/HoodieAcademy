@@ -11,6 +11,15 @@ export async function POST(request: NextRequest) {
     console.log('NFT Verification API: Checking wallet:', walletAddress);
     // TEMP DEBUG: Log the Helius API key (first 6 chars only for safety)
     console.log('HELIUS_API_KEY:', process.env.HELIUS_API_KEY ? process.env.HELIUS_API_KEY.slice(0, 6) + '...' : 'NOT SET');
+    
+    // Check if API key is available
+    if (!process.env.HELIUS_API_KEY) {
+      console.error('HELIUS_API_KEY environment variable is not set');
+      return NextResponse.json(
+        { error: 'API configuration error' },
+        { status: 500 }
+      );
+    }
 
     // Use Helius searchAssets RPC endpoint for NFT verification
     const apiUrl = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
@@ -46,9 +55,24 @@ export async function POST(request: NextRequest) {
         console.log(`Helius searchAssets RPC failed with status:`, response.status);
         const errorText = await response.text();
         console.log(`Helius searchAssets RPC error response:`, errorText);
+        return NextResponse.json(
+          { 
+            error: 'Helius API request failed',
+            status: response.status,
+            details: errorText
+          },
+          { status: 500 }
+        );
       }
     } catch (error) {
       console.error(`Helius searchAssets RPC error:`, error);
+      return NextResponse.json(
+        { 
+          error: 'Failed to fetch NFT data from Helius API',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        },
+        { status: 500 }
+      );
     }
     // Check for WifHoodie NFTs
     const WIFHOODIE_COLLECTION_ID = "H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ";

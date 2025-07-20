@@ -16,7 +16,7 @@ import { GlowingCoinIcon } from "@/components/icons/GlowingCoinIcon";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { squadTracks, getSquadForCourse, getCoursesForSquad } from "@/lib/squadData";
-import { isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet } from "@/lib/utils";
+import { isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet, getCompletedCoursesCount } from "@/lib/utils";
 
 // Simple course data
 const allCourses: Array<{
@@ -158,9 +158,8 @@ export default function CoursesPage() {
         if (savedStatus) {
           try {
             const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
-            const courseData = allCourses.find(c => c.localStorageKey === key);
-            const totalLessons = courseData?.totalLessons || 1;
             const completedLessons = parsedStatus.filter(s => s === 'completed').length;
+            const totalLessons = parsedStatus.length;
             const progress = Math.round((completedLessons / totalLessons) * 100);
             const isCompleted = progress === 100;
             return { completed: isCompleted, progress };
@@ -185,8 +184,16 @@ export default function CoursesPage() {
       courseStatus: status,
       userSquad: userSquad,
       isAdmin: isAdmin,
+      isAdminBypass: isAdminBypass,
+      isDemoWallet: isDemoWallet,
       isLoading: false,
-      allCourses: allCourses.map(c => ({ id: c.id, title: c.title }))
+      allCourses: allCourses.map(c => ({ id: c.id, title: c.title })),
+      completedCoursesCount: getCompletedCoursesCount(),
+      localStorageData: allCourses.map(c => ({
+        id: c.id,
+        key: c.localStorageKey,
+        data: c.localStorageKey ? localStorage.getItem(c.localStorageKey) : null
+      }))
     });
     
     setCourseCompletionStatus(status);
@@ -247,33 +254,54 @@ export default function CoursesPage() {
   const getFilteredCourses = () => {
     let filteredCourses = allCourses;
 
-    // If user is not admin and has a squad, filter by squad
-    // Demo wallet should be treated as a regular user (no admin bypass)
-    if (!isAdmin && !isAdminBypass && userSquad && !isDemoWallet) {
-      const squadCourseIds = getCoursesForSquad(userSquad);
-      filteredCourses = allCourses.filter(course => squadCourseIds.includes(course.id));
-    }
+    console.log('Filtering courses:', {
+      activeFilter,
+      selectedSquad,
+      userSquad,
+      isAdmin,
+      isAdminBypass,
+      isDemoWallet,
+      totalCourses: allCourses.length
+    });
 
-    // Apply additional filters
+    // Apply filters based on active filter
     switch (activeFilter) {
       case 'completed':
-        return filteredCourses.filter(course => 
+        const completedCourses = filteredCourses.filter(course => 
           course.localStorageKey && courseCompletionStatus[course.localStorageKey]?.completed
         );
+        console.log('Completed courses filter:', {
+          totalFiltered: filteredCourses.length,
+          completedCount: completedCourses.length,
+          completedCourses: completedCourses.map(c => ({ id: c.id, title: c.title })),
+          courseStatus: courseCompletionStatus
+        });
+        return completedCourses;
       case 'squads':
         if (selectedSquad) {
+          // Show courses for selected squad
           const squadCourseIds = getCoursesForSquad(selectedSquad);
-          return filteredCourses.filter(course => squadCourseIds.includes(course.id));
+          const squadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
+          console.log('Selected squad courses:', squadCourses.length);
+          return squadCourses;
+        } else if (!isAdmin && !isAdminBypass && userSquad && !isDemoWallet) {
+          // Show courses for user's squad when no specific squad is selected
+          const squadCourseIds = getCoursesForSquad(userSquad);
+          const userSquadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
+          console.log('User squad courses:', userSquadCourses.length);
+          return userSquadCourses;
         }
+        console.log('All courses (squads filter):', filteredCourses.length);
         return filteredCourses;
       default:
+        // For 'all' filter, show all courses regardless of squad restrictions
+        // The 'all' tab should show all courses, regardless of squad restrictions
+        console.log('All courses (all filter):', filteredCourses.length);
         return filteredCourses;
     }
   };
 
-  const completedCoursesCount = allCourses.filter(course => 
-    course.localStorageKey && courseCompletionStatus[course.localStorageKey]?.completed
-  ).length;
+  const completedCoursesCount = getCompletedCoursesCount();
 
   if (isLoading) {
     return (

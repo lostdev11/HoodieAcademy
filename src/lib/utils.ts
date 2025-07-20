@@ -402,3 +402,46 @@ export const useEventsAndAnnouncementsUpdates = (callback: () => void) => {
     };
   }
 };
+
+// Course completion utilities
+export const getCompletedCoursesCount = (): number => {
+  if (typeof window === 'undefined') return 0;
+  
+  const allCourses = [
+    { localStorageKey: 'walletWizardryProgress' },
+    { localStorageKey: 'nftMasteryProgress' },
+    { localStorageKey: 'memeCoinManiaProgress' },
+    { localStorageKey: 'communityStrategyProgress' },
+    { localStorageKey: 'snsProgress' },
+    { localStorageKey: 'technicalAnalysisProgress' }
+  ];
+  
+  let completedCount = 0;
+  
+  allCourses.forEach(course => {
+    if (course.localStorageKey) {
+      const savedStatus = localStorage.getItem(course.localStorageKey);
+      if (savedStatus) {
+        try {
+          const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
+          const completedLessons = parsedStatus.filter(s => s === 'completed').length;
+          const totalLessons = parsedStatus.length;
+          const progress = Math.round((completedLessons / totalLessons) * 100);
+          const isCompleted = progress === 100;
+          
+          if (isCompleted) {
+            completedCount++;
+          }
+        } catch (e) {
+          console.error("Failed to parse course progress from localStorage for key:", course.localStorageKey, e);
+        }
+      }
+    }
+  });
+  
+  return completedCount;
+};
+
+export const getTotalCoursesCount = (): number => {
+  return 6; // Total number of courses
+};

@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import TokenGate from '@/components/TokenGate';
 import Link from 'next/link';
-import { getActiveAnnouncements, Announcement, getScheduledAnnouncements } from '@/lib/utils';
+import { getActiveAnnouncements, Announcement, getScheduledAnnouncements, getCompletedCoursesCount, getTotalCoursesCount } from '@/lib/utils';
+import GlobalBulletinBoard from '@/components/GlobalBulletinBoard';
 
 interface TodoItem {
   id: string;
@@ -98,7 +99,7 @@ const getRealUpcomingClasses = (): UpcomingClass[] => {
 export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
-  const [overallProgress, setOverallProgress] = useState(65);
+  const [overallProgress, setOverallProgress] = useState(0);
   const [showProfileSuggestion, setShowProfileSuggestion] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string>("");
@@ -106,6 +107,9 @@ export default function DashboardPage() {
   const [realAnnouncements, setRealAnnouncements] = useState<Announcement[]>([]);
   const [realUpcomingClasses, setRealUpcomingClasses] = useState<UpcomingClass[]>([]);
   const [profileImage, setProfileImage] = useState<string>("🧑‍🎓");
+  const [squadId, setSquadId] = useState<string | null>(null);
+  const [completedCoursesCount, setCompletedCoursesCount] = useState(0);
+  const [totalCoursesCount, setTotalCoursesCount] = useState(6);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -146,11 +150,61 @@ export default function DashboardPage() {
       setRealUpcomingClasses(getRealUpcomingClasses());
     }
 
+    // Get squad ID for bulletin board
+    const squadResult = typeof window !== 'undefined' ? localStorage.getItem('userSquad') : null;
+    if (squadResult) {
+      try {
+        const result = JSON.parse(squadResult);
+        let userSquadName: string;
+        
+        // Handle both object and string formats
+        if (typeof result === 'object' && result.name) {
+          userSquadName = result.name;
+        } else if (typeof result === 'string') {
+          userSquadName = result;
+        } else {
+          throw new Error('Invalid squad result format');
+        }
+        
+        // Normalize squad name to get squad ID
+        const normalized = userSquadName.replace(/^[🎨🧠🎤⚔️🦅🏦]+\s*/, '').toLowerCase().trim();
+        const squadMapping: { [key: string]: string } = {
+          'hoodie creators': 'creators',
+          'hoodie decoders': 'decoders', 
+          'hoodie speakers': 'speakers',
+          'hoodie raiders': 'raiders',
+          'hoodie rangers': 'rangers',
+          'treasury builders': 'treasury'
+        };
+        const squadId = squadMapping[normalized] || normalized;
+        setSquadId(squadId);
+      } catch (error) {
+        console.error('Error parsing squad result:', error);
+        setSquadId(null);
+      }
+    }
+
     // Load saved profile image
     const savedProfileImage = typeof window !== 'undefined' ? localStorage.getItem('userProfileImage') : null;
     if (savedProfileImage) {
       setProfileImage(savedProfileImage);
     }
+
+    // Calculate completed courses count
+    const completedCount = getCompletedCoursesCount();
+    const totalCount = getTotalCoursesCount();
+    setCompletedCoursesCount(completedCount);
+    setTotalCoursesCount(totalCount);
+    
+    // Calculate overall progress based on completed courses
+    const progressPercentage = Math.round((completedCount / totalCount) * 100);
+    setOverallProgress(progressPercentage);
+    
+    console.log('Dashboard: Course completion stats:', {
+      completed: completedCount,
+      total: totalCount,
+      percentage: progressPercentage
+    });
   }, []);
 
   // Listen for real-time updates
@@ -352,7 +406,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-sm text-gray-400">Courses Completed</p>
-                      <p className="text-2xl font-bold text-cyan-400">3/6</p>
+                      <p className="text-2xl font-bold text-cyan-400">{completedCoursesCount}/{totalCoursesCount}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -456,42 +510,21 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Announcements */}
+            {/* Global Bulletin Board */}
             <Card className="bg-slate-800/50 border-blue-500/30">
               <CardHeader>
                 <CardTitle className="text-blue-400 flex items-center space-x-2">
                   <Bell className="w-5 h-5" />
-                  <span>Announcements</span>
-                  <Badge variant="secondary" className="ml-auto">
-                    {realAnnouncements.length}
-                  </Badge>
+                  <span>Global Bulletin Board</span>
+                  {squadId && (
+                    <Badge variant="outline" className="text-xs border-cyan-500/30 text-cyan-400">
+                      {squadId}
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {realAnnouncements.length > 0 ? (
-                  realAnnouncements.map((announcement) => (
-                    <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                      <div className="flex items-start space-x-3">
-                        <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
-                          <Bell className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white">{announcement.title}</h4>
-                          <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
-                          <p className="text-xs text-gray-400 mt-2">
-                            Active from {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
-                            {announcement.endDate && ` to ${new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}`}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <Bell className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">No announcements</p>
-                  </div>
-                )}
+              <CardContent>
+                <GlobalBulletinBoard squadId={squadId} />
               </CardContent>
             </Card>
 
@@ -546,7 +579,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
-                      <p className="text-2xl font-bold text-cyan-400">3</p>
+                      <p className="text-2xl font-bold text-cyan-400">{completedCoursesCount}</p>
                       <p className="text-sm text-gray-400">Courses Completed</p>
                     </div>
                     <div>
