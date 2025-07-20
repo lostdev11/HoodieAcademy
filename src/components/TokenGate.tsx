@@ -33,6 +33,18 @@ export default function TokenGate({ children }: TokenGateProps) {
     setIsClient(true)
   }, [])
 
+  // Clear any stale wallet data on mount
+  useEffect(() => {
+    if (!isClient) return
+
+    localStorage.removeItem('walletAddress')
+    setWalletAddress(null)
+    setIsConnected(false)
+    setIsAuthenticated(false)
+    setIsHolder(false)
+    setError(null)
+  }, [isClient])
+
   // Check if Phantom is installed (only on client)
   const isPhantomInstalled = isClient && typeof window !== 'undefined' && window.solana?.isPhantom
 
@@ -84,13 +96,15 @@ export default function TokenGate({ children }: TokenGateProps) {
     try {
       const response = await window.solana.connect()
       const address = response.publicKey.toString()
+
+      console.log("✅ Connected wallet:", address)
+
+      // Save address and update UI
+      localStorage.setItem('walletAddress', address)
       setWalletAddress(address)
       setIsConnected(true)
-      
-      // Store wallet address
-      localStorage.setItem('walletAddress', address)
-      
-      // Verify NFT ownership
+
+      // Trigger NFT verification
       await verifyNFT(address)
     } catch (error: any) {
       console.error("Wallet connection failed:", error)
@@ -101,6 +115,10 @@ export default function TokenGate({ children }: TokenGateProps) {
   }
 
   const verifyNFT = async (address: string) => {
+    if (!address) {
+      console.warn("⚠️ No wallet address provided for verification.")
+      return
+    }
     setIsVerifying(true)
     setError(null)
 
@@ -119,7 +137,7 @@ export default function TokenGate({ children }: TokenGateProps) {
 
       const data = await response.json()
       console.log('NFT Verification response:', data)
-      
+    
       setIsHolder(data.isHolder)
       
       if (!data.isHolder) {

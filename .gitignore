@@ -1,38 +1,37 @@
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# --- Node.js ---
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.tgz
 
-# local env files
-.env
-.env.local
-.env.*.local
-
-# vercel
-.vercel
-
-# typescript
+# --- Next.js build output ---
+.next/
+out/
+dist/
+.cache/
+coverage/
 *.tsbuildinfo
-next-env.d.ts
 
-# Node modules
-node_modules/
+# --- Vercel/Netlify ---
+.vercel/
+.netlify/
+
+# --- Environment variables & secrets ---
+.env
+.env.*
+!.env.example
+
+# --- System/IDE files ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Logs ---
+*.log
+
+# --- Misc ---
+*.local
