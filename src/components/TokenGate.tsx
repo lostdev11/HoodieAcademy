@@ -55,16 +55,19 @@ export default function TokenGate({ children }: TokenGateProps) {
     const checkAuthStatus = async () => {
       try {
         const storedWallet = localStorage.getItem('walletAddress')
+        console.log('🔍 TokenGate: Checking auth status for wallet:', storedWallet)
+        
         if (storedWallet) {
           setWalletAddress(storedWallet)
           setIsConnected(true)
           
           // Check if placement test is completed for this wallet
           const placementCompleted = localStorage.getItem(`placement_completed_${storedWallet}`)
+          console.log('🔍 TokenGate: Placement completed flag:', placementCompleted)
           
           // If placement test is completed, authenticate user without re-verifying NFT
           if (placementCompleted === 'true') {
-            console.log('Placement test completed, authenticating user without NFT re-verification')
+            console.log('✅ TokenGate: Placement test completed, authenticating user without NFT re-verification')
             setIsHolder(true)
             setIsAuthenticated(true)
             return
@@ -72,19 +75,34 @@ export default function TokenGate({ children }: TokenGateProps) {
           
           // Also check if user has a squad assigned (alternative completion indicator)
           const userSquad = localStorage.getItem('userSquad')
+          console.log('🔍 TokenGate: User squad data:', userSquad)
+          
           if (userSquad) {
             try {
               const squadData = JSON.parse(userSquad)
               if (squadData && squadData.name) {
-                console.log('User has squad assigned, authenticating user')
+                console.log('✅ TokenGate: User has squad assigned, authenticating user')
                 setIsHolder(true)
                 setIsAuthenticated(true)
                 return
               }
             } catch (e) {
-              console.log('Error parsing squad data:', e)
+              console.log('❌ TokenGate: Error parsing squad data:', e)
             }
           }
+          
+          // Check if onboarding is completed (another indicator)
+          const onboardingCompleted = localStorage.getItem('onboardingCompleted')
+          console.log('🔍 TokenGate: Onboarding completed:', onboardingCompleted)
+          
+          if (onboardingCompleted === 'true') {
+            console.log('✅ TokenGate: Onboarding completed, authenticating user')
+            setIsHolder(true)
+            setIsAuthenticated(true)
+            return
+          }
+          
+          console.log('🔍 TokenGate: No completion indicators found, verifying NFT ownership...')
           
           // Verify NFT ownership for stored wallet
           const response = await fetch('/api/nft-verification', {
@@ -98,13 +116,18 @@ export default function TokenGate({ children }: TokenGateProps) {
           if (response.ok) {
             const data = await response.json()
             if (data.isHolder) {
+              console.log('✅ TokenGate: NFT verification successful')
               setIsHolder(true)
               setIsAuthenticated(true)
+            } else {
+              console.log('❌ TokenGate: NFT verification failed - no WifHoodie NFT found')
             }
           }
+        } else {
+          console.log('🔍 TokenGate: No stored wallet address found')
         }
       } catch (error) {
-        console.error('Auth check failed:', error)
+        console.error('❌ TokenGate: Auth check failed:', error)
       }
     }
 
@@ -232,6 +255,14 @@ export default function TokenGate({ children }: TokenGateProps) {
     } else {
       router.push('/courses')
     }
+  }
+
+  // Function to manually authenticate user (for debugging and manual fixes)
+  const manuallyAuthenticate = () => {
+    console.log('🔧 TokenGate: Manually authenticating user')
+    setIsHolder(true)
+    setIsAuthenticated(true)
+    setError(null)
   }
 
   // If user is authenticated, render children
@@ -381,6 +412,15 @@ export default function TokenGate({ children }: TokenGateProps) {
                     className="w-full text-slate-400 hover:text-slate-300 hover:bg-slate-700/50"
                   >
                     Disconnect Wallet
+                  </Button>
+                  
+                  {/* Debug button for manual authentication */}
+                  <Button
+                    variant="outline"
+                    onClick={manuallyAuthenticate}
+                    className="w-full border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 hover:border-yellow-400 bg-transparent text-xs"
+                  >
+                    🔧 Manual Auth (Debug)
                   </Button>
                 </div>
               )}

@@ -132,6 +132,14 @@ export default function SquadTestPage() {
     if (walletAddress) {
       localStorage.setItem(`placement_completed_${walletAddress}`, 'true');
       console.log(`Placement test completed for wallet: ${walletAddress}`);
+      
+      // Also set onboarding as completed to ensure authentication
+      localStorage.setItem('onboardingCompleted', 'true');
+      console.log('Onboarding marked as completed');
+      
+      // Set a general placement completion flag
+      localStorage.setItem('placementTestCompleted', 'true');
+      console.log('General placement test completion flag set');
     } else {
       console.log('No wallet address found, cannot set placement completion flag');
     }
