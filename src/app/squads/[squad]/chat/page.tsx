@@ -386,6 +386,100 @@ export default function SquadChatPage({ params }: PageProps) {
     );
   }
 
+  // Custom authentication check for squad chat
+  const isAuthenticatedForSquadChat = () => {
+    const userSquad = localStorage.getItem('userSquad');
+    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+    const placementTestCompleted = localStorage.getItem('placementTestCompleted');
+    
+    console.log('🔍 Squad Chat Auth Check:');
+    console.log('  - User squad:', userSquad ? 'Yes' : 'No');
+    console.log('  - Onboarding completed:', onboardingCompleted);
+    console.log('  - Placement test completed:', placementTestCompleted);
+    
+    return userSquad || onboardingCompleted === 'true' || placementTestCompleted === 'true';
+  };
+
+  // If user has access to squad chat, render without TokenGate
+  if (hasAccess && isAuthenticatedForSquadChat()) {
+    console.log('✅ Squad Chat: User has access and is authenticated, rendering chat directly');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="relative z-10 p-6 max-w-6xl mx-auto">
+          {/* Navigation */}
+          <div className="mb-8">
+            <Button
+              asChild
+              variant="outline"
+              className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30"
+            >
+              <Link href="/">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Link>
+            </Button>
+          </div>
+
+          {/* Squad Info Header */}
+          <div className="mb-6 p-4 bg-slate-800/50 rounded-lg border border-cyan-500/30">
+            <h1 className="text-2xl font-bold text-cyan-400 mb-2">
+              {squadName} Chat Room
+            </h1>
+            <p className="text-gray-300">
+              Connect with your squad members and discuss strategies, share insights, and build your community.
+            </p>
+            
+            {/* Debug Info */}
+            <div className="mt-4 p-3 bg-slate-900/50 rounded border border-yellow-500/30">
+              <h3 className="text-yellow-400 font-semibold text-sm mb-2">🔧 Debug Info</h3>
+              <div className="text-xs text-gray-300 space-y-1">
+                <p><strong>Squad Name:</strong> {squadName}</p>
+                <p><strong>User Squad:</strong> {userSquad || 'Not assigned'}</p>
+                <p><strong>Has Access:</strong> {hasAccess ? 'Yes' : 'No'}</p>
+                <p><strong>Current URL:</strong> {typeof window !== 'undefined' ? window.location.pathname : 'N/A'}</p>
+              </div>
+              <Button
+                onClick={() => {
+                  console.log('=== SQUAD CHAT DEBUG ===');
+                  console.log('Squad Name:', squadName);
+                  console.log('User Squad:', userSquad);
+                  console.log('Has Access:', hasAccess);
+                  console.log('localStorage userSquad:', localStorage.getItem('userSquad'));
+                  console.log('localStorage onboardingCompleted:', localStorage.getItem('onboardingCompleted'));
+                  console.log('localStorage userDisplayName:', localStorage.getItem('userDisplayName'));
+                  
+                  // Test squad matching
+                  if (userSquad) {
+                    console.log('=== TESTING SQUAD MATCHING ===');
+                    const testResult = doSquadsMatch(userSquad, squadName);
+                    console.log('Test result:', testResult);
+                  }
+                  
+                  alert('Check browser console for detailed debug information');
+                }}
+                variant="outline"
+                size="sm"
+                className="mt-2 border-yellow-500/30 text-yellow-400 hover:text-yellow-300"
+              >
+                Debug to Console
+              </Button>
+            </div>
+          </div>
+
+          {/* Chat Container */}
+          <div className="h-[calc(100vh-300px)]">
+            {/* Pinned Message Area */}
+            <PinnedMessage squad={squadName} />
+            
+            <ChatRoom squad={squadName} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback to TokenGate for users who need authentication
+  console.log('🔒 Squad Chat: User needs authentication, showing TokenGate');
   return (
     <TokenGate>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
