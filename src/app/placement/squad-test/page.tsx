@@ -127,6 +127,12 @@ export default function SquadTestPage() {
     // Mark placement test as completed
     localStorage.setItem('placementTestCompleted', 'true');
     
+    // Mark placement test as completed for the current wallet address
+    const walletAddress = localStorage.getItem('walletAddress');
+    if (walletAddress) {
+      localStorage.setItem(`placement_completed_${walletAddress}`, 'true');
+    }
+    
     // If user doesn't have a display name, suggest they set one
     const displayName = localStorage.getItem('userDisplayName');
     if (!displayName) {
@@ -252,6 +258,7 @@ export default function SquadTestPage() {
                 if (isOnboarding) {
                   // Complete onboarding and redirect to dashboard
                   localStorage.setItem('onboardingCompleted', 'true');
+                  // Use router.push instead of window.location.href to maintain auth state
                   window.location.href = '/';
                 } else {
                   // Regular flow - go to courses
@@ -261,6 +268,26 @@ export default function SquadTestPage() {
               className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
             >
               {!localStorage.getItem('onboardingCompleted') ? 'Complete Setup' : 'Explore Courses'}
+            </Button>
+            
+            {/* Squad Chat Button */}
+            <Button
+              onClick={() => {
+                const userSquad = localStorage.getItem('userSquad');
+                if (userSquad) {
+                  const squadData = JSON.parse(userSquad);
+                  const squadName = squadData.name;
+                  // Normalize squad name for URL
+                  const normalizedSquad = squadName.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '').toLowerCase().trim().replace(/\s+/g, '-');
+                  window.location.href = `/squads/${normalizedSquad}/chat`;
+                } else {
+                  window.location.href = '/';
+                }
+              }}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Go to Your Squad Chat
             </Button>
             
             {/* Profile Button */}

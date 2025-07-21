@@ -59,6 +59,16 @@ export default function TokenGate({ children }: TokenGateProps) {
           setWalletAddress(storedWallet)
           setIsConnected(true)
           
+          // Check if placement test is completed for this wallet
+          const placementCompleted = localStorage.getItem(`placement_completed_${storedWallet}`)
+          
+          // If placement test is completed, authenticate user without re-verifying NFT
+          if (placementCompleted === 'true') {
+            setIsHolder(true)
+            setIsAuthenticated(true)
+            return
+          }
+          
           // Verify NFT ownership for stored wallet
           const response = await fetch('/api/nft-verification', {
             method: 'POST',
@@ -175,6 +185,8 @@ export default function TokenGate({ children }: TokenGateProps) {
       console.error('Auto-redirect failed:', error)
       // Fallback to home page
       router.push('/')
+    } finally {
+      setIsRedirecting(false)
     }
   }
 
