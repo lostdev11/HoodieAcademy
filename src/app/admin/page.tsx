@@ -54,6 +54,7 @@ import {
   getScheduledAnnouncements, getAllActiveAnnouncements,
   addEvent, updateEvent, deleteEvent as deleteEventUtil
 } from '@/lib/utils';
+import { fetchAllUsers, fetchPlacementTests, getUserStats, User as SupabaseUser } from '@/lib/supabase';
 import {
   Select,
   SelectContent,
@@ -294,110 +295,30 @@ export default function AdminDashboard() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      let users: User[] = [];
+      console.log('🔄 Loading users from Supabase...');
       
-      // Method 1: Load from userProgress and userProfiles (existing method)
-      const userProgress = localStorage.getItem('userProgress');
-      const userProfiles = localStorage.getItem('userProfiles');
+      // Fetch users from Supabase
+      const supabaseUsers = await fetchAllUsers();
+      const placementTests = await fetchPlacementTests();
       
-      if (userProgress) {
-        const progress = JSON.parse(userProgress);
-        const profiles = userProfiles ? JSON.parse(userProfiles) : {};
-        
-        // Convert progress data to User objects
-        Object.entries(progress).forEach(([walletAddress, userData]: [string, any]) => {
-          const profile = profiles[walletAddress] || {};
-          const user: User = {
-            walletAddress,
-            displayName: profile.displayName || `User ${walletAddress.slice(0, 6)}...`,
-            squad: profile.squad || 'Unassigned',
-            profileCompleted: profile.profileCompleted || false,
-            squadTestCompleted: profile.squadTestCompleted || false,
-            courses: userData.courses || {},
-            createdAt: profile.createdAt || new Date().toISOString(),
-            lastActive: profile.lastActive || new Date().toISOString()
-          };
-          users.push(user);
-        });
-      }
-
-      // Method 2: Load from leaderboard service (for users who completed onboarding)
-      const leaderboardService = (await import('@/services/leaderboard-service')).leaderboardService;
-      const leaderboardData = leaderboardService.getLeaderboard();
-      
-      leaderboardData.forEach((leaderboardUser: any) => {
-        // Check if this user is already in the list
-        const existingUser = users.find(u => u.walletAddress === leaderboardUser.walletAddress);
-        if (!existingUser) {
-          // Create user from leaderboard data
-          const user: User = {
-            walletAddress: leaderboardUser.walletAddress,
-            displayName: leaderboardUser.displayName || `User ${leaderboardUser.walletAddress.slice(0, 6)}...`,
-            squad: leaderboardUser.squad || 'Unassigned',
-            profileCompleted: true, // If they're in leaderboard, they completed profile
-            squadTestCompleted: true, // If they're in leaderboard, they completed squad test
-            courses: {}, // Will be populated from other sources
-            createdAt: leaderboardUser.joinDate || new Date().toISOString(),
-            lastActive: leaderboardUser.lastActive || new Date().toISOString()
-          };
-          users.push(user);
-        }
+      console.log('📊 Supabase data:', {
+        users: supabaseUsers.length,
+        placementTests: placementTests.length
       });
-
-      // Method 3: Load from individual localStorage keys (wallet address, display name, squad)
-      const walletAddress = localStorage.getItem('walletAddress');
-      const displayName = localStorage.getItem('userDisplayName');
-      const squadResult = localStorage.getItem('userSquad');
       
-      if (walletAddress && !users.find(u => u.walletAddress === walletAddress)) {
-        let squad = 'Unassigned';
-        if (squadResult) {
-          try {
-            const squadData = JSON.parse(squadResult);
-            squad = squadData.name || squadData.id || squadResult;
-          } catch (error) {
-            squad = squadResult;
-          }
-        }
-        
-        const user: User = {
-          walletAddress,
-          displayName: displayName || `User ${walletAddress.slice(0, 6)}...`,
-          squad,
-          profileCompleted: !!displayName,
-          squadTestCompleted: !!squadResult,
-          courses: {}, // Will be populated from other sources
-          createdAt: new Date().toISOString(),
-          lastActive: new Date().toISOString()
-        };
-        users.push(user);
-      }
-
-      // Method 4: Load placement test completions from all wallets
-      const placementTestCompletions = getAllPlacementTestCompletions();
-      placementTestCompletions.forEach(completion => {
-        const existingUser = users.find(u => u.walletAddress === completion.walletAddress);
-        if (existingUser) {
-          existingUser.squadTestCompleted = true;
-          existingUser.squad = completion.squad;
-          existingUser.lastActive = completion.completedAt;
-        } else {
-          // Create new user entry for placement test completion
-          const user: User = {
-            walletAddress: completion.walletAddress,
-            displayName: completion.displayName || `User ${completion.walletAddress.slice(0, 6)}...`,
-            squad: completion.squad,
-            profileCompleted: !!completion.displayName,
-            squadTestCompleted: true,
-            courses: {},
-            createdAt: completion.completedAt,
-            lastActive: completion.completedAt
-          };
-          users.push(user);
-        }
-      });
-
-      // Method 5: Load course progress from individual course localStorage keys
+      // Convert Supabase users to admin dashboard format
+      const users: User[] = supabaseUsers.map((supabaseUser: SupabaseUser) => ({
+        walletAddress: supabaseUser.wallet_address,
+        displayName: supabaseUser.display_name || `User ${supabaseUser.wallet_address.slice(0, 6)}...`,
+        squad: supabaseUser.squad || 'Unassigned',
+        profileCompleted: supabaseUser.profile_completed,
+        squadTestCompleted: supabaseUser.squad_test_completed,
+        courses: {}, // Will be populated from localStorage for now
+        createdAt: supabaseUser.created_at || new Date().toISOString(),
+        lastActive: supabaseUser.last_active || new Date().toISOString()
+      }));
+      
+      // Add course progress from localStorage for existing users
       users.forEach(user => {
         // Check for wallet wizardry progress
         const walletWizardryProgress = localStorage.getItem('walletWizardryProgress');
@@ -424,48 +345,116 @@ export default function AdminDashboard() {
           }
         }
       });
-
-      // Remove demo user if we have real users
-      if (users.length > 1) {
-        users = users.filter(user => user.walletAddress !== "0x1234567890abcdef1234567890abcdef12345678");
-      }
       
-      // Add demo users if no real users exist
+      // Add demo user if no real users exist
       if (users.length === 0) {
-        users = [
-          {
-            walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
-            displayName: "CryptoHoodie",
-            squad: "Vault Keepers",
-            profileCompleted: true,
-            squadTestCompleted: true,
-            courses: {
-              "wallet-wizardry": {
-                progress: ['completed', 'completed', 'completed', 'completed'],
-                finalExam: {
-                  taken: true,
-                  score: 85,
-                  totalQuestions: 20,
-                  passed: true,
-                  approved: false,
-                  submittedAt: "2024-01-15T10:30:00Z"
-                }
+        users.push({
+          walletAddress: "0x1234567890abcdef1234567890abcdef12345678",
+          displayName: "CryptoHoodie",
+          squad: "Vault Keepers",
+          profileCompleted: true,
+          squadTestCompleted: true,
+          courses: {
+            "wallet-wizardry": {
+              progress: ['completed', 'completed', 'completed', 'completed'],
+              finalExam: {
+                taken: true,
+                score: 85,
+                totalQuestions: 20,
+                passed: true,
+                approved: false,
+                submittedAt: "2024-01-15T10:30:00Z"
               }
-            },
-            createdAt: "2024-01-01T00:00:00Z",
-            lastActive: "2024-01-15T12:00:00Z"
-          }
-        ];
+            }
+          },
+          createdAt: "2024-01-01T00:00:00Z",
+          lastActive: "2024-01-15T12:00:00Z"
+        });
       }
 
+      console.log('✅ Loaded users:', users.length);
       setUsers(users);
-      calculateStats(users);
+      
+      // Get stats from Supabase
+      const stats = await getUserStats();
+      setStats({
+        totalUsers: stats.totalUsers,
+        activeUsers: stats.activeUsers,
+        completedCourses: 0, // Will be calculated from localStorage for now
+        pendingApprovals: 0, // Will be calculated from localStorage for now
+        totalExamsTaken: 0, // Will be calculated from localStorage for now
+        placementTestsCompleted: stats.placementTestsCompleted,
+        squadDistribution: stats.squadDistribution
+      });
+      
       loadAnnouncements();
       loadEvents();
     } catch (error) {
-      console.error('Error loading users:', error);
+      console.error('❌ Error loading users from Supabase:', error);
+      // Fallback to localStorage method if Supabase fails
+      console.log('🔄 Falling back to localStorage method...');
+      loadUsersFromLocalStorage();
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fallback method using localStorage (for backward compatibility)
+  const loadUsersFromLocalStorage = async () => {
+    try {
+      let users: User[] = [];
+      
+      // Load from userProgress and userProfiles
+      const userProgress = localStorage.getItem('userProgress');
+      const userProfiles = localStorage.getItem('userProfiles');
+      
+      if (userProgress) {
+        const progress = JSON.parse(userProgress);
+        const profiles = userProfiles ? JSON.parse(userProfiles) : {};
+        
+        Object.entries(progress).forEach(([walletAddress, userData]: [string, any]) => {
+          const profile = profiles[walletAddress] || {};
+          const user: User = {
+            walletAddress,
+            displayName: profile.displayName || `User ${walletAddress.slice(0, 6)}...`,
+            squad: profile.squad || 'Unassigned',
+            profileCompleted: profile.profileCompleted || false,
+            squadTestCompleted: profile.squadTestCompleted || false,
+            courses: userData.courses || {},
+            createdAt: profile.createdAt || new Date().toISOString(),
+            lastActive: profile.lastActive || new Date().toISOString()
+          };
+          users.push(user);
+        });
+      }
+
+      // Load placement test completions from localStorage
+      const placementTestCompletions = getAllPlacementTestCompletions();
+      placementTestCompletions.forEach(completion => {
+        const existingUser = users.find(u => u.walletAddress === completion.walletAddress);
+        if (existingUser) {
+          existingUser.squadTestCompleted = true;
+          existingUser.squad = completion.squad;
+          existingUser.lastActive = completion.completedAt;
+        } else {
+          const user: User = {
+            walletAddress: completion.walletAddress,
+            displayName: completion.displayName || `User ${completion.walletAddress.slice(0, 6)}...`,
+            squad: completion.squad,
+            profileCompleted: !!completion.displayName,
+            squadTestCompleted: true,
+            courses: {},
+            createdAt: completion.completedAt,
+            lastActive: completion.completedAt
+          };
+          users.push(user);
+        }
+      });
+
+      setUsers(users);
+      calculateStats(users);
+    } catch (error) {
+      console.error('Error loading users from localStorage:', error);
     }
   };
 

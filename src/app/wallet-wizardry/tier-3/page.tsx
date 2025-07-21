@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { updateScoreForLessonCompletion } from '@/lib/utils';
+import { updateUserActivity } from '@/lib/supabase';
 
 export default function Tier3() {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -23,7 +24,7 @@ export default function Tier3() {
     }
   }, []);
 
-  const markAsCompleted = () => {
+  const markAsCompleted = async () => {
     if (typeof window !== 'undefined') {
       const savedStatus = localStorage.getItem('walletWizardryProgress');
       let parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = ['completed', 'completed', 'unlocked', 'locked'];
@@ -43,6 +44,16 @@ export default function Tier3() {
       // Update leaderboard score
       const walletAddress = localStorage.getItem('walletAddress') || 'demo-wallet';
       updateScoreForLessonCompletion(walletAddress, 'wallet-wizardry', 2, 4); // tier-3 is lesson 2 of 4
+      
+      // Track user activity in Supabase
+      if (walletAddress && walletAddress !== 'demo-wallet') {
+        try {
+          await updateUserActivity(walletAddress, 'course_completion');
+          console.log('✅ Course completion activity recorded');
+        } catch (error) {
+          console.error('❌ Error recording course completion activity:', error);
+        }
+      }
       
       setIsCompleted(true);
     }

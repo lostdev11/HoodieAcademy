@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, Trophy, Users, Target, Zap, User } from 'lucide-react';
 import SquadBadge from '@/components/SquadBadge';
+import { recordPlacementTest } from '@/lib/supabase';
 
 interface QuizOption {
   id: string;
@@ -78,11 +79,11 @@ export default function SquadTestPage() {
     }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentQuestion < (quizData?.questions.length || 0) - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
-      calculateSquad();
+      await calculateSquad();
     }
   };
 
@@ -92,7 +93,7 @@ export default function SquadTestPage() {
     }
   };
 
-  const calculateSquad = () => {
+  const calculateSquad = async () => {
     if (!quizData) return;
 
     const squadScores: Record<string, number> = {};
@@ -129,6 +130,8 @@ export default function SquadTestPage() {
     
     // Mark placement test as completed for the current wallet address
     const walletAddress = localStorage.getItem('walletAddress');
+    const displayName = localStorage.getItem('userDisplayName');
+    
     if (walletAddress) {
       localStorage.setItem(`placement_completed_${walletAddress}`, 'true');
       console.log(`Placement test completed for wallet: ${walletAddress}`);
@@ -140,12 +143,26 @@ export default function SquadTestPage() {
       // Set a general placement completion flag
       localStorage.setItem('placementTestCompleted', 'true');
       console.log('General placement test completion flag set');
+      
+      // Record to Supabase for admin tracking
+      try {
+        console.log('Recording placement test to Supabase:', {
+          wallet_address: walletAddress,
+          squad: squadInfo.name,
+          display_name: displayName
+        });
+        
+        await recordPlacementTest(walletAddress, squadInfo.name, displayName || undefined);
+        console.log('✅ Successfully recorded placement test to Supabase');
+      } catch (error) {
+        console.error('❌ Error recording placement test to Supabase:', error);
+        // Don't fail the test if Supabase recording fails
+      }
     } else {
       console.log('No wallet address found, cannot set placement completion flag');
     }
     
     // If user doesn't have a display name, suggest they set one
-    const displayName = localStorage.getItem('userDisplayName');
     if (!displayName) {
       localStorage.setItem('suggestDisplayName', 'true');
     }
