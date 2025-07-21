@@ -929,38 +929,39 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="relative z-10 p-6 max-w-7xl mx-auto">
+      <div className="relative z-10 p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
             <div>
-              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
                 Admin Dashboard
               </h1>
-              <p className="text-gray-300">Manage users, courses, and exam approvals</p>
+              <p className="text-gray-300 text-sm sm:text-base">Manage users, courses, and exam approvals</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <Button
                 asChild
                 variant="outline"
-                className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300"
+                className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 w-full sm:w-auto"
               >
                 <Link href="/dashboard">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
+                  <span className="hidden sm:inline">Back to Dashboard</span>
+                  <span className="sm:hidden">Dashboard</span>
                 </Link>
               </Button>
               <Button
                 onClick={handleLogout}
                 variant="outline"
-                className="bg-slate-800/50 hover:bg-slate-700/50 text-red-400 hover:text-red-300 border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] transition-all duration-300"
+                className="bg-slate-800/50 hover:bg-slate-700/50 text-red-400 hover:text-red-300 border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] transition-all duration-300 w-full sm:w-auto"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
-              <div className="flex items-center gap-2">
-                <Shield className="w-6 h-6 text-purple-400" />
-                <Badge variant="outline" className="border-purple-500 text-purple-400">
+              <div className="flex items-center justify-center sm:justify-start gap-2">
+                <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
+                <Badge variant="outline" className="border-purple-500 text-purple-400 text-xs sm:text-sm">
                   Admin Access
                 </Badge>
               </div>
@@ -1004,87 +1005,87 @@ export default function AdminDashboard() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
           <Card className="bg-slate-800/50 border-purple-500/30">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Total Users</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Total Users</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">{stats.totalUsers}</p>
                 </div>
-                <Users className="w-8 h-8 text-purple-400" />
+                <Users className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-purple-400" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800/50 border-green-500/30">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Active Users</p>
-                  <p className="text-2xl font-bold text-white">{stats.activeUsers}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Active Users</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">{stats.activeUsers}</p>
                 </div>
-                <Clock className="w-8 h-8 text-green-400" />
+                <Clock className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-green-400" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800/50 border-blue-500/30">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Completed Courses</p>
-                  <p className="text-2xl font-bold text-white">{stats.completedCourses}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Completed Courses</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">{stats.completedCourses}</p>
                 </div>
-                <BookOpen className="w-8 h-8 text-blue-400" />
+                <BookOpen className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-400" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800/50 border-yellow-500/30">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Pending Approvals</p>
-                  <p className="text-2xl font-bold text-white">{stats.pendingApprovals}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Pending Approvals</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">{stats.pendingApprovals}</p>
                 </div>
-                <AlertTriangle className="w-8 h-8 text-yellow-400" />
+                <AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-yellow-400" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800/50 border-cyan-500/30">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Exams Taken</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalExamsTaken}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Exams Taken</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">{stats.totalExamsTaken}</p>
                 </div>
-                <FileText className="w-8 h-8 text-cyan-400" />
+                <FileText className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-cyan-400" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800/50 border-pink-500/30">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Placement Tests</p>
-                  <p className="text-2xl font-bold text-white">{stats.placementTestsCompleted}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Placement Tests</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">{stats.placementTestsCompleted}</p>
                 </div>
-                <Target className="w-8 h-8 text-pink-400" />
+                <Target className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-pink-400" />
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800/50 border-orange-500/30">
-            <CardContent className="p-6">
+            <CardContent className="p-3 sm:p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-400">Squads</p>
-                  <p className="text-2xl font-bold text-white">{Object.keys(stats.squadDistribution).length}</p>
+                  <p className="text-xs sm:text-sm text-gray-400">Squads</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold text-white">{Object.keys(stats.squadDistribution).length}</p>
                 </div>
-                <Users className="w-8 h-8 text-orange-400" />
+                <Users className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-orange-400" />
               </div>
             </CardContent>
           </Card>
@@ -1092,25 +1093,25 @@ export default function AdminDashboard() {
 
         {/* Squad Distribution */}
         {Object.keys(stats.squadDistribution).length > 0 && (
-          <Card className="bg-slate-800/50 border-orange-500/30 mb-8">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center">
-                <Users className="w-5 h-5 mr-2 text-orange-400" />
+          <Card className="bg-slate-800/50 border-orange-500/30 mb-6 sm:mb-8">
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="text-white flex items-center text-lg sm:text-xl">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-orange-400" />
                 Squad Distribution
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {Object.entries(stats.squadDistribution).map(([squad, count]) => (
-                  <div key={squad} className="bg-slate-700/50 rounded-lg p-4 border border-orange-500/30">
+                  <div key={squad} className="bg-slate-700/50 rounded-lg p-3 sm:p-4 border border-orange-500/30">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-gray-400">Squad</p>
-                        <p className="text-lg font-semibold text-white">{squad}</p>
+                        <p className="text-xs sm:text-sm text-gray-400">Squad</p>
+                        <p className="text-sm sm:text-base lg:text-lg font-semibold text-white">{squad}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-gray-400">Members</p>
-                        <p className="text-2xl font-bold text-orange-400">{count}</p>
+                        <p className="text-xs sm:text-sm text-gray-400">Members</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold text-orange-400">{count}</p>
                       </div>
                     </div>
                   </div>
@@ -1122,58 +1123,64 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 bg-slate-800/50">
-            <TabsTrigger value="users" className="data-[state=active]:bg-purple-600">
-              <Users className="w-4 h-4 mr-2" />
-              Users
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 bg-slate-800/50 gap-1 sm:gap-2">
+            <TabsTrigger value="users" className="data-[state=active]:bg-purple-600 text-xs sm:text-sm p-2 sm:p-3">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Users</span>
+              <span className="sm:hidden">Users</span>
             </TabsTrigger>
-            <TabsTrigger value="exams" className="data-[state=active]:bg-purple-600">
-              <FileText className="w-4 h-4 mr-2" />
-              Exam Approvals
+            <TabsTrigger value="exams" className="data-[state=active]:bg-purple-600 text-xs sm:text-sm p-2 sm:p-3">
+              <FileText className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Exam Approvals</span>
+              <span className="sm:hidden">Exams</span>
             </TabsTrigger>
-            <TabsTrigger value="courses" className="data-[state=active]:bg-purple-600">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Course Management
+            <TabsTrigger value="courses" className="data-[state=active]:bg-purple-600 text-xs sm:text-sm p-2 sm:p-3">
+              <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Course Management</span>
+              <span className="sm:hidden">Courses</span>
             </TabsTrigger>
-            <TabsTrigger value="badges" className="data-[state=active]:bg-purple-600">
-              <Award className="w-4 h-4 mr-2" />
-              Badge Management
+            <TabsTrigger value="badges" className="data-[state=active]:bg-purple-600 text-xs sm:text-sm p-2 sm:p-3">
+              <Award className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Badge Management</span>
+              <span className="sm:hidden">Badges</span>
             </TabsTrigger>
-            <TabsTrigger value="announcements" className="data-[state=active]:bg-purple-600">
-              <Bell className="w-4 h-4 mr-2" />
-              Events & Announcements
+            <TabsTrigger value="announcements" className="data-[state=active]:bg-purple-600 text-xs sm:text-sm p-2 sm:p-3">
+              <Bell className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Events & Announcements</span>
+              <span className="sm:hidden">Events</span>
             </TabsTrigger>
-            <TabsTrigger value="debug" className="data-[state=active]:bg-purple-600">
-              <AlertCircle className="w-4 h-4 mr-2" />
-              Debug
+            <TabsTrigger value="debug" className="data-[state=active]:bg-purple-600 text-xs sm:text-sm p-2 sm:p-3">
+              <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Debug</span>
+              <span className="sm:hidden">Debug</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
-          <TabsContent value="users" className="mt-6">
+          <TabsContent value="users" className="mt-4 sm:mt-6">
             <Card className="bg-slate-800/50 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-white">User Management</CardTitle>
+              <CardHeader className="pb-3 sm:pb-6">
+                <CardTitle className="text-white text-lg sm:text-xl">User Management</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {users.map((user) => (
-                    <div key={user.walletAddress} className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
-                      <div className="flex items-center justify-between">
+                    <div key={user.walletAddress} className="bg-slate-700/50 p-3 sm:p-4 rounded-lg border border-slate-600">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-white">{user.displayName}</h3>
-                            <Badge variant="outline" className="border-cyan-500 text-cyan-400">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+                            <h3 className="font-semibold text-white text-sm sm:text-base">{user.displayName}</h3>
+                            <Badge variant="outline" className="border-cyan-500 text-cyan-400 text-xs">
                               {user.squad}
                             </Badge>
                             {user.profileCompleted && (
                               <CheckCircle className="w-4 h-4 text-green-400" />
                             )}
                           </div>
-                          <p className="text-sm text-gray-400 mb-2">
+                          <p className="text-xs sm:text-sm text-gray-400 mb-2">
                             {user.walletAddress.slice(0, 6)}...{user.walletAddress.slice(-4)}
                           </p>
-                          <div className="flex items-center gap-4 text-sm text-gray-300">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-300">
                             <span>Joined: {new Date(user.createdAt).toLocaleDateString()}</span>
                             <span>Last Active: {new Date(user.lastActive).toLocaleDateString()}</span>
                           </div>
@@ -1182,10 +1189,11 @@ export default function AdminDashboard() {
                           variant="outline"
                           size="sm"
                           onClick={() => setSelectedUser(user)}
-                          className="border-purple-500 text-purple-400 hover:bg-purple-500/10"
+                          className="border-purple-500 text-purple-400 hover:bg-purple-500/10 w-full sm:w-auto"
                         >
                           <Eye className="w-4 h-4 mr-2" />
-                          View Details
+                          <span className="hidden sm:inline">View Details</span>
+                          <span className="sm:hidden">Details</span>
                         </Button>
                       </div>
                     </div>

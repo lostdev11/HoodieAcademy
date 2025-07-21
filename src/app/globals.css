@@ -98,6 +98,44 @@
     @apply bg-background text-foreground;
     font-family: var(--font-inter), sans-serif; /* Using Inter font from layout */
   }
+
+  /* Mobile-specific optimizations */
+  @media (max-width: 640px) {
+    /* Improve touch targets */
+    button, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+    
+    /* Optimize text for mobile reading */
+    h1, h2, h3, h4, h5, h6 {
+      line-height: 1.2;
+    }
+    
+    /* Improve card spacing on mobile */
+    .card {
+      margin-bottom: 1rem;
+    }
+    
+    /* Optimize grid layouts for mobile */
+    .grid {
+      gap: 0.75rem;
+    }
+  }
+
+  /* Phantom mobile wallet optimizations */
+  @media (max-width: 480px) {
+    /* Ensure buttons are large enough for mobile wallets */
+    .wallet-connect-button {
+      min-height: 48px;
+      font-size: 16px;
+    }
+    
+    /* Optimize for mobile wallet browser */
+    input, select, textarea {
+      font-size: 16px; /* Prevents zoom on iOS */
+    }
+  }
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold; /* Ensure headers are bold */
   }
