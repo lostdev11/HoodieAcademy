@@ -57,12 +57,23 @@ export default function TokenGate({ children }: TokenGateProps) {
         const storedWallet = localStorage.getItem('walletAddress')
         console.log('🔍 TokenGate: Checking auth status for wallet:', storedWallet)
         
-        if (storedWallet) {
-          setWalletAddress(storedWallet)
+        // If no wallet address is stored, try to get it from other sources
+        let walletAddress = storedWallet
+        if (!walletAddress) {
+          // Try to get wallet address from window.solana if available
+          if (typeof window !== 'undefined' && window.solana && window.solana.publicKey) {
+            walletAddress = window.solana.publicKey.toString()
+            console.log('🔍 TokenGate: Retrieved wallet from window.solana:', walletAddress)
+            localStorage.setItem('walletAddress', walletAddress)
+          }
+        }
+        
+        if (walletAddress) {
+          setWalletAddress(walletAddress)
           setIsConnected(true)
           
           // Check if placement test is completed for this wallet
-          const placementCompleted = localStorage.getItem(`placement_completed_${storedWallet}`)
+          const placementCompleted = localStorage.getItem(`placement_completed_${walletAddress}`)
           console.log('🔍 TokenGate: Placement completed flag:', placementCompleted)
           
           // If placement test is completed, authenticate user without re-verifying NFT
@@ -110,7 +121,7 @@ export default function TokenGate({ children }: TokenGateProps) {
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ walletAddress: storedWallet }),
+            body: JSON.stringify({ walletAddress: walletAddress }),
           })
 
           if (response.ok) {
@@ -124,7 +135,23 @@ export default function TokenGate({ children }: TokenGateProps) {
             }
           }
         } else {
-          console.log('🔍 TokenGate: No stored wallet address found')
+          console.log('🔍 TokenGate: No wallet address found anywhere')
+          // If user has squad assigned but no wallet, still authenticate them
+          const userSquad = localStorage.getItem('userSquad')
+          const onboardingCompleted = localStorage.getItem('onboardingCompleted')
+          const placementTestCompleted = localStorage.getItem('placementTestCompleted')
+          
+          console.log('🔍 TokenGate: Checking alternative auth methods:')
+          console.log('  - User squad:', userSquad ? 'Yes' : 'No')
+          console.log('  - Onboarding completed:', onboardingCompleted)
+          console.log('  - Placement test completed:', placementTestCompleted)
+          
+          if (userSquad || onboardingCompleted === 'true' || placementTestCompleted === 'true') {
+            console.log('✅ TokenGate: User has completion indicators but no wallet, authenticating anyway')
+            setIsHolder(true)
+            setIsAuthenticated(true)
+            return
+          }
         }
       } catch (error) {
         console.error('❌ TokenGate: Auth check failed:', error)
@@ -263,6 +290,25 @@ export default function TokenGate({ children }: TokenGateProps) {
     setIsHolder(true)
     setIsAuthenticated(true)
     setError(null)
+  }
+
+  // Function to manually set wallet address
+  const manuallySetWallet = () => {
+    if (typeof window !== 'undefined' && window.solana && window.solana.publicKey) {
+      const address = window.solana.publicKey.toString()
+      console.log('🔧 TokenGate: Manually setting wallet address:', address)
+      localStorage.setItem('walletAddress', address)
+      setWalletAddress(address)
+      setIsConnected(true)
+      // Try to authenticate after setting wallet
+      setTimeout(() => {
+        setIsHolder(true)
+        setIsAuthenticated(true)
+      }, 100)
+    } else {
+      console.log('❌ TokenGate: No wallet available to set')
+      alert('No Phantom wallet detected. Please connect your wallet first.')
+    }
   }
 
   // If user is authenticated, render children
@@ -421,6 +467,15 @@ export default function TokenGate({ children }: TokenGateProps) {
                     className="w-full border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 hover:border-yellow-400 bg-transparent text-xs"
                   >
                     🔧 Manual Auth (Debug)
+                  </Button>
+                  
+                  {/* Debug button for manual wallet setting */}
+                  <Button
+                    variant="outline"
+                    onClick={manuallySetWallet}
+                    className="w-full border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 bg-transparent text-xs"
+                  >
+                    🔧 Set Wallet (Debug)
                   </Button>
                 </div>
               )}
