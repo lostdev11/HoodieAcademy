@@ -95,6 +95,10 @@ interface AdminStats {
   completedCourses: number;
   pendingApprovals: number;
   totalExamsTaken: number;
+  placementTestsCompleted: number;
+  squadDistribution: {
+    [squad: string]: number;
+  };
 }
 
 export default function AdminDashboard() {
@@ -210,6 +214,83 @@ export default function AdminDashboard() {
     setPasswordError("");
   };
 
+  // Helper function to get all placement test completions
+  const getAllPlacementTestCompletions = () => {
+    const completions: Array<{
+      walletAddress: string;
+      squad: string;
+      displayName?: string;
+      completedAt: string;
+    }> = [];
+
+    // Get all localStorage keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('placement_completed_')) {
+        const walletAddress = key.replace('placement_completed_', '');
+        const placementCompleted = localStorage.getItem(key);
+        
+        if (placementCompleted === 'true') {
+          // Get squad information for this wallet
+          const userSquad = localStorage.getItem('userSquad');
+          const displayName = localStorage.getItem('userDisplayName');
+          
+          let squad = 'Unknown Squad';
+          if (userSquad) {
+            try {
+              const squadData = JSON.parse(userSquad);
+              squad = squadData.name || squadData.id || userSquad;
+            } catch (error) {
+              squad = userSquad;
+            }
+          }
+
+          // Get completion timestamp
+          const placementTestCompleted = localStorage.getItem('placementTestCompleted');
+          const completedAt = placementTestCompleted ? new Date().toISOString() : new Date().toISOString();
+
+          completions.push({
+            walletAddress,
+            squad,
+            displayName: displayName || undefined,
+            completedAt
+          });
+        }
+      }
+    }
+
+    // Also check for general placement test completion flags
+    const placementTestCompleted = localStorage.getItem('placementTestCompleted');
+    const walletAddress = localStorage.getItem('walletAddress');
+    const userSquad = localStorage.getItem('userSquad');
+    const displayName = localStorage.getItem('userDisplayName');
+
+    if (placementTestCompleted === 'true' && walletAddress) {
+      let squad = 'Unknown Squad';
+      if (userSquad) {
+        try {
+          const squadData = JSON.parse(userSquad);
+          squad = squadData.name || squadData.id || userSquad;
+        } catch (error) {
+          squad = userSquad;
+        }
+      }
+
+      // Check if this wallet is already in completions
+      const existingCompletion = completions.find(c => c.walletAddress === walletAddress);
+      if (!existingCompletion) {
+        completions.push({
+          walletAddress,
+          squad,
+          displayName: displayName || undefined,
+          completedAt: new Date().toISOString()
+        });
+      }
+    }
+
+    return completions;
+  };
+
   const loadUsers = async () => {
     setLoading(true);
     try {
@@ -292,7 +373,31 @@ export default function AdminDashboard() {
         users.push(user);
       }
 
-      // Method 4: Load course progress from individual course localStorage keys
+      // Method 4: Load placement test completions from all wallets
+      const placementTestCompletions = getAllPlacementTestCompletions();
+      placementTestCompletions.forEach(completion => {
+        const existingUser = users.find(u => u.walletAddress === completion.walletAddress);
+        if (existingUser) {
+          existingUser.squadTestCompleted = true;
+          existingUser.squad = completion.squad;
+          existingUser.lastActive = completion.completedAt;
+        } else {
+          // Create new user entry for placement test completion
+          const user: User = {
+            walletAddress: completion.walletAddress,
+            displayName: completion.displayName || `User ${completion.walletAddress.slice(0, 6)}...`,
+            squad: completion.squad,
+            profileCompleted: !!completion.displayName,
+            squadTestCompleted: true,
+            courses: {},
+            createdAt: completion.completedAt,
+            lastActive: completion.completedAt
+          };
+          users.push(user);
+        }
+      });
+
+      // Method 5: Load course progress from individual course localStorage keys
       users.forEach(user => {
         // Check for wallet wizardry progress
         const walletWizardryProgress = localStorage.getItem('walletWizardryProgress');
@@ -388,12 +493,25 @@ export default function AdminDashboard() {
       ).length;
     }, 0);
 
+    // Calculate placement test statistics
+    const placementTestsCompleted = userList.filter(user => user.squadTestCompleted).length;
+    
+    // Calculate squad distribution
+    const squadDistribution: { [squad: string]: number } = {};
+    userList.forEach(user => {
+      if (user.squadTestCompleted && user.squad) {
+        squadDistribution[user.squad] = (squadDistribution[user.squad] || 0) + 1;
+      }
+    });
+
     setStats({
       totalUsers,
       activeUsers,
       completedCourses,
       pendingApprovals,
-      totalExamsTaken
+      totalExamsTaken,
+      placementTestsCompleted,
+      squadDistribution
     });
   };
 
@@ -886,7 +1004,7 @@ export default function AdminDashboard() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6 mb-8">
           <Card className="bg-slate-800/50 border-purple-500/30">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -946,7 +1064,61 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="bg-slate-800/50 border-pink-500/30">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Placement Tests</p>
+                  <p className="text-2xl font-bold text-white">{stats.placementTestsCompleted}</p>
+                </div>
+                <Target className="w-8 h-8 text-pink-400" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800/50 border-orange-500/30">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-400">Squads</p>
+                  <p className="text-2xl font-bold text-white">{Object.keys(stats.squadDistribution).length}</p>
+                </div>
+                <Users className="w-8 h-8 text-orange-400" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Squad Distribution */}
+        {Object.keys(stats.squadDistribution).length > 0 && (
+          <Card className="bg-slate-800/50 border-orange-500/30 mb-8">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Users className="w-5 h-5 mr-2 text-orange-400" />
+                Squad Distribution
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(stats.squadDistribution).map(([squad, count]) => (
+                  <div key={squad} className="bg-slate-700/50 rounded-lg p-4 border border-orange-500/30">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-400">Squad</p>
+                        <p className="text-lg font-semibold text-white">{squad}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-400">Members</p>
+                        <p className="text-2xl font-bold text-orange-400">{count}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="w-full">
