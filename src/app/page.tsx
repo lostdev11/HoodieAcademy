@@ -259,27 +259,27 @@ export default function HoodieAcademy() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
+          <header className="bg-slate-800/50 border-b border-cyan-500/30 p-3 sm:p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-cyan-400">Welcome to Hoodie Academy</h1>
-                  <p className="text-gray-300">Your Web3 learning journey starts here!</p>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-cyan-400">Welcome to Hoodie Academy</h1>
+                  <p className="text-gray-300 text-sm sm:text-base">Your Web3 learning journey starts here!</p>
                 </div>
                 
                 {/* Squad Badge */}
                 {userSquad && (
-                  <div className="hidden md:block">
+                  <div className="hidden sm:block">
                     <SquadBadge squad={typeof userSquad === 'string' ? userSquad.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '') : 'Unknown Squad'} />
                   </div>
                 )}
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                 {/* Wallet Info */}
                 {walletAddress && (
-                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30">
+                  <div className="flex items-center justify-center sm:justify-start space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30">
                     <User className="w-4 h-4 text-cyan-400" />
-                    <span className="text-sm text-cyan-400 font-mono">
+                    <span className="text-xs sm:text-sm text-cyan-400 font-mono">
                       {formatWalletAddress(walletAddress)}
                     </span>
                     {isDemoWallet && (
@@ -295,23 +295,23 @@ export default function HoodieAcademy() {
                   onClick={handleDisconnect}
                   variant="outline"
                   size="sm"
-                  className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+                  className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300 w-full sm:w-auto"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Disconnect
                 </Button>
                 
                 {/* Time */}
-                <div className="text-right">
-                  <div className="text-sm text-gray-400">Current Time</div>
-                  <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
+                <div className="text-center sm:text-right">
+                  <div className="text-xs sm:text-sm text-gray-400">Current Time</div>
+                  <div className="text-sm sm:text-lg text-cyan-400 font-mono">{currentTime}</div>
                 </div>
               </div>
             </div>
           </header>
 
           {/* Dashboard Content */}
-          <main className="flex-1 p-6 space-y-6">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
             {/* Demo Wallet Banner */}
             {isDemoWallet && (
               <Card className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 border-yellow-500/30">
@@ -365,58 +365,58 @@ export default function HoodieAcademy() {
               </Card>
             )}
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
               <Card className="bg-slate-800/50 border-cyan-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-cyan-500/20 rounded-lg">
-                      <BookOpen className="w-6 h-6 text-cyan-400" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="p-1.5 sm:p-2 bg-cyan-500/20 rounded-lg">
+                      <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-cyan-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">Courses Completed</p>
-                      <p className="text-2xl font-bold text-cyan-400">3/6</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Courses Completed</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-cyan-400">3/6</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-slate-800/50 border-green-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-green-500/20 rounded-lg">
-                      <Award className="w-6 h-6 text-green-400" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="p-1.5 sm:p-2 bg-green-500/20 rounded-lg">
+                      <Award className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">NFT Badges</p>
-                      <p className="text-2xl font-bold text-green-400">5</p>
+                      <p className="text-xs sm:text-sm text-gray-400">NFT Badges</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-400">5</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-slate-800/50 border-purple-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-purple-500/20 rounded-lg">
-                      <TrendingUp className="w-6 h-6 text-purple-400" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="p-1.5 sm:p-2 bg-purple-500/20 rounded-lg">
+                      <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-purple-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">Overall Progress</p>
-                      <p className="text-2xl font-bold text-purple-400">{overallProgress}%</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Overall Progress</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-400">{overallProgress}%</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-slate-800/50 border-yellow-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-yellow-500/20 rounded-lg">
-                      <Trophy className="w-6 h-6 text-yellow-400" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="p-1.5 sm:p-2 bg-yellow-500/20 rounded-lg">
+                      <Trophy className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-yellow-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">Your Rank</p>
-                      <p className="text-2xl font-bold text-yellow-400">
+                      <p className="text-xs sm:text-sm text-gray-400">Your Rank</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-400">
                         {userRank > 0 ? `#${userRank}` : 'N/A'}
                       </p>
                     </div>
@@ -425,14 +425,14 @@ export default function HoodieAcademy() {
               </Card>
 
               <Card className="bg-slate-800/50 border-pink-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-pink-500/20 rounded-lg">
-                      <Video className="w-6 h-6 text-pink-400" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="p-1.5 sm:p-2 bg-pink-500/20 rounded-lg">
+                      <Video className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-pink-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">Total Score</p>
-                      <p className="text-2xl font-bold text-pink-400">{userScore.toLocaleString()}</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Total Score</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-pink-400">{userScore.toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -452,17 +452,17 @@ export default function HoodieAcademy() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
                     <div>
-                      <p className="text-gray-300 mb-2">
+                      <p className="text-gray-300 mb-2 text-sm sm:text-base">
                         Manage users, approve exams, and monitor course progress.
                       </p>
                       <div className="flex items-center gap-2 mb-4">
                         <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-purple-400">Password authenticated</span>
+                        <span className="text-xs sm:text-sm text-purple-400">Password authenticated</span>
                       </div>
                     </div>
-                    <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
+                    <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 w-full sm:w-auto">
                       <Link href="/admin">
                         <Shield className="w-4 h-4 mr-2" />
                         Access Dashboard
@@ -486,21 +486,21 @@ export default function HoodieAcademy() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
                     <div>
-                      <p className="text-gray-300 mb-2">
+                      <p className="text-gray-300 mb-2 text-sm sm:text-base">
                         Admin access is disabled for the demo wallet to allow live data testing.
                         Use a different wallet to access admin features.
                       </p>
                       <div className="flex items-center gap-2 mb-4">
                         <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-yellow-400">Demo wallet detected</span>
+                        <span className="text-xs sm:text-sm text-yellow-400">Demo wallet detected</span>
                       </div>
                     </div>
                     <Button
                       variant="outline"
                       disabled
-                      className="border-yellow-500/30 text-yellow-400 cursor-not-allowed"
+                      className="border-yellow-500/30 text-yellow-400 cursor-not-allowed w-full sm:w-auto"
                     >
                       <Shield className="w-4 h-4 mr-2" />
                       Access Disabled
@@ -519,20 +519,20 @@ export default function HoodieAcademy() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
                   <div>
-                    <p className="text-gray-300 mb-2">
+                    <p className="text-gray-300 mb-2 text-sm sm:text-base">
                       Take our personality test to discover which Hoodie squad aligns with your skills and interests!
                     </p>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      <Badge variant="outline" className="text-yellow-400 border-yellow-500/30">🎨 Creators</Badge>
-                      <Badge variant="outline" className="text-gray-300 border-gray-500/30">🧠 Decoders</Badge>
-                      <Badge variant="outline" className="text-red-400 border-red-500/30">🎤 Speakers</Badge>
-                      <Badge variant="outline" className="text-blue-400 border-blue-500/30">⚔️ Raiders</Badge>
-                      <Badge variant="outline" className="text-purple-400 border-purple-500/30">🦅 Rangers</Badge>
+                      <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 text-xs">🎨 Creators</Badge>
+                      <Badge variant="outline" className="text-gray-300 border-gray-500/30 text-xs">🧠 Decoders</Badge>
+                      <Badge variant="outline" className="text-red-400 border-red-500/30 text-xs">🎤 Speakers</Badge>
+                      <Badge variant="outline" className="text-blue-400 border-blue-500/30 text-xs">⚔️ Raiders</Badge>
+                      <Badge variant="outline" className="text-purple-400 border-purple-500/30 text-xs">🦅 Rangers</Badge>
                     </div>
                   </div>
-                  <Button asChild className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700">
+                  <Button asChild className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 w-full sm:w-auto">
                     <Link href="/placement/squad-test">Take Test</Link>
                   </Button>
                 </div>
@@ -549,17 +549,17 @@ export default function HoodieAcademy() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
                     <div>
-                      <p className="text-gray-300 mb-2">
+                      <p className="text-gray-300 mb-2 text-sm sm:text-base">
                         Connect with your {userSquad} squad members in real-time.
                       </p>
                       <div className="flex items-center gap-2 mb-4">
                         <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-green-400">Live messaging</span>
+                        <span className="text-xs sm:text-sm text-green-400">Live messaging</span>
                       </div>
                     </div>
-                    <Button asChild className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
+                    <Button asChild className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 w-full sm:w-auto">
                       <Link href={`/squads/${normalizeSquadNameForUrl(userSquad)}/chat`}>
                         <Users className="w-4 h-4 mr-2" />
                         Join Chat
@@ -570,7 +570,7 @@ export default function HoodieAcademy() {
               </Card>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Leaderboard Preview */}
               <Card className="bg-slate-800/50 border-yellow-500/30 lg:col-span-1">
                 <CardHeader>

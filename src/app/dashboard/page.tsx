@@ -259,12 +259,12 @@ export default function DashboardPage() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+          <header className="bg-slate-800/50 border-b border-cyan-500/30 p-3 sm:p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+              <div className="flex items-center gap-3 sm:gap-4">
                 {/* Profile Picture */}
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-lg">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-lg">
                     {profileImage && profileImage !== '🧑‍🎓' ? (
                       <img 
                         src={profileImage} 
@@ -277,13 +277,13 @@ export default function DashboardPage() {
                         }}
                       />
                     ) : null}
-                    <div className={`w-full h-full bg-gradient-to-br from-cyan-400 to-pink-400 flex items-center justify-center text-xl ${profileImage && profileImage !== '🧑‍🎓' ? 'hidden' : ''}`}>
+                    <div className={`w-full h-full bg-gradient-to-br from-cyan-400 to-pink-400 flex items-center justify-center text-lg sm:text-xl ${profileImage && profileImage !== '🧑‍🎓' ? 'hidden' : ''}`}>
                       🧑‍🎓
                     </div>
                   </div>
                   {profileImage && profileImage !== '🧑‍🎓' && (
                     <div className="absolute -top-1 -right-1">
-                      <div className="w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 bg-purple-600 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs">✨</span>
                       </div>
                     </div>
@@ -291,63 +291,64 @@ export default function DashboardPage() {
                 </div>
                 
                 <div>
-                  <h1 className="text-3xl font-bold text-cyan-400">Dashboard</h1>
-                  <p className="text-gray-300">Welcome back, Hoodie Scholar!</p>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-cyan-400">Dashboard</h1>
+                  <p className="text-gray-300 text-sm sm:text-base">Welcome back, Hoodie Scholar!</p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-center sm:text-right">
                 <div className="text-sm text-gray-400">Current Time</div>
                 <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="mt-2 text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
-                  onClick={() => {
-                    console.log('=== Dashboard Debug ===');
-                    console.log('realAnnouncements state:', realAnnouncements);
-                    console.log('localStorage announcements:', typeof window !== 'undefined' ? localStorage.getItem('announcements') : null);
-                    console.log('getActiveAnnouncements():', getActiveAnnouncements());
-                    console.log('======================');
-                  }}
-                >
-                  Debug Announcements
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="mt-2 text-xs border-green-500/30 text-green-400 hover:bg-green-500/20"
-                  onClick={() => {
-                    // Create a test announcement
-                    const testAnnouncement = {
-                      id: Date.now().toString(),
-                      title: 'Test Announcement',
-                      content: 'This is a test announcement to debug the system.',
-                      type: 'info' as const,
-                      priority: 'medium' as const,
-                      startDate: new Date().toISOString().split('T')[0], // Today
-                      endDate: undefined,
-                      isActive: true,
-                      createdBy: 'Debug',
-                      createdAt: new Date().toISOString()
-                    };
-                    
-                    console.log('Creating test announcement:', testAnnouncement);
-                    
-                    // Add to localStorage directly
-                    const existingAnnouncements = JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('announcements') : '[]') || '[]');
-                    existingAnnouncements.push(testAnnouncement);
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('announcements', JSON.stringify(existingAnnouncements));
-                    }
-                    
-                    // Trigger the event
-                    if (typeof window !== 'undefined') {
-                      window.dispatchEvent(new CustomEvent('announcementsUpdated'));
-                    }
-                    
-                    console.log('Test announcement created and event dispatched');
-                  }}
-                >
+                <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20 w-full sm:w-auto"
+                    onClick={() => {
+                      console.log('=== Dashboard Debug ===');
+                      console.log('realAnnouncements state:', realAnnouncements);
+                      console.log('localStorage announcements:', typeof window !== 'undefined' ? localStorage.getItem('announcements') : null);
+                      console.log('getActiveAnnouncements():', getActiveAnnouncements());
+                      console.log('======================');
+                    }}
+                  >
+                    Debug Announcements
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="text-xs border-green-500/30 text-green-400 hover:bg-green-500/20 w-full sm:w-auto"
+                    onClick={() => {
+                      // Create a test announcement
+                      const testAnnouncement = {
+                        id: Date.now().toString(),
+                        title: 'Test Announcement',
+                        content: 'This is a test announcement to debug the system.',
+                        type: 'info' as const,
+                        priority: 'medium' as const,
+                        startDate: new Date().toISOString().split('T')[0], // Today
+                        endDate: undefined,
+                        isActive: true,
+                        createdBy: 'Debug',
+                        createdAt: new Date().toISOString()
+                      };
+                      
+                      console.log('Creating test announcement:', testAnnouncement);
+                      
+                      // Add to localStorage directly
+                      const existingAnnouncements = JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('announcements') : '[]') || '[]');
+                      existingAnnouncements.push(testAnnouncement);
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem('announcements', JSON.stringify(existingAnnouncements));
+                      }
+                      
+                      // Trigger the event
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('announcementsUpdated'));
+                      }
+                      
+                      console.log('Test announcement created and event dispatched');
+                    }}
+                  >
                   Create Test Announcement
                 </Button>
               </div>
@@ -355,7 +356,7 @@ export default function DashboardPage() {
           </header>
 
           {/* Dashboard Content */}
-          <main className="flex-1 p-6 space-y-6">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
             {/* Profile Suggestions */}
             {showProfileSuggestion && (
               <Card className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500/30">
@@ -397,54 +398,54 @@ export default function DashboardPage() {
             )}
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               <Card className="bg-slate-800/50 border-cyan-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-cyan-500/20 rounded-lg">
-                      <BookOpen className="w-6 h-6 text-cyan-400" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="p-1.5 sm:p-2 bg-cyan-500/20 rounded-lg">
+                      <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-cyan-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">Courses Completed</p>
-                      <p className="text-2xl font-bold text-cyan-400">{completedCoursesCount}/{totalCoursesCount}</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Courses Completed</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-cyan-400">{completedCoursesCount}/{totalCoursesCount}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-slate-800/50 border-green-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-green-500/20 rounded-lg">
-                      <Award className="w-6 h-6 text-green-400" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="p-1.5 sm:p-2 bg-green-500/20 rounded-lg">
+                      <Award className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-green-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">NFT Badges</p>
-                      <p className="text-2xl font-bold text-green-400">5</p>
+                      <p className="text-xs sm:text-sm text-gray-400">NFT Badges</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-400">5</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-slate-800/50 border-purple-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-purple-500/20 rounded-lg">
-                      <TrendingUp className="w-6 h-6 text-purple-400" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="p-1.5 sm:p-2 bg-purple-500/20 rounded-lg">
+                      <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-purple-400" />
                     </div>
                     <div>
-                      <p className="text-sm text-gray-400">Overall Progress</p>
-                      <p className="text-2xl font-bold text-purple-400">{overallProgress}%</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Overall Progress</p>
+                      <p className="text-lg sm:text-xl md:text-2xl font-bold text-purple-400">{overallProgress}%</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-slate-800/50 border-pink-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-pink-500/20 rounded-lg">
-                      <Video className="w-6 h-6 text-pink-400" />
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="p-1.5 sm:p-2 bg-pink-500/20 rounded-lg">
+                      <Video className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 text-pink-400" />
                     </div>
                     <div>
                       <p className="text-sm text-gray-400">Hours Watched</p>
