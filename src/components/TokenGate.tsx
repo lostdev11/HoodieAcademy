@@ -64,7 +64,9 @@ export default function TokenGate({ children }: TokenGateProps) {
           if (typeof window !== 'undefined' && window.solana && window.solana.publicKey) {
             walletAddress = window.solana.publicKey.toString()
             console.log('🔍 TokenGate: Retrieved wallet from window.solana:', walletAddress)
-            localStorage.setItem('walletAddress', walletAddress)
+            if (walletAddress) {
+              localStorage.setItem('walletAddress', walletAddress)
+            }
           }
         }
         
