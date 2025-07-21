@@ -131,6 +131,9 @@ export default function SquadTestPage() {
     const walletAddress = localStorage.getItem('walletAddress');
     if (walletAddress) {
       localStorage.setItem(`placement_completed_${walletAddress}`, 'true');
+      console.log(`Placement test completed for wallet: ${walletAddress}`);
+    } else {
+      console.log('No wallet address found, cannot set placement completion flag');
     }
     
     // If user doesn't have a display name, suggest they set one
@@ -274,13 +277,22 @@ export default function SquadTestPage() {
             <Button
               onClick={() => {
                 const userSquad = localStorage.getItem('userSquad');
+                const walletAddress = localStorage.getItem('walletAddress');
+                console.log('Squad chat button clicked');
+                console.log('User squad:', userSquad);
+                console.log('Wallet address:', walletAddress);
+                console.log('Placement completed flag:', localStorage.getItem(`placement_completed_${walletAddress}`));
+                
                 if (userSquad) {
                   const squadData = JSON.parse(userSquad);
                   const squadName = squadData.name;
                   // Normalize squad name for URL
                   const normalizedSquad = squadName.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '').toLowerCase().trim().replace(/\s+/g, '-');
-                  window.location.href = `/squads/${normalizedSquad}/chat`;
+                  const chatUrl = `/squads/${normalizedSquad}/chat`;
+                  console.log('Navigating to squad chat:', chatUrl);
+                  window.location.href = chatUrl;
                 } else {
+                  console.log('No user squad found, redirecting to home');
                   window.location.href = '/';
                 }
               }}

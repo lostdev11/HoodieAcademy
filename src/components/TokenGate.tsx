@@ -64,9 +64,26 @@ export default function TokenGate({ children }: TokenGateProps) {
           
           // If placement test is completed, authenticate user without re-verifying NFT
           if (placementCompleted === 'true') {
+            console.log('Placement test completed, authenticating user without NFT re-verification')
             setIsHolder(true)
             setIsAuthenticated(true)
             return
+          }
+          
+          // Also check if user has a squad assigned (alternative completion indicator)
+          const userSquad = localStorage.getItem('userSquad')
+          if (userSquad) {
+            try {
+              const squadData = JSON.parse(userSquad)
+              if (squadData && squadData.name) {
+                console.log('User has squad assigned, authenticating user')
+                setIsHolder(true)
+                setIsAuthenticated(true)
+                return
+              }
+            } catch (e) {
+              console.log('Error parsing squad data:', e)
+            }
           }
           
           // Verify NFT ownership for stored wallet
