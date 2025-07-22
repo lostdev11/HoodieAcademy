@@ -98,14 +98,6 @@ export const getUserScore = (walletAddress: string): number => {
   return leaderboardService.getUserScore(walletAddress);
 };
 
-// Admin password - in production, this would be stored securely and hashed
-export const ADMIN_PASSWORD = "darkhoodie2024";
-
-// Check if a password is correct for admin access
-export function isAdminPassword(password: string): boolean {
-  return password === ADMIN_PASSWORD;
-}
-
 // Check if current user is admin (using session storage)
 export function isCurrentUserAdmin(): boolean {
   if (typeof window === 'undefined') return false;

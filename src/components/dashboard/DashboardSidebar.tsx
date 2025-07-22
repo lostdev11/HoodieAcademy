@@ -18,6 +18,7 @@ import {
   Video,
   MessageCircle
 } from 'lucide-react';
+import { fetchUserByWallet } from '@/lib/supabase';
 
 interface SidebarItem {
   id: string;
@@ -38,6 +39,7 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
   const [collapsed, setCollapsed] = useState(isCollapsed);
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [squadChatUrl, setSquadChatUrl] = useState<string>('/squads/hoodie-creators/chat');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Helper function to get squad chat URL
   const getSquadChatUrl = (squadName: string): string => {
@@ -136,6 +138,34 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
     }
   }, []);
 
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (typeof window === 'undefined' || !window.solana) return;
+      try {
+        // Connect to Phantom wallet if not already connected
+        const provider = window.solana;
+        if (!provider.isConnected) {
+          await provider.connect();
+        }
+        const walletAddress = provider.publicKey?.toString();
+        if (!walletAddress) return;
+        console.log('👤 Checking admin for wallet:', walletAddress);
+        const user = await fetchUserByWallet(walletAddress);
+        if (user && user.is_admin) {
+          setIsAdmin(true);
+          console.log('✅ Admin status: true');
+        } else {
+          setIsAdmin(false);
+          console.log('✅ Admin status: false');
+        }
+      } catch (err) {
+        setIsAdmin(false);
+        console.error('💥 Failed to check admin:', err);
+      }
+    };
+    checkAdmin();
+  }, []);
+
   const handleToggle = () => {
     setCollapsed(!collapsed);
     onToggle?.();
@@ -192,12 +222,13 @@ const sidebarItems: SidebarItem[] = [
     icon: <Trophy className="w-5 h-5" />,
     href: '/achievements'
   },
-  {
+  // Only include Admin tab if isAdmin is true
+  ...(isAdmin ? [{
     id: 'admin',
     label: 'Admin',
     icon: <Settings className="w-5 h-5" />,
     href: '/admin'
-  }
+  }] : [])
 ];
 
   return (
