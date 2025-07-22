@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   BarChart3,
-  Video,
-  MessageCircle
+  Video
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -25,123 +24,8 @@ interface SidebarItem {
   icon: React.ReactNode;
   href: string;
   badge?: number;
-  dynamic?: boolean;
 }
 
-interface DashboardSidebarProps {
-  isCollapsed?: boolean;
-  onToggle?: () => void;
-}
-
-export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSidebarProps) {
-  const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(isCollapsed);
-  const [userSquad, setUserSquad] = useState<string | null>(null);
-  const [squadChatUrl, setSquadChatUrl] = useState<string>('/squads/hoodie-creators/chat');
-
-  // Helper function to get squad chat URL
-  const getSquadChatUrl = (squadName: string): string => {
-    if (!squadName) return '/squads/hoodie-creators/chat';
-    
-    // Map squad names to their URL paths (including emoji variations)
-    const squadUrlMapping: { [key: string]: string } = {
-      // Full names with emojis (from quiz.json)
-      '🎨 Hoodie Creators': 'hoodie-creators',
-      '🧠 Hoodie Decoders': 'hoodie-decoders',
-      '🎤 Hoodie Speakers': 'hoodie-speakers', 
-      '⚔️ Hoodie Raiders': 'hoodie-raiders',
-      '🦅 Hoodie Rangers': 'hoodie-rangers',
-      '🏦 Treasury Builders': 'treasury-builders',
-      // Full names without emojis
-      'Hoodie Creators': 'hoodie-creators',
-      'Hoodie Decoders': 'hoodie-decoders',
-      'Hoodie Speakers': 'hoodie-speakers',
-      'Hoodie Raiders': 'hoodie-raiders',
-      'Hoodie Rangers': 'hoodie-rangers',
-      'Treasury Builders': 'treasury-builders',
-      // Lowercase variations
-      'hoodie creators': 'hoodie-creators',
-      'hoodie decoders': 'hoodie-decoders',
-      'hoodie speakers': 'hoodie-speakers',
-      'hoodie raiders': 'hoodie-raiders',
-      'hoodie rangers': 'hoodie-rangers',
-      'treasury builders': 'treasury-builders',
-      // Squad IDs (fallback)
-      'creators': 'hoodie-creators',
-      'decoders': 'hoodie-decoders',
-      'speakers': 'hoodie-speakers',
-      'raiders': 'hoodie-raiders',
-      'rangers': 'hoodie-rangers',
-      'treasury': 'treasury-builders'
-    };
-
-    // Try exact match first
-    if (squadUrlMapping[squadName]) {
-      return `/squads/${squadUrlMapping[squadName]}/chat`;
-    }
-
-    // Try normalized match (remove emojis and normalize)
-    const normalized = squadName.replace(/^[🎨🧠🎤⚔️🦅🏦🔍🗣️]+\s*/, '').toLowerCase().trim();
-    if (squadUrlMapping[normalized]) {
-      return `/squads/${squadUrlMapping[normalized]}/chat`;
-    }
-
-    // Try squad ID match
-    const squadMapping: { [key: string]: string } = {
-      'hoodie creators': 'creators',
-      'hoodie decoders': 'decoders', 
-      'hoodie speakers': 'speakers',
-      'hoodie raiders': 'raiders',
-      'hoodie rangers': 'rangers',
-      'treasury builders': 'treasury'
-    };
-    const squadId = squadMapping[normalized] || normalized;
-    if (squadUrlMapping[squadId]) {
-      return `/squads/${squadUrlMapping[squadId]}/chat`;
-    }
-
-    // Fallback: convert to URL-friendly format
-    const urlFriendly = squadName
-      .toLowerCase()
-      .replace(/[🎨🧠🎤⚔️🦅🏦🔍🗣️]/g, '') // Remove emojis
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/[^a-z0-9-]/g, '') // Remove special characters
-      .trim();
-    
-    return `/squads/${urlFriendly}/chat`;
-  };
-
-  // Load user's squad
-  useEffect(() => {
-    const squadResult = localStorage.getItem('userSquad');
-    if (squadResult) {
-      try {
-        const result = JSON.parse(squadResult);
-        let userSquadName: string;
-        
-        // Handle both object and string formats
-        if (typeof result === 'object' && result.name) {
-          userSquadName = result.name;
-        } else if (typeof result === 'string') {
-          userSquadName = result;
-        } else {
-          throw new Error('Invalid squad result format');
-        }
-        
-        setUserSquad(userSquadName);
-        setSquadChatUrl(getSquadChatUrl(userSquadName));
-      } catch (error) {
-        console.error('Error parsing squad result:', error);
-      }
-    }
-  }, []);
-
-  const handleToggle = () => {
-    setCollapsed(!collapsed);
-    onToggle?.();
-  };
-
-  // Create sidebar items with dynamic squad chat
 const sidebarItems: SidebarItem[] = [
   {
     id: 'home',
@@ -161,13 +45,6 @@ const sidebarItems: SidebarItem[] = [
     icon: <BookOpen className="w-5 h-5" />,
     href: '/courses'
   },
-    {
-      id: 'squad-chat',
-      label: userSquad ? `${userSquad} Chat` : 'Squad Chat',
-      icon: <MessageCircle className="w-5 h-5" />,
-      href: squadChatUrl,
-      dynamic: true
-    },
   {
     id: 'leaderboard',
     label: 'Leaderboard',
@@ -199,6 +76,20 @@ const sidebarItems: SidebarItem[] = [
     href: '/admin'
   }
 ];
+
+interface DashboardSidebarProps {
+  isCollapsed?: boolean;
+  onToggle?: () => void;
+}
+
+export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSidebarProps) {
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(isCollapsed);
+
+  const handleToggle = () => {
+    setCollapsed(!collapsed);
+    onToggle?.();
+  };
 
   return (
     <div className={`bg-slate-900/80 border-r border-cyan-500/30 backdrop-blur-sm transition-all duration-300 ${
@@ -249,7 +140,7 @@ const sidebarItems: SidebarItem[] = [
       {/* Navigation Items */}
       <nav className="flex-1 p-4 space-y-2">
         {sidebarItems.map((item) => {
-          const isActive = pathname === item.href || (item.dynamic && pathname.includes('/squads/') && pathname.includes('/chat'));
+          const isActive = pathname === item.href;
           return (
             <Link key={item.id} href={item.href}>
               <Button

@@ -9,7 +9,6 @@ import { Progress } from "@/components/ui/progress";
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, Trophy, Users, Target, Zap, User } from 'lucide-react';
 import SquadBadge from '@/components/SquadBadge';
-import { recordPlacementTest } from '@/lib/supabase';
 
 interface QuizOption {
   id: string;
@@ -79,11 +78,11 @@ export default function SquadTestPage() {
     }));
   };
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (currentQuestion < (quizData?.questions.length || 0) - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
-      await calculateSquad();
+      calculateSquad();
     }
   };
 
@@ -93,7 +92,7 @@ export default function SquadTestPage() {
     }
   };
 
-  const calculateSquad = async () => {
+  const calculateSquad = () => {
     if (!quizData) return;
 
     const squadScores: Record<string, number> = {};
@@ -128,41 +127,8 @@ export default function SquadTestPage() {
     // Mark placement test as completed
     localStorage.setItem('placementTestCompleted', 'true');
     
-    // Mark placement test as completed for the current wallet address
-    const walletAddress = localStorage.getItem('walletAddress');
-    const displayName = localStorage.getItem('userDisplayName');
-    
-    if (walletAddress) {
-      localStorage.setItem(`placement_completed_${walletAddress}`, 'true');
-      console.log(`Placement test completed for wallet: ${walletAddress}`);
-      
-      // Also set onboarding as completed to ensure authentication
-      localStorage.setItem('onboardingCompleted', 'true');
-      console.log('Onboarding marked as completed');
-      
-      // Set a general placement completion flag
-      localStorage.setItem('placementTestCompleted', 'true');
-      console.log('General placement test completion flag set');
-      
-      // Record to Supabase for admin tracking
-      try {
-        console.log('Recording placement test to Supabase:', {
-          wallet_address: walletAddress,
-          squad: squadInfo.name,
-          display_name: displayName
-        });
-        
-        await recordPlacementTest(walletAddress, squadInfo.name, displayName || undefined);
-        console.log('✅ Successfully recorded placement test to Supabase');
-      } catch (error) {
-        console.error('❌ Error recording placement test to Supabase:', error);
-        // Don't fail the test if Supabase recording fails
-      }
-    } else {
-      console.log('No wallet address found, cannot set placement completion flag');
-    }
-    
     // If user doesn't have a display name, suggest they set one
+    const displayName = localStorage.getItem('userDisplayName');
     if (!displayName) {
       localStorage.setItem('suggestDisplayName', 'true');
     }
@@ -286,7 +252,6 @@ export default function SquadTestPage() {
                 if (isOnboarding) {
                   // Complete onboarding and redirect to dashboard
                   localStorage.setItem('onboardingCompleted', 'true');
-                  // Use router.push instead of window.location.href to maintain auth state
                   window.location.href = '/';
                 } else {
                   // Regular flow - go to courses
@@ -296,35 +261,6 @@ export default function SquadTestPage() {
               className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
             >
               {!localStorage.getItem('onboardingCompleted') ? 'Complete Setup' : 'Explore Courses'}
-            </Button>
-            
-            {/* Squad Chat Button */}
-            <Button
-              onClick={() => {
-                const userSquad = localStorage.getItem('userSquad');
-                const walletAddress = localStorage.getItem('walletAddress');
-                console.log('Squad chat button clicked');
-                console.log('User squad:', userSquad);
-                console.log('Wallet address:', walletAddress);
-                console.log('Placement completed flag:', localStorage.getItem(`placement_completed_${walletAddress}`));
-                
-                if (userSquad) {
-                  const squadData = JSON.parse(userSquad);
-                  const squadName = squadData.name;
-                  // Normalize squad name for URL
-                  const normalizedSquad = squadName.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '').toLowerCase().trim().replace(/\s+/g, '-');
-                  const chatUrl = `/squads/${normalizedSquad}/chat`;
-                  console.log('Navigating to squad chat:', chatUrl);
-                  window.location.href = chatUrl;
-                } else {
-                  console.log('No user squad found, redirecting to home');
-                  window.location.href = '/';
-                }
-              }}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-            >
-              <Users className="w-4 h-4 mr-2" />
-              Go to Your Squad Chat
             </Button>
             
             {/* Profile Button */}

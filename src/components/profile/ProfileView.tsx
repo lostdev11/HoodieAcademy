@@ -15,7 +15,6 @@ import { Connection } from '@solana/web3.js';
 import SquadBadge from '@/components/SquadBadge';
 import { NFTProfileSelector } from '@/components/profile/NFTProfileSelector';
 import { NFT } from '@/services/nft-service';
-import { updateUserActivity } from '@/lib/supabase';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -89,8 +88,10 @@ export function ProfileView() {
         setWallet(walletAddress);
       } else if (connectedWallet) {
         setWallet(connectedWallet);
+      } else {
+        // For demo purposes, use a test wallet that has a .sol domain
+        setWallet('JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU');
       }
-      // No fallback to demo wallet
     };
 
     // Check for squad placement result
@@ -164,23 +165,12 @@ export function ProfileView() {
     }
   }, [wallet, snsResolver, connection]);
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (displayName.trim()) {
       const trimmedName = displayName.trim();
       localStorage.setItem('userDisplayName', trimmedName);
       setOriginalDisplayName(trimmedName);
       setEditMode(false);
-      
-      // Track user activity in Supabase
-      if (wallet) {
-        try {
-          await updateUserActivity(wallet, 'profile_update');
-          console.log('✅ Profile update activity recorded');
-        } catch (error) {
-          console.error('❌ Error recording profile update activity:', error);
-        }
-      }
-      
       // Optional: Add a success message or toast notification here
     } else {
       // Don't save if display name is empty

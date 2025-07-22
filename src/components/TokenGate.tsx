@@ -32,12 +32,6 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
 
   // Check for existing verification session on component mount
   useEffect(() => {
-    // Debug: Check if Helius API key is loaded
-    console.log("🔑 Debug: Helius API key loaded:", HELIUS_API_KEY ? "YES" : "NO");
-    if (!HELIUS_API_KEY) {
-      console.error("❌ Debug: Helius API key is missing from environment variables!");
-    }
-    
     if (typeof window !== 'undefined') {
       const sessionData = sessionStorage.getItem(VERIFICATION_SESSION_KEY);
       if (sessionData) {
@@ -70,8 +64,8 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
       
       // If no valid session, check if there's a wallet address in localStorage
       // but no session (indicating a disconnect scenario)
-      const storedWallet = localStorage.getItem('walletAddress');
-      if (storedWallet && !sessionStorage.getItem(VERIFICATION_SESSION_KEY)) {
+      const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
+      if (storedWallet && typeof window !== 'undefined' && !sessionStorage.getItem(VERIFICATION_SESSION_KEY)) {
         // Clear any stale wallet data
         localStorage.removeItem('walletAddress');
         localStorage.removeItem('connectedWallet');
@@ -128,108 +122,43 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
   };
 
   const checkWifHoodieOwnership = async (showSuccessMessage: boolean = true) => {
-    if (!walletAddress) {
-      console.log("🔍 Debug: No wallet address provided, skipping verification");
-      return;
-    }
-    
-    // Check if Helius API key is defined
-    if (!HELIUS_API_KEY) {
-      console.error("❌ Debug: Helius API key is missing!");
-      setError("Configuration error: Helius API key is not defined.");
-      setLoading(false);
-      return;
-    }
-    
-    console.log("🔑 Debug: Helius API key is defined:", HELIUS_API_KEY ? "YES" : "NO");
-    console.log("👛 Debug: Checking wallet:", walletAddress);
-    
+    if (!walletAddress) return;
     setLoading(true);
     setError(null);
     
+    console.log('=== NFT Verification Debug ===');
+    console.log('Wallet address:', walletAddress);
+    console.log('WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
+    
     try {
-      const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
-      console.log("🌐 Debug: Making API request to Helius...");
-      
-      const response = await fetch(url, {
+      // Use our server-side API route to avoid CORS issues
+      const response = await fetch('/api/nft-verification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 'my-id',
-          method: 'getAssetsByOwner',
-          params: {
-            ownerAddress: walletAddress,
-            page: 1,
-            limit: 1000,
-          },
-        }),
+        body: JSON.stringify({ walletAddress }),
       });
 
-      // Check for HTTP errors
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("❌ Debug: HTTP error from Helius API:", response.status, errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+        console.error('NFT Verification API error:', errorText);
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log("📦 Debug: Raw API response:", data);
+      console.log('NFT Verification API response:', data);
       
-      // Check for API errors
-      if (data.error) {
-        console.error("❌ Debug: Helius API returned error:", data.error);
-        throw new Error(`API Error: ${data.error.message || 'Unknown API error'}`);
-      }
-
-      const { result } = data;
-      
-      if (!result || !result.items) {
-          console.error("❌ Debug: Helius API did not return items:", result);
-          throw new Error("Failed to fetch assets from wallet. The API response was malformed.");
-      }
-
-      console.log("🎯 Debug: Total assets returned by Helius:", result.items.length);
-      console.log("📋 Debug: Raw assets data:", result.items);
-
-      // Filter for WifHoodie collection NFTs
-      const wifHoodieNfts = result.items.filter((nft: any) => {
-        if (!nft.grouping || !Array.isArray(nft.grouping)) {
-          console.log("⚠️ Debug: NFT has no grouping data:", nft.id);
-          return false;
-        }
-        
-        const isWifHoodie = nft.grouping.some((group: any) => {
-          const isCollection = group.group_key === "collection";
-          const isCorrectCollection = group.group_value === WIFHOODIE_COLLECTION_ID;
-          
-          if (isCollection) {
-            console.log(`🔍 Debug: Found NFT collection: ${group.group_value}. Is WifHoodie? ${isCorrectCollection}`);
-          }
-          
-          return isCollection && isCorrectCollection;
-        });
-        
-        if (isWifHoodie) {
-          console.log("✅ Debug: Found WifHoodie NFT:", nft.id);
-        }
-        
-        return isWifHoodie;
-      });
-
-      console.log("🎉 Debug: WifHoodie NFTs found:", wifHoodieNfts.length);
-      console.log("📊 Debug: Filtered WifHoodie NFTs:", wifHoodieNfts);
-
-      const hasWifHoodie = wifHoodieNfts.length > 0;
-      console.log("🎯 Debug: Final result - Does wallet hold WifHoodie NFT?", hasWifHoodie);
+      const hasWifHoodie = data.isHolder;
+      console.log("Does the wallet hold a WifHoodie NFT?", hasWifHoodie);
+      console.log("NFTs found:", data.nftsFound);
+      console.log("API used:", data.apiUsed);
 
       setIsHolder(hasWifHoodie);
-      
       if (hasWifHoodie) {
-        console.log("✅ Debug: Verification successful - storing session data");
-        
         // Store verification session
         const sessionData = {
           walletAddress,
@@ -243,45 +172,88 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         localStorage.setItem('connectedWallet', walletAddress);
         
         setHasBeenConnected(true);
-        
         // Only show success message for fresh verifications
         if (showSuccessMessage) {
-          console.log("🎉 Debug: Showing success message for fresh verification");
-          
           // Check if user needs to complete onboarding
-          const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-          const hasDisplayName = localStorage.getItem('userDisplayName');
+          const hasCompletedOnboarding = typeof window !== 'undefined' ? localStorage.getItem('onboardingCompleted') : null;
+          const hasDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
           
           if (!hasCompletedOnboarding || !hasDisplayName) {
-            console.log("🆕 Debug: New user detected - redirecting to onboarding");
             // Redirect to onboarding for new users
             setTimeout(() => {
-              window.location.href = '/onboarding';
+              if (typeof window !== 'undefined') {
+                window.location.href = '/onboarding';
+              }
             }, 2000);
           } else {
-            console.log("👤 Debug: Existing user - showing success message");
             // Existing user - show success message
             setShowSuccess(true);
             // Hide success message after 2 seconds
             setTimeout(() => setShowSuccess(false), 2000);
           }
-        } else {
-          console.log("🔄 Debug: Skipping success message for existing session");
         }
-      } else {
-        console.log("❌ Debug: No WifHoodie NFTs found - verification failed");
       }
     } catch (error: any) {
-      console.error("💥 Debug: NFT check failed with error:", error);
+      console.error("NFT check failed:", error);
       setError(`NFT verification failed: ${error.message}`);
     }
     setLoading(false);
   };
 
+  // Debug function - can be called from browser console
+  const debugHeliusAPI = async () => {
+    if (!walletAddress) {
+      console.log('No wallet address connected');
+      return;
+    }
+    
+    console.log('=== Debugging NFT Verification API ===');
+    console.log('Wallet address:', walletAddress);
+    console.log('WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
+    
+    try {
+      const response = await fetch('/api/nft-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ walletAddress }),
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log('Full API response:', data);
+      console.log('Is holder:', data.isHolder);
+      console.log('NFTs found:', data.nftsFound);
+      console.log('API used:', data.apiUsed);
+      console.log('Sample NFTs:', data.nfts);
+      
+    } catch (error) {
+      console.error('Debug API call failed:', error);
+    }
+    
+    console.log('=== End Debug ===');
+  };
+
+  // Expose debug function to window for console access
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).debugHeliusAPI = debugHeliusAPI;
+    }
+  }, [walletAddress]);
+
   useEffect(() => {
     if (walletAddress) {
       // Only show success message if this is a fresh verification (not from existing session)
-      const isFreshVerification = !sessionStorage.getItem(VERIFICATION_SESSION_KEY);
+      const isFreshVerification = typeof window !== 'undefined' ? !sessionStorage.getItem(VERIFICATION_SESSION_KEY) : false;
       checkWifHoodieOwnership(isFreshVerification);
     }
   }, [walletAddress]);
@@ -297,8 +269,8 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
 
   if (walletAddress && !loading && isHolder && showSuccess) {
     // Check if this is a new user
-    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-    const hasDisplayName = localStorage.getItem('userDisplayName');
+    const hasCompletedOnboarding = typeof window !== 'undefined' ? localStorage.getItem('onboardingCompleted') : null;
+    const hasDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
     const isNewUser = !hasCompletedOnboarding || !hasDisplayName;
     
     return (

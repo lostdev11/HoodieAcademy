@@ -86,7 +86,7 @@ export default function LeaderboardPage() {
         break;
       case 'recent':
         filtered = filtered.filter(user => {
-          const lastActive = new Date(user.lastActive ?? 0);
+          const lastActive = new Date(user.lastActive);
           const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
           return lastActive > oneWeekAgo;
         });
@@ -220,7 +220,7 @@ export default function LeaderboardPage() {
                       <p className="text-sm text-gray-400">Active Learners</p>
                       <p className="text-2xl font-bold text-green-400">
                         {users.filter(user => {
-                          const lastActive = new Date(user.lastActive ?? 0);
+                          const lastActive = new Date(user.lastActive);
                           const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
                           return lastActive > oneWeekAgo;
                         }).length}

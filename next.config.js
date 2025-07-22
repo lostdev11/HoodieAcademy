@@ -1,10 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  trailingSlash: true,
+  reactStrictMode: true,
+  swcMinify: true,
   images: {
-    unoptimized: true,
+    domains: ['images.unsplash.com', 'via.placeholder.com'],
+    unoptimized: false,
   },
-};
+  env: {
+    NEXT_PUBLIC_HELIUS_API_KEY: process.env.NEXT_PUBLIC_HELIUS_API_KEY,
+  },
+  // Optimize for Vercel
+  output: 'standalone',
+  poweredByHeader: false,
+}
 
-module.exports = nextConfig; 
+module.exports = nextConfig 
