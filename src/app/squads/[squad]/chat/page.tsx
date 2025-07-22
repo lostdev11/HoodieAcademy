@@ -179,42 +179,42 @@ export default function SquadChatPage({ params }: PageProps) {
       try {
         console.log('Checking squad chat access for:', squadName);
         
-        // Check if user has completed onboarding and has a squad
-        const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-        const hasDisplayName = localStorage.getItem('userDisplayName');
+    // Check if user has completed onboarding and has a squad
+    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
+    const hasDisplayName = localStorage.getItem('userDisplayName');
         
         console.log('Onboarding status:', { hasCompletedOnboarding, hasDisplayName });
-        
-        if (!hasCompletedOnboarding || !hasDisplayName) {
+    
+    if (!hasCompletedOnboarding || !hasDisplayName) {
           console.log('User needs to complete onboarding, redirecting...');
-          router.push('/onboarding');
-          return;
-        }
+      router.push('/onboarding');
+      return;
+    }
 
-        // Get user's squad from localStorage
-        const squadResult = localStorage.getItem('userSquad');
+    // Get user's squad from localStorage
+    const squadResult = localStorage.getItem('userSquad');
         console.log('Squad result from localStorage:', squadResult);
         
-        if (squadResult) {
-          try {
-            const result = JSON.parse(squadResult);
-            let userSquadName: string;
-            
-            // Handle both object and string formats
-            if (typeof result === 'object' && result.name) {
-              userSquadName = result.name;
-            } else if (typeof result === 'string') {
-              userSquadName = result;
-            } else {
-              throw new Error('Invalid squad result format');
-            }
-            
+    if (squadResult) {
+      try {
+        const result = JSON.parse(squadResult);
+        let userSquadName: string;
+        
+        // Handle both object and string formats
+        if (typeof result === 'object' && result.name) {
+          userSquadName = result.name;
+        } else if (typeof result === 'string') {
+          userSquadName = result;
+        } else {
+          throw new Error('Invalid squad result format');
+        }
+        
             console.log('User squad name:', userSquadName);
-            setUserSquad(userSquadName);
-            
-            // Get squad IDs for comparison
-            const userSquadId = getSquadId(userSquadName);
-            const requestedSquadId = getSquadId(squadName);
+        setUserSquad(userSquadName);
+        
+        // Get squad IDs for comparison
+        const userSquadId = getSquadId(userSquadName);
+        const requestedSquadId = getSquadId(squadName);
             
             console.log('Squad comparison:', {
               userSquadId,
@@ -224,35 +224,35 @@ export default function SquadChatPage({ params }: PageProps) {
               normalizedUser: normalizeSquadName(userSquadName),
               normalizedRequested: normalizeSquadName(squadName)
             });
-            
-            // Check if user has access to this squad's chat
+        
+        // Check if user has access to this squad's chat
             const squadsMatch = doSquadsMatch(userSquadName, squadName);
             console.log('Squads match result:', squadsMatch);
             
             if (squadsMatch) {
               console.log('Access granted to squad chat');
-              setHasAccess(true);
-            } else {
+          setHasAccess(true);
+        } else {
               console.log('Access denied - squad mismatch');
-              setHasAccess(false);
+          setHasAccess(false);
               setError(`You can only access your assigned squad's chat. Your squad: ${userSquadName}`);
               
               // Debug: Show the URL that would be generated
               const correctUrl = getSquadChatUrl(userSquadName);
               console.log('Generated squad chat URL:', correctUrl);
               console.log('Current URL:', window.location.pathname);
-            }
-          } catch (error) {
-            console.error('Error parsing squad result:', error);
-            setHasAccess(false);
-            setError('Error reading your squad assignment. Please retake the placement test.');
-          }
-        } else {
-          console.log('No squad assigned, redirecting to placement test');
-          // No squad assigned, redirect to placement test
-          router.push('/placement/squad-test');
-          return;
         }
+      } catch (error) {
+        console.error('Error parsing squad result:', error);
+        setHasAccess(false);
+            setError('Error reading your squad assignment. Please retake the placement test.');
+      }
+    } else {
+          console.log('No squad assigned, redirecting to placement test');
+      // No squad assigned, redirect to placement test
+      router.push('/placement/squad-test');
+      return;
+    }
       } catch (error) {
         console.error('Error checking squad access:', error);
         setError('An error occurred while checking your access. Please try again.');
@@ -328,15 +328,15 @@ export default function SquadChatPage({ params }: PageProps) {
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 {userSquad && (
-                  <Button
-                    asChild
-                    className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
-                  >
+                <Button
+                  asChild
+                  className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
+                >
                     <Link href={getSquadChatUrl(userSquad)}>
-                      <Users className="w-4 h-4 mr-2" />
-                      Go to Your Squad Chat
-                    </Link>
-                  </Button>
+                    <Users className="w-4 h-4 mr-2" />
+                    Go to Your Squad Chat
+                  </Link>
+                </Button>
                 )}
                 <Button
                   asChild

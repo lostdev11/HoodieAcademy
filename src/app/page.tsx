@@ -34,7 +34,8 @@ import Link from "next/link"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
-import { getUserRank, getUserScore, isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
+import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
+import { fetchUserByWallet } from '@/lib/supabase'
 
 
 
@@ -113,8 +114,22 @@ export default function HoodieAcademy() {
       setWalletAddress(storedWallet);
     }
 
-    // Check if user is admin (now password-based)
-    setIsAdmin(isCurrentUserAdmin());
+    // Check if user is admin using Supabase
+    const checkAdminStatus = async () => {
+      if (storedWallet) {
+        try {
+          const user = await fetchUserByWallet(storedWallet);
+          setIsAdmin(user?.is_admin || false);
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
 
     // Get squad placement result
     const squadResult = typeof window !== 'undefined' ? localStorage.getItem('userSquad') : null;
@@ -162,11 +177,6 @@ export default function HoodieAcademy() {
       const score = getUserScore(storedWallet);
       setUserRank(rank);
       setUserScore(score);
-      
-      // Check if this is the demo wallet
-      if (storedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
-        setIsDemoWallet(true);
-      }
       
       // Load real data
       setRealAnnouncements(getRealAnnouncements());
@@ -409,8 +419,8 @@ export default function HoodieAcademy() {
                     </div>
                     <p className="mobile-first-text text-gray-400">Your Rank</p>
                     <p className="mobile-first-title text-yellow-400">
-                      {userRank > 0 ? `#${userRank}` : 'N/A'}
-                    </p>
+                        {userRank > 0 ? `#${userRank}` : 'N/A'}
+                      </p>
                   </div>
                 </CardContent>
               </Card>
@@ -448,7 +458,7 @@ export default function HoodieAcademy() {
                       </p>
                       <div className="flex items-center justify-center gap-2 mb-4">
                         <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                        <span className="mobile-first-text text-purple-400">Password authenticated</span>
+                        <span className="mobile-first-text text-purple-400">Wallet authenticated</span>
                       </div>
                     </div>
                     <Button asChild className="mobile-first-button bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">

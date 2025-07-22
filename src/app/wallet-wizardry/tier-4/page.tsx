@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { updateScoreForLessonCompletion } from '@/lib/utils';
-import { updateUserActivity } from '@/lib/supabase';
+import { updateUserActivity, recordCourseCompletion } from '@/lib/supabase';
 
 export default function Tier4() {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -49,6 +49,14 @@ export default function Tier4() {
           console.log('✅ Course completion activity recorded');
         } catch (error) {
           console.error('❌ Error recording course completion activity:', error);
+        }
+      }
+
+      if (walletAddress) {
+        try {
+          await recordCourseCompletion(walletAddress, 'wallet-wizardry');
+        } catch (error) {
+          console.error('Error recording course completion:', error);
         }
       }
       

@@ -16,7 +16,8 @@ import { GlowingCoinIcon } from "@/components/icons/GlowingCoinIcon";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { squadTracks, getSquadForCourse, getCoursesForSquad } from "@/lib/squadData";
-import { isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet, getCompletedCoursesCount } from "@/lib/utils";
+import { isCurrentUserAdmin, getConnectedWallet, getCompletedCoursesCount } from "@/lib/utils";
+import { fetchUserByWallet } from "@/lib/supabase";
 
 // Simple course data
 const allCourses: Array<{
@@ -114,7 +115,6 @@ export default function CoursesPage() {
   const [selectedSquad, setSelectedSquad] = useState<string | null>(null);
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isDemoWallet, setIsDemoWallet] = useState(false);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -125,14 +125,22 @@ export default function CoursesPage() {
   }, []);
 
   useEffect(() => {
-    // Check if user is admin
-    setIsAdmin(isCurrentUserAdmin());
+    // Check if user is admin using Supabase
+    const checkAdminStatus = async () => {
+      if (storedWallet) {
+        try {
+          const user = await fetchUserByWallet(storedWallet);
+          setIsAdmin(user?.is_admin || false);
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    };
 
-    // Check if this is the demo wallet
-    const connectedWallet = getConnectedWallet();
-    if (connectedWallet && connectedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
-      setIsDemoWallet(true);
-    }
+    checkAdminStatus();
 
     // Get user's squad assignment
     const squadResult = localStorage.getItem('userSquad');
@@ -185,7 +193,6 @@ export default function CoursesPage() {
       userSquad: userSquad,
       isAdmin: isAdmin,
       isAdminBypass: isAdminBypass,
-      isDemoWallet: isDemoWallet,
       isLoading: false,
       allCourses: allCourses.map(c => ({ id: c.id, title: c.title })),
       completedCoursesCount: getCompletedCoursesCount(),
@@ -260,7 +267,6 @@ export default function CoursesPage() {
       userSquad,
       isAdmin,
       isAdminBypass,
-      isDemoWallet,
       totalCourses: allCourses.length
     });
 
@@ -284,7 +290,7 @@ export default function CoursesPage() {
           const squadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
           console.log('Selected squad courses:', squadCourses.length);
           return squadCourses;
-        } else if (!isAdmin && !isAdminBypass && userSquad && !isDemoWallet) {
+        } else if (!isAdmin && !isAdminBypass && userSquad) {
           // Show courses for user's squad when no specific squad is selected
           const squadCourseIds = getCoursesForSquad(userSquad);
           const userSquadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
@@ -366,7 +372,7 @@ export default function CoursesPage() {
             )}
 
             {/* Admin Access Notice */}
-            {isAdmin && !isDemoWallet && (
+            {isAdmin && (
               <div className="mt-6">
                 <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-purple-500/30 backdrop-blur-sm">
                   <CardContent className="p-4">
@@ -375,23 +381,6 @@ export default function CoursesPage() {
                       <div className="text-center">
                         <p className="text-purple-400 font-semibold">Admin Access</p>
                         <p className="text-gray-300 text-sm">Password authenticated - viewing all courses</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Demo Wallet Notice */}
-            {isDemoWallet && (
-              <div className="mt-6">
-                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-yellow-500/30 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-center space-x-3">
-                      <span className="text-yellow-400 text-lg">🔧</span>
-                      <div className="text-center">
-                        <p className="text-yellow-400 font-semibold">Demo Mode Active</p>
-                        <p className="text-gray-300 text-sm">Admin access disabled - viewing all courses for testing</p>
                       </div>
                     </div>
                   </CardContent>

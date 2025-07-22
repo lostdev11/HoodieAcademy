@@ -227,20 +227,20 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         console.log('Message sent to localStorage');
       } else {
         // Try Supabase
-        const messageData: NewMessage = {
-          text: newMessage.trim(),
-          sender: currentUser,
-          squad: squad,
-        };
+      const messageData: NewMessage = {
+        text: newMessage.trim(),
+        sender: currentUser,
+        squad: squad,
+      };
 
         console.log('Attempting to send message to Supabase:', messageData);
 
-        const { data, error } = await supabase
-          .from('messages')
-          .insert([messageData])
-          .select();
+      const { data, error } = await supabase
+        .from('messages')
+        .insert([messageData])
+        .select();
 
-        if (error) {
+      if (error) {
           console.error('Error sending message to Supabase:', error);
           // Fallback to localStorage
           addLocalMessage(newMessage, currentUser);
@@ -284,12 +284,12 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
       <div className="p-4 border-b border-slate-600/30 bg-slate-800/50">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-cyan-400">
-              {squad} Squad Chat
-            </h3>
-            <p className="text-sm text-gray-400">
+        <h3 className="text-lg font-semibold text-cyan-400">
+          {squad} Squad Chat
+        </h3>
+        <p className="text-sm text-gray-400">
               {useLocalStorage ? 'Local messaging' : 'Real-time messaging'} for {squad} squad members
-            </p>
+        </p>
           </div>
           <div className="flex items-center gap-2">
             {isOnline ? (

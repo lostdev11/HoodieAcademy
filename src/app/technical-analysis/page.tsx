@@ -22,6 +22,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import { recordCourseCompletion } from '@/lib/supabase';
 
 declare global {
   interface Window {
@@ -325,6 +326,12 @@ export default function TechnicalAnalysisPage() {
       }
       setLessonStatus(newLessonStatus);
       saveProgress(newLessonStatus);
+      if (newLessonStatus.every(status => status === 'completed')) {
+        const walletAddress = localStorage.getItem('walletAddress');
+        if (walletAddress) {
+          recordCourseCompletion(walletAddress, 'technical-analysis').catch(console.error);
+        }
+      }
     } else {
       setFeedbackModalContent({ title: "Quiz Failed", description: `You scored ${score}/${totalQuestions}. Review the charts and indicators, then try again. You need at least ${Math.ceil(PASSING_PERCENTAGE * totalQuestions)} correct answers.` });
       setTimeout(() => setShowFeedbackModal(false), 3000);

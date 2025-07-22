@@ -89,10 +89,8 @@ export function ProfileView() {
         setWallet(walletAddress);
       } else if (connectedWallet) {
         setWallet(connectedWallet);
-      } else {
-        // For demo purposes, use a test wallet that has a .sol domain
-        setWallet('JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU');
       }
+      // No fallback to demo wallet
     };
 
     // Check for squad placement result

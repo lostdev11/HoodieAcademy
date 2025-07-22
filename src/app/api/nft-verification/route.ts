@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     console.log('NFT Verification API: Checking wallet:', walletAddress);
     // TEMP DEBUG: Log the Helius API key (first 6 chars only for safety)
     console.log('HELIUS_API_KEY:', process.env.HELIUS_API_KEY ? process.env.HELIUS_API_KEY.slice(0, 6) + '...' : 'NOT SET');
-    
+
     // Check if API key is available
     if (!process.env.HELIUS_API_KEY) {
       console.error('HELIUS_API_KEY environment variable is not set');
@@ -28,12 +28,12 @@ export async function POST(request: NextRequest) {
 
     // Approach 1: Try Helius RPC API
     if (process.env.HELIUS_API_KEY) {
-      try {
+    try {
         console.log(`Trying Helius RPC API...`);
         const apiUrl = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
-        const response = await fetch(apiUrl, {
+      const response = await fetch(apiUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             jsonrpc: '2.0',
             id: 'nft-verification',
@@ -44,22 +44,22 @@ export async function POST(request: NextRequest) {
               limit: 1000
             }
           })
-        });
+      });
         
-        if (response.ok) {
-          const data = await response.json();
+      if (response.ok) {
+        const data = await response.json();
           console.log(`Helius RPC API response:`, data);
           if (data.result?.items) {
             nfts = data.result.items;
             apiUsed = 'Helius RPC API';
-            console.log(`Helius NFTs found:`, nfts.length);
+        console.log(`Helius NFTs found:`, nfts.length);
             // Debug: Log the first NFT structure
-            if (nfts.length > 0) {
+        if (nfts.length > 0) {
               console.log(`First NFT structure:`, JSON.stringify(nfts[0], null, 2));
             }
-          }
-        } else {
-          const errorText = await response.text();
+        }
+      } else {
+        const errorText = await response.text();
           console.log(`Helius RPC API failed:`, response.status, errorText);
           apiErrors.push(`Helius RPC: ${response.status} - ${errorText}`);
         }
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' }
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           console.log(`Solscan API response:`, data);
@@ -98,19 +98,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Approach 3: Test mode for known wallet
-    if (nfts.length === 0 && walletAddress === 'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU') {
-      console.log('TEST MODE: Simulating WifHoodie NFT found for test wallet');
-      apiUsed = 'Test Mode';
-    }
+    // Remove test mode for known wallet
+    // if (nfts.length === 0 && walletAddress === 'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU') {
+    //   console.log('TEST MODE: Simulating WifHoodie NFT found for test wallet');
+    //   apiUsed = 'Test Mode';
+    // }
     // Check for WifHoodie NFTs
     const WIFHOODIE_COLLECTION_ID = "H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ";
     let hasWifHoodie = false;
 
-    // Test mode for known wallet
-    if (apiUsed === 'Test Mode') {
-      hasWifHoodie = true;
-    } else {
+    // Remove test mode for known wallet
+    // if (apiUsed === 'Test Mode') {
+    //   hasWifHoodie = true;
+    // } else {
       console.log(`Checking ${nfts.length} NFTs for WifHoodie collection: ${WIFHOODIE_COLLECTION_ID}`);
       hasWifHoodie = nfts.some((nft: any, index: number) => {
         // Check by mint address (Helius format)
@@ -119,16 +119,16 @@ export async function POST(request: NextRequest) {
         const isWifHoodieByCollection = nft.grouping?.some((group: any) => 
           group.group_key === "collection" && group.group_value === WIFHOODIE_COLLECTION_ID
         );
-        // Check by token name
+      // Check by token name
         const tokenName = nft.content?.metadata?.name || nft.name || nft.tokenInfo?.name || '';
-        const isWifHoodieByName = tokenName.toLowerCase().includes('wifhoodie') || 
-                                  tokenName.toLowerCase().includes('wif hoodie');
-        // Check by symbol
+      const isWifHoodieByName = tokenName.toLowerCase().includes('wifhoodie') || 
+                                tokenName.toLowerCase().includes('wif hoodie');
+      // Check by symbol
         const tokenSymbol = nft.content?.metadata?.symbol || nft.symbol || nft.tokenInfo?.symbol || '';
-        const isWifHoodieBySymbol = tokenSymbol.toLowerCase().includes('wifhoodie') || 
-                                   tokenSymbol.toLowerCase().includes('wif');
+      const isWifHoodieBySymbol = tokenSymbol.toLowerCase().includes('wifhoodie') || 
+                                 tokenSymbol.toLowerCase().includes('wif');
         
-        const isWifHoodie = isWifHoodieByMint || isWifHoodieByCollection || isWifHoodieByName || isWifHoodieBySymbol;
+      const isWifHoodie = isWifHoodieByMint || isWifHoodieByCollection || isWifHoodieByName || isWifHoodieBySymbol;
         
         // Debug: Log each NFT check
         console.log(`NFT ${index + 1}:`, {
@@ -143,9 +143,9 @@ export async function POST(request: NextRequest) {
           isWifHoodie
         });
         
-        return isWifHoodie;
-      });
-    }
+      return isWifHoodie;
+    });
+    // }
     return NextResponse.json({
       success: true,
       isHolder: hasWifHoodie,

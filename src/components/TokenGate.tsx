@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Wallet, Zap, Shield, CheckCircle, AlertCircle, Home, GraduationCap } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { supabase } from '@/lib/supabase';
+import { fetchUserByWallet } from '@/lib/supabase';
 
 declare global {
   interface Window {
@@ -27,6 +29,7 @@ export default function TokenGate({ children }: TokenGateProps) {
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isClient, setIsClient] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Check if we're on the client side
   useEffect(() => {
@@ -53,7 +56,7 @@ export default function TokenGate({ children }: TokenGateProps) {
     if (!isClient) return
 
     const checkAuthStatus = async () => {
-      try {
+        try {
         const storedWallet = localStorage.getItem('walletAddress')
         console.log('🔍 TokenGate: Checking auth status for wallet:', storedWallet)
         
@@ -66,14 +69,26 @@ export default function TokenGate({ children }: TokenGateProps) {
             console.log('🔍 TokenGate: Retrieved wallet from window.solana:', walletAddress)
             if (walletAddress) {
               localStorage.setItem('walletAddress', walletAddress)
-            }
-          }
+        }
+      }
         }
         
         if (walletAddress) {
           setWalletAddress(walletAddress)
           setIsConnected(true)
           
+          // Upsert user in Supabase for live admin tracking
+          try {
+            await supabase.from('users').upsert([
+              {
+                wallet_address: walletAddress,
+                last_active: new Date().toISOString(),
+              }
+            ], { onConflict: 'wallet_address' });
+          } catch (error) {
+            console.error('Error upserting user on wallet connect:', error);
+          }
+
           // Check if placement test is completed for this wallet
           const placementCompleted = localStorage.getItem(`placement_completed_${walletAddress}`)
           console.log('🔍 TokenGate: Placement completed flag:', placementCompleted)
@@ -118,11 +133,11 @@ export default function TokenGate({ children }: TokenGateProps) {
           console.log('🔍 TokenGate: No completion indicators found, verifying NFT ownership...')
           
           // Verify NFT ownership for stored wallet
-          const response = await fetch('/api/nft-verification', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+      const response = await fetch('/api/nft-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
             body: JSON.stringify({ walletAddress: walletAddress }),
           })
 
@@ -163,6 +178,17 @@ export default function TokenGate({ children }: TokenGateProps) {
     checkAuthStatus()
   }, [isClient])
 
+  // Check if user is an admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (walletAddress) {
+        const user = await fetchUserByWallet(walletAddress);
+        setIsAdmin(user?.is_admin || false);
+      }
+    };
+    checkAdminStatus();
+  }, [walletAddress]);
+
   const connectPhantom = async () => {
     if (!isPhantomInstalled) {
       setError("Phantom wallet is not installed. Please install it from https://phantom.app/")
@@ -200,7 +226,7 @@ export default function TokenGate({ children }: TokenGateProps) {
     }
     setIsVerifying(true)
     setError(null)
-
+    
     try {
       const response = await fetch('/api/nft-verification', {
         method: 'POST',
@@ -209,7 +235,7 @@ export default function TokenGate({ children }: TokenGateProps) {
         },
         body: JSON.stringify({ walletAddress: address }),
       })
-
+      
       if (!response.ok) {
         throw new Error(`API request failed: ${response.status}`)
       }
@@ -320,14 +346,14 @@ export default function TokenGate({ children }: TokenGateProps) {
 
   // Show loading state during hydration
   if (!isClient) {
-    return (
+      return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto mb-4"></div>
           <p className="text-slate-300">Loading...</p>
         </div>
-      </div>
-    )
+        </div>
+      )
   }
 
   // Otherwise, show the gate UI
@@ -381,16 +407,24 @@ export default function TokenGate({ children }: TokenGateProps) {
                 : isConnected && !isHolder
                 ? "No WifHoodie NFT found in your wallet. Please purchase one to continue."
                 : "Connect your Phantom wallet to verify your WifHoodie NFT and access this course."}
-            </p>
+        </p>
 
             {/* Wallet Address Display */}
             {walletAddress && (
               <div className="bg-slate-700/50 rounded-lg p-3">
                 <p className="text-xs text-slate-400 mb-1">Connected Wallet:</p>
                 <p className="text-sm text-emerald-400 font-mono break-all">{walletAddress}</p>
+                {isAdmin && (
+                  <div className="mt-2 pt-2 border-t border-slate-600">
+                    <p className="text-xs text-purple-400 flex items-center gap-1">
+                      <Shield className="w-3 h-3" />
+                      Admin Access - Debug Mode Enabled
+                    </p>
+                  </div>
+                )}
               </div>
             )}
-
+        
             {/* Error Message */}
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
@@ -401,11 +435,11 @@ export default function TokenGate({ children }: TokenGateProps) {
             {/* Connect button */}
             <div className="pt-4">
               {!isConnected ? (
-                <Button
+            <Button
                   onClick={handleConnect}
                   disabled={isConnecting || !isPhantomInstalled}
                   className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-emerald-500 to-purple-600 hover:from-emerald-400 hover:to-purple-500 border-0 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
+            >
                   <div className="flex items-center gap-3">
                     {isConnecting ? (
                       <>
@@ -433,7 +467,7 @@ export default function TokenGate({ children }: TokenGateProps) {
                         <Zap className="w-5 h-5 animate-pulse" />
                         {isVerifying ? "Verifying NFT..." : "Redirecting..."}
                       </div>
-                    </Button>
+            </Button>
                   ) : isHolder ? (
                     <Button
                       onClick={handleEnterCourse}
@@ -442,9 +476,9 @@ export default function TokenGate({ children }: TokenGateProps) {
                       <div className="flex items-center gap-3">
                         <CheckCircle className="w-5 h-5" />
                         Enter Course
-                      </div>
+          </div>
                     </Button>
-                  ) : (
+        ) : (
                     <Button
                       variant="outline"
                       className="w-full border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:border-amber-400 bg-transparent"
@@ -462,25 +496,28 @@ export default function TokenGate({ children }: TokenGateProps) {
                     Disconnect Wallet
                   </Button>
                   
-                  {/* Debug button for manual authentication */}
-                  <Button
-                    variant="outline"
-                    onClick={manuallyAuthenticate}
-                    className="w-full border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 hover:border-yellow-400 bg-transparent text-xs"
-                  >
-                    🔧 Manual Auth (Debug)
-                  </Button>
-                  
-                  {/* Debug button for manual wallet setting */}
-                  <Button
-                    variant="outline"
-                    onClick={manuallySetWallet}
-                    className="w-full border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 bg-transparent text-xs"
-                  >
-                    🔧 Set Wallet (Debug)
-                  </Button>
-                </div>
-              )}
+                  {/* Debug buttons - Admin only */}
+                  {isAdmin && (
+                    <>
+                      <Button
+                        variant="outline"
+                        onClick={manuallyAuthenticate}
+                        className="w-full border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 hover:border-yellow-400 bg-transparent text-xs"
+                      >
+                        🔧 Manual Auth (Admin Debug)
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        onClick={manuallySetWallet}
+                        className="w-full border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 bg-transparent text-xs"
+                      >
+                        🔧 Set Wallet (Admin Debug)
+                      </Button>
+                    </>
+                  )}
+          </div>
+        )}
             </div>
 
             {/* Additional info */}

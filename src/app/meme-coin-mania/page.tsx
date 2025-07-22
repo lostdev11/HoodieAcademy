@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
+import { recordCourseCompletion } from '@/lib/supabase';
 
 declare global {
   interface Window {
@@ -305,6 +306,13 @@ const MemeCoinManiaPage = () => {
       }
       setLessonStatus(newLessonStatus);
       saveProgress(newLessonStatus);
+
+      if (newLessonStatus.every(status => status === 'completed')) {
+        const walletAddress = localStorage.getItem('walletAddress');
+        if (walletAddress) {
+          recordCourseCompletion(walletAddress, 'meme-coin-mania').catch(console.error);
+        }
+      }
     } else {
       setFeedbackModalContent({ title: "Quiz Failed", description: `You scored ${score}/${totalQuestions}. Review the lesson and try again. You need at least ${Math.ceil(PASSING_PERCENTAGE * totalQuestions)} correct answers.` });
     }

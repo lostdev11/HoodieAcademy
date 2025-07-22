@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { updateScoreForLessonCompletion } from '@/lib/utils';
-import { updateUserActivity } from '@/lib/supabase';
+import { updateUserActivity, recordCourseCompletion } from '@/lib/supabase';
 
 export default function Tier1() {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -53,6 +53,16 @@ export default function Tier1() {
           console.log('✅ Course completion activity recorded');
         } catch (error) {
           console.error('❌ Error recording course completion activity:', error);
+        }
+      }
+
+      const walletAddressForSupabase = localStorage.getItem('walletAddress');
+      if (walletAddressForSupabase) {
+        try {
+          await recordCourseCompletion(walletAddressForSupabase, 'wallet-wizardry');
+          console.log('✅ Wallet Wizardry course completion recorded in Supabase');
+        } catch (error) {
+          console.error('❌ Error recording Wallet Wizardry course completion in Supabase:', error);
         }
       }
       

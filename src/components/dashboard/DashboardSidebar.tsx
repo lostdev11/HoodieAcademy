@@ -142,25 +142,25 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
   };
 
   // Create sidebar items with dynamic squad chat
-  const sidebarItems: SidebarItem[] = [
-    {
-      id: 'home',
-      label: 'Home',
-      icon: <Home className="w-5 h-5" />,
-      href: '/'
-    },
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: <BarChart3 className="w-5 h-5" />,
-      href: '/dashboard'
-    },
-    {
-      id: 'courses',
-      label: 'Courses',
-      icon: <BookOpen className="w-5 h-5" />,
-      href: '/courses'
-    },
+const sidebarItems: SidebarItem[] = [
+  {
+    id: 'home',
+    label: 'Home',
+    icon: <Home className="w-5 h-5" />,
+    href: '/'
+  },
+  {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: <BarChart3 className="w-5 h-5" />,
+    href: '/dashboard'
+  },
+  {
+    id: 'courses',
+    label: 'Courses',
+    icon: <BookOpen className="w-5 h-5" />,
+    href: '/courses'
+  },
     {
       id: 'squad-chat',
       label: userSquad ? `${userSquad} Chat` : 'Squad Chat',
@@ -168,37 +168,37 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
       href: squadChatUrl,
       dynamic: true
     },
-    {
-      id: 'leaderboard',
-      label: 'Leaderboard',
-      icon: <BarChart3 className="w-5 h-5" />,
-      href: '/leaderboard'
-    },
-    {
-      id: 'profile',
-      label: 'Profile',
-      icon: <User className="w-5 h-5" />,
-      href: '/profile'
-    },
-    {
-      id: 'media',
-      label: 'My Media',
-      icon: <Video className="w-5 h-5" />,
-      href: '/media'
-    },
-    {
-      id: 'achievements',
-      label: 'Achievements',
-      icon: <Trophy className="w-5 h-5" />,
-      href: '/achievements'
-    },
-    {
-      id: 'admin',
-      label: 'Admin',
-      icon: <Settings className="w-5 h-5" />,
-      href: '/admin'
-    }
-  ];
+  {
+    id: 'leaderboard',
+    label: 'Leaderboard',
+    icon: <BarChart3 className="w-5 h-5" />,
+    href: '/leaderboard'
+  },
+  {
+    id: 'profile',
+    label: 'Profile',
+    icon: <User className="w-5 h-5" />,
+    href: '/profile'
+  },
+  {
+    id: 'media',
+    label: 'My Media',
+    icon: <Video className="w-5 h-5" />,
+    href: '/media'
+  },
+  {
+    id: 'achievements',
+    label: 'Achievements',
+    icon: <Trophy className="w-5 h-5" />,
+    href: '/achievements'
+  },
+  {
+    id: 'admin',
+    label: 'Admin',
+    icon: <Settings className="w-5 h-5" />,
+    href: '/admin'
+  }
+];
 
   return (
     <div className={`bg-slate-900/80 border-r border-cyan-500/30 backdrop-blur-sm transition-all duration-300 ${
