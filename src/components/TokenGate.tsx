@@ -32,6 +32,12 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
 
   // Check for existing verification session on component mount
   useEffect(() => {
+    // Debug: Check if Helius API key is loaded
+    console.log("🔑 Debug: Helius API key loaded:", HELIUS_API_KEY ? "YES" : "NO");
+    if (!HELIUS_API_KEY) {
+      console.error("❌ Debug: Helius API key is missing from environment variables!");
+    }
+    
     if (typeof window !== 'undefined') {
       const sessionData = sessionStorage.getItem(VERIFICATION_SESSION_KEY);
       if (sessionData) {
@@ -122,11 +128,28 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
   };
 
   const checkWifHoodieOwnership = async (showSuccessMessage: boolean = true) => {
-    if (!walletAddress) return;
+    if (!walletAddress) {
+      console.log("🔍 Debug: No wallet address provided, skipping verification");
+      return;
+    }
+    
+    // Check if Helius API key is defined
+    if (!HELIUS_API_KEY) {
+      console.error("❌ Debug: Helius API key is missing!");
+      setError("Configuration error: Helius API key is not defined.");
+      setLoading(false);
+      return;
+    }
+    
+    console.log("🔑 Debug: Helius API key is defined:", HELIUS_API_KEY ? "YES" : "NO");
+    console.log("👛 Debug: Checking wallet:", walletAddress);
+    
     setLoading(true);
     setError(null);
+    
     try {
       const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+      console.log("🌐 Debug: Making API request to Helius...");
       
       const response = await fetch(url, {
         method: 'POST',
@@ -145,36 +168,68 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         }),
       });
 
-      const { result } = await response.json();
+      // Check for HTTP errors
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Debug: HTTP error from Helius API:", response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("📦 Debug: Raw API response:", data);
+      
+      // Check for API errors
+      if (data.error) {
+        console.error("❌ Debug: Helius API returned error:", data.error);
+        throw new Error(`API Error: ${data.error.message || 'Unknown API error'}`);
+      }
+
+      const { result } = data;
       
       if (!result || !result.items) {
-          console.error("Helius API did not return items:", result);
+          console.error("❌ Debug: Helius API did not return items:", result);
           throw new Error("Failed to fetch assets from wallet. The API response was malformed.");
       }
 
-      console.log("Assets returned by Helius:", result.items);
+      console.log("🎯 Debug: Total assets returned by Helius:", result.items.length);
+      console.log("📋 Debug: Raw assets data:", result.items);
 
-      const hasWifHoodie = result.items.some(
-        (nft: any) => {
-          if (!nft.grouping || !Array.isArray(nft.grouping)) {
-            return false;
+      // Filter for WifHoodie collection NFTs
+      const wifHoodieNfts = result.items.filter((nft: any) => {
+        if (!nft.grouping || !Array.isArray(nft.grouping)) {
+          console.log("⚠️ Debug: NFT has no grouping data:", nft.id);
+          return false;
+        }
+        
+        const isWifHoodie = nft.grouping.some((group: any) => {
+          const isCollection = group.group_key === "collection";
+          const isCorrectCollection = group.group_value === WIFHOODIE_COLLECTION_ID;
+          
+          if (isCollection) {
+            console.log(`🔍 Debug: Found NFT collection: ${group.group_value}. Is WifHoodie? ${isCorrectCollection}`);
           }
           
-          return nft.grouping.some((group: any) => {
-            const isCollection = group.group_key === "collection";
-            const isCorrectCollection = group.group_value === WIFHOODIE_COLLECTION_ID;
-            if (isCollection) {
-              console.log(`Found NFT from a collection: ${group.group_value}. Is it the WifHoodie collection? ${isCorrectCollection}`);
-            }
-            return isCollection && isCorrectCollection;
-          });
+          return isCollection && isCorrectCollection;
+        });
+        
+        if (isWifHoodie) {
+          console.log("✅ Debug: Found WifHoodie NFT:", nft.id);
         }
-      );
+        
+        return isWifHoodie;
+      });
 
-      console.log("Does the wallet hold a WifHoodie NFT?", hasWifHoodie);
+      console.log("🎉 Debug: WifHoodie NFTs found:", wifHoodieNfts.length);
+      console.log("📊 Debug: Filtered WifHoodie NFTs:", wifHoodieNfts);
+
+      const hasWifHoodie = wifHoodieNfts.length > 0;
+      console.log("🎯 Debug: Final result - Does wallet hold WifHoodie NFT?", hasWifHoodie);
 
       setIsHolder(hasWifHoodie);
+      
       if (hasWifHoodie) {
+        console.log("✅ Debug: Verification successful - storing session data");
+        
         // Store verification session
         const sessionData = {
           walletAddress,
@@ -188,27 +243,36 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         localStorage.setItem('connectedWallet', walletAddress);
         
         setHasBeenConnected(true);
+        
         // Only show success message for fresh verifications
         if (showSuccessMessage) {
+          console.log("🎉 Debug: Showing success message for fresh verification");
+          
           // Check if user needs to complete onboarding
           const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
           const hasDisplayName = localStorage.getItem('userDisplayName');
           
           if (!hasCompletedOnboarding || !hasDisplayName) {
+            console.log("🆕 Debug: New user detected - redirecting to onboarding");
             // Redirect to onboarding for new users
             setTimeout(() => {
               window.location.href = '/onboarding';
             }, 2000);
           } else {
+            console.log("👤 Debug: Existing user - showing success message");
             // Existing user - show success message
             setShowSuccess(true);
             // Hide success message after 2 seconds
             setTimeout(() => setShowSuccess(false), 2000);
           }
+        } else {
+          console.log("🔄 Debug: Skipping success message for existing session");
         }
+      } else {
+        console.log("❌ Debug: No WifHoodie NFTs found - verification failed");
       }
     } catch (error: any) {
-      console.error("NFT check failed:", error);
+      console.error("💥 Debug: NFT check failed with error:", error);
       setError(`NFT verification failed: ${error.message}`);
     }
     setLoading(false);
