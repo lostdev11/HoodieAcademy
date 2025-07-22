@@ -10,11 +10,11 @@ export async function POST(request: NextRequest) {
 
     console.log('NFT Verification API: Checking wallet:', walletAddress);
     // TEMP DEBUG: Log the Helius API key (first 6 chars only for safety)
-    console.log('HELIUS_API_KEY:', process.env.HELIUS_API_KEY ? process.env.HELIUS_API_KEY.slice(0, 6) + '...' : 'NOT SET');
+    console.log('NEXT_PUBLIC_HELIUS_API_KEY:', process.env.NEXT_PUBLIC_HELIUS_API_KEY ? process.env.NEXT_PUBLIC_HELIUS_API_KEY.slice(0, 6) + '...' : 'NOT SET');
     
     // Check if API key is available
-    if (!process.env.HELIUS_API_KEY) {
-      console.error('HELIUS_API_KEY environment variable is not set');
+    if (!process.env.NEXT_PUBLIC_HELIUS_API_KEY) {
+      console.error('NEXT_PUBLIC_HELIUS_API_KEY environment variable is not set');
       return NextResponse.json(
         { error: 'API configuration error' },
         { status: 500 }
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use Helius searchAssets RPC endpoint for NFT verification
-    const apiUrl = `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
+    const apiUrl = `https://mainnet.helius-rpc.com/?api-key=${process.env.NEXT_PUBLIC_HELIUS_API_KEY}`;
     let nfts = [];
     let apiUsed = 'Helius searchAssets RPC';
     try {
