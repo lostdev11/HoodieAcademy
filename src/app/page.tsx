@@ -103,7 +103,6 @@ export default function HoodieAcademy() {
   const [userRank, setUserRank] = useState<number>(-1);
   const [userScore, setUserScore] = useState<number>(0);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isDemoWallet, setIsDemoWallet] = useState(false);
   const [realAnnouncements, setRealAnnouncements] = useState<Announcement[]>([]);
   const [realUpcomingClasses, setRealUpcomingClasses] = useState<UpcomingClass[]>([]);
 
@@ -291,11 +290,6 @@ export default function HoodieAcademy() {
                     <span className="mobile-first-text text-cyan-400 font-mono">
                       {formatWalletAddress(walletAddress)}
                     </span>
-                    {isDemoWallet && (
-                      <Badge variant="outline" className="ml-2 text-yellow-400 border-yellow-500/30 text-xs">
-                        DEMO
-                      </Badge>
-                    )}
                   </div>
                 )}
                 
@@ -321,29 +315,6 @@ export default function HoodieAcademy() {
 
           {/* Dashboard Content */}
           <main className="flex-1 mobile-first-container">
-            {/* Demo Wallet Banner */}
-            {isDemoWallet && (
-              <Card className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 border-yellow-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <AlertCircle className="w-6 h-6 text-yellow-400" />
-                      <div>
-                        <h3 className="text-lg font-semibold text-yellow-400">Demo Mode Active</h3>
-                        <p className="text-yellow-200 text-sm">
-                          You are using the demo wallet. Admin access has been disabled to allow live data testing.
-                          All progress and interactions will be saved normally.
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="border-yellow-500 text-yellow-400">
-                      Demo Wallet
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Welcome Message for New Users */}
             {showWelcomeMessage && (
               <Card className="bg-gradient-to-r from-green-500/20 to-cyan-500/20 border-green-500/30">
@@ -439,7 +410,7 @@ export default function HoodieAcademy() {
             </div>
 
             {/* Admin Dashboard Access */}
-            {isAdmin && !isDemoWallet && (
+            {isAdmin && (
               <Card className="bg-slate-800/50 border-purple-500/30 mb-6">
                 <CardHeader>
                   <CardTitle className="text-purple-400 flex items-center space-x-2">
@@ -466,43 +437,6 @@ export default function HoodieAcademy() {
                         <Shield className="w-4 h-4" />
                         Access Dashboard
                       </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Demo Wallet Admin Access Disabled */}
-            {isDemoWallet && (
-              <Card className="bg-slate-800/50 border-yellow-500/30 mb-6">
-                <CardHeader>
-                  <CardTitle className="text-yellow-400 flex items-center space-x-2">
-                    <Shield className="w-5 h-5" />
-                    <span>Admin Access Disabled</span>
-                    <Badge variant="outline" className="ml-auto text-yellow-400 border-yellow-500/30">
-                      Demo Mode
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center text-center gap-4">
-                    <div>
-                      <p className="mobile-first-text text-gray-300 mb-3">
-                        Admin access is disabled for the demo wallet to allow live data testing.
-                        Use a different wallet to access admin features.
-                      </p>
-                      <div className="flex items-center justify-center gap-2 mb-4">
-                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                        <span className="mobile-first-text text-yellow-400">Demo wallet detected</span>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      disabled
-                      className="mobile-first-button border-yellow-500/30 text-yellow-400 cursor-not-allowed"
-                    >
-                      <Shield className="w-4 h-4" />
-                      Access Disabled
                     </Button>
                   </div>
                 </CardContent>
