@@ -1,4 +1,4 @@
-export const dynamic = "force-static";
+'use client';
       import { useState, useEffect } from "react";
       import TokenGate from "@/components/TokenGate";
       import { Button } from "@/components/ui/button";
