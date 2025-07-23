@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 'use client';
 
 import { ProfileView } from '@/components/profile/ProfileView';

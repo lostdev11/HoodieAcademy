@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import SquadChatClient from './SquadChatClient';
 
 // Generate static params for all possible squad routes
