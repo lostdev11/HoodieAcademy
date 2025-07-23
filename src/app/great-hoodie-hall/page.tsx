@@ -303,40 +303,32 @@ export default function GreatHoodieHall() {
   };
 
   const checkWifHoodieOwnership = useCallback(async () => {
-    if (!walletAddress || !HELIUS_API_KEY) {
-      if(!HELIUS_API_KEY) console.error("Helius API key is missing. Ensure NEXT_PUBLIC_HELIUS_API_KEY is set.");
+    if (!walletAddress) {
+      console.error("No wallet address provided.");
       return;
     }
     setLoading(true);
     try {
-      const response = await axios.post(
-        `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, 
-        {
-          jsonrpc: "2.0",
-          id: "my-id",
-          method: "getAssetsByOwner",
-          params: {
-            ownerAddress: walletAddress,
-            page: 1, 
-            limit: 1000,
-            displayOptions: {
-              showCollectionMetadata: true 
-            }
-          },
-        },
-        { headers: { 'Content-Type': 'application/json' } }
-      );
+      // Use our server-side API route to avoid CORS issues
+      const response = await axios.post('/api/nft-verification', {
+        walletAddress
+      }, {
+        headers: { 
+          'Content-Type': 'application/json'
+        }
+      });
       
-      const nfts = response.data.result?.items || [];
-      const hasWifHoodie = nfts.some((nft: any) => 
-        nft.grouping?.find((group: any) => group.group_key === 'collection' && group.group_value === WIFHOODIE_COLLECTION_ADDRESS)
-      );
+      const hasWifHoodie = response.data.isHolder;
+      console.log("Does the wallet hold a WifHoodie NFT?", hasWifHoodie);
+      console.log("NFTs found:", response.data.nftsFound);
+      console.log("API used:", response.data.apiUsed);
+      
       setIsHolder(hasWifHoodie);
-      if (!hasWifHoodie && nfts.length > 0) {
-        console.log("User owns NFTs, but not from the WifHoodie collection:", WIFHOODIE_COLLECTION_ADDRESS);
-        console.log("Owned NFTs collections:", nfts.map((nft:any) => nft.grouping?.find((group: any) => group.group_key === 'collection')?.group_value).filter(Boolean));
-      } else if (nfts.length === 0) {
-        console.log("User owns no NFTs according to Helius.");
+      if (!hasWifHoodie && response.data.nftsFound > 0) {
+        console.log("User owns NFTs, but not from the WifHoodie collection");
+        console.log("Sample NFTs:", response.data.nfts);
+      } else if (response.data.nftsFound === 0) {
+        console.log("User owns no NFTs according to the API.");
       }
 
     } catch (error) {
@@ -348,7 +340,7 @@ export default function GreatHoodieHall() {
       alert("Failed to verify WifHoodie NFT.");
     }
     setLoading(false);
-  }, [walletAddress, HELIUS_API_KEY]);
+  }, [walletAddress]);
 
   useEffect(() => {
     if (walletAddress) {

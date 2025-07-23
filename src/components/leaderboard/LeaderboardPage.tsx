@@ -14,6 +14,7 @@ import {
   Users, 
   Target,
   RefreshCw,
+  Calendar,
   Award
 } from 'lucide-react';
 import { LeaderboardCard } from './LeaderboardCard';

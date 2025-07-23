@@ -148,21 +148,7 @@ export function LeaderboardCard({ user, isCurrentUser = false, highlight = false
             >
               <Copy className="w-4 h-4" />
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              asChild
-              className="text-gray-400 hover:text-blue-400 hover:bg-blue-500/10"
-              title="View on Solscan"
-            >
-              <a 
-                href={`https://solscan.io/account/${user.walletAddress}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            </Button>
+            {/* Removed Solscan link button */}
           </div>
           
           <Button

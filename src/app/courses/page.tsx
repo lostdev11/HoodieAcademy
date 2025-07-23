@@ -16,7 +16,8 @@ import { GlowingCoinIcon } from "@/components/icons/GlowingCoinIcon";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { squadTracks, getSquadForCourse, getCoursesForSquad } from "@/lib/squadData";
-import { isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet } from "@/lib/utils";
+import { isCurrentUserAdmin, getConnectedWallet, getCompletedCoursesCount } from "@/lib/utils";
+import { fetchUserByWallet } from "@/lib/supabase";
 
 // Simple course data
 const allCourses: Array<{
@@ -840,7 +841,6 @@ export default function CoursesPage() {
   const [selectedSquad, setSelectedSquad] = useState<string | null>(null);
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isDemoWallet, setIsDemoWallet] = useState(false);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -851,14 +851,25 @@ export default function CoursesPage() {
   }, []);
 
   useEffect(() => {
-    // Check if user is admin
-    setIsAdmin(isCurrentUserAdmin());
+    // Get wallet address from localStorage
+    const storedWallet = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
+    
+    // Check if user is admin using Supabase
+    const checkAdminStatus = async () => {
+      if (storedWallet) {
+        try {
+          const user = await fetchUserByWallet(storedWallet);
+          setIsAdmin(user?.is_admin || false);
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    };
 
-    // Check if this is the demo wallet
-    const connectedWallet = getConnectedWallet();
-    if (connectedWallet && connectedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
-      setIsDemoWallet(true);
-    }
+    checkAdminStatus();
 
     // Get user's squad assignment
     const squadResult = localStorage.getItem('userSquad');
@@ -884,9 +895,8 @@ export default function CoursesPage() {
         if (savedStatus) {
           try {
             const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
-            const courseData = allCourses.find(c => c.localStorageKey === key);
-            const totalLessons = courseData?.totalLessons || 1;
             const completedLessons = parsedStatus.filter(s => s === 'completed').length;
+            const totalLessons = parsedStatus.length;
             const progress = Math.round((completedLessons / totalLessons) * 100);
             const isCompleted = progress === 100;
             return { completed: isCompleted, progress };
@@ -911,8 +921,15 @@ export default function CoursesPage() {
       courseStatus: status,
       userSquad: userSquad,
       isAdmin: isAdmin,
+      isAdminBypass: isAdminBypass,
       isLoading: false,
-      allCourses: allCourses.map(c => ({ id: c.id, title: c.title }))
+      allCourses: allCourses.map(c => ({ id: c.id, title: c.title })),
+      completedCoursesCount: getCompletedCoursesCount(),
+      localStorageData: allCourses.map(c => ({
+        id: c.id,
+        key: c.localStorageKey,
+        data: c.localStorageKey ? localStorage.getItem(c.localStorageKey) : null
+      }))
     });
     
     setCourseCompletionStatus(status);
@@ -973,33 +990,53 @@ export default function CoursesPage() {
   const getFilteredCourses = () => {
     let filteredCourses = allCourses;
 
-    // If user is not admin and has a squad, filter by squad
-    // Demo wallet should be treated as a regular user (no admin bypass)
-    if (!isAdmin && !isAdminBypass && userSquad && !isDemoWallet) {
-      const squadCourseIds = getCoursesForSquad(userSquad);
-      filteredCourses = allCourses.filter(course => squadCourseIds.includes(course.id));
-    }
+    console.log('Filtering courses:', {
+      activeFilter,
+      selectedSquad,
+      userSquad,
+      isAdmin,
+      isAdminBypass,
+      totalCourses: allCourses.length
+    });
 
-    // Apply additional filters
+    // Apply filters based on active filter
     switch (activeFilter) {
       case 'completed':
-        return filteredCourses.filter(course => 
+        const completedCourses = filteredCourses.filter(course => 
           course.localStorageKey && courseCompletionStatus[course.localStorageKey]?.completed
         );
+        console.log('Completed courses filter:', {
+          totalFiltered: filteredCourses.length,
+          completedCount: completedCourses.length,
+          completedCourses: completedCourses.map(c => ({ id: c.id, title: c.title })),
+          courseStatus: courseCompletionStatus
+        });
+        return completedCourses;
       case 'squads':
         if (selectedSquad) {
+          // Show courses for selected squad
           const squadCourseIds = getCoursesForSquad(selectedSquad);
-          return filteredCourses.filter(course => squadCourseIds.includes(course.id));
+          const squadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
+          console.log('Selected squad courses:', squadCourses.length);
+          return squadCourses;
+        } else if (!isAdmin && !isAdminBypass && userSquad) {
+          // Show courses for user's squad when no specific squad is selected
+          const squadCourseIds = getCoursesForSquad(userSquad);
+          const userSquadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
+          console.log('User squad courses:', userSquadCourses.length);
+          return userSquadCourses;
         }
+        console.log('All courses (squads filter):', filteredCourses.length);
         return filteredCourses;
       default:
+        // For 'all' filter, show all courses regardless of squad restrictions
+        // The 'all' tab should show all courses, regardless of squad restrictions
+        console.log('All courses (all filter):', filteredCourses.length);
         return filteredCourses;
     }
   };
 
-  const completedCoursesCount = allCourses.filter(course => 
-    course.localStorageKey && courseCompletionStatus[course.localStorageKey]?.completed
-  ).length;
+  const completedCoursesCount = getCompletedCoursesCount();
 
   if (isLoading) {
     return (
@@ -1064,7 +1101,7 @@ export default function CoursesPage() {
             )}
 
             {/* Admin Access Notice */}
-            {isAdmin && !isDemoWallet && (
+            {isAdmin && (
               <div className="mt-6">
                 <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-purple-500/30 backdrop-blur-sm">
                   <CardContent className="p-4">
@@ -1073,23 +1110,6 @@ export default function CoursesPage() {
                       <div className="text-center">
                         <p className="text-purple-400 font-semibold">Admin Access</p>
                         <p className="text-gray-300 text-sm">Password authenticated - viewing all courses</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Demo Wallet Notice */}
-            {isDemoWallet && (
-              <div className="mt-6">
-                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-yellow-500/30 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-center space-x-3">
-                      <span className="text-yellow-400 text-lg">🔧</span>
-                      <div className="text-center">
-                        <p className="text-yellow-400 font-semibold">Demo Mode Active</p>
-                        <p className="text-gray-300 text-sm">Admin access disabled - viewing all courses for testing</p>
                       </div>
                     </div>
                   </CardContent>

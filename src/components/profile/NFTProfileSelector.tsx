@@ -296,23 +296,7 @@ export function NFTProfileSelector({
 
             {/* View on Explorer Link */}
             {walletAddress && (
-              <div className="text-center pt-4 border-t border-slate-600/30">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="text-cyan-400 hover:text-cyan-300"
-                >
-                  <a 
-                    href={`https://solscan.io/account/${walletAddress}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    View Wallet on Solscan
-                  </a>
-                </Button>
-              </div>
+              null // Removed Solscan link button
             )}
           </div>
         </DialogContent>

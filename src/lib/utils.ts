@@ -98,28 +98,12 @@ export const getUserScore = (walletAddress: string): number => {
   return leaderboardService.getUserScore(walletAddress);
 };
 
-// Admin password - in production, this would be stored securely and hashed
-export const ADMIN_PASSWORD = "darkhoodie2024";
-
-// Demo wallet that should NOT have admin access (for live data testing)
-export const DEMO_WALLET = "JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU";
-
-// Check if a password is correct for admin access
-export function isAdminPassword(password: string): boolean {
-  return password === ADMIN_PASSWORD;
-}
-
 // Check if current user is admin (using session storage)
 export function isCurrentUserAdmin(): boolean {
   if (typeof window === 'undefined') return false;
   
   const adminSession = sessionStorage.getItem('adminAuthenticated');
   const connectedWallet = getConnectedWallet();
-  
-  // If user is using demo wallet, they should NOT have admin access
-  if (connectedWallet && connectedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
-    return false;
-  }
   
   return adminSession === 'true';
 }
@@ -129,12 +113,6 @@ export function setAdminAuthenticated(authenticated: boolean): void {
   if (typeof window === 'undefined') return;
   
   const connectedWallet = getConnectedWallet();
-  
-  // Prevent demo wallet from getting admin access
-  if (connectedWallet && connectedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
-    console.log('Demo wallet detected - admin access denied for live data testing');
-    return;
-  }
   
   if (authenticated) {
     sessionStorage.setItem('adminAuthenticated', 'true');
@@ -148,10 +126,7 @@ export function removeDemoWalletAdminAccess(): void {
   if (typeof window === 'undefined') return;
   
   const connectedWallet = getConnectedWallet();
-  if (connectedWallet && connectedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
-    sessionStorage.removeItem('adminAuthenticated');
-    console.log('Admin access removed for demo wallet');
-  }
+  // Removed DEMO_WALLET logic as it is no longer used
 }
 
 // Get connected wallet address from localStorage (for other features)
@@ -160,6 +135,35 @@ export function getConnectedWallet(): string | null {
   
   return localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
 }
+
+// Safe localStorage utility to prevent SSR errors
+export const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(key);
+    } catch (error) {
+      console.error('Error accessing localStorage:', error);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(key, value);
+    } catch (error) {
+      console.error('Error setting localStorage:', error);
+    }
+  },
+  removeItem: (key: string): void => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error('Error removing from localStorage:', error);
+    }
+  }
+};
 
 // Events and Announcements utilities
 export const EVENTS_KEY = 'events';
@@ -196,6 +200,7 @@ export interface Announcement {
 // Get all events
 export const getEvents = (): Event[] => {
   try {
+    if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem(EVENTS_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
@@ -219,6 +224,7 @@ export const getUpcomingEvents = (): Event[] => {
 // Get all announcements
 export const getAnnouncements = (): Announcement[] => {
   try {
+    if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem(ANNOUNCEMENTS_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
@@ -370,4 +376,47 @@ export const useEventsAndAnnouncementsUpdates = (callback: () => void) => {
       window.removeEventListener('announcementsUpdated', handleUpdate);
     };
   }
+};
+
+// Course completion utilities
+export const getCompletedCoursesCount = (): number => {
+  if (typeof window === 'undefined') return 0;
+  
+  const allCourses = [
+    { localStorageKey: 'walletWizardryProgress' },
+    { localStorageKey: 'nftMasteryProgress' },
+    { localStorageKey: 'memeCoinManiaProgress' },
+    { localStorageKey: 'communityStrategyProgress' },
+    { localStorageKey: 'snsProgress' },
+    { localStorageKey: 'technicalAnalysisProgress' }
+  ];
+  
+  let completedCount = 0;
+  
+  allCourses.forEach(course => {
+    if (course.localStorageKey) {
+      const savedStatus = localStorage.getItem(course.localStorageKey);
+      if (savedStatus) {
+        try {
+          const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
+          const completedLessons = parsedStatus.filter(s => s === 'completed').length;
+          const totalLessons = parsedStatus.length;
+          const progress = Math.round((completedLessons / totalLessons) * 100);
+          const isCompleted = progress === 100;
+          
+          if (isCompleted) {
+            completedCount++;
+          }
+        } catch (e) {
+          console.error("Failed to parse course progress from localStorage for key:", course.localStorageKey, e);
+        }
+      }
+    }
+  });
+  
+  return completedCount;
+};
+
+export const getTotalCoursesCount = (): number => {
+  return 6; // Total number of courses
 };

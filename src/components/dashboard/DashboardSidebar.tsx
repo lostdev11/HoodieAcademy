@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,10 @@ import {
   ChevronLeft,
   ChevronRight,
   BarChart3,
-  Video
+  Video,
+  MessageCircle
 } from 'lucide-react';
+import { fetchUserByWallet } from '@/lib/supabase';
 
 interface SidebarItem {
   id: string;
@@ -24,8 +26,152 @@ interface SidebarItem {
   icon: React.ReactNode;
   href: string;
   badge?: number;
+  dynamic?: boolean;
 }
 
+interface DashboardSidebarProps {
+  isCollapsed?: boolean;
+  onToggle?: () => void;
+}
+
+export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSidebarProps) {
+  const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(isCollapsed);
+  const [userSquad, setUserSquad] = useState<string | null>(null);
+  const [squadChatUrl, setSquadChatUrl] = useState<string>('/squads/hoodie-creators/chat');
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Helper function to get squad chat URL
+  const getSquadChatUrl = (squadName: string): string => {
+    if (!squadName) return '/squads/hoodie-creators/chat';
+    
+    // Map squad names to their URL paths (including emoji variations)
+    const squadUrlMapping: { [key: string]: string } = {
+      // Full names with emojis (from quiz.json)
+      '🎨 Hoodie Creators': 'hoodie-creators',
+      '🧠 Hoodie Decoders': 'hoodie-decoders',
+      '🎤 Hoodie Speakers': 'hoodie-speakers', 
+      '⚔️ Hoodie Raiders': 'hoodie-raiders',
+      '🦅 Hoodie Rangers': 'hoodie-rangers',
+      '🏦 Treasury Builders': 'treasury-builders',
+      // Full names without emojis
+      'Hoodie Creators': 'hoodie-creators',
+      'Hoodie Decoders': 'hoodie-decoders',
+      'Hoodie Speakers': 'hoodie-speakers',
+      'Hoodie Raiders': 'hoodie-raiders',
+      'Hoodie Rangers': 'hoodie-rangers',
+      'Treasury Builders': 'treasury-builders',
+      // Lowercase variations
+      'hoodie creators': 'hoodie-creators',
+      'hoodie decoders': 'hoodie-decoders',
+      'hoodie speakers': 'hoodie-speakers',
+      'hoodie raiders': 'hoodie-raiders',
+      'hoodie rangers': 'hoodie-rangers',
+      'treasury builders': 'treasury-builders',
+      // Squad IDs (fallback)
+      'creators': 'hoodie-creators',
+      'decoders': 'hoodie-decoders',
+      'speakers': 'hoodie-speakers',
+      'raiders': 'hoodie-raiders',
+      'rangers': 'hoodie-rangers',
+      'treasury': 'treasury-builders'
+    };
+
+    // Try exact match first
+    if (squadUrlMapping[squadName]) {
+      return `/squads/${squadUrlMapping[squadName]}/chat`;
+    }
+
+    // Try normalized match (remove emojis and normalize)
+    const normalized = squadName.replace(/^[🎨🧠🎤⚔️🦅🏦🔍🗣️]+\s*/, '').toLowerCase().trim();
+    if (squadUrlMapping[normalized]) {
+      return `/squads/${squadUrlMapping[normalized]}/chat`;
+    }
+
+    // Try squad ID match
+    const squadMapping: { [key: string]: string } = {
+      'hoodie creators': 'creators',
+      'hoodie decoders': 'decoders', 
+      'hoodie speakers': 'speakers',
+      'hoodie raiders': 'raiders',
+      'hoodie rangers': 'rangers',
+      'treasury builders': 'treasury'
+    };
+    const squadId = squadMapping[normalized] || normalized;
+    if (squadUrlMapping[squadId]) {
+      return `/squads/${squadUrlMapping[squadId]}/chat`;
+    }
+
+    // Fallback: convert to URL-friendly format
+    const urlFriendly = squadName
+      .toLowerCase()
+      .replace(/[🎨🧠🎤⚔️🦅🏦🔍🗣️]/g, '') // Remove emojis
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/[^a-z0-9-]/g, '') // Remove special characters
+      .trim();
+    
+    return `/squads/${urlFriendly}/chat`;
+  };
+
+  // Load user's squad
+  useEffect(() => {
+    const squadResult = localStorage.getItem('userSquad');
+    if (squadResult) {
+      try {
+        const result = JSON.parse(squadResult);
+        let userSquadName: string;
+        
+        // Handle both object and string formats
+        if (typeof result === 'object' && result.name) {
+          userSquadName = result.name;
+        } else if (typeof result === 'string') {
+          userSquadName = result;
+        } else {
+          throw new Error('Invalid squad result format');
+        }
+        
+        setUserSquad(userSquadName);
+        setSquadChatUrl(getSquadChatUrl(userSquadName));
+      } catch (error) {
+        console.error('Error parsing squad result:', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (typeof window === 'undefined' || !window.solana) return;
+      try {
+        // Connect to Phantom wallet if not already connected
+        const provider = window.solana;
+        if (!provider.isConnected) {
+          await provider.connect();
+        }
+        const walletAddress = provider.publicKey?.toString();
+        if (!walletAddress) return;
+        console.log('👤 Checking admin for wallet:', walletAddress);
+        const user = await fetchUserByWallet(walletAddress);
+        if (user && user.is_admin) {
+          setIsAdmin(true);
+          console.log('✅ Admin status: true');
+        } else {
+          setIsAdmin(false);
+          console.log('✅ Admin status: false');
+        }
+      } catch (err) {
+        setIsAdmin(false);
+        console.error('💥 Failed to check admin:', err);
+      }
+    };
+    checkAdmin();
+  }, []);
+
+  const handleToggle = () => {
+    setCollapsed(!collapsed);
+    onToggle?.();
+  };
+
+  // Create sidebar items with dynamic squad chat
 const sidebarItems: SidebarItem[] = [
   {
     id: 'home',
@@ -45,6 +191,13 @@ const sidebarItems: SidebarItem[] = [
     icon: <BookOpen className="w-5 h-5" />,
     href: '/courses'
   },
+    {
+      id: 'squad-chat',
+      label: userSquad ? `${userSquad} Chat` : 'Squad Chat',
+      icon: <MessageCircle className="w-5 h-5" />,
+      href: squadChatUrl,
+      dynamic: true
+    },
   {
     id: 'leaderboard',
     label: 'Leaderboard',
@@ -69,27 +222,14 @@ const sidebarItems: SidebarItem[] = [
     icon: <Trophy className="w-5 h-5" />,
     href: '/achievements'
   },
-  {
+  // Only include Admin tab if isAdmin is true
+  ...(isAdmin ? [{
     id: 'admin',
     label: 'Admin',
     icon: <Settings className="w-5 h-5" />,
     href: '/admin'
-  }
+  }] : [])
 ];
-
-interface DashboardSidebarProps {
-  isCollapsed?: boolean;
-  onToggle?: () => void;
-}
-
-export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSidebarProps) {
-  const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(isCollapsed);
-
-  const handleToggle = () => {
-    setCollapsed(!collapsed);
-    onToggle?.();
-  };
 
   return (
     <div className={`bg-slate-900/80 border-r border-cyan-500/30 backdrop-blur-sm transition-all duration-300 ${
@@ -140,7 +280,7 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
       {/* Navigation Items */}
       <nav className="flex-1 p-4 space-y-2">
         {sidebarItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.dynamic && pathname.includes('/squads/') && pathname.includes('/chat'));
           return (
             <Link key={item.id} href={item.href}>
               <Button

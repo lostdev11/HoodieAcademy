@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Wallet } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface TokenGateProps {
   children: React.ReactNode;
@@ -17,118 +18,25 @@ declare global {
 
 type WalletProvider = 'phantom';
 
-const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [isHolder, setIsHolder] = useState(false);
+const VERIFICATION_SESSION_KEY = 'wifhoodie_verification';
+
+export default function TokenGate({ children }: TokenGateProps) {
+  const router = useRouter()
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [isConnected, setIsConnected] = useState(false)
+  const [walletAddress, setWalletAddress] = useState<string | null>(null)
+  const [isHolder, setIsHolder] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showWalletSelector, setShowWalletSelector] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [hasBeenConnected, setHasBeenConnected] = useState(false);
+  const isPhantomInstalled = typeof window !== 'undefined' && window.solana?.isPhantom;
 
-  const WIFHOODIE_COLLECTION_ID = "H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ";
-  const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
-  const VERIFICATION_SESSION_KEY = 'wifhoodie_verification_session';
-
-  // Check for existing verification session on component mount
-  useEffect(() => {
-    // Debug: Check if Helius API key is loaded
-    console.log("🔑 Debug: Helius API key loaded:", HELIUS_API_KEY ? "YES" : "NO");
-    if (!HELIUS_API_KEY) {
-      console.error("❌ Debug: Helius API key is missing from environment variables!");
-    }
-    
-    if (typeof window !== 'undefined') {
-      const sessionData = sessionStorage.getItem(VERIFICATION_SESSION_KEY);
-      if (sessionData) {
-        try {
-          const { walletAddress: sessionWallet, isHolder: sessionIsHolder, timestamp } = JSON.parse(sessionData);
-          const now = Date.now();
-          const sessionAge = now - timestamp;
-          const sessionValid = sessionAge < 30 * 60 * 1000; // 30 minutes
-
-          if (sessionValid && sessionIsHolder) {
-            setWalletAddress(sessionWallet);
-            setIsHolder(true);
-            setHasBeenConnected(true);
-            setShowSuccess(false); // Ensure success message is not shown for existing sessions
-            console.log('Using existing verification session');
-            return; // Exit early if we have a valid session
-          } else {
-            // Clear expired session
-            sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
-            localStorage.removeItem('walletAddress');
-            localStorage.removeItem('connectedWallet');
-          }
-        } catch (error) {
-          console.error('Failed to parse verification session:', error);
-          sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
-          localStorage.removeItem('walletAddress');
-          localStorage.removeItem('connectedWallet');
-        }
-      }
-      
-      // If no valid session, check if there's a wallet address in localStorage
-      // but no session (indicating a disconnect scenario)
-      const storedWallet = localStorage.getItem('walletAddress');
-      if (storedWallet && !sessionStorage.getItem(VERIFICATION_SESSION_KEY)) {
-        // Clear any stale wallet data
-        localStorage.removeItem('walletAddress');
-        localStorage.removeItem('connectedWallet');
-      }
-    }
-  }, []);
-
-  const connectWallet = async (providerName: WalletProvider) => {
-    setError(null);
-    let provider;
-
-    if (providerName === 'phantom') {
-      if (window.solana?.isPhantom) {
-        provider = window.solana;
-      } else {
-        setError("Phantom wallet is not installed.");
-        return;
-      }
-    }
-
-    if (!provider) {
-        setError("Could not find a compatible Solana wallet.");
-        return;
-    }
-
-    try {
-      if (provider.isConnecting) return;
-      const response = await provider.connect();
-      setWalletAddress(response.publicKey.toString());
-    } catch (error: any) {
-      console.error("Wallet connection failed:", error);
-      setError(`Wallet connection failed: ${error.message || 'User rejected the request.'}`);
-    } finally {
-      setShowWalletSelector(false);
-    }
-  };
-
-  const disconnectWallet = () => {
-    setWalletAddress(null);
-    setIsHolder(false);
-    setError(null);
-    setShowSuccess(false);
-    setHasBeenConnected(false);
-    
-    // Clear all wallet-related storage
-    sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
-    localStorage.removeItem('walletAddress');
-    localStorage.removeItem('connectedWallet');
-    
-    // Disconnect from wallet providers
-    if (window.solana?.disconnect) {
-      window.solana.disconnect();
-    }
-  };
-
-  const checkWifHoodieOwnership = async (showSuccessMessage: boolean = true) => {
-    if (!walletAddress) {
+  // Add the helper function inside the component so it can access state setters
+  const checkWifHoodieOwnership = async (wallet: string, showSuccessMessage: boolean = true) => {
+    if (!wallet) {
       console.log("🔍 Debug: No wallet address provided, skipping verification");
       return;
     }
@@ -142,7 +50,7 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
     }
     
     console.log("🔑 Debug: Helius API key is defined:", HELIUS_API_KEY ? "YES" : "NO");
-    console.log("👛 Debug: Checking wallet:", walletAddress);
+    console.log("👛 Debug: Checking wallet:", wallet);
     
     setLoading(true);
     setError(null);
@@ -161,7 +69,7 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
           id: 'my-id',
           method: 'getAssetsByOwner',
           params: {
-            ownerAddress: walletAddress,
+            ownerAddress: wallet,
             page: 1,
             limit: 1000,
           },
@@ -232,15 +140,15 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         
         // Store verification session
         const sessionData = {
-          walletAddress,
+          walletAddress: wallet,
           isHolder: true,
           timestamp: Date.now()
         };
         sessionStorage.setItem(VERIFICATION_SESSION_KEY, JSON.stringify(sessionData));
         
         // Store wallet address in localStorage for profile access
-        localStorage.setItem('walletAddress', walletAddress);
-        localStorage.setItem('connectedWallet', walletAddress);
+        localStorage.setItem('walletAddress', wallet);
+        localStorage.setItem('connectedWallet', wallet);
         
         setHasBeenConnected(true);
         
@@ -278,48 +186,62 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
     setLoading(false);
   };
 
+  // When walletAddress changes, verify ownership (but only show success if not from session)
   useEffect(() => {
     if (walletAddress) {
-      // Only show success message if this is a fresh verification (not from existing session)
       const isFreshVerification = !sessionStorage.getItem(VERIFICATION_SESSION_KEY);
-      checkWifHoodieOwnership(isFreshVerification);
+      checkWifHoodieOwnership(walletAddress, isFreshVerification);
     }
   }, [walletAddress]);
+
+  // Check if user is an admin
+  // useEffect(() => {
+  //   const checkAdminStatus = async () => {
+  //     if (walletAddress) {
+  //       const user = await fetchUserByWallet(walletAddress);
+  //       setIsAdmin(user?.is_admin || false);
+  //     }
+  //   };
+  //   checkAdminStatus();
+  // }, [walletAddress]);
+
+  const connectPhantom = async () => {
+    if (!isPhantomInstalled) {
+      setError("Phantom wallet is not installed. Please install it from https://phantom.app/")
+      return
+    }
+
+    setIsConnecting(true)
+    setError(null)
+
+    try {
+      const response = await window.solana.connect()
+      const address = response.publicKey.toString()
+
+      console.log("✅ Connected wallet:", address)
+
+      // Save address and update UI
+      localStorage.setItem('walletAddress', address)
+      setWalletAddress(address)
+      setIsConnected(true)
+
+      // Trigger NFT verification
+      await checkWifHoodieOwnership(address, true);
+    } catch (error: any) {
+      console.error("Wallet connection failed:", error)
+      setError(`Connection failed: ${error.message || 'User rejected the request.'}`)
+    } finally {
+      setIsConnecting(false)
+    }
+  }
+
+  // Remove the verifyNFT function and any fetches to /api/nft-verification in this file.
 
   if (walletAddress && loading) {
     return (
       <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900 text-center">
         <p className="text-gray-300">Verifying your WifHoodie NFT...</p>
         {error && <p className="text-red-400 mt-4">{error}</p>}
-      </div>
-    );
-  }
-
-  if (walletAddress && !loading && isHolder && showSuccess) {
-    // Check if this is a new user
-    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-    const hasDisplayName = localStorage.getItem('userDisplayName');
-    const isNewUser = !hasCompletedOnboarding || !hasDisplayName;
-    
-    return (
-      <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center p-8 bg-gray-800 rounded-xl shadow-lg"
-        >
-          <h2 className="text-2xl font-bold text-green-400 mb-4">✅ Verification Successful!</h2>
-          <p className="text-gray-300 mb-4">
-            WifHoodie NFT verified in wallet: <br/>
-            <span className="font-mono text-xs text-amber-300">{walletAddress}</span>
-          </p>
-          {isNewUser ? (
-            <p className="text-cyan-300">Redirecting to complete your profile setup...</p>
-          ) : (
-            <p className="text-green-300">Access granted to Hoodie Academy courses!</p>
-          )}
-        </motion.div>
       </div>
     );
   }
@@ -375,17 +297,19 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
         className="text-center p-8 bg-gray-800 rounded-xl shadow-lg"
       >
         <h2 className="text-2xl font-bold text-white mb-4">
-          {hasBeenConnected ? 'Welcome Back!' : 'Course Access Required'}
+          {/* {hasBeenConnected ? 'Welcome Back!' : 'Course Access Required'} */}
+          Course Access Required
         </h2>
         <p className="text-gray-300 mb-6">
-          {hasBeenConnected 
+          {/* {hasBeenConnected 
             ? 'Please reconnect your wallet to continue your learning journey.'
             : 'Connect your wallet to verify your WifHoodie NFT and access this course.'
-          }
+          } */}
+          Connect your wallet to verify your WifHoodie NFT and access this course.
         </p>
         {error && <p className="text-red-400 mb-4">{error}</p>}
         
-        {!showWalletSelector ? (
+        {/* {!showWalletSelector ? ( // This state is no longer needed
           <div className="flex justify-center">
             <Button
               onClick={() => setShowWalletSelector(true)}
@@ -407,10 +331,30 @@ const TokenGate: React.FC<TokenGateProps> = ({ children }) => {
                 Cancel
              </Button>
           </div>
+        )} */}
+        <div className="flex justify-center">
+            <Button
+              onClick={() => setLoading(true)}
+              className="bg-gradient-to-r from-green-600 to-purple-600 text-white hover:from-green-500 hover:to-purple-500 px-8 py-3 w-64"
+            >
+              <Wallet className="mr-2" size={20} />
+              Connect Wallet
+            </Button>
+          </div>
+        {loading && (
+          <div className="flex flex-col items-center space-y-3 mt-4">
+             <Button
+                onClick={() => connectWallet('phantom')}
+                className="bg-purple-600 hover:bg-purple-700 text-white w-64"
+             >
+                Connect Phantom
+             </Button>
+             <Button variant="ghost" onClick={() => setLoading(false)} className="text-gray-400">
+                Cancel
+             </Button>
+          </div>
         )}
       </motion.div>
     </div>
   );
 };
-
-export default TokenGate;
