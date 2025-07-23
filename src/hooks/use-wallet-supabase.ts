@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export function useWalletSupabase() {
   const [wallet, setWallet] = useState<string | null>(null);
@@ -17,16 +17,15 @@ export function useWalletSupabase() {
       const response = await provider.connect();
       const walletAddress = response.publicKey.toString();
       setWallet(walletAddress);
-      const supabase = createClient();
       // Upsert last_active
       await supabase
         .from('users')
-        .upsert({ wallet: walletAddress, last_active: new Date().toISOString() }, { onConflict: 'wallet' });
+        .upsert({ wallet_address: walletAddress, last_active: new Date().toISOString() }, { onConflict: 'wallet_address' });
       // Check admin
       const { data, error: adminError } = await supabase
         .from('users')
         .select('is_admin')
-        .eq('wallet', walletAddress)
+        .eq('wallet_address', walletAddress)
         .single();
       if (adminError) throw adminError;
       setIsAdmin(!!data?.is_admin);
@@ -60,10 +59,9 @@ export function useWalletSupabase() {
   const trackCourseStart = useCallback(async (course_slug: string) => {
     if (!wallet) return;
     try {
-      const supabase = createClient();
       await supabase
-        .from('course_progress')
-        .upsert({ wallet, course_slug, started_at: new Date().toISOString() }, { onConflict: 'wallet,course_slug' });
+        .from('user_course_completions')
+        .upsert({ wallet_address: wallet, course_id: course_slug, started_at: new Date().toISOString() }, { onConflict: 'wallet_address,course_id' });
     } catch (err) {
       console.error('Course start tracking failed:', err);
     }
@@ -73,10 +71,9 @@ export function useWalletSupabase() {
   const trackCourseCompletion = useCallback(async (course_slug: string) => {
     if (!wallet) return;
     try {
-      const supabase = createClient();
       await supabase
-        .from('course_completions')
-        .insert({ wallet, course_slug, completed_at: new Date().toISOString() });
+        .from('user_course_completions')
+        .upsert({ wallet_address: wallet, course_id: course_slug, completed_at: new Date().toISOString() }, { onConflict: 'wallet_address,course_id' });
     } catch (err) {
       console.error('Completion logging failed:', err);
     }

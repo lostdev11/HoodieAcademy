@@ -2,9 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse JSON body safely
-    const body = await request.json().catch(() => null);
-    const walletAddress = body?.walletAddress;
+    let walletAddress = null;
+
+    try {
+      const body = await request.json();
+      walletAddress = body.walletAddress;
+      console.log('🧠 Parsed walletAddress:', walletAddress);
+    } catch (jsonError) {
+      console.error('❌ Failed to parse JSON body:', jsonError);
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+    }
+
+    console.log('🧠 API Triggered: walletAddress =', walletAddress);
 
     if (!walletAddress) {
       return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
@@ -111,7 +120,14 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('[🔥] Uncaught NFT Verification API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('❌ NFT Verification API error:', error?.message || error);
+    console.error('🔍 Full error object:', error);
+    return NextResponse.json(
+      {
+        error: 'Failed to verify NFT ownership',
+        details: error?.message || JSON.stringify(error)
+      },
+      { status: 500 }
+    );
   }
 } 

@@ -1,31 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Fallback values for development
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mchwxspjjgyboshzqrsd.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1jaHd4c3Bqamd5Ym9zaHpxcnNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0ODY5ODIsImV4cCI6MjA2NzA2Mjk4Mn0.MSn5FKMQfTsYmTE6j1dSwEX6H7ASR09zEyGPX0kX1r0'
+console.log("✅ SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+console.log("✅ SUPABASE KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-// Validate configuration
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables')
-  throw new Error('Missing Supabase environment variables')
-}
-
-// Log for debugging (remove in production)
-console.log('Supabase URL:', supabaseUrl ? 'Set' : 'Not set')
-console.log('Supabase Key:', supabaseAnonKey ? 'Set' : 'Not set')
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
-  }
-})
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 // Database types
 export interface Message {
@@ -263,6 +244,25 @@ export async function completeCourse(user_id: string, course_id: string) {
     console.error('Error completing course:', error);
     throw error;
   }
+}
+
+// Record course completion for a wallet address
+export async function recordCourseCompletion(walletAddress: string, courseId: string) {
+  const { data, error } = await supabase
+    .from('course_progress')
+    .upsert([
+      {
+        wallet_address: walletAddress,
+        course_id: courseId,
+        completed_at: new Date().toISOString(),
+      },
+    ]);
+
+  if (error) {
+    console.error('Error recording course completion:', error);
+  }
+
+  return data;
 }
 
 // Fetch all course completions (admin)

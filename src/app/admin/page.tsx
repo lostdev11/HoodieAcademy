@@ -23,7 +23,9 @@ import {
   User as SupabaseUser,
   CourseCompletion,
   approveBadge,
-  resetCourses
+  resetCourses,
+  approveFinalExam,
+  unapproveFinalExam
 } from '@/lib/supabase';
 import {
   Announcement, Event, getAnnouncements, getEvents
@@ -83,6 +85,8 @@ export default function AdminDashboard() {
     { value: "🎯 Hoodie Rangers", label: "🎯 Hoodie Rangers" },
     { value: "🎨 Hoodie Creators", label: "🎨 Hoodie Creators" }
   ];
+
+  const [finalExamLoading, setFinalExamLoading] = useState<string | null>(null);
 
   // Get wallet address using your existing logic
   useEffect(() => {
@@ -273,6 +277,35 @@ export default function AdminDashboard() {
     setShowUserViewModal(true);
   };
 
+  // Final Exam Approve/Reject handlers
+  const handleApproveFinalExam = async (wallet_address: string, course_id: string) => {
+    if (!walletAddress) return;
+    setFinalExamLoading(wallet_address + course_id + 'approve');
+    try {
+      await approveFinalExam(wallet_address, course_id, walletAddress);
+      // Refresh completions
+      const completions = await fetchAllCourseCompletions();
+      setCourseCompletions(completions);
+    } catch (e) {
+      console.error('Error approving final exam:', e);
+    } finally {
+      setFinalExamLoading(null);
+    }
+  };
+  const handleRejectFinalExam = async (wallet_address: string, course_id: string) => {
+    setFinalExamLoading(wallet_address + course_id + 'reject');
+    try {
+      await unapproveFinalExam(wallet_address, course_id);
+      // Refresh completions
+      const completions = await fetchAllCourseCompletions();
+      setCourseCompletions(completions);
+    } catch (e) {
+      console.error('Error rejecting final exam:', e);
+    } finally {
+      setFinalExamLoading(null);
+    }
+  };
+
   if (isAdmin === null || loading) return <div className="p-8 text-center">Loading...</div>;
   if (isAdmin === false) return (
     <div className="p-8 text-center text-red-600 dark:text-red-400">
@@ -372,7 +405,7 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-800">
+          <TabsList className="grid w-full grid-cols-5 bg-slate-800">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -380,6 +413,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Courses
+            </TabsTrigger>
+            <TabsTrigger value="finalexams" className="flex items-center gap-2">
+              <Trophy className="w-4 h-4" />
+              Final Exam Approvals
             </TabsTrigger>
             <TabsTrigger value="announcements" className="flex items-center gap-2">
               <Megaphone className="w-4 h-4" />
@@ -538,6 +575,67 @@ export default function AdminDashboard() {
                       </div>
                     );
                   })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Final Exam Approvals Tab */}
+          <TabsContent value="finalexams" className="space-y-6">
+            <Card className="bg-slate-800/50">
+              <CardHeader>
+                <CardTitle>Wallet Wizardry Final Exam Approvals</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-2 text-left">Display Name</th>
+                        <th className="px-4 py-2 text-left">Wallet Address</th>
+                        <th className="px-4 py-2 text-left">Completed At</th>
+                        <th className="px-4 py-2 text-left">Status</th>
+                        <th className="px-4 py-2 text-left">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {courseCompletions.filter(c => c.course_id === 'wallet-wizardry-final-exam' && c.completed_at).map((completion) => {
+                        const user = users.find(u => u.wallet_address === completion.wallet_address);
+                        let statusBadge = null;
+                        if (completion.final_exam_approved === true) statusBadge = <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Approved</Badge>;
+                        else if (completion.final_exam_approved === false) statusBadge = <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Rejected</Badge>;
+                        else statusBadge = <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Pending</Badge>;
+                        return (
+                          <tr key={completion.id || completion.wallet_address + completion.course_id} className="border-b border-slate-700">
+                            <td className="px-4 py-2">{user?.display_name || 'Unknown'}</td>
+                            <td className="px-4 py-2 font-mono text-xs break-all">{completion.wallet_address}</td>
+                            <td className="px-4 py-2">{completion.completed_at ? new Date(completion.completed_at).toLocaleString() : '-'}</td>
+                            <td className="px-4 py-2">{statusBadge}</td>
+                            <td className="px-4 py-2">
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant={completion.final_exam_approved === true ? "outline" : "default"}
+                                  disabled={completion.final_exam_approved === true || finalExamLoading === completion.wallet_address + completion.course_id + 'approve'}
+                                  onClick={() => handleApproveFinalExam(completion.wallet_address, completion.course_id)}
+                                >
+                                  {finalExamLoading === completion.wallet_address + completion.course_id + 'approve' ? <RefreshCw className="animate-spin w-4 h-4" /> : <CheckCircle className="w-4 h-4 mr-1" />} Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant={completion.final_exam_approved === false ? "outline" : "destructive"}
+                                  disabled={completion.final_exam_approved === false || finalExamLoading === completion.wallet_address + completion.course_id + 'reject'}
+                                  onClick={() => handleRejectFinalExam(completion.wallet_address, completion.course_id)}
+                                >
+                                  {finalExamLoading === completion.wallet_address + completion.course_id + 'reject' ? <RefreshCw className="animate-spin w-4 h-4" /> : <XCircle className="w-4 h-4 mr-1" />} Reject
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>

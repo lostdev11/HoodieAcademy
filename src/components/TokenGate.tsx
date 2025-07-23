@@ -46,9 +46,9 @@ export default function TokenGate({ children }: TokenGateProps) {
       });
 
       const data = await res.json();
-      console.log("🎯 Debug: Response from /api/verify-holder:", data);
+      console.log("🎯 Full API response:", data);
 
-      if (data?.isHolder) {
+      if (data?.isAdmin) {
         setIsHolder(true);
         localStorage.setItem('walletAddress', wallet);
         sessionStorage.setItem(VERIFICATION_SESSION_KEY, JSON.stringify({

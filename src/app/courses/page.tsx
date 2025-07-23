@@ -125,6 +125,9 @@ export default function CoursesPage() {
   }, []);
 
   useEffect(() => {
+    // Get wallet address from localStorage
+    const storedWallet = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
+    
     // Check if user is admin using Supabase
     const checkAdminStatus = async () => {
       if (storedWallet) {
