@@ -1,3 +1,4 @@
+<<<<<<< HEAD:netlify/functions/nft-verification.js
 exports.handler = async (event, context) => {
   // Enable CORS
   const headers = {
@@ -24,6 +25,10 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({ error: 'Method not allowed' }),
     };
   }
+=======
+export const dynamic = 'force-dynamic'
+import { NextRequest, NextResponse } from 'next/server'
+>>>>>>> main:src/app/api/nft-verification/route.ts
 
   try {
     let walletAddress = null;
