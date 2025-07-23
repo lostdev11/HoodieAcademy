@@ -163,9 +163,7 @@ export default function HoodieAcademy() {
       setUserRank(rank);
       setUserScore(score);
       
-      // if (storedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
-      //   setIsDemoWallet(true);
-      // }
+
       
       // Load real data
       setRealAnnouncements(getRealAnnouncements());
@@ -748,7 +746,9 @@ export default function HoodieAcademy() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
-                      <p className="text-2xl font-bold text-cyan-400">{userScore > 0 ? Math.floor(userScore / 300) : 0}</p>
+                      <p className="text-2xl font-bold text-cyan-400">
+                        {Math.floor((overallProgress / 100) * 6)}/6
+                      </p>
                       <p className="text-sm text-gray-400">Courses Completed</p>
                     </div>
                     <div>
