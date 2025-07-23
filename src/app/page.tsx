@@ -163,8 +163,9 @@ export default function HoodieAcademy() {
       setUserRank(rank);
       setUserScore(score);
       
-      // Set demo wallet to false since we removed DEMO_WALLET
-      setIsDemoWallet(false);
+      // if (storedWallet.toLowerCase() === DEMO_WALLET.toLowerCase()) {
+      //   setIsDemoWallet(true);
+      // }
       
       // Load real data
       setRealAnnouncements(getRealAnnouncements());
