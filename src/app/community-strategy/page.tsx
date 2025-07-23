@@ -23,7 +23,6 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { recordCourseCompletion } from '@/lib/supabase';
 
 interface PhantomResponse {
   publicKey: {
@@ -323,12 +322,6 @@ export default function CommunityStrategyPage() {
       }
       setLessonStatus(newLessonStatus);
       saveProgress(newLessonStatus);
-      if (newLessonStatus.every(status => status === 'completed')) {
-        const walletAddress = localStorage.getItem('walletAddress');
-        if (walletAddress) {
-          recordCourseCompletion(walletAddress, 'community-strategy').catch(console.error);
-        }
-      }
     } else {
       setFeedbackModalContent({ title: "Quiz Failed", description: `You scored ${score}/${totalQuestions}. Review the strategies and try again. You need at least ${Math.ceil(PASSING_PERCENTAGE * totalQuestions)} correct answers.` });
       setTimeout(() => setShowFeedbackModal(false), 3000);

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { updateScoreForLessonCompletion } from '@/lib/utils';
-import { updateUserActivity, recordCourseCompletion } from '@/lib/supabase';
 
 export default function Tier2() {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -24,7 +23,7 @@ export default function Tier2() {
     }
   }, []);
 
-  const markAsCompleted = async () => {
+  const markAsCompleted = () => {
     if (typeof window !== 'undefined') {
       const savedStatus = localStorage.getItem('walletWizardryProgress');
       let parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = ['completed', 'unlocked', 'locked', 'locked'];
@@ -44,26 +43,6 @@ export default function Tier2() {
       // Update leaderboard score
       const walletAddress = localStorage.getItem('walletAddress') || 'demo-wallet';
       updateScoreForLessonCompletion(walletAddress, 'wallet-wizardry', 1, 4); // tier-2 is lesson 1 of 4
-      
-      // Track user activity in Supabase
-      if (walletAddress && walletAddress !== 'demo-wallet') {
-        try {
-          await updateUserActivity(walletAddress, 'course_completion');
-          console.log('✅ Course completion activity recorded');
-        } catch (error) {
-          console.error('❌ Error recording course completion activity:', error);
-        }
-      }
-
-      const walletAddressForSupabase = localStorage.getItem('walletAddress');
-      if (walletAddressForSupabase) {
-        try {
-          await recordCourseCompletion(walletAddressForSupabase, 'wallet-wizardry');
-          console.log('✅ Wallet Wizardry course completion recorded in Supabase');
-        } catch (error) {
-          console.error('❌ Error recording Wallet Wizardry course completion in Supabase:', error);
-        }
-      }
       
       setIsCompleted(true);
     }

@@ -9,7 +9,6 @@ import { motion } from 'framer-motion';
 import { PixelHoodieIcon } from "@/components/icons/PixelHoodieIcon";
 import { ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
 import { updateScoreForQuizCompletion } from '@/lib/utils';
-import { recordCourseCompletion } from '@/lib/supabase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -321,19 +320,12 @@ export default function NftMasteryPage() {
       }
       setLessonStatus(newLessonStatus);
       saveProgress(newLessonStatus);
-
-      if (newLessonStatus.every(status => status === 'completed')) {
-        const walletAddress = localStorage.getItem('walletAddress');
-        if (walletAddress) {
-          recordCourseCompletion(walletAddress, 'nft-mastery').catch(console.error);
-        }
-      }
     } else {
       setFeedbackModalContent({ title: "Quiz Failed", description: `You scored ${score}/${totalQuestions}. Please review the material and try again. You need at least ${Math.ceil(PASSING_PERCENTAGE * totalQuestions)} correct answers.` });
       setTimeout(() => setShowFeedbackModal(false), 3000);
     }
     setShowFeedbackModal(true);
-  }, [selectedAnswers, currentLesson, currentLessonIndex, lessonStatus, lessonsData.length]);
+  }, [selectedAnswers, currentLesson, currentLessonIndex, lessonStatus]);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => {

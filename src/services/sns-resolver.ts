@@ -17,8 +17,8 @@ export class MockSNSResolver implements SNSResolver {
     'crypto.sol': '2c...pqr',
     'nft.sol': '4d...stu',
     'dao.sol': '6e...vwx',
-    // Remove demo wallet mapping
-    // 'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU': 'lostdev.sol'
+    // Real wallet addresses and their .sol domains
+    'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU': 'lostdev.sol'
   };
 
   private reverseLookup: Record<string, string> = {};

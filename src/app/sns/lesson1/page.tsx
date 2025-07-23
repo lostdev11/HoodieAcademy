@@ -5,7 +5,6 @@
       import Link from "next/link";
       import { ArrowLeft } from "lucide-react";
       import axios from "axios";
-      import { recordCourseCompletion } from '@/lib/supabase';
 
       export default function Lesson1() {
         const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -41,7 +40,6 @@
           try {
             await axios.post(`/api/progress/${walletAddress}/sns`, { lessonId: "lesson1", completed: true });
             setCompleted(true);
-            await recordCourseCompletion(walletAddress, 'sns');
           } catch (error) {
             console.error("Progress update failed:", error);
             alert("Failed to update progress.");
