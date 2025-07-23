@@ -34,7 +34,7 @@ import Link from "next/link"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
-import { getUserRank, getUserScore, isCurrentUserAdmin, DEMO_WALLET, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
+import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
 
 
 
