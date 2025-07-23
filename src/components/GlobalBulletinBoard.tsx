@@ -71,7 +71,7 @@ export default function GlobalBulletinBoard({ squadId }: GlobalBulletinBoardProp
         setIsLoading(true);
         setError(null);
         
-        const res = await fetch('/api/getBulletins');
+        const res = await fetch('/.netlify/functions/getBulletins');
         if (!res.ok) {
           throw new Error('Failed to fetch bulletin data');
         }

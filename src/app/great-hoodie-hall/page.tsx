@@ -310,7 +310,7 @@ export default function GreatHoodieHall() {
     setLoading(true);
     try {
       // Use our server-side API route to avoid CORS issues
-      const response = await axios.post('/api/nft-verification', {
+              const response = await axios.post('/.netlify/functions/nft-verification', {
         walletAddress
       }, {
         headers: { 

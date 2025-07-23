@@ -6,6 +6,10 @@ import { motion } from "framer-motion";
 import { Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+// Constants
+const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
+const WIFHOODIE_COLLECTION_ID = 'H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ';
+
 interface TokenGateProps {
   children: React.ReactNode;
 }
@@ -32,6 +36,8 @@ export default function TokenGate({ children }: TokenGateProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isClient, setIsClient] = useState(false)
   const [loading, setLoading] = useState(false);
+  const [hasBeenConnected, setHasBeenConnected] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const isPhantomInstalled = typeof window !== 'undefined' && window.solana?.isPhantom;
 
   // Add the helper function inside the component so it can access state setters
@@ -205,35 +211,51 @@ export default function TokenGate({ children }: TokenGateProps) {
   //   checkAdminStatus();
   // }, [walletAddress]);
 
-  const connectPhantom = async () => {
-    if (!isPhantomInstalled) {
-      setError("Phantom wallet is not installed. Please install it from https://phantom.app/")
-      return
+  const disconnectWallet = () => {
+    setWalletAddress(null);
+    setIsHolder(false);
+    setError(null);
+    setShowSuccess(false);
+    setHasBeenConnected(false);
+    
+    // Clear all wallet-related storage
+    sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
+    localStorage.removeItem('walletAddress');
+    localStorage.removeItem('connectedWallet');
+    
+    // Disconnect from wallet providers
+    if (window.solana?.disconnect) {
+      window.solana.disconnect();
     }
+  };
 
-    setIsConnecting(true)
-    setError(null)
-
+  const connectWallet = async (providerName: WalletProvider) => {
+    setError(null);
+    let provider;
+    if (providerName === 'phantom') {
+      if (window.solana?.isPhantom) {
+        provider = window.solana;
+      } else {
+        setError("Phantom wallet is not installed.");
+        return;
+      }
+    }
+    if (!provider) {
+      setError("Could not find a compatible Solana wallet.");
+      return;
+    }
     try {
-      const response = await window.solana.connect()
-      const address = response.publicKey.toString()
-
-      console.log("✅ Connected wallet:", address)
-
-      // Save address and update UI
-      localStorage.setItem('walletAddress', address)
-      setWalletAddress(address)
-      setIsConnected(true)
-
-      // Trigger NFT verification
-      await checkWifHoodieOwnership(address, true);
+      if (provider.isConnecting) return;
+      const response = await provider.connect();
+      setWalletAddress(response.publicKey.toString());
+      // Trigger verification with success message
+      await checkWifHoodieOwnership(response.publicKey.toString(), true);
     } catch (error: any) {
-      console.error("Wallet connection failed:", error)
-      setError(`Connection failed: ${error.message || 'User rejected the request.'}`)
+      setError(`Wallet connection failed: ${error.message || 'User rejected the request.'}`);
     } finally {
-      setIsConnecting(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Remove the verifyNFT function and any fetches to /api/nft-verification in this file.
 

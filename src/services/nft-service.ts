@@ -60,8 +60,8 @@ export class NFTService {
     try {
       console.log('Using server-side NFT verification API...');
       
-      // Use our server-side API route to avoid CORS issues
-      const response = await fetch('/api/nft-verification', {
+      // Use our Netlify Function to avoid CORS issues
+      const response = await fetch('/.netlify/functions/nft-verification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -204,8 +204,8 @@ export class NFTService {
 
   async getNFTMetadata(mintAddress: string): Promise<NFTMetadata | null> {
     try {
-      // Use our server-side API route to avoid CORS issues
-      const response = await fetch('/api/nft-verification', {
+      // Use our Netlify Function to avoid CORS issues
+      const response = await fetch('/.netlify/functions/nft-verification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

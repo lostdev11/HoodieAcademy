@@ -1,22 +1,5 @@
-import { NextResponse } from 'next/server';
-
-interface Message {
-  id: string;
-  title: string;
-  body: string;
-  priority: 'high' | 'medium' | 'low';
-  createdAt: string;
-  author?: string;
-  squad?: string;
-}
-
-interface BulletinData {
-  global: Message[];
-  squads: Record<string, Message[]>;
-}
-
 // Mock data simulating Notion/Airtable integration
-const mockBulletinData: BulletinData = {
+const mockBulletinData = {
   global: [
     {
       id: '1',
@@ -310,17 +293,48 @@ Each squad now has their own dedicated space:
   }
 };
 
-export async function GET() {
+exports.handler = async (event, context) => {
+  // Enable CORS
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: '',
+    };
+  }
+
+  // Only allow GET requests
+  if (event.httpMethod !== 'GET') {
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: 'Method not allowed' }),
+    };
+  }
+
   try {
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    return NextResponse.json(mockBulletinData);
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify(mockBulletinData),
+    };
   } catch (error) {
     console.error('Error fetching bulletin data:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch bulletin data' },
-      { status: 500 }
-    );
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Failed to fetch bulletin data' }),
+    };
   }
-} 
+}; 
