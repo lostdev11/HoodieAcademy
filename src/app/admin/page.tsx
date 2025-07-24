@@ -13,7 +13,7 @@ import {
   Users, BookOpen, Trophy, Settings, Plus, Edit, Trash2, Search, Filter,
   RefreshCw, Download, Upload, Eye, EyeOff, CheckCircle, XCircle, AlertTriangle,
   Info, User, Award, Target, TrendingUp, BarChart3, Megaphone, Bell, Clock,
-  FileText, CheckSquare, XSquare, ArrowLeft, LogOut, Shield, AlertCircle, Lock, Key, CalendarDays
+  FileText, CheckSquare, XSquare, ArrowLeft, LogOut, Shield, AlertCircle, Lock, Key, CalendarDays,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -32,6 +32,16 @@ import {
 import {
   Announcement, Event, getAnnouncements, getEvents
 } from '@/lib/utils';
+import { Database } from "@/types/supabase";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import { supabase } from "@/lib/supabase";
 
 interface AdminStats {
   totalUsers: number;
@@ -89,6 +99,7 @@ export default function AdminDashboard() {
   ];
 
   const [finalExamLoading, setFinalExamLoading] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   // Get wallet address using your existing logic
   useEffect(() => {
@@ -445,6 +456,56 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {/* User Tracking Table */}
+                <div className="mb-8 overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Wallet</TableHead>
+                        <TableHead>Profile Completed</TableHead>
+                        <TableHead>Squad Test Completed</TableHead>
+                        <TableHead>Squad</TableHead>
+                        <TableHead>Display Name</TableHead>
+                        <TableHead>Last Active</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users?.map(user => (
+                        <TableRow key={user.id || user.wallet_address}>
+                          <TableCell>{user.wallet_address}</TableCell>
+                          <TableCell>{user.profile_completed ? '✅' : '❌'}</TableCell>
+                          <TableCell>{user.squad_test_completed ? '✅' : '❌'}</TableCell>
+                          <TableCell>{user.squad || '-'}</TableCell>
+                          <TableCell>{user.display_name || '-'}</TableCell>
+                          <TableCell>{user.last_active ? new Date(user.last_active).toLocaleString() : '-'}</TableCell>
+                          <TableCell>
+                            <Button
+                              disabled={approvingId === user.id}
+                              onClick={async () => {
+                                setApprovingId(user.id || user.wallet_address);
+                                await supabase
+                                  .from('users')
+                                  .update({
+                                    exam_approved_by_admin: true,
+                                    exam_approved_at: new Date().toISOString()
+                                  })
+                                  .eq('id', user.id);
+                                setApprovingId(null);
+                                // Refresh users
+                                const updatedUsers = await fetchAllUsers();
+                                setUsers(updatedUsers);
+                              }}
+                            >
+                              {approvingId === user.id ? "Approving..." : "Approve"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {/* Existing user cards */}
                 <div className="space-y-4">
                   {users.map((user) => {
                     const userCompletions = courseCompletions.filter(
