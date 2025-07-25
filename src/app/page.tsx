@@ -269,7 +269,7 @@ export default function HoodieAcademy() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-cyan-400">Home Tab Dashboard</h1>
+                  <h1 className="text-3xl font-bold text-cyan-400">Hoodie Dashboard</h1>
                   <p className="text-gray-300">Your Web3 learning journey starts here!</p>
                 </div>
                 
