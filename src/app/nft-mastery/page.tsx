@@ -1,6 +1,5 @@
+'use client';
 export const dynamic = "force-static";
-
-'use client'
 
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
@@ -11,6 +10,7 @@ import { motion } from 'framer-motion';
 import { PixelHoodieIcon } from "@/components/icons/PixelHoodieIcon";
 import { ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
 import { updateScoreForQuizCompletion } from '@/lib/utils';
+import { completeCourse } from '@/lib/supabase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -172,6 +172,22 @@ export default function NftMasteryPage() {
         const lastCompletedIndex = parsedStatus.lastIndexOf('completed');
         const newCurrentIndex = parsedStatus.findIndex(status => status === 'unlocked');
         setCurrentLessonIndex(newCurrentIndex !== -1 ? newCurrentIndex : (lastCompletedIndex + 1 < lessonsData.length ? lastCompletedIndex + 1 : lastCompletedIndex));
+        // If all lessons are completed, record in Supabase
+        if (parsedStatus.every(status => status === 'completed')) {
+          // Get user's wallet address (no demo-wallet fallback)
+          const walletAddress = localStorage.getItem('userWalletAddress') || 
+                               localStorage.getItem('connectedWallet') || 
+                               localStorage.getItem('walletAddress') ||
+                               (typeof window !== 'undefined' && window.solana?.publicKey ? window.solana.publicKey.toString() : null);
+          // Record completion
+          if (walletAddress && allLessonsCompleted) {
+            completeCourse(walletAddress, 'nft-mastery').then(() => {
+              console.log('✅ NFT Mastery completion recorded in database for wallet:', walletAddress);
+            }).catch((error) => {
+              console.error('❌ Error recording NFT Mastery completion:', error);
+            });
+          }
+        }
       }
     }
   }, []);

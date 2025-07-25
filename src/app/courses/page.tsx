@@ -1,3 +1,5 @@
+'use client';
+
 export const dynamic = "force-static";
 
 import { Button } from "@/components/ui/button";

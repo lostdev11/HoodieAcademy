@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { updateScoreForLessonCompletion } from '@/lib/utils';
+import { completeCourse } from '@/lib/supabase';
 
 export default function Tier1() {
   const [isCompleted, setIsCompleted] = useState(false);
@@ -24,7 +25,7 @@ export default function Tier1() {
     }
   }, []);
 
-  const markAsCompleted = () => {
+  const markAsCompleted = async () => {
     if (typeof window !== 'undefined') {
       const savedStatus = localStorage.getItem('walletWizardryProgress');
       let parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = ['unlocked', 'locked', 'locked', 'locked'];
@@ -41,9 +42,20 @@ export default function Tier1() {
       
       localStorage.setItem('walletWizardryProgress', JSON.stringify(parsedStatus));
       
+      // Get user's wallet address (no demo-wallet fallback)
+      const walletAddress = localStorage.getItem('userWalletAddress') || 
+                           localStorage.getItem('connectedWallet') || 
+                           localStorage.getItem('walletAddress') ||
+                           (typeof window !== 'undefined' && window.solana?.publicKey ? window.solana.publicKey.toString() : null);
+      
       // Update leaderboard score
-      const walletAddress = localStorage.getItem('walletAddress') || 'demo-wallet';
       updateScoreForLessonCompletion(walletAddress, 'wallet-wizardry', 0, 4); // tier-1 is lesson 0 of 4
+      
+      // Record course completion in database
+      if (walletAddress) {
+        await completeCourse(walletAddress, 'wallet-wizardry-tier-1');
+        console.log('✅ Tier 1 completion recorded in database for wallet:', walletAddress);
+      }
       
       setIsCompleted(true);
     }

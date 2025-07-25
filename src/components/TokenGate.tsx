@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { updateUserWalletMetadata, getCurrentUserWallet, signInWithWallet } from '@/lib/supabase';
 
 // Constants
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
@@ -39,6 +40,33 @@ export default function TokenGate({ children }: TokenGateProps) {
   const [hasBeenConnected, setHasBeenConnected] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const isPhantomInstalled = typeof window !== 'undefined' && window.solana?.isPhantom;
+
+  // Initialize walletAddress from localStorage and Supabase Auth on mount
+  useEffect(() => {
+    const initializeWallet = async () => {
+      if (typeof window !== 'undefined') {
+        // First check localStorage for backward compatibility
+        const storedWallet = localStorage.getItem('walletAddress');
+        if (storedWallet) {
+          setWalletAddress(storedWallet);
+          return;
+        }
+        
+        // Then check Supabase Auth
+        try {
+          const authWallet = await getCurrentUserWallet();
+          if (authWallet) {
+            setWalletAddress(authWallet);
+            localStorage.setItem('walletAddress', authWallet);
+          }
+        } catch (error) {
+          console.error('Error getting current user wallet:', error);
+        }
+      }
+    };
+    
+    initializeWallet();
+  }, []);
 
   // Add the helper function inside the component so it can access state setters
   const checkWifHoodieOwnership = async (wallet: string, showSuccessMessage: boolean = true) => {
@@ -211,7 +239,7 @@ export default function TokenGate({ children }: TokenGateProps) {
   //   checkAdminStatus();
   // }, [walletAddress]);
 
-  const disconnectWallet = () => {
+  const disconnectWallet = async () => {
     setWalletAddress(null);
     setIsHolder(false);
     setError(null);
@@ -226,6 +254,15 @@ export default function TokenGate({ children }: TokenGateProps) {
     // Disconnect from wallet providers
     if (window.solana?.disconnect) {
       window.solana.disconnect();
+    }
+    
+    // Sign out from Supabase Auth (optional - you might want to keep the session)
+    try {
+      // Uncomment the line below if you want to sign out from Supabase Auth
+      // await signOutUser();
+      console.log('✅ Wallet disconnected (Supabase Auth session preserved)');
+    } catch (error) {
+      console.error('❌ Error signing out from Supabase Auth:', error);
     }
   };
 
@@ -247,9 +284,23 @@ export default function TokenGate({ children }: TokenGateProps) {
     try {
       if (provider.isConnecting) return;
       const response = await provider.connect();
-      setWalletAddress(response.publicKey.toString());
+      const walletAddress = response.publicKey.toString();
+      setWalletAddress(walletAddress);
+      
+      // Store in localStorage for backward compatibility
+      localStorage.setItem('walletAddress', walletAddress);
+      
+      // Update Supabase Auth metadata
+      try {
+        await updateUserWalletMetadata(walletAddress);
+        console.log('✅ Wallet metadata updated in Supabase Auth');
+      } catch (authError) {
+        console.warn('⚠️ Failed to update Supabase Auth metadata:', authError);
+        // Continue with the flow even if Auth update fails
+      }
+      
       // Trigger verification with success message
-      await checkWifHoodieOwnership(response.publicKey.toString(), true);
+      await checkWifHoodieOwnership(walletAddress, true);
     } catch (error: any) {
       setError(`Wallet connection failed: ${error.message || 'User rejected the request.'}`);
     } finally {

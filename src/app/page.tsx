@@ -37,7 +37,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
 import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
-
+import { useRouter } from 'next/navigation';
 
 
 interface UpcomingClass {
@@ -98,6 +98,7 @@ export default function HoodieAcademy() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
   const [overallProgress, setOverallProgress] = useState(65);
+  const router = useRouter();
   const [walletAddress, setWalletAddress] = useState<string>("");
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
@@ -107,6 +108,12 @@ export default function HoodieAcademy() {
   const [isDemoWallet, setIsDemoWallet] = useState(false);
   const [realAnnouncements, setRealAnnouncements] = useState<Announcement[]>([]);
   const [realUpcomingClasses, setRealUpcomingClasses] = useState<UpcomingClass[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('walletAddress')) {
+      router.replace('/connect');
+    }
+  }, [router]);
 
   useEffect(() => {
     // Get wallet address from localStorage
@@ -262,7 +269,7 @@ export default function HoodieAcademy() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-cyan-400">Welcome to Hoodie Academy</h1>
+                  <h1 className="text-3xl font-bold text-cyan-400">Home Tab Dashboard</h1>
                   <p className="text-gray-300">Your Web3 learning journey starts here!</p>
                 </div>
                 
@@ -363,81 +370,6 @@ export default function HoodieAcademy() {
                 </CardContent>
               </Card>
             )}
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <Card className="bg-slate-800/50 border-cyan-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-cyan-500/20 rounded-lg">
-                      <BookOpen className="w-6 h-6 text-cyan-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Courses Completed</p>
-                      <p className="text-2xl font-bold text-cyan-400">3/6</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800/50 border-green-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-green-500/20 rounded-lg">
-                      <Award className="w-6 h-6 text-green-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">NFT Badges</p>
-                      <p className="text-2xl font-bold text-green-400">5</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800/50 border-purple-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-purple-500/20 rounded-lg">
-                      <TrendingUp className="w-6 h-6 text-purple-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Overall Progress</p>
-                      <p className="text-2xl font-bold text-purple-400">{overallProgress}%</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800/50 border-yellow-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-yellow-500/20 rounded-lg">
-                      <Trophy className="w-6 h-6 text-yellow-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Your Rank</p>
-                      <p className="text-2xl font-bold text-yellow-400">
-                        {userRank > 0 ? `#${userRank}` : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800/50 border-pink-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-pink-500/20 rounded-lg">
-                      <Video className="w-6 h-6 text-pink-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Total Score</p>
-                      <p className="text-2xl font-bold text-pink-400">{userScore.toLocaleString()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
             {/* Admin Dashboard Access */}
             {isAdmin && !isDemoWallet && (
               <Card className="bg-slate-800/50 border-purple-500/30 mb-6">
@@ -575,7 +507,7 @@ export default function HoodieAcademy() {
                 <CardHeader>
                   <CardTitle className="text-yellow-400 flex items-center space-x-2">
                     <Trophy className="w-5 h-5" />
-                    <span>Top Performers</span>
+                    <span>Top Hoodies</span>
                     <Button size="sm" variant="outline" asChild className="ml-auto text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/10">
                       <Link href="/leaderboard">View All</Link>
                     </Button>
@@ -649,7 +581,7 @@ export default function HoodieAcademy() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-pink-400 flex items-center space-x-2">
                       <Bell className="w-5 h-5" />
-                      <span>Announcements</span>
+                      <span>Hood Announcements</span>
                     </CardTitle>
                     <Button
                       onClick={() => {
@@ -733,42 +665,7 @@ export default function HoodieAcademy() {
             )}
 
             {/* Progress Overview */}
-            <Card className="bg-slate-800/50 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-purple-400">Overall Academy Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-300">Progress</span>
-                      <span className="text-purple-400">{overallProgress}%</span>
-                    </div>
-                    <Progress value={overallProgress} className="h-3 bg-slate-700 [&>div]:bg-gradient-to-r [&>div]:from-purple-500 [&>div]:to-pink-500" />
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold text-cyan-400">
-                        {Math.floor((overallProgress / 100) * 6)}/6
-                      </p>
-                      <p className="text-sm text-gray-400">Courses Completed</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-green-400">{realAnnouncements.length}</p>
-                      <p className="text-sm text-gray-400">Active Announcements</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-yellow-400">{userRank > 0 ? userRank : 'N/A'}</p>
-                      <p className="text-sm text-gray-400">Leaderboard Rank</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-pink-400">{userScore.toLocaleString()}</p>
-                      <p className="text-sm text-gray-400">Total Score</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* (Removed the Overall Academy Progress card and its contents) */}
           </main>
         </div>
       </div>

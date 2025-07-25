@@ -1,6 +1,6 @@
-export const dynamic = "force-static";
-
 'use client'
+
+export const dynamic = "force-static";
 
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';

@@ -1,6 +1,6 @@
-export const dynamic = "force-static";
-
 'use client'
+
+export const dynamic = "force-static";
 
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
@@ -24,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import { completeCourse } from '@/lib/supabase';
 
 declare global {
   interface Window {
@@ -163,10 +164,30 @@ export default function TechnicalAnalysisPage() {
       const savedStatus = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (savedStatus) {
         const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
-        setLessonStatus(parsedStatus);
-        const lastCompletedIndex = parsedStatus.lastIndexOf('completed');
-        const newCurrentIndex = parsedStatus.findIndex(status => status === 'unlocked');
-        setCurrentLessonIndex(newCurrentIndex !== -1 ? newCurrentIndex : (lastCompletedIndex + 1 < lessonsData.length ? lastCompletedIndex + 1 : lastCompletedIndex));
+        // Ensure all lessons are unlocked while preserving completion status
+        const updatedStatus = parsedStatus.map(status => 
+          status === 'completed' ? 'completed' as const : 'unlocked' as const
+        );
+        setLessonStatus(updatedStatus);
+        const lastCompletedIndex = updatedStatus.lastIndexOf('completed');
+        const newCurrentIndex = updatedStatus.findIndex(status => status === 'unlocked');
+        setCurrentLessonIndex(newCurrentIndex !== -1 ? newCurrentIndex : (lastCompletedIndex + 1 < lessonsData.length ? lastCompletedIndex + 1 : lessonsData.length - 1));
+        // Check if all lessons are completed
+        const allLessonsCompleted = updatedStatus.every(status => status === 'completed');
+        if (allLessonsCompleted) {
+          // Get user's wallet address (same logic as other courses)
+          const walletAddress = localStorage.getItem('userWalletAddress') || 
+                               localStorage.getItem('connectedWallet') || 
+                               localStorage.getItem('walletAddress') ||
+                               (typeof window !== 'undefined' && window.solana?.publicKey ? window.solana.publicKey.toString() : null) ||
+                               'demo-wallet';
+          // Record course completion in database
+          completeCourse(walletAddress, 'technical-analysis').then(() => {
+            console.log('✅ Technical Analysis completion recorded in database for wallet:', walletAddress);
+          }).catch((err) => {
+            console.error('❌ Error recording Technical Analysis completion:', err);
+          });
+        }
       }
     }
   }, []);
