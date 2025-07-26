@@ -131,19 +131,42 @@ export default function AdminDashboard() {
         console.log('✅ Admin: Loaded completions:', completions.length);
         console.log('✅ Admin: Loaded exam approvals:', examApprovals.length);
         console.log('📋 Admin: Course completions data:', completions);
+        console.log('📋 Admin: Exam approvals data:', examApprovals);
+        
         setUsers(users);
         setCourseCompletions(completions);
         setExamApprovals(examApprovals);
-        calculateStats(users, completions);
-        setAnnouncements(getAnnouncements());
-        setEvents(getEvents());
         console.log('✅ Admin: Dashboard data loading complete');
-      } catch (e) {
-        console.error('❌ Admin: Error loading data:', e);
+      } catch (error) {
+        console.error('❌ Admin: Error loading dashboard data:', error);
       }
     };
+    
     load();
   }, [isAdmin]);
+
+  // Add manual refresh function
+  const refreshData = async () => {
+    console.log('🔄 Admin: Manual refresh triggered...');
+    try {
+      const [users, completions, examApprovals] = await Promise.all([
+        fetchAllUsers(),
+        fetchAllCourseCompletions(),
+        fetchAllExamApprovals(),
+      ]);
+      console.log('✅ Admin: Manual refresh - Loaded users:', users.length);
+      console.log('✅ Admin: Manual refresh - Loaded completions:', completions.length);
+      console.log('✅ Admin: Manual refresh - Loaded exam approvals:', examApprovals.length);
+      console.log('📋 Admin: Manual refresh - Course completions data:', completions);
+      
+      setUsers(users);
+      setCourseCompletions(completions);
+      setExamApprovals(examApprovals);
+      console.log('✅ Admin: Manual refresh complete');
+    } catch (error) {
+      console.error('❌ Admin: Error in manual refresh:', error);
+    }
+  };
 
   // Remove adminWallets fetch useEffect, but keep the logic for displaying and updating admin wallets
   useEffect(() => {
