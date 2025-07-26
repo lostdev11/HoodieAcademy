@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { 
@@ -177,6 +177,9 @@ export function NFTProfileSelector({
               <Image className="w-5 h-5" />
               Select NFT as Profile Picture
             </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Choose an NFT from your wallet to use as your profile picture. You can search by name, collection, or symbol.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">

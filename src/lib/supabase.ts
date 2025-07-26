@@ -618,6 +618,19 @@ export async function updateUserWalletMetadata(walletAddress: string) {
   try {
     console.log(`🔍 Updating user metadata with wallet: ${walletAddress}`);
     
+    // First check if user is authenticated
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.warn('⚠️ No authenticated user found, skipping metadata update:', userError.message);
+      return null;
+    }
+    
+    if (!user) {
+      console.warn('⚠️ No authenticated user found, skipping metadata update');
+      return null;
+    }
+    
     const { data, error } = await supabase.auth.updateUser({
       data: {
         wallet: walletAddress,
@@ -635,7 +648,8 @@ export async function updateUserWalletMetadata(walletAddress: string) {
     return data;
   } catch (error) {
     console.error('❌ Error in updateUserWalletMetadata:', error);
-    throw error;
+    // Don't throw the error, just log it and return null
+    return null;
   }
 }
 
@@ -645,7 +659,7 @@ export async function getCurrentUserWallet() {
     const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error) {
-      console.error('❌ Error getting current user:', error);
+      console.log('ℹ️ No authenticated user found:', error.message);
       return null;
     }
 
@@ -658,7 +672,7 @@ export async function getCurrentUserWallet() {
     console.log('✅ Current user wallet:', walletAddress);
     return walletAddress;
   } catch (error) {
-    console.error('❌ Error in getCurrentUserWallet:', error);
+    console.log('ℹ️ Error getting current user wallet:', error);
     return null;
   }
 }
