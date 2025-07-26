@@ -155,7 +155,7 @@ export default function WalletWizardryPage() {
 
             {/* Syllabus */}
             {showSyllabus && (
-              <Syllabus data={syllabusData.walletWizardry} />
+              <Syllabus data={syllabusData.walletWizardry} courseTitle="Wallet Wizardry" />
             )}
 
             {/* Tiers */}
