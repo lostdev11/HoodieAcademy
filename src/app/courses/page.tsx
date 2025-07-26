@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { squadTracks, getSquadForCourse, getCoursesForSquad } from "@/lib/squadData";
 import { isCurrentUserAdmin, getConnectedWallet, getCompletedCoursesCount } from "@/lib/utils";
 import { fetchUserByWallet } from "@/lib/supabase";
+import SquadFilter from '@/components/SquadFilter';
 
 // Simple course data
 const allCourses: Array<{
@@ -33,6 +34,7 @@ const allCourses: Array<{
   category?: string;
   level?: string;
   access?: string;
+  squad?: string;
 }> = [
   {
     id: 'wallet-wizardry',
@@ -98,6 +100,67 @@ const allCourses: Array<{
     pathType: "tech",
     href: "/technical-analysis",
     localStorageKey: "technicalAnalysisProgress",
+    squad: "Decoders",
+    totalLessons: 4,
+  },
+  {
+    id: 'nft-trading-psychology',
+    title: "NFT Trading Psychology",
+    description: "Your journey from casual collector to meta-aware floor tactician. Learn NFT awareness, market instincts, and trading discipline.",
+    badge: "Floor Tactician",
+    emoji: "🧠",
+    pathType: "tech",
+    href: "/nft-trading-psychology",
+    localStorageKey: "nftTradingPsychologyProgress",
+    squad: "Raiders",
+    totalLessons: 7,
+  },
+  {
+    id: 'cybersecurity-wallet-practices',
+    title: "Cybersecurity & Wallet Best Practices",
+    description: "Protect ya neck in Web3. Learn wallet security, browser hygiene, scam detection, and OpSec for traders.",
+    badge: "Security Sentinel",
+    emoji: "🔐",
+    pathType: "tech",
+    href: "/cybersecurity-wallet-practices",
+    localStorageKey: "cybersecurityWalletPracticesProgress",
+    squad: "Decoders",
+    totalLessons: 7,
+  },
+  {
+    id: 'ai-automation-curriculum',
+    title: "AI + Automation Curriculum",
+    description: "Learn to wield the machine. Sacred knowledge for AI literacy, prompt engineering, and automation tools.",
+    badge: "AI-Certified Hoodie",
+    emoji: "🤖",
+    pathType: "tech",
+    href: "/ai-automation-curriculum",
+    localStorageKey: "aiAutomationCurriculumProgress",
+    squad: "Decoders",
+    totalLessons: 8,
+  },
+  {
+    id: 'lore-narrative-crafting',
+    title: "Lore & Narrative Crafting",
+    description: "Build worlds. Shape myths. Write the future. Learn storytelling, worldbuilding, and narrative development in Web3.",
+    badge: "Lorekeeper",
+    emoji: "📜",
+    pathType: "social",
+    href: "/lore-narrative-crafting",
+    localStorageKey: "loreNarrativeCraftingProgress",
+    squad: "Speakers",
+    totalLessons: 7,
+  },
+  {
+    id: 'hoodie-squad-track',
+    title: "Hoodie Squad Track",
+    description: "Choose your squad and follow a curated learning path. Decoders, Raiders, Speakers, and Creators each have specialized curricula.",
+    badge: "Squad Member",
+    emoji: "🧥",
+    pathType: "converged",
+    href: "/hoodie-squad-track",
+    localStorageKey: "hoodieSquadTrackProgress",
+    squad: "All",
     totalLessons: 4,
   },
   // Free Courses
@@ -999,6 +1062,11 @@ export default function CoursesPage() {
       totalCourses: allCourses.length
     });
 
+    // Apply squad filter first
+    if (selectedSquad && selectedSquad !== 'All') {
+      filteredCourses = filteredCourses.filter(course => course.squad === selectedSquad);
+    }
+
     // Apply filters based on active filter
     switch (activeFilter) {
       case 'completed':
@@ -1219,6 +1287,13 @@ export default function CoursesPage() {
               </div>
             </div>
           )}
+
+          {/* Squad Filter Component */}
+          <div className="flex justify-center mb-8">
+            <SquadFilter 
+              onChange={(squad) => setSelectedSquad(squad)}
+            />
+          </div>
 
           {/* Admin bypass section */}
           {!isAdminBypass && (
