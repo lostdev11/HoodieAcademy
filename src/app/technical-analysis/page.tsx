@@ -524,53 +524,13 @@ export default function TechnicalAnalysisPage() {
           )}
 
           <section className="my-8 text-center p-6 bg-card rounded-xl shadow-lg border border-orange-600 neon-border-orange w-full">
-              <h2 className="text-2xl font-bold text-primary mb-2">Connect Your Wallet</h2>
-              <p className="text-sm text-muted-foreground mb-4">Safely connect your preferred wallet to view your balance and NFTs.</p>
-              
-              <div className="flex justify-center items-center">
-                <Button 
-                    onClick={() => setShowWalletSelector(!showWalletSelector)}
-                    className="px-6 py-3 mb-4 rounded-lg shadow-lg bg-gradient-to-r from-green-500 to-purple-600 hover:from-green-600 hover:to-purple-700 text-white min-w-[240px] transition-all duration-300 flex items-center justify-center"
-                    aria-expanded={showWalletSelector}
-                >
-                    <Wallet size={18} className="mr-2"/>
-                    {connectedWalletProvider ? `Connected: ${connectedWalletProvider}` : "Select Wallet"}
-                    {showWalletSelector ? <ChevronUp size={18} className="ml-2" /> : <ChevronDown size={18} className="ml-2" />}
-                </Button>
-              </div>
-
-              {showWalletSelector && (
-                  <motion.div 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex justify-center mt-4 overflow-hidden"
-                  >
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-md">
-                          {walletProviders.map(wallet => (
-                              <Button
-                                  key={wallet.name}
-                                  onClick={() => handleWalletConnection(wallet.name)}
-                                  className="w-full px-6 py-3 rounded-lg shadow-lg bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700 text-white transition-all duration-300 flex items-center justify-center"
-                              >
-                                 {wallet.icon} {wallet.label}
-                              </Button>
-                          ))}
-                      </div>
-                  </motion.div>
-              )}
-
-              {account && (
-              <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-4 text-foreground space-y-1"
-              >
-                  <p><strong>Address:</strong> {account}</p>
-                  <p><strong>Balance:</strong> {balance || 'Loading...'}</p>
-                  <p>{mockNftStatus || 'Checking NFT status...'}</p>
-              </motion.div>
-              )}
+            <h2 className="text-2xl font-bold text-primary mb-2">Technical Analysis Tools</h2>
+            <p className="text-sm text-muted-foreground mb-4">Master the art of technical analysis with advanced charting and indicators.</p>
+            <div className="space-y-2">
+              <p><strong>Chart Types:</strong> Candlestick, Line, Bar, Area</p>
+              <p><strong>Indicators:</strong> RSI, MACD, Bollinger Bands, Moving Averages</p>
+              <p><strong>Timeframes:</strong> 1m to 1D analysis</p>
+            </div>
           </section>
 
           <AlertDialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>

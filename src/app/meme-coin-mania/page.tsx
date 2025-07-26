@@ -506,55 +506,23 @@ const MemeCoinManiaPage = () => {
               {/* Wallet section */}
               <Card className="bg-slate-800/50 border-2 border-cyan-500/30 backdrop-blur-sm">
                 <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold text-cyan-400 mb-4 text-center">Connect Your Wallet</h2>
-                  <p className="text-gray-300 mb-4 text-center">Connect a Solana wallet to view your address, balance, and NFT status.</p>
+                  <h2 className="text-2xl font-bold text-cyan-400 mb-4 text-center">Meme Coin Trading Tools</h2>
+                  <p className="text-gray-300 mb-4 text-center">Essential tools and platforms for meme coin trading and analysis.</p>
                   
-                  <div className="flex justify-center items-center">
-                    <Button 
-                      onClick={() => setShowWalletSelector(!showWalletSelector)}
-                      className="px-6 py-3 mb-4 rounded-lg shadow-lg bg-gradient-to-r from-green-500 to-purple-600 hover:from-green-600 hover:to-purple-700 text-white min-w-[240px] transition-all duration-300 flex items-center justify-center"
-                      aria-expanded={showWalletSelector}
-                      aria-label={showWalletSelector ? "Close wallet selector" : "Open wallet selector"}
-                    >
-                      <Wallet size={18} className="mr-2"/>
-                      {connectedWalletProvider ? `Connected: ${connectedWalletProvider}` : "Select Wallet"}
-                      {showWalletSelector ? <ChevronUp size={18} className="ml-2" /> : <ChevronDown size={18} className="ml-2" />}
-                    </Button>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">DEX Platforms:</span>
+                      <span className="text-cyan-400">Uniswap, PancakeSwap, Raydium</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Chart Tools:</span>
+                      <span className="text-cyan-400">DexTools, DEXTools, Birdeye</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Risk Level:</span>
+                      <span className="text-red-400 font-semibold">EXTREME</span>
+                    </div>
                   </div>
-
-                  {showWalletSelector && (
-                    <motion.div 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex justify-center mt-4 overflow-hidden"
-                    >
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-md">
-                        {walletProviders.map(wallet => (
-                          <Button
-                            key={wallet.name}
-                            onClick={() => handleWalletConnection(wallet.name)}
-                            className="w-full px-6 py-3 rounded-lg shadow-lg bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700 text-white transition-all duration-300 flex items-center justify-center"
-                            aria-label={`Connect ${wallet.label}`}
-                          >
-                            {wallet.icon} {wallet.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {account && (
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="mt-4 text-gray-300 space-y-1"
-                    >
-                      <p><strong>Address:</strong> {account}</p>
-                      <p><strong>Balance:</strong> {balance || 'Fetching balance...'}</p>
-                      <p><strong>NFT Status:</strong> {mockNftStatus || 'Checking NFT status...'}</p>
-                    </motion.div>
-                  )}
                 </CardContent>
               </Card>
             </main>

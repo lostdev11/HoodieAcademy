@@ -500,100 +500,14 @@ export default function NftMasteryPage() {
           )}
 
           <section className="my-8 text-center p-6 bg-card rounded-xl shadow-lg border border-purple-600 neon-border-purple w-full">
-            <h2 className="text-2xl font-bold text-primary mb-2">Hoodie-Verse Collection</h2>
-            <p className="text-sm text-muted-foreground mb-4">Explore our exclusive Solana NFT collection!</p>
+            <h2 className="text-2xl font-bold text-primary mb-2">NFT Trading Tools</h2>
+            <p className="text-sm text-muted-foreground mb-4">Essential tools and platforms for NFT trading and analysis.</p>
             <div className="space-y-2">
-              <p><strong>Collection Size:</strong> 5,000 NFTs</p>
-              <p><strong>Mint Date:</strong> July 2025</p>
-              <p><strong>Utility:</strong> Exclusive community access, virtual events, and merchandise discounts.</p>
+              <p><strong>Marketplaces:</strong> OpenSea, Magic Eden, Blur, X2Y2</p>
+              <p><strong>Analytics:</strong> NFTGo, Dune Analytics, Nansen</p>
+              <p><strong>Tools:</strong> Rarity calculators, floor tracking, portfolio management</p>
             </div>
           </section>
-
-          <section className="my-8 text-center p-6 bg-card rounded-xl shadow-lg border border-purple-600 neon-border-purple w-full">
-            <h2 className="text-2xl font-bold text-primary mb-2">Connect Your Wallet</h2>
-            <p className="text-sm text-muted-foreground mb-4">Connect a Solana wallet to view your address, balance, and Hoodie-Verse NFT status.</p>
-            <div className="flex justify-center items-center">
-              <Button
-                onClick={() => setShowWalletSelector(!showWalletSelector)}
-                className="px-6 py-3 mb-4 rounded-lg shadow-lg bg-gradient-to-r from-green-500 to-purple-600 hover:from-green-600 hover:to-purple-700 text-white min-w-[240px] transition-all duration-300 flex items-center justify-center"
-                aria-expanded={showWalletSelector}
-                aria-label={showWalletSelector ? "Close wallet selector" : "Open wallet selector"}
-              >
-                <Wallet size={18} className="mr-2"/>
-                {connectedWalletProvider ? `Connected: ${connectedWalletProvider}` : "Select Wallet"}
-                {showWalletSelector ? <ChevronUp size={18} className="ml-2" /> : <ChevronDown size={18} className="ml-2" />}
-              </Button>
-            </div>
-            {showWalletSelector && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="flex justify-center mt-4 overflow-hidden"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-md">
-                  {walletProviders.map(wallet => (
-                    <Button
-                      key={wallet.name}
-                      onClick={() => handleWalletConnection(wallet.name)}
-                      className="w-full px-6 py-3 rounded-lg shadow-lg bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-700 hover:to-purple-700 text-white transition-all duration-300 flex items-center justify-center"
-                    >
-                      {wallet.icon} {wallet.label}
-                    </Button>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-            {account && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="mt-4 text-foreground space-y-1"
-              >
-                <p><strong>Address:</strong> {account}</p>
-                <p><strong>Balance:</strong> {balance || 'Fetching balance...'}</p>
-                <p><strong>NFT Status:</strong> {mockNftStatus || 'Checking NFT status...'}</p>
-              </motion.div>
-            )}
-          </section>
-
-          <AlertDialog open={showFeedbackModal} onOpenChange={setShowFeedbackModal}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{feedbackModalContent.title}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {feedbackModalContent.description}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                {quizPassed && currentLessonIndex < lessonsData.length - 1 ? (
-                  null
-                ) : quizPassed && currentLessonIndex === lessonsData.length - 1 ? (
-                  <AlertDialogAction onClick={() => setShowFeedbackModal(false)} className="bg-green-600 hover:bg-green-700">Mastered!</AlertDialogAction>
-                ) : (
-                  <>
-                    <AlertDialogCancel onClick={() => setShowFeedbackModal(false)}>Review Lesson</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => {setSelectedAnswers({}); setQuizSubmitted(false); setQuizPassed(false); setCurrentScore(0); setShowFeedbackModal(false);}} className="bg-purple-600 hover:bg-purple-700">Retry Quiz</AlertDialogAction>
-                  </>
-                )}
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          <AlertDialog open={showWalletAlert} onOpenChange={setShowWalletAlert}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{walletAlertConfig.title}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {walletAlertConfig.description}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                {walletAlertConfig.title !== "Phantom Connected" && <AlertDialogCancel>Cancel</AlertDialogCancel> }
-                <AlertDialogAction onClick={() => setShowWalletAlert(false)} className="bg-purple-600 hover:bg-purple-700">OK</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
         {/* Footer hashtags */}
         <div className="mt-12 text-cyan-400/70 text-sm text-center">#StayBuilding #StayHODLing</div>
