@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { completeCourse } from '@/lib/supabase';
 
 interface QuizOption {
   id: string;
@@ -112,7 +113,7 @@ export default function FinalExamPage() {
     }
   };
 
-  const calculateResults = () => {
+  const calculateResults = async () => {
     if (!quizData) return;
 
     let correctAnswers = 0;
@@ -133,6 +134,12 @@ export default function FinalExamPage() {
     setScore(percentage);
     setExamPassed(passed);
 
+    // Get user's wallet address (no demo-wallet fallback)
+    const walletAddress = localStorage.getItem('userWalletAddress') || 
+                         localStorage.getItem('connectedWallet') || 
+                         localStorage.getItem('walletAddress') ||
+                         (typeof window !== 'undefined' && window.solana?.publicKey ? window.solana.publicKey.toString() : null);
+
     // Save result to localStorage with admin approval status
     const examResult = {
       passed,
@@ -147,24 +154,29 @@ export default function FinalExamPage() {
     localStorage.setItem('walletWizardryFinalExam', JSON.stringify(examResult));
 
     // Save to user's course progress for admin dashboard
-    const userWalletAddress = localStorage.getItem('userWalletAddress') || 'demo-wallet';
     const userProgress = localStorage.getItem('userProgress') || '{}';
     const progress = JSON.parse(userProgress);
     
-    if (!progress[userWalletAddress]) {
-      progress[userWalletAddress] = {
+    if (!progress[walletAddress]) {
+      progress[walletAddress] = {
         courses: {}
       };
     }
     
-    if (!progress[userWalletAddress].courses['wallet-wizardry']) {
-      progress[userWalletAddress].courses['wallet-wizardry'] = {
+    if (!progress[walletAddress].courses['wallet-wizardry']) {
+      progress[walletAddress].courses['wallet-wizardry'] = {
         progress: ['completed', 'completed', 'completed', 'completed']
       };
     }
     
-    progress[userWalletAddress].courses['wallet-wizardry'].finalExam = examResult;
+    progress[walletAddress].courses['wallet-wizardry'].finalExam = examResult;
     localStorage.setItem('userProgress', JSON.stringify(progress));
+
+    // Record course completion in database
+    if (walletAddress) {
+      await completeCourse(walletAddress, 'wallet-wizardry-final-exam');
+      console.log('✅ Final Exam completion recorded in database for wallet:', walletAddress);
+    }
 
     setShowResults(true);
   };

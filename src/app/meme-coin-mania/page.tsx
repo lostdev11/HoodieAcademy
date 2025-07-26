@@ -1,6 +1,6 @@
-export const dynamic = "force-static";
-
 'use client'
+
+export const dynamic = "force-static";
 
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
+import { completeCourse } from '@/lib/supabase';
 
 declare global {
   interface Window {
@@ -171,6 +172,22 @@ const MemeCoinManiaPage = () => {
         const lastCompletedIndex = updatedStatus.lastIndexOf('completed');
         const newCurrentIndex = updatedStatus.findIndex(status => status === 'unlocked');
         setCurrentLessonIndex(newCurrentIndex !== -1 ? newCurrentIndex : (lastCompletedIndex + 1 < lessonsData.length ? lastCompletedIndex + 1 : lastCompletedIndex));
+        // If all lessons are completed, record in Supabase
+        if (updatedStatus.every(status => status === 'completed')) {
+          // Get wallet address
+          const walletAddress = localStorage.getItem('userWalletAddress') || 
+                               localStorage.getItem('connectedWallet') || 
+                               localStorage.getItem('walletAddress') ||
+                               (typeof window !== 'undefined' && window.solana?.publicKey ? window.solana.publicKey.toString() : null);
+          // Record completion
+          if (walletAddress) {
+            completeCourse(walletAddress, 'meme-coin-mania').then(() => {
+              console.log('✅ Meme Coin Mania completion recorded in database for wallet:', walletAddress);
+            }).catch((error) => {
+              console.error('❌ Error recording Meme Coin Mania completion:', error);
+            });
+          }
+        }
       } else {
         // Initialize all lessons as unlocked
         const initialStatus = lessonsData.map(() => 'unlocked' as const);

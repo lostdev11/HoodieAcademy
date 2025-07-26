@@ -13,7 +13,7 @@ import {
   Users, BookOpen, Trophy, Settings, Plus, Edit, Trash2, Search, Filter,
   RefreshCw, Download, Upload, Eye, EyeOff, CheckCircle, XCircle, AlertTriangle,
   Info, User, Award, Target, TrendingUp, BarChart3, Megaphone, Bell, Clock,
-  FileText, CheckSquare, XSquare, ArrowLeft, LogOut, Shield, AlertCircle, Lock, Key, CalendarDays
+  FileText, CheckSquare, XSquare, ArrowLeft, LogOut, Shield, AlertCircle, Lock, Key, CalendarDays,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -27,11 +27,27 @@ import {
   approveBadge,
   resetCourses,
   approveFinalExam,
-  unapproveFinalExam
+  unapproveFinalExam,
+  migrateCourseCompletionsData,
+  fetchAllExamApprovals,
+  ExamApproval,
+  approveExam,
+  rejectExam
 } from '@/lib/supabase';
 import {
   Announcement, Event, getAnnouncements, getEvents
 } from '@/lib/utils';
+import { Database } from "@/types/supabase";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
+import { supabase } from "@/lib/supabase";
+import { useAdminStatus } from '@/hooks/use-admin-status';
 
 interface AdminStats {
   totalUsers: number;
@@ -44,11 +60,11 @@ interface AdminStats {
 }
 
 export default function AdminDashboard() {
+  // Remove local wallet/admin/loading state, use hook instead
+  const { walletAddress, isAdmin, loadingState } = useAdminStatus();
   const [users, setUsers] = useState<SupabaseUser[]>([]);
   const [courseCompletions, setCourseCompletions] = useState<CourseCompletion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [examApprovals, setExamApprovals] = useState<ExamApproval[]>([]);
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     activeUsers: 0,
@@ -89,105 +105,51 @@ export default function AdminDashboard() {
   ];
 
   const [finalExamLoading, setFinalExamLoading] = useState<string | null>(null);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
-  // Get wallet address using your existing logic
-  useEffect(() => {
-    const getWalletAddress = () => {
-      if (typeof window !== 'undefined' && window.solana?.publicKey) {
-        const address = window.solana.publicKey.toString();
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔍 Admin: Found wallet in window.solana:', address);
-        }
-        setWalletAddress(address);
-        return address;
-      }
-      
-      const storedWallet = localStorage.getItem('connectedWallet');
-      if (storedWallet) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔍 Admin: Found wallet in localStorage:', storedWallet);
-        }
-        setWalletAddress(storedWallet);
-        return storedWallet;
-      }
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 Admin: No wallet address found');
-      }
-      setWalletAddress(null);
-      return null;
-    };
+  const [adminWallets, setAdminWallets] = useState<{ wallet_address: string }[]>([]);
+  const [newAdminWallet, setNewAdminWallet] = useState('');
+  const [adminLoading, setAdminLoading] = useState(false);
+  // Remove manualWallet state and all manual wallet input UI
 
-    getWalletAddress();
-    const interval = setInterval(getWalletAddress, 1000);
-    
-    // Fallback: if no wallet is found after 10 seconds, set loading to false
-    const timeout = setTimeout(() => {
-      if (!walletAddress) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔍 Admin: Timeout reached, no wallet found');
-        }
-        setLoading(false);
-        setIsAdmin(false);
-      }
-    }, 10000);
-    
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [walletAddress]);
-
-  // Check admin status
-  useEffect(() => {
-    if (!walletAddress) {
-      console.log('🔍 Admin: No wallet address, skipping admin check');
-      return;
-    }
-    
-    console.log('🔍 Admin: Checking admin status for wallet:', walletAddress);
-    fetchUserByWallet(walletAddress).then(user => {
-      console.log('🔍 Admin: User data from Supabase:', user);
-      const adminStatus = user?.is_admin === true;
-      console.log('🔍 Admin: Is admin?', adminStatus);
-      setIsAdmin(adminStatus);
-    }).catch(error => {
-      console.error('❌ Admin: Error fetching user:', error);
-      setIsAdmin(false);
-    });
-  }, [walletAddress]);
-
-  // Load dashboard data if admin
+  // Only keep data loading useEffect, but trigger on isAdmin
   useEffect(() => {
     if (isAdmin !== true) {
       console.log('🔍 Admin: Not admin, not loading data. isAdmin:', isAdmin);
       return;
     }
-    
     console.log('🔍 Admin: Loading dashboard data...');
     const load = async () => {
       try {
-        const [users, completions] = await Promise.all([
+        const [users, completions, examApprovals] = await Promise.all([
           fetchAllUsers(),
           fetchAllCourseCompletions(),
+          fetchAllExamApprovals(),
         ]);
         console.log('✅ Admin: Loaded users:', users.length);
         console.log('✅ Admin: Loaded completions:', completions.length);
+        console.log('✅ Admin: Loaded exam approvals:', examApprovals.length);
         setUsers(users);
         setCourseCompletions(completions);
+        setExamApprovals(examApprovals);
         calculateStats(users, completions);
-        
-        // Load announcements and events
         setAnnouncements(getAnnouncements());
         setEvents(getEvents());
       } catch (e) {
         console.error('❌ Admin: Error loading data:', e);
-      } finally {
-        console.log('✅ Admin: Finished loading, setting loading to false');
-        setLoading(false);
       }
     };
     load();
+  }, [isAdmin]);
+
+  // Remove adminWallets fetch useEffect, but keep the logic for displaying and updating admin wallets
+  useEffect(() => {
+    if (isAdmin) {
+      supabase
+        .from('admin_wallets')
+        .select('wallet_address')
+        .then(({ data }) => setAdminWallets(data || []));
+    }
   }, [isAdmin]);
 
   const calculateStats = (userList: SupabaseUser[], completions: CourseCompletion[]) => {
@@ -308,14 +270,91 @@ export default function AdminDashboard() {
     }
   };
 
-  if (isAdmin === null || loading) return <div className="p-8 text-center">Loading...</div>;
+  // Exam approval handlers
+  const handleApproveExam = async (exam_id: string, admin_user_id: string) => {
+    try {
+      await approveExam(exam_id, admin_user_id);
+      // Refresh exam approvals
+      const examApprovals = await fetchAllExamApprovals();
+      setExamApprovals(examApprovals);
+    } catch (e) {
+      console.error('Error approving exam:', e);
+    }
+  };
+
+  const handleRejectExam = async (exam_id: string, admin_user_id: string) => {
+    try {
+      await rejectExam(exam_id, admin_user_id);
+      // Refresh exam approvals
+      const examApprovals = await fetchAllExamApprovals();
+      setExamApprovals(examApprovals);
+    } catch (e) {
+      console.error('Error rejecting exam:', e);
+    }
+  };
+
+  const handleAddAdminWallet = async () => {
+    if (!newAdminWallet) return;
+    setAdminLoading(true);
+    await supabase.from('admin_wallets').insert([{ wallet_address: newAdminWallet }]);
+    const { data } = await supabase.from('admin_wallets').select('wallet_address');
+    setAdminWallets(data || []);
+    setNewAdminWallet('');
+    setAdminLoading(false);
+  };
+
+  const handleRemoveAdminWallet = async (wallet: string) => {
+    setAdminLoading(true);
+    await supabase.from('admin_wallets').delete().eq('wallet_address', wallet);
+    const { data } = await supabase.from('admin_wallets').select('wallet_address');
+    setAdminWallets(data || []);
+    setAdminLoading(false);
+  };
+
+  // Granular loading UI
+  if (loadingState === 'detecting-wallet') return <div className="p-8 text-center">Detecting wallet...</div>;
+  if (loadingState === 'checking-admin') return <div className="p-8 text-center">Checking admin status...</div>;
+  if (isAdmin === null) return <div className="p-8 text-center">Loading...</div>;
   if (isAdmin === false) return (
     <div className="p-8 text-center text-red-600 dark:text-red-400">
-      Access denied. You must be an admin to view this page.
-      <br />
+      Access denied. You must be an admin to view this page.<br />
       <small>Wallet: {walletAddress || 'Not connected'}</small>
     </div>
   );
+
+  // Manual refresh handler
+  const handleManualRefresh = async () => {
+    try {
+      const [users, completions] = await Promise.all([
+        fetchAllUsers(),
+        fetchAllCourseCompletions(),
+      ]);
+      setUsers(users);
+      setCourseCompletions(completions);
+      calculateStats(users, completions);
+      setAnnouncements(getAnnouncements());
+      setEvents(getEvents());
+    } catch (e) {
+      console.error('❌ Admin: Error loading data:', e);
+    }
+  };
+
+  // Migration handler
+  const handleMigration = async () => {
+    try {
+      console.log('🔄 Starting migration...');
+      const result = await migrateCourseCompletionsData();
+      console.log('✅ Migration result:', result);
+      
+      // Refresh data after migration
+      await handleManualRefresh();
+      
+      alert(`Migration completed!\nMigrated: ${result.migrated} records\nErrors: ${result.errors}`);
+    } catch (e) {
+      console.error('❌ Migration failed:', e);
+      alert('Migration failed. Check console for details.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
@@ -339,6 +378,10 @@ export default function AdminDashboard() {
               <Shield className="w-4 h-4 mr-2" />
               Admin Access
             </Badge>
+            <Button onClick={handleMigration} variant="destructive" className="mb-4">
+              Migrate Data
+            </Button>
+            <Button onClick={handleManualRefresh} className="mb-4">Refresh Data</Button>
             <Button variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
@@ -407,7 +450,7 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-slate-800">
+          <TabsList className="grid w-full grid-cols-7 bg-slate-800">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -420,6 +463,10 @@ export default function AdminDashboard() {
               <Trophy className="w-4 h-4" />
               Final Exam Approvals
             </TabsTrigger>
+            <TabsTrigger value="examapprovals" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Exam Approvals
+            </TabsTrigger>
             <TabsTrigger value="announcements" className="flex items-center gap-2">
               <Megaphone className="w-4 h-4" />
               Announcements
@@ -427,6 +474,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="events" className="flex items-center gap-2">
               <CalendarDays className="w-4 h-4" />
               Events
+            </TabsTrigger>
+            <TabsTrigger value="admin-management" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              Admin Management
             </TabsTrigger>
           </TabsList>
 
@@ -445,6 +496,34 @@ export default function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {/* User Tracking Table */}
+                <div className="mb-8 overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Wallet</TableHead>
+                        <TableHead>Profile Completed</TableHead>
+                        <TableHead>Squad Test Completed</TableHead>
+                        <TableHead>Squad</TableHead>
+                        <TableHead>Display Name</TableHead>
+                        <TableHead>Last Active</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users?.map(user => (
+                        <TableRow key={user.id || user.wallet_address}>
+                          <TableCell>{user.wallet_address}</TableCell>
+                          <TableCell>{user.profile_completed ? '✅' : '❌'}</TableCell>
+                          <TableCell>{user.squad_test_completed ? '✅' : '❌'}</TableCell>
+                          <TableCell>{user.squad || '-'}</TableCell>
+                          <TableCell>{user.display_name || '-'}</TableCell>
+                          <TableCell>{user.last_active ? new Date(user.last_active).toLocaleString() : '-'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {/* Existing user cards */}
                 <div className="space-y-4">
                   {users.map((user) => {
                     const userCompletions = courseCompletions.filter(
@@ -643,6 +722,86 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* Exam Approvals Tab */}
+          <TabsContent value="examapprovals" className="space-y-6">
+            <Card className="bg-slate-800/50">
+              <CardHeader>
+                <CardTitle>Exam Approvals Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-2 text-left">Display Name</th>
+                        <th className="px-4 py-2 text-left">Wallet Address</th>
+                        <th className="px-4 py-2 text-left">Course</th>
+                        <th className="px-4 py-2 text-left">Exam Type</th>
+                        <th className="px-4 py-2 text-left">Submitted At</th>
+                        <th className="px-4 py-2 text-left">Status</th>
+                        <th className="px-4 py-2 text-left">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {examApprovals.map((exam) => {
+                        const user = users.find(u => u.wallet_address === exam.wallet_address);
+                        let statusBadge = null;
+                        if (exam.status === 'approved') statusBadge = <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Approved</Badge>;
+                        else if (exam.status === 'rejected') statusBadge = <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Rejected</Badge>;
+                        else statusBadge = <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Pending</Badge>;
+                        
+                        return (
+                          <tr key={exam.id} className="border-b border-slate-700">
+                            <td className="px-4 py-2">{user?.display_name || 'Unknown'}</td>
+                            <td className="px-4 py-2 font-mono text-xs break-all">{exam.wallet_address}</td>
+                            <td className="px-4 py-2">{exam.course_id}</td>
+                            <td className="px-4 py-2">{exam.exam_type}</td>
+                            <td className="px-4 py-2">{exam.submitted_at ? new Date(exam.submitted_at).toLocaleString() : '-'}</td>
+                            <td className="px-4 py-2">{statusBadge}</td>
+                            <td className="px-4 py-2">
+                              <div className="flex gap-2">
+                                {exam.status === 'pending' && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      onClick={() => handleApproveExam(exam.id!, walletAddress || '')}
+                                    >
+                                      <CheckCircle className="w-4 h-4 mr-1" /> Approve
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => handleRejectExam(exam.id!, walletAddress || '')}
+                                    >
+                                      <XCircle className="w-4 h-4 mr-1" /> Reject
+                                    </Button>
+                                  </>
+                                )}
+                                {exam.status !== 'pending' && (
+                                  <span className="text-sm text-gray-400">
+                                    {exam.approved_at ? new Date(exam.approved_at).toLocaleDateString() : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {examApprovals.length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No exam approvals found</p>
+                    <p className="text-sm">Exam approvals will appear here when users submit exams</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Announcements Tab */}
           <TabsContent value="announcements" className="space-y-6">
             <Card className="bg-slate-800/50">
@@ -736,6 +895,56 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Admin Management Tab */}
+          <TabsContent value="admin-management" className="space-y-6">
+            <Card className="bg-slate-800/50">
+              <CardHeader>
+                <CardTitle>Admin Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-6 flex gap-2 items-end">
+                  <Input
+                    placeholder="Enter wallet address"
+                    value={newAdminWallet}
+                    onChange={e => setNewAdminWallet(e.target.value)}
+                    className="w-96"
+                  />
+                  <Button onClick={handleAddAdminWallet} disabled={adminLoading || !newAdminWallet}>
+                    {adminLoading ? 'Adding...' : 'Add Admin'}
+                  </Button>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Current Admin Wallets</h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Wallet Address</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {adminWallets.map((admin) => (
+                        <TableRow key={admin.wallet_address}>
+                          <TableCell className="font-mono text-xs break-all">{admin.wallet_address}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleRemoveAdminWallet(admin.wallet_address)}
+                              disabled={adminLoading || admin.wallet_address === walletAddress}
+                            >
+                              Remove
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>

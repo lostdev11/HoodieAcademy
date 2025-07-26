@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import { Inter, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
+import TokenGate from '@/components/TokenGate';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -28,13 +29,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Only skip TokenGate for /connect
+  const isConnectPage = typeof window !== 'undefined' && window.location.pathname === '/connect';
   return (
     <html lang="en">
       <head>
         <link rel="icon" href="data:," />
       </head>
       <body className={`${inter.variable} ${ibmPlexMono.variable} antialiased scrollbar-thin`}>
-        {children}
+        {isConnectPage ? children : <TokenGate>{children}</TokenGate>}
       </body>
     </html>
   );

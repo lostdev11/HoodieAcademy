@@ -188,11 +188,16 @@ export type Database = {
       users: {
         Row: {
           approved: boolean | null
+          courses_started: boolean | null
           created_at: string | null
           display_name: string | null
+          exam_approved_at: string | null
+          exam_approved_by_admin: boolean | null
           id: string
           is_admin: boolean | null
           last_active: string | null
+          placement_completed: boolean | null
+          placement_started: boolean | null
           profile_completed: boolean | null
           squad: string | null
           squad_test_completed: boolean | null
@@ -200,11 +205,16 @@ export type Database = {
         }
         Insert: {
           approved?: boolean | null
+          courses_started?: boolean | null
           created_at?: string | null
           display_name?: string | null
+          exam_approved_at?: string | null
+          exam_approved_by_admin?: boolean | null
           id?: string
           is_admin?: boolean | null
           last_active?: string | null
+          placement_completed?: boolean | null
+          placement_started?: boolean | null
           profile_completed?: boolean | null
           squad?: string | null
           squad_test_completed?: boolean | null
@@ -212,11 +222,16 @@ export type Database = {
         }
         Update: {
           approved?: boolean | null
+          courses_started?: boolean | null
           created_at?: string | null
           display_name?: string | null
+          exam_approved_at?: string | null
+          exam_approved_by_admin?: boolean | null
           id?: string
           is_admin?: boolean | null
           last_active?: string | null
+          placement_completed?: boolean | null
+          placement_started?: boolean | null
           profile_completed?: boolean | null
           squad?: string | null
           squad_test_completed?: boolean | null

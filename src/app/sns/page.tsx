@@ -6,6 +6,7 @@
       import { ArrowLeft } from "lucide-react";
       import axios from "axios";
       import { Card, CardContent } from "@/components/ui/card";
+      import { completeCourse } from '@/lib/supabase';
 
       export default function SNSCourse() {
         const [walletAddress, setWalletAddress] = useState<string | null>(null);
