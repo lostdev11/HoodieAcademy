@@ -43,18 +43,31 @@ export default function Tier1() {
       localStorage.setItem('walletWizardryProgress', JSON.stringify(parsedStatus));
       
       // Get user's wallet address (no demo-wallet fallback)
-      const walletAddress = localStorage.getItem('userWalletAddress') || 
-                           localStorage.getItem('connectedWallet') || 
-                           localStorage.getItem('walletAddress') ||
-                           (typeof window !== 'undefined' && window.solana?.publicKey ? window.solana.publicKey.toString() : null);
+      const userWalletAddress = localStorage.getItem('userWalletAddress');
+      const connectedWallet = localStorage.getItem('connectedWallet');
+      const walletAddress = localStorage.getItem('walletAddress');
+      const solanaPublicKey = typeof window !== 'undefined' && window.solana?.publicKey ? window.solana.publicKey.toString() : null;
+      
+      console.log('🔍 Tier 1 completion - Wallet address sources:', {
+        userWalletAddress,
+        connectedWallet,
+        walletAddress,
+        solanaPublicKey
+      });
+      
+      const finalWalletAddress = userWalletAddress || connectedWallet || walletAddress || solanaPublicKey;
+      
+      console.log('🔍 Tier 1 completion - Final wallet address:', finalWalletAddress);
       
       // Update leaderboard score
-      updateScoreForLessonCompletion(walletAddress, 'wallet-wizardry', 0, 4); // tier-1 is lesson 0 of 4
+      updateScoreForLessonCompletion(finalWalletAddress, 'wallet-wizardry', 0, 4); // tier-1 is lesson 0 of 4
       
       // Record course completion in database
-      if (walletAddress) {
-        await completeCourse(walletAddress, 'wallet-wizardry-tier-1');
-        console.log('✅ Tier 1 completion recorded in database for wallet:', walletAddress);
+      if (finalWalletAddress) {
+        await completeCourse(finalWalletAddress, 'wallet-wizardry-tier-1');
+        console.log('✅ Tier 1 completion recorded in database for wallet:', finalWalletAddress);
+      } else {
+        console.error('❌ No wallet address found for Tier 1 completion');
       }
       
       setIsCompleted(true);

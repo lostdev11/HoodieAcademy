@@ -230,6 +230,14 @@ export async function startCourse(wallet_address: string, course_id: string) {
 export async function completeCourse(wallet_address: string, course_id: string) {
   try {
     console.log(`🔍 Completing course: ${course_id} for wallet: ${wallet_address}`);
+    console.log(`🔍 Wallet address type: ${typeof wallet_address}, length: ${wallet_address?.length}`);
+    console.log(`🔍 Course ID type: ${typeof course_id}, value: ${course_id}`);
+    
+    if (!wallet_address || wallet_address === 'null' || wallet_address === 'undefined') {
+      console.error(`❌ Invalid wallet address: ${wallet_address}`);
+      throw new Error('Invalid wallet address');
+    }
+    
     // First, try to update existing record
     const { data: updateData, error: updateError } = await supabase
       .from('user_course_completions')
