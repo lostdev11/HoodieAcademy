@@ -121,6 +121,7 @@ export default function AdminDashboard() {
     console.log('🔍 Admin: Loading dashboard data...');
     const load = async () => {
       try {
+        console.log('🔄 Admin: Starting data fetch...');
         const [users, completions, examApprovals] = await Promise.all([
           fetchAllUsers(),
           fetchAllCourseCompletions(),
@@ -129,12 +130,14 @@ export default function AdminDashboard() {
         console.log('✅ Admin: Loaded users:', users.length);
         console.log('✅ Admin: Loaded completions:', completions.length);
         console.log('✅ Admin: Loaded exam approvals:', examApprovals.length);
+        console.log('📋 Admin: Course completions data:', completions);
         setUsers(users);
         setCourseCompletions(completions);
         setExamApprovals(examApprovals);
         calculateStats(users, completions);
         setAnnouncements(getAnnouncements());
         setEvents(getEvents());
+        console.log('✅ Admin: Dashboard data loading complete');
       } catch (e) {
         console.error('❌ Admin: Error loading data:', e);
       }

@@ -289,6 +289,9 @@ export async function fetchAllCourseCompletions(): Promise<CourseCompletion[]> {
     console.log('✅ Fetched course completions:', data?.length || 0, 'records');
     if (data && data.length > 0) {
       console.log('📋 Sample completion:', data[0]);
+      console.log('📋 All completions:', data);
+    } else {
+      console.log('⚠️ No course completions found in database');
     }
     
     return data || [];
