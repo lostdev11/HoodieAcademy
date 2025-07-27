@@ -1,0 +1,100 @@
+{
+  "id": "n100-nft-marketplaces",
+  "title": "N100 – NFT Marketplaces 101: Where the Magic Happens",
+  "description": "Master Solana's top NFT marketplaces: Magic Eden and Tensor. Learn to navigate interfaces, understand liquidity, and place your first bids.",
+  "badge": "Marketplace Navigator",
+  "emoji": "🏪",
+  "pathType": "tech",
+  "href": "/courses/n100-nft-marketplaces",
+  "localStorageKey": "n100NftMarketplacesProgress",
+  "totalLessons": 5,
+  "squad": "Decoders",
+  "category": "marketplaces",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Welcome to the Marketplace",
+      "description": "An overview of Solana's top marketplaces: Magic Eden and Tensor. Learn what role they play in NFT trading, how liquidity works, and where most volume flows.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Understanding NFT Marketplaces",
+          "content": "NFT marketplaces are the digital equivalent of art galleries and auction houses, but for blockchain-based assets. They provide the infrastructure for buying, selling, and trading NFTs.\n\n**Key Functions of Marketplaces:**\n• **Discovery**: Browse and discover new NFT collections\n• **Trading**: Buy, sell, and bid on NFTs\n• **Liquidity**: Provide market depth for price discovery\n• **Analytics**: Track floor prices, volume, and trends\n\n**Solana's Top Marketplaces:**\n• **Magic Eden**: The largest Solana NFT marketplace\n• **Tensor**: Advanced trading platform for degens\n• **OpenSea**: Multi-chain marketplace (includes Solana)\n• **Solanart**: Early Solana marketplace\n\n**Why Marketplaces Matter**:\nMarketplaces are where price discovery happens and where most NFT trading volume flows. Understanding how to navigate them is crucial for successful NFT trading.",
+          "video": "/videos/marketplace-overview.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Magic Eden Basics",
+      "description": "Learn how to navigate Magic Eden's interface: trending collections, floor price, listing activity, and how to place a bid or buy instantly.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Navigating Magic Eden",
+          "content": "**Magic Eden Interface Overview**:\n\n**Homepage Features:**\n• Trending collections\n• Recent sales\n• Floor price updates\n• Featured drops\n\n**Collection Pages:**\n• Floor price and volume stats\n• Listings with price filters\n• Trait rarity information\n• Sales history\n\n**Trading Features:**\n• **Buy Now**: Purchase at listed price\n• **Place Bid**: Offer below floor\n• **List for Sale**: Set your asking price\n• **Cancel Listing**: Remove your listing\n\n**Key Metrics to Watch:**\n• Floor price (lowest listed price)\n• 24h volume\n• Number of listings\n• Recent sales\n• Unique holders",
+          "video": "/videos/magic-eden-walkthrough.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Placing Bids and Buying",
+          "content": "**How to Place a Bid:**\n1. Navigate to the collection page\n2. Click 'Place Bid' on any NFT\n3. Enter your bid amount (in SOL)\n4. Set bid duration (1-7 days)\n5. Confirm transaction\n\n**How to Buy Instantly:**\n1. Find an NFT you want\n2. Click 'Buy Now'\n3. Review the price and fees\n4. Confirm the transaction\n5. NFT transfers to your wallet\n\n**Bid Strategy Tips:**\n• Start with small bids to test the market\n• Monitor bid activity and adjust accordingly\n• Consider placing multiple bids across different NFTs\n• Set realistic bid amounts based on floor price\n\n**Risk Management:**\n• Never bid more than you can afford to lose\n• Factor in marketplace fees (usually 2-3%)\n• Consider gas fees for transactions\n• Have a clear exit strategy",
+          "video": "/videos/magic-eden-trading.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Tensor Deep Dive",
+      "description": "Explore Tensor's advanced trader view: bid walls, snipe tools, listings feed, and analytic tabs. Understand why degens prefer it.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Tensor's Advanced Features",
+          "content": "**Why Traders Love Tensor:**\n\n**Advanced Analytics:**\n• Real-time floor price tracking\n• Volume and liquidity analysis\n• Trait rarity breakdowns\n• Historical price charts\n\n**Trading Tools:**\n• **Bid Walls**: See all active bids\n• **Snipe Tools**: Quick purchase options\n• **Listings Feed**: Real-time new listings\n• **Bulk Operations**: Multi-NFT trading\n\n**Interface Advantages:**\n• Cleaner, more professional layout\n• Better data visualization\n• Faster transaction processing\n• More detailed collection stats\n\n**Key Differences from Magic Eden:**\n• More advanced trading features\n• Better analytics and data\n• Faster transaction speeds\n• More professional interface\n• Advanced filtering options",
+          "video": "/videos/tensor-overview.mp4"
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Using Tensor's Trading Tools",
+          "content": "**Bid Wall Analysis:**\n• View all active bids on a collection\n• Identify support levels\n• Understand market sentiment\n• Find undervalued NFTs\n\n**Snipe Tools:**\n• Quick buy options for new listings\n• Automated bidding strategies\n• Price alert notifications\n• Instant purchase capabilities\n\n**Listings Feed:**\n• Real-time new listings\n• Price change notifications\n• Trait-based filtering\n• Volume-based sorting\n\n**Bulk Operations:**\n• Buy multiple NFTs at once\n• Place multiple bids simultaneously\n• Cancel multiple listings\n• Batch transactions for efficiency\n\n**Pro Tips:**\n• Use bid walls to understand market depth\n• Set up alerts for price drops\n• Monitor listings feed for opportunities\n• Use bulk operations to save time",
+          "video": "/videos/tensor-trading.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-4",
+      "title": "Demo: Bid on a WifHoodie",
+      "description": "Walk through placing a bid on both platforms. Practice using a burner wallet and check what happens post-fill.",
+      "lessons": [
+        {
+          "id": "lesson-4-1",
+          "title": "Step-by-Step Bid Demo",
+          "content": "**Demo: Placing a Bid on Magic Eden**\n\n**Step 1: Connect Wallet**\n• Open Magic Eden in your browser\n• Connect your Phantom or Solflare wallet\n• Ensure you have SOL for the bid\n\n**Step 2: Find WifHoodie Collection**\n• Search for 'WifHoodie' in the search bar\n• Click on the collection page\n• Review current floor price and listings\n\n**Step 3: Place Your Bid**\n• Select an NFT you want to bid on\n• Click 'Place Bid' button\n• Enter your bid amount (e.g., 0.5 SOL)\n• Set bid duration (7 days recommended)\n• Review and confirm transaction\n\n**Step 4: Monitor Your Bid**\n• Check your bid in the 'My Bids' section\n• Monitor if you get outbid\n• Adjust bid if needed\n\n**What Happens if You Win:**\n• NFT automatically transfers to your wallet\n• SOL is deducted from your balance\n• You can list it for sale or hold\n\n**What Happens if You Lose:**\n• SOL is returned to your wallet\n• No fees are charged\n• You can place new bids",
+          "video": "/videos/bid-demo-magic-eden.mp4"
+        },
+        {
+          "id": "lesson-4-2",
+          "title": "Tensor Bid Demo",
+          "content": "**Demo: Placing a Bid on Tensor**\n\n**Step 1: Navigate to Tensor**\n• Go to tensor.trade\n• Connect your wallet\n• Search for WifHoodie collection\n\n**Step 2: Analyze the Market**\n• Check current floor price\n• Review bid wall activity\n• Look at recent sales\n• Analyze trait rarity\n\n**Step 3: Place Strategic Bid**\n• Use bid wall to see current bids\n• Place bid slightly above floor\n• Set appropriate duration\n• Confirm transaction\n\n**Step 4: Advanced Features**\n• Set up price alerts\n• Use snipe tools for quick purchases\n• Monitor listings feed\n• Use bulk operations if needed\n\n**Key Differences from Magic Eden:**\n• More detailed analytics\n• Better bid wall visualization\n• Faster transaction processing\n• More professional interface\n• Advanced filtering options\n\n**Pro Tips:**\n• Use Tensor for more serious trading\n• Leverage analytics for better decisions\n• Set up alerts for opportunities\n• Use bulk operations for efficiency",
+          "video": "/videos/bid-demo-tensor.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-5",
+      "title": "Assignment: Place Your First Bid",
+      "description": "Choose a hoodie (or any NFT) and place a small bid using a test wallet. Screenshot it and post in the Decoder thread with your thoughts.",
+      "lessons": [
+        {
+          "id": "lesson-5-1",
+          "title": "Your First Bid Assignment",
+          "content": "**Assignment: Place Your First Real Bid**\n\n**Objective:**\nGain hands-on experience with NFT marketplaces by placing your first bid on a real NFT.\n\n**Requirements:**\n• Use a test wallet with small amount of SOL\n• Place bid on any NFT collection\n• Document the process with screenshots\n• Share your experience in the Decoder thread\n\n**Step-by-Step Instructions:**\n\n**1. Prepare Your Wallet**\n• Create a test wallet (Phantom or Solflare)\n• Add a small amount of SOL (0.1-0.5 SOL)\n• Ensure you have enough for bid + gas fees\n\n**2. Choose Your Target**\n• Pick any NFT collection you're interested in\n• Research current floor price\n• Identify a good entry point\n• Consider trait rarity and demand\n\n**3. Place Your Bid**\n• Navigate to the collection on Magic Eden or Tensor\n• Select an NFT you want to bid on\n• Place a bid slightly below floor price\n• Set appropriate duration (3-7 days)\n• Confirm the transaction\n\n**4. Document Your Experience**\n• Screenshot your bid placement\n• Record the bid amount and duration\n• Note your reasoning for the bid\n• Monitor the bid status\n\n**5. Share Your Results**\n• Post screenshots in the Decoder thread\n• Share your thought process\n• Discuss what you learned\n• Ask questions about the experience\n\n**Success Criteria:**\n✅ Successfully placed a bid\n✅ Documented the process\n✅ Shared experience in community\n✅ Learned from the experience\n\n**Bonus Challenges:**\n• Try bidding on both Magic Eden and Tensor\n• Compare the user experience\n• Place multiple bids on different NFTs\n• Track your bid performance over time",
+          "video": "/videos/assignment-guide.mp4"
+        }
+      ]
+    }
+  ]
+} 

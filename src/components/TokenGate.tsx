@@ -1,4 +1,5 @@
 "use client";
+// NFT verification enabled with proper API configuration
 import React from 'react';
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -192,6 +193,39 @@ export default function TokenGate({ children }: TokenGateProps) {
     setLoading(false);
   };
 
+  // Restore session on component mount
+  useEffect(() => {
+    const savedWalletAddress = localStorage.getItem('walletAddress');
+    const sessionData = sessionStorage.getItem(VERIFICATION_SESSION_KEY);
+    
+    if (savedWalletAddress && sessionData) {
+      try {
+        const session = JSON.parse(sessionData);
+        const now = Date.now();
+        const sessionAge = now - session.timestamp;
+        const sessionValid = sessionAge < 24 * 60 * 60 * 1000; // 24 hours
+        
+        if (sessionValid && session.walletAddress === savedWalletAddress) {
+          console.log("🔄 Debug: Restoring session for wallet:", savedWalletAddress);
+          setWalletAddress(savedWalletAddress);
+          setIsHolder(true);
+          setIsAuthenticated(true);
+          setHasBeenConnected(true);
+        } else {
+          console.log("⏰ Debug: Session expired or invalid, clearing storage");
+          sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
+          localStorage.removeItem('walletAddress');
+          localStorage.removeItem('connectedWallet');
+        }
+      } catch (error) {
+        console.error("❌ Debug: Error parsing session data:", error);
+        sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
+        localStorage.removeItem('walletAddress');
+        localStorage.removeItem('connectedWallet');
+      }
+    }
+  }, []);
+
   // When walletAddress changes, verify ownership (but only show success if not from session)
   useEffect(() => {
     if (walletAddress) {
@@ -356,26 +390,13 @@ export default function TokenGate({ children }: TokenGateProps) {
         )} */}
         <div className="flex justify-center">
             <Button
-              onClick={() => setLoading(true)}
+              onClick={() => connectWallet('phantom')}
               className="bg-gradient-to-r from-green-600 to-purple-600 text-white hover:from-green-500 hover:to-purple-500 px-8 py-3 w-64"
             >
               <Wallet className="mr-2" size={20} />
               Connect Wallet
             </Button>
           </div>
-        {loading && (
-          <div className="flex flex-col items-center space-y-3 mt-4">
-             <Button
-                onClick={() => connectWallet('phantom')}
-                className="bg-purple-600 hover:bg-purple-700 text-white w-64"
-             >
-                Connect Phantom
-             </Button>
-             <Button variant="ghost" onClick={() => setLoading(false)} className="text-gray-400">
-                Cancel
-             </Button>
-          </div>
-        )}
       </motion.div>
     </div>
   );

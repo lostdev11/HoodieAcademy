@@ -3,11 +3,16 @@ import { createClient } from '@supabase/supabase-js'
 console.log("✅ SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 console.log("✅ SUPABASE KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-// Create Supabase client only if environment variables are available
+// Create Supabase client only if environment variables are available and valid
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = supabaseUrl && supabaseKey 
+// Check if the URL is a valid Supabase URL (not placeholder)
+const isValidSupabaseUrl = supabaseUrl && 
+  supabaseUrl !== 'your_supabase_url_here' && 
+  supabaseUrl.startsWith('https://');
+
+export const supabase = isValidSupabaseUrl && supabaseKey && supabaseKey !== 'your_supabase_anon_key_here'
   ? createClient(supabaseUrl, supabaseKey)
   : createClient('https://mock.supabase.co', 'mock-key');
 

@@ -1,0 +1,55 @@
+{
+  "id": "nft-mastery",
+  "title": "NFT Mastery",
+  "description": "Learn the ins and outs of NFTs, from creation to trading and community building, with interactive quizzes and mock minting.",
+  "badge": "NFT Ninja",
+  "emoji": "👾",
+  "pathType": "tech",
+  "href": "/courses/nft-mastery",
+  "localStorageKey": "nftMasteryProgress",
+  "totalLessons": 4,
+  "squad": "Creators",
+  "category": "nft",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Understanding NFTs",
+      "description": "Learn the fundamentals of Non-Fungible Tokens",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What are NFTs?",
+          "content": "NFTs (Non-Fungible Tokens) are unique digital assets that represent ownership of a specific item or piece of content on the blockchain.\n\n**Key Characteristics:**\n• **Unique**: Each NFT has distinct properties\n• **Indivisible**: Cannot be split into smaller parts\n• **Verifiable**: Ownership is proven on the blockchain\n• **Immutable**: Cannot be altered once created\n\n**Common Use Cases:**\n• Digital art and collectibles\n• Gaming items and characters\n• Virtual real estate\n• Music and video content\n• Domain names and identities\n\n**Why NFTs Matter**:\nNFTs enable true digital ownership and create new economic models for creators and collectors.",
+          "video": "/videos/nft-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "How NFTs Work",
+          "content": "**Blockchain Technology**:\nNFTs are built on blockchain technology, which provides:\n• Decentralized ownership records\n• Immutable transaction history\n• Global accessibility\n\n**Smart Contracts**:\nNFTs are governed by smart contracts that define:\n• Token standards (ERC-721, ERC-1155)\n• Ownership rules\n• Transfer mechanisms\n• Metadata storage\n\n**Metadata**:\nEach NFT contains metadata that describes:\n• The digital asset it represents\n• Creator information\n• Properties and attributes\n• Links to external content\n\n**Gas Fees**:\nCreating and trading NFTs requires gas fees to pay for blockchain transactions.",
+          "video": "/videos/nft-mechanics.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Creating Your First NFT",
+      "description": "Step-by-step guide to minting your own NFT",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Preparing Your Digital Asset",
+          "content": "**File Requirements**:\n• Supported formats: JPG, PNG, GIF, MP4, MP3, GLB\n• File size limits (varies by platform)\n• High quality recommended for better value\n\n**Metadata Preparation**:\n• Name for your NFT\n• Description explaining the piece\n• Properties/attributes (rarity traits)\n• External links (website, social media)\n\n**Legal Considerations**:\n• Ensure you own the rights to the content\n• Consider licensing terms\n• Be aware of copyright issues\n\n**Market Research**:\n• Study successful NFT collections\n• Understand current trends\n• Research target audience",
+          "video": "/videos/preparing-nft.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Minting on OpenSea",
+          "content": "**Step 1: Connect Your Wallet**\n• Install MetaMask or other supported wallet\n• Connect to OpenSea\n• Ensure you have enough ETH for gas fees\n\n**Step 2: Create Your Collection**\n• Click 'Create' → 'My Collections'\n• Add collection details (name, description, logo)\n• Set up collection metadata\n\n**Step 3: Mint Your NFT**\n• Upload your digital file\n• Fill in metadata (name, description, properties)\n• Set your price or choose 'Free mint'\n• Pay gas fees to complete minting\n\n**Step 4: List for Sale**\n• Set your asking price\n• Choose listing duration\n• Set royalty percentage\n• Publish your listing",
+          "video": "/videos/opensea-minting.mp4"
+        }
+      ]
+    }
+  ]
+} 

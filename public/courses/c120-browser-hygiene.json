@@ -1,0 +1,106 @@
+{
+  "id": "c120-browser-hygiene",
+  "title": "C120 – Browser Hygiene & Setup",
+  "description": "Master browser security for Web3 trading. Learn to segment browsers, manage extensions safely, control permissions, and harden your setup against drainers and scams.",
+  "badge": "Browser Guardian",
+  "emoji": "🛡️",
+  "pathType": "tech",
+  "href": "/courses/c120-browser-hygiene",
+  "localStorageKey": "c120BrowserHygieneProgress",
+  "totalLessons": 5,
+  "squad": "Decoders",
+  "category": "cybersecurity",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Browser Segmentation",
+      "description": "Why you should separate real-life and degen activity across different browsers or profiles. Use Brave for trading, Chrome for personal accounts, etc.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Why Browser Segmentation Matters",
+          "content": "**The Problem with Single Browser Usage:**\n\n**Security Risks:**\n• **Cross-Contamination**: Malicious sites can access data from other tabs\n• **Session Hijacking**: One compromised session affects everything\n• **Extension Vulnerabilities**: Risky extensions can access all your data\n• **Tracking**: Sites can track you across different activities\n• **Data Leakage**: Personal info mixed with trading activities\n\n**Real-World Scenarios:**\n• **Drainer Attack**: Malicious site drains your wallet\n• **Phishing Site**: Fake site steals your credentials\n• **Malicious Extension**: Extension steals your data\n• **Session Theft**: Someone gains access to your accounts\n• **Cross-Site Scripting**: Malicious code runs in your browser\n\n**Benefits of Browser Segmentation:**\n• **Isolation**: Problems in one browser don't affect others\n• **Privacy**: Keep personal and trading activities separate\n• **Security**: Reduce attack surface\n• **Organization**: Easier to manage different activities\n• **Recovery**: If one browser is compromised, others are safe\n\n**Recommended Browser Setup:**\n• **Brave**: For Web3 trading and DeFi activities\n• **Chrome**: For personal accounts and regular browsing\n• **Firefox**: For sensitive activities (banking, etc.)\n• **Edge**: For work-related activities\n• **Safari**: For Apple ecosystem activities\n\n**Pro Tips:**\n• Use different email addresses for each browser\n• Don't sync bookmarks between browsers\n• Use different passwords for each browser\n• Clear cookies regularly\n• Use incognito/private mode for sensitive activities",
+          "video": "/videos/browser-segmentation-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Setting Up Browser Profiles",
+          "content": "**How to Create Browser Profiles:**\n\n**Chrome Profile Setup:**\n• **Step 1**: Open Chrome and click your profile icon\n• **Step 2**: Click \"Add\" to create a new profile\n• **Step 3**: Name it (e.g., \"Trading\", \"Personal\", \"Work\")\n• **Step 4**: Choose a color and icon\n• **Step 5**: Sign in with different Google accounts\n\n**Firefox Profile Setup:**\n• **Step 1**: Type `about:profiles` in address bar\n• **Step 2**: Click \"Create a New Profile\"\n• **Step 3**: Name your profile\n• **Step 4**: Choose profile location\n• **Step 5**: Set as default if desired\n\n**Brave Profile Setup:**\n• **Step 1**: Click the profile icon in top right\n• **Step 2**: Click \"Add New Profile\"\n• **Step 3**: Name your profile\n• **Step 4**: Choose sync settings\n• **Step 5**: Customize settings for each profile\n\n**Profile Organization Strategy:**\n\n**Trading Profile:**\n• **Browser**: Brave or Chrome\n• **Extensions**: Wallet extensions, trading tools\n• **Bookmarks**: Trading sites, DEXs, charts\n• **Settings**: Enhanced privacy, ad blocking\n• **Accounts**: Trading-specific accounts only\n\n**Personal Profile:**\n• **Browser**: Chrome or Firefox\n• **Extensions**: Minimal, trusted only\n• **Bookmarks**: Personal sites, social media\n• **Settings**: Standard privacy settings\n• **Accounts**: Personal accounts only\n\n**Work Profile:**\n• **Browser**: Edge or Chrome\n• **Extensions**: Work-related tools only\n• **Bookmarks**: Work sites, productivity tools\n• **Settings**: Company security policies\n• **Accounts**: Work accounts only\n\n**Pro Tips:**\n• Use different passwords for each profile\n• Don't share bookmarks between profiles\n• Clear data regularly\n• Use different email addresses\n• Keep trading profile isolated",
+          "video": "/videos/browser-profiles-setup.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Trusted vs Risky Extensions",
+      "description": "Learn which browser extensions are safe (wallets, blockers) and which are data mines or security risks.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Safe Browser Extensions",
+          "content": "**Trusted Extension Categories:**\n\n**Wallet Extensions:**\n• **MetaMask**: Most trusted Ethereum wallet\n• **Phantom**: Popular Solana wallet\n• **Brave Wallet**: Built into Brave browser\n• **Coinbase Wallet**: Official Coinbase extension\n• **Trust Wallet**: Binance's wallet extension\n\n**Privacy & Security:**\n• **uBlock Origin**: Ad and tracker blocker\n• **Privacy Badger**: Automatic tracker blocking\n• **HTTPS Everywhere**: Forces secure connections\n• **NoScript**: Blocks JavaScript execution\n• **Cookie AutoDelete**: Automatically deletes cookies\n\n**Trading Tools:**\n• **TradingView**: Chart analysis tools\n• **CoinGecko**: Price tracking\n• **DeBank**: DeFi portfolio tracker\n• **DEXScreener**: DEX data and charts\n• **Coinhall**: Solana trading data\n\n**Productivity:**\n• **LastPass**: Password manager\n• **1Password**: Secure password management\n• **Bitwarden**: Open-source password manager\n• **Grammarly**: Writing assistant\n• **Notion Web Clipper**: Save web content\n\n**How to Verify Extensions:**\n• **Check Reviews**: Look for high ratings and many reviews\n• **Developer Info**: Research the developer/company\n• **Permissions**: Review what permissions it requests\n• **Update Frequency**: Regular updates are good\n• **Open Source**: Open source extensions are often safer\n\n**Red Flags to Watch For:**\n• **Too Many Permissions**: Requests unnecessary access\n• **No Reviews**: New or unpopular extensions\n• **Suspicious Developer**: Unknown or sketchy developer\n• **Aggressive Marketing**: Spammy or pushy advertising\n• **Copycat Names**: Imitates popular extensions",
+          "video": "/videos/safe-extensions.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Dangerous Extensions to Avoid",
+          "content": "**Risky Extension Categories:**\n\n**Data Mining Extensions:**\n• **Free VPNs**: Often sell your data\n• **Productivity Tools**: May track your browsing\n• **Shopping Extensions**: Track your purchases\n• **Social Media Tools**: Access your social accounts\n• **Gaming Extensions**: May contain malware\n\n**Malicious Extensions:**\n• **Fake Wallets**: Imitate real wallet extensions\n• **Phishing Tools**: Designed to steal credentials\n• **Cryptocurrency Miners**: Use your computer for mining\n• **Ad Injectors**: Insert unwanted ads\n• **Browser Hijackers**: Change your homepage/search\n\n**Common Attack Vectors:**\n• **Fake MetaMask**: Malicious copy of MetaMask\n• **Fake Phantom**: Malicious copy of Phantom\n• **Fake Trading Tools**: Imitate legitimate trading tools\n• **Fake Password Managers**: Steal your passwords\n• **Fake Ad Blockers**: Actually show more ads\n\n**How to Spot Fake Extensions:**\n• **Check URL**: Verify it's from official store\n• **Developer Name**: Should match official company\n• **Install Count**: Popular extensions have many installs\n• **Reviews**: Look for authentic reviews\n• **Permissions**: Should be minimal and relevant\n\n**Protection Strategies:**\n• **Only Install from Official Stores**: Chrome Web Store, Firefox Add-ons\n• **Verify Developer**: Research the developer/company\n• **Read Permissions**: Understand what it can access\n• **Start Small**: Install one extension at a time\n• **Monitor Behavior**: Watch for unusual activity\n\n**Pro Tips:**\n• **Whitelist Approach**: Only install essential extensions\n• **Regular Audits**: Review installed extensions monthly\n• **Remove Unused**: Delete extensions you don't use\n• **Update Regularly**: Keep extensions updated\n• **Backup Settings**: Export extension settings",
+          "video": "/videos/dangerous-extensions.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Permission Control",
+      "description": "How to manually lock down your browser permissions: clipboard, popups, autofill, microphone, and more.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Understanding Browser Permissions",
+          "content": "**What are Browser Permissions?**\nBrowser permissions control what websites and extensions can access on your device.\n\n**Common Permissions:**\n\n**Location:**\n• **What it does**: Allows sites to know your location\n• **Risk**: Privacy invasion, tracking\n• **Recommendation**: Block for most sites\n• **When to allow**: Only for mapping/navigation sites\n\n**Camera:**\n• **What it does**: Access to your webcam\n• **Risk**: Unauthorized video recording\n• **Recommendation**: Block by default\n• **When to allow**: Only for video calls\n\n**Microphone:**\n• **What it does**: Access to your microphone\n• **Risk**: Audio recording without consent\n• **Recommendation**: Block by default\n• **When to allow**: Only for voice calls\n\n**Notifications:**\n• **What it does**: Send push notifications\n• **Risk**: Spam, unwanted alerts\n• **Recommendation**: Block for most sites\n• **When to allow**: Only for important services\n\n**Clipboard:**\n• **What it does**: Read/write to clipboard\n• **Risk**: Steal copied data\n• **Recommendation**: Block by default\n• **When to allow**: Only for trusted tools\n\n**Autofill:**\n• **What it does**: Auto-fill forms with saved data\n• **Risk**: Data theft, form manipulation\n• **Recommendation**: Disable for sensitive sites\n• **When to allow**: Only for trusted sites\n\n**Popups:**\n• **What it does**: Open new windows/tabs\n• **Risk**: Malicious popups, scams\n• **Recommendation**: Block by default\n• **When to allow**: Only for trusted sites\n\n**JavaScript:**\n• **What it does**: Run code on websites\n• **Risk**: Malicious scripts, tracking\n• **Recommendation**: Allow but use blockers\n• **When to block**: Suspicious sites only",
+          "video": "/videos/browser-permissions.mp4"
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Locking Down Your Browser",
+          "content": "**How to Secure Browser Permissions:**\n\n**Chrome Security Settings:**\n• **Step 1**: Go to Settings > Privacy and Security\n• **Step 2**: Click \"Site Settings\"\n• **Step 3**: Configure each permission:\n  - **Location**: Block\n  - **Camera**: Block\n  - **Microphone**: Block\n  - **Notifications**: Block\n  - **Popups**: Block\n  - **JavaScript**: Allow (use extensions to block)\n\n**Firefox Security Settings:**\n• **Step 1**: Go to Settings > Privacy & Security\n• **Step 2**: Set \"Enhanced Tracking Protection\" to Strict\n• **Step 3**: Configure permissions:\n  - **Location**: Block\n  - **Camera**: Block\n  - **Microphone**: Block\n  - **Notifications**: Block\n  - **Popups**: Block\n\n**Brave Security Settings:**\n• **Step 1**: Go to Settings > Shields\n• **Step 2**: Set Shields to \"Aggressive\"\n• **Step 3**: Configure site settings:\n  - **Location**: Block\n  - **Camera**: Block\n  - **Microphone**: Block\n  - **Notifications**: Block\n  - **Popups**: Block\n\n**Advanced Security Measures:**\n\n**Content Security Policy:**\n• **What it does**: Controls what resources can load\n• **Implementation**: Use browser extensions\n• **Benefits**: Prevents XSS attacks\n• **Configuration**: Block inline scripts\n\n**HTTP Strict Transport Security:**\n• **What it does**: Forces HTTPS connections\n• **Implementation**: Built into modern browsers\n• **Benefits**: Prevents man-in-the-middle attacks\n• **Configuration**: Enable in browser settings\n\n**Pro Tips:**\n• **Whitelist Approach**: Block everything, allow only what you need\n• **Regular Audits**: Check permissions monthly\n• **Use Extensions**: Security extensions can help\n• **Test Settings**: Make sure sites still work\n• **Backup Settings**: Export your security configuration",
+          "video": "/videos/locking-down-browser.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-4",
+      "title": "Hardening for Web3",
+      "description": "How to prepare your browser before interacting with mints, airdrops, or DApps. Avoid drainers before they drain you.",
+      "lessons": [
+        {
+          "id": "lesson-4-1",
+          "title": "Web3 Security Threats",
+          "content": "**Common Web3 Security Threats:**\n\n**Drainer Attacks:**\n• **What it is**: Malicious sites that drain your wallet\n• **How it works**: Tricks you into signing malicious transactions\n• **Signs**: Unrealistic promises, urgent pressure\n• **Protection**: Never sign transactions from unknown sites\n• **Recovery**: Use hardware wallets, separate hot wallets\n\n**Phishing Sites:**\n• **What it is**: Fake sites that look like real ones\n• **How it works**: Steals your private keys or seed phrases\n• **Signs**: Slightly different URLs, poor design\n• **Protection**: Always verify URLs, use bookmarks\n• **Recovery**: Never enter seed phrases on websites\n\n**Malicious DApps:**\n• **What it is**: Decentralized apps with hidden malicious code\n• **How it works**: Executes unwanted transactions\n• **Signs**: Unrealistic returns, pressure to act fast\n• **Protection**: Research DApps before using\n• **Recovery**: Use separate wallets for testing\n\n**Fake Airdrops:**\n• **What it is**: Fake token distributions\n• **How it works**: Claims to give free tokens but steals your data\n• **Signs**: Too good to be true, urgent deadlines\n• **Protection**: Verify airdrops through official channels\n• **Recovery**: Never connect wallets to unknown sites\n\n**Malicious Extensions:**\n• **What it is**: Browser extensions that steal crypto\n• **How it works**: Intercepts wallet connections\n• **Signs**: Fake wallet extensions, suspicious permissions\n• **Protection**: Only install from official sources\n• **Recovery**: Remove suspicious extensions immediately\n\n**Prevention Strategies:**\n• **Use Hardware Wallets**: Keep most funds offline\n• **Separate Wallets**: Use different wallets for different purposes\n• **Research Everything**: Verify before interacting\n• **Slow Down**: Don't rush into opportunities\n• **Stay Updated**: Keep software updated",
+          "video": "/videos/web3-security-threats.mp4"
+        },
+        {
+          "id": "lesson-4-2",
+          "title": "Preparing Your Browser for Web3",
+          "content": "**Web3 Browser Setup Checklist:**\n\n**Essential Extensions:**\n• **MetaMask**: For Ethereum interactions\n• **Phantom**: For Solana interactions\n• **uBlock Origin**: Block malicious ads and trackers\n• **Privacy Badger**: Additional privacy protection\n• **NoScript**: Block malicious scripts\n\n**Browser Settings:**\n• **Disable JavaScript**: For unknown sites\n• **Block Popups**: Prevent malicious popups\n• **Disable Autofill**: Prevent data theft\n• **Clear Cookies**: Regularly clear browsing data\n• **Use Incognito**: For sensitive transactions\n\n**Wallet Security:**\n• **Hardware Wallet**: Use for large amounts\n• **Hot Wallet**: Use for small amounts only\n• **Separate Wallets**: Different wallets for different purposes\n• **Backup Seeds**: Store securely offline\n• **Test Transactions**: Small amounts first\n\n**Site Verification:**\n• **Check URLs**: Verify you're on the right site\n• **Use Bookmarks**: Bookmark trusted sites\n• **Research Projects**: Verify before investing\n• **Check Social Media**: Official announcements only\n• **Avoid FOMO**: Don't rush into opportunities\n\n**Transaction Safety:**\n• **Review Transactions**: Always check before signing\n• **Gas Limits**: Set appropriate gas limits\n• **Slippage**: Use reasonable slippage settings\n• **Test Transactions**: Small amounts first\n• **Monitor Activity**: Check wallet activity regularly\n\n**Pro Tips:**\n• **Start Small**: Test with small amounts\n• **Stay Informed**: Follow security news\n• **Use Multiple Browsers**: Separate activities\n• **Regular Audits**: Check security monthly\n• **Backup Everything**: Keep backups secure",
+          "video": "/videos/web3-browser-setup.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-5",
+      "title": "Assignment",
+      "description": "Audit your browser setup. Post a screenshot or summary of your trading browser profile and what you changed.",
+      "lessons": [
+        {
+          "id": "lesson-5-1",
+          "title": "Browser Security Audit Assignment",
+          "content": "**🎯 Assignment: Audit Your Browser Security**\n\n**Objective:**\nApply your browser hygiene knowledge by auditing and securing your trading browser setup.\n\n**Requirements:**\n• Audit your current browser setup\n• Implement security improvements\n• Document your changes\n• Share your findings with the community\n• Test your security measures\n\n**Step-by-Step Instructions:**\n\n**1. Current State Assessment**\n• **List Installed Extensions**: Write down all extensions\n• **Check Permissions**: Review site permissions\n• **Identify Risks**: Note any security concerns\n• **Document Settings**: Screenshot current settings\n• **Note Issues**: Any problems or suspicious activity\n\n**2. Browser Segmentation Setup**\n• **Create Trading Profile**: Set up dedicated trading browser\n• **Choose Browser**: Brave, Chrome, or Firefox\n• **Name Profile**: \"Trading\" or \"Web3\"\n• **Customize Settings**: Apply security settings\n• **Test Profile**: Make sure it works properly\n\n**3. Extension Audit**\n• **Review Extensions**: Check each installed extension\n• **Remove Risky Ones**: Delete suspicious extensions\n• **Install Safe Ones**: Add recommended security extensions\n• **Configure Settings**: Set up extension preferences\n• **Test Functionality**: Ensure everything works\n\n**4. Permission Lockdown**\n• **Location**: Block for all sites\n• **Camera**: Block for all sites\n• **Microphone**: Block for all sites\n• **Notifications**: Block for most sites\n• **Popups**: Block for all sites\n• **JavaScript**: Allow but use blockers\n\n**5. Web3 Security Setup**\n• **Install Wallet Extensions**: MetaMask, Phantom\n• **Configure Security**: Set up wallet security\n• **Test Connections**: Verify wallet connections\n• **Bookmark Sites**: Save trusted sites\n• **Practice Safety**: Test with small amounts\n\n**6. Documentation**\n• **Take Screenshots**: Before and after changes\n• **List Changes**: Document all modifications\n• **Explain Reasoning**: Why you made each change\n• **Note Results**: Any issues or improvements\n• **Plan Maintenance**: How to keep it secure\n\n**7. Community Sharing**\n• **Post Screenshots**: Share your setup (safely)\n• **List Extensions**: What you installed/removed\n• **Share Tips**: What worked for you\n• **Ask Questions**: Get feedback from others\n• **Help Others**: Respond to other students\n\n**Success Criteria:**\n✅ Created dedicated trading browser profile\n✅ Removed all risky extensions\n✅ Locked down permissions\n✅ Installed security extensions\n✅ Tested Web3 functionality\n✅ Documented all changes\n✅ Shared with community\n\n**Bonus Challenges:**\n• Set up hardware wallet integration\n• Configure advanced security settings\n• Test with multiple wallets\n• Create security checklist\n• Help other students with setup\n\n**Safety Reminders:**\n• Never share private keys or seed phrases\n• Use separate wallets for testing\n• Start with small amounts\n• Research everything before interacting\n• Stay updated on security threats",
+          "video": "/videos/assignment-guide.mp4"
+        }
+      ]
+    }
+  ]
+} 
