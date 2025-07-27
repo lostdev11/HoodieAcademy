@@ -606,10 +606,8 @@ export default function CoursesPage() {
           {/* Squad Filter */}
           <div className="flex justify-center mb-8">
             <SquadFilter
+              onChange={setSelectedSquad}
               selectedSquad={selectedSquad}
-              onSquadChange={setSelectedSquad}
-              userSquad={userSquad}
-              isAdmin={isAdmin}
             />
           </div>
 

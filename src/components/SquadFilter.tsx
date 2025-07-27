@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const squads = ["All", "Decoders", "Raiders", "Speakers", "Creators"];
 
-export default function SquadFilter({ onChange }: { onChange: (squad: string) => void }) {
-  const [active, setActive] = useState("All");
+export default function SquadFilter({ onChange, selectedSquad }: { onChange: (squad: string) => void, selectedSquad?: string }) {
+  const [active, setActive] = useState(selectedSquad || "All");
+
+  // Sync with external state
+  useEffect(() => {
+    if (selectedSquad && selectedSquad !== active) {
+      setActive(selectedSquad);
+    }
+  }, [selectedSquad, active]);
 
   return (
     <div className="flex gap-2 p-4 flex-wrap">
