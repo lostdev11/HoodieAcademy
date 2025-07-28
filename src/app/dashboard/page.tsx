@@ -15,12 +15,22 @@ import {
   Award,
   BookOpen,
   Video,
-  AlertCircle
+  AlertCircle,
+  Users,
+  Target,
+  Brain,
+  Mic,
+  Palette,
+  Trophy,
+  Calendar,
+  FileText,
+  Sparkles
 } from 'lucide-react';
 import TokenGate from '@/components/TokenGate';
 import Link from 'next/link';
 import { getActiveAnnouncements, Announcement, getScheduledAnnouncements, getCompletedCoursesCount, getTotalCoursesCount } from '@/lib/utils';
 import GlobalBulletinBoard from '@/components/GlobalBulletinBoard';
+import { squadTracks, SquadTrack } from '@/lib/squadData';
 
 interface TodoItem {
   id: string;
@@ -39,6 +49,26 @@ interface UpcomingClass {
   duration: string;
   instructor: string;
   type: 'live' | 'recorded';
+}
+
+interface WeeklyAssignment {
+  id: string;
+  title: string;
+  description: string;
+  type: 'meme' | 'summary' | 'onboarding' | 'content' | 'research';
+  dueDate: string;
+  squad: string;
+  points: number;
+  completed: boolean;
+}
+
+interface SquadActivity {
+  squad: string;
+  icon: string;
+  color: string;
+  activities: string[];
+  memberCount: number;
+  activeThisWeek: number;
 }
 
 // Real data functions
@@ -96,6 +126,195 @@ const getRealUpcomingClasses = (): UpcomingClass[] => {
   return [];
 };
 
+const getWeeklyAssignments = (userSquad: string | null): WeeklyAssignment[] => {
+  const assignments: WeeklyAssignment[] = [];
+  
+  if (!userSquad) return assignments;
+  
+  // Squad-specific assignments
+  const squadAssignments = {
+    creators: [
+      {
+        id: 'creators-meme-1',
+        title: 'Design Hoodie Academy Meme',
+        description: 'Create a meme that captures the "Class Is In Session" vibe. Focus on cyberpunk aesthetics and educational themes.',
+        type: 'meme' as const,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        squad: 'creators',
+        points: 50,
+        completed: false
+      },
+      {
+        id: 'creators-content-1',
+        title: 'Draft Lesson Summary',
+        description: 'Create a visual summary of any completed lesson. Include key points, diagrams, and actionable takeaways.',
+        type: 'content' as const,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        squad: 'creators',
+        points: 75,
+        completed: false
+      }
+    ],
+    decoders: [
+      {
+        id: 'decoders-research-1',
+        title: 'Market Analysis Report',
+        description: 'Research and document 3 current market trends. Include data sources, analysis, and potential implications.',
+        type: 'research' as const,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        squad: 'decoders',
+        points: 100,
+        completed: false
+      },
+      {
+        id: 'decoders-summary-1',
+        title: 'Technical Analysis Cheat Sheet',
+        description: 'Create a comprehensive cheat sheet for technical analysis concepts covered in your track.',
+        type: 'summary' as const,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        squad: 'decoders',
+        points: 75,
+        completed: false
+      }
+    ],
+    speakers: [
+      {
+        id: 'speakers-onboarding-1',
+        title: 'Host Community Check-in',
+        description: 'Host or co-host a 15-minute community check-in. Focus on welcoming new members and sharing insights.',
+        type: 'onboarding' as const,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        squad: 'speakers',
+        points: 75,
+        completed: false
+      },
+      {
+        id: 'speakers-content-1',
+        title: 'Create Squad Newsletter',
+        description: 'Draft a weekly newsletter for your squad highlighting achievements, upcoming events, and key learnings.',
+        type: 'content' as const,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        squad: 'speakers',
+        points: 50,
+        completed: false
+      }
+    ],
+    raiders: [
+      {
+        id: 'raiders-research-1',
+        title: 'Meta Trend Analysis',
+        description: 'Identify and document 2 emerging meta trends. Include entry/exit strategies and risk assessment.',
+        type: 'research' as const,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        squad: 'raiders',
+        points: 100,
+        completed: false
+      },
+      {
+        id: 'raiders-summary-1',
+        title: 'Trading Psychology Notes',
+        description: 'Document key psychological principles from your NFT trading psychology course with real examples.',
+        type: 'summary' as const,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        squad: 'raiders',
+        points: 75,
+        completed: false
+      }
+    ],
+    rangers: [
+      {
+        id: 'rangers-content-1',
+        title: 'Cross-Squad Collaboration',
+        description: 'Work with members from 2 different squads on a joint project or knowledge sharing session.',
+        type: 'content' as const,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        squad: 'rangers',
+        points: 100,
+        completed: false
+      },
+      {
+        id: 'rangers-summary-1',
+        title: 'Multi-Track Summary',
+        description: 'Create a summary connecting concepts from at least 2 different course tracks.',
+        type: 'summary' as const,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        squad: 'rangers',
+        points: 75,
+        completed: false
+      }
+    ]
+  };
+  
+  return squadAssignments[userSquad as keyof typeof squadAssignments] || [];
+};
+
+const getSquadActivity = (): SquadActivity[] => {
+  return [
+    {
+      squad: 'creators',
+      icon: '🎨',
+      color: 'text-yellow-400',
+      activities: ['2 memes dropped', '1 lesson summary created', '3 pixel art pieces shared'],
+      memberCount: 24,
+      activeThisWeek: 8
+    },
+    {
+      squad: 'decoders',
+      icon: '🧠',
+      color: 'text-gray-300',
+      activities: ['1 cheat sheet in progress', '2 market analyses completed', '1 alpha thread started'],
+      memberCount: 31,
+      activeThisWeek: 12
+    },
+    {
+      squad: 'speakers',
+      icon: '🎤',
+      color: 'text-red-400',
+      activities: ['1 Space hosted', '2 community check-ins', '1 newsletter drafted'],
+      memberCount: 18,
+      activeThisWeek: 6
+    },
+    {
+      squad: 'raiders',
+      icon: '⚔️',
+      color: 'text-blue-400',
+      activities: ['3 meta analyses shared', '1 raid coordinated', '2 trading strategies posted'],
+      memberCount: 27,
+      activeThisWeek: 9
+    },
+    {
+      squad: 'rangers',
+      icon: '🦅',
+      color: 'text-purple-400',
+      activities: ['2 cross-squad collaborations', '1 multi-track summary', '3 knowledge shares'],
+      memberCount: 15,
+      activeThisWeek: 5
+    }
+  ];
+};
+
+const getSquadIcon = (squadId: string) => {
+  switch (squadId) {
+    case 'creators': return <Palette className="w-5 h-5" />;
+    case 'decoders': return <Brain className="w-5 h-5" />;
+    case 'speakers': return <Mic className="w-5 h-5" />;
+    case 'raiders': return <Target className="w-5 h-5" />;
+    case 'rangers': return <Award className="w-5 h-5" />;
+    default: return <Users className="w-5 h-5" />;
+  }
+};
+
+const getAssignmentIcon = (type: string) => {
+  switch (type) {
+    case 'meme': return <Sparkles className="w-4 h-4" />;
+    case 'summary': return <FileText className="w-4 h-4" />;
+    case 'onboarding': return <Users className="w-4 h-4" />;
+    case 'content': return <BookOpen className="w-4 h-4" />;
+    case 'research': return <Brain className="w-4 h-4" />;
+    default: return <CheckCircle className="w-4 h-4" />;
+  }
+};
+
 export default function DashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
@@ -110,6 +329,9 @@ export default function DashboardPage() {
   const [squadId, setSquadId] = useState<string | null>(null);
   const [completedCoursesCount, setCompletedCoursesCount] = useState(0);
   const [totalCoursesCount, setTotalCoursesCount] = useState(6);
+  const [weeklyAssignments, setWeeklyAssignments] = useState<WeeklyAssignment[]>([]);
+  const [squadActivity, setSquadActivity] = useState<SquadActivity[]>([]);
+  const [userSquadInfo, setUserSquadInfo] = useState<SquadTrack | null>(null);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -150,7 +372,7 @@ export default function DashboardPage() {
       setRealUpcomingClasses(getRealUpcomingClasses());
     }
 
-    // Get squad ID for bulletin board
+    // Get squad ID for bulletin board and assignments
     const squadResult = typeof window !== 'undefined' ? localStorage.getItem('userSquad') : null;
     if (squadResult) {
       try {
@@ -178,6 +400,13 @@ export default function DashboardPage() {
         };
         const squadId = squadMapping[normalized] || normalized;
         setSquadId(squadId);
+        
+        // Set user squad info for display
+        const squadInfo = squadTracks.find(s => s.id === squadId);
+        setUserSquadInfo(squadInfo || null);
+        
+        // Load weekly assignments for this squad
+        setWeeklyAssignments(getWeeklyAssignments(squadId));
       } catch (error) {
         console.error('Error parsing squad result:', error);
         setSquadId(null);
@@ -205,6 +434,9 @@ export default function DashboardPage() {
       total: totalCount,
       percentage: progressPercentage
     });
+    
+    // Load squad activity
+    setSquadActivity(getSquadActivity());
   }, []);
 
   // Listen for real-time updates
@@ -298,58 +530,6 @@ export default function DashboardPage() {
               <div className="text-right">
                 <div className="text-sm text-gray-400">Current Time</div>
                 <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="mt-2 text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
-                  onClick={() => {
-                    console.log('=== Dashboard Debug ===');
-                    console.log('realAnnouncements state:', realAnnouncements);
-                    console.log('localStorage announcements:', typeof window !== 'undefined' ? localStorage.getItem('announcements') : null);
-                    console.log('getActiveAnnouncements():', getActiveAnnouncements());
-                    console.log('======================');
-                  }}
-                >
-                  Debug Announcements
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="mt-2 text-xs border-green-500/30 text-green-400 hover:bg-green-500/20"
-                  onClick={() => {
-                    // Create a test announcement
-                    const testAnnouncement = {
-                      id: Date.now().toString(),
-                      title: 'Test Announcement',
-                      content: 'This is a test announcement to debug the system.',
-                      type: 'info' as const,
-                      priority: 'medium' as const,
-                      startDate: new Date().toISOString().split('T')[0], // Today
-                      endDate: undefined,
-                      isActive: true,
-                      createdBy: 'Debug',
-                      createdAt: new Date().toISOString()
-                    };
-                    
-                    console.log('Creating test announcement:', testAnnouncement);
-                    
-                    // Add to localStorage directly
-                    const existingAnnouncements = JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('announcements') : '[]') || '[]');
-                    existingAnnouncements.push(testAnnouncement);
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('announcements', JSON.stringify(existingAnnouncements));
-                    }
-                    
-                    // Trigger the event
-                    if (typeof window !== 'undefined') {
-                      window.dispatchEvent(new CustomEvent('announcementsUpdated'));
-                    }
-                    
-                    console.log('Test announcement created and event dispatched');
-                  }}
-                >
-                  Create Test Announcement
-                </Button>
               </div>
             </div>
           </header>
@@ -396,7 +576,205 @@ export default function DashboardPage() {
               </Card>
             )}
 
+            {/* Squad Affiliation & Track Progress */}
+            {userSquadInfo && (
+              <Card className="bg-slate-800/50 border-cyan-500/30">
+                <CardHeader>
+                  <CardTitle className="text-cyan-400 flex items-center space-x-2">
+                    {getSquadIcon(userSquadInfo.id)}
+                    <span>Squad Affiliation & Track Progress</span>
+                    <Badge variant="outline" className={`ml-auto ${userSquadInfo.color} border-current`}>
+                      {userSquadInfo.name}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Squad Info */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-full ${userSquadInfo.bgColor} border ${userSquadInfo.borderColor} flex items-center justify-center text-2xl`}>
+                          {userSquadInfo.icon}
+                        </div>
+                        <div>
+                          <h3 className={`text-lg font-semibold ${userSquadInfo.color}`}>
+                            {userSquadInfo.name}
+                          </h3>
+                          <p className="text-sm text-gray-300">{userSquadInfo.description}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-300">Current Level</span>
+                          <span className="text-cyan-400 font-semibold">Level 100</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-300">Track Progress</span>
+                          <span className="text-cyan-400 font-semibold">{overallProgress}%</span>
+                        </div>
+                        <Progress value={overallProgress} className="h-2 bg-slate-700 [&>div]:bg-gradient-to-r [&>div]:from-cyan-500 [&>div]:to-purple-500" />
+                      </div>
+                    </div>
+                    
+                    {/* Quick Stats */}
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">Track Statistics</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                          <div className="text-2xl font-bold text-cyan-400">{completedCoursesCount}</div>
+                          <div className="text-xs text-gray-400">Courses Completed</div>
+                        </div>
+                        <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                          <div className="text-2xl font-bold text-green-400">15</div>
+                          <div className="text-xs text-gray-400">Lessons Finished</div>
+                        </div>
+                        <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                          <div className="text-2xl font-bold text-yellow-400">8</div>
+                          <div className="text-xs text-gray-400">Quizzes Passed</div>
+                        </div>
+                        <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                          <div className="text-2xl font-bold text-pink-400">5</div>
+                          <div className="text-xs text-gray-400">NFT Badges</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
+            {/* Weekly Assignments */}
+            {weeklyAssignments.length > 0 && (
+              <Card className="bg-slate-800/50 border-green-500/30">
+                <CardHeader>
+                  <CardTitle className="text-green-400 flex items-center space-x-2">
+                    <Calendar className="w-5 h-5" />
+                    <span>Weekly Assignments</span>
+                    <Badge variant="outline" className="ml-auto border-green-500 text-green-400">
+                      {weeklyAssignments.length} Active
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-4">
+                    {weeklyAssignments.map((assignment) => (
+                      <div key={assignment.id} className={`p-4 rounded-lg border transition-all duration-200 ${
+                        assignment.completed 
+                          ? 'bg-green-500/10 border-green-500/30' 
+                          : 'bg-slate-700/30 border-slate-600/30 hover:border-green-500/30'
+                      }`}>
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3 flex-1">
+                            <div className={`p-2 rounded ${
+                              assignment.completed ? 'bg-green-500/20' : 'bg-slate-600/20'
+                            }`}>
+                              {getAssignmentIcon(assignment.type)}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4 className={`font-semibold ${
+                                  assignment.completed ? 'text-green-400 line-through' : 'text-white'
+                                }`}>
+                                  {assignment.title}
+                                </h4>
+                                <Badge variant="outline" className="text-xs border-cyan-500/30 text-cyan-400">
+                                  {assignment.points} pts
+                                </Badge>
+                              </div>
+                              <p className={`text-sm ${
+                                assignment.completed ? 'text-green-300' : 'text-gray-300'
+                              }`}>
+                                {assignment.description}
+                              </p>
+                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                                <span>Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
+                                <span>Type: {assignment.type}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant={assignment.completed ? "outline" : "default"}
+                            className={assignment.completed ? "border-green-500 text-green-400" : "bg-green-600 hover:bg-green-700"}
+                          >
+                            {assignment.completed ? 'Completed' : 'Submit Work'}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Global Announcements */}
+            <Card className="bg-slate-800/50 border-blue-500/30">
+              <CardHeader>
+                <CardTitle className="text-blue-400 flex items-center space-x-2">
+                  <Bell className="w-5 h-5" />
+                  <span>Global Announcements</span>
+                  {squadId && (
+                    <Badge variant="outline" className="text-xs border-cyan-500/30 text-cyan-400">
+                      {squadId}
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <GlobalBulletinBoard squadId={squadId} />
+              </CardContent>
+            </Card>
+
+            {/* Squad Activity Summary */}
+            <Card className="bg-slate-800/50 border-purple-500/30">
+              <CardHeader>
+                <CardTitle className="text-purple-400 flex items-center space-x-2">
+                  <Trophy className="w-5 h-5" />
+                  <span>Squad Activity Summary</span>
+                  <Badge variant="outline" className="ml-auto border-purple-500 text-purple-400">
+                    This Week
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {squadActivity.map((squad) => (
+                    <div key={squad.squad} className={`p-4 rounded-lg border transition-all duration-200 ${
+                      squad.squad === squadId 
+                        ? 'bg-purple-500/10 border-purple-500/30' 
+                        : 'bg-slate-700/30 border-slate-600/30'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="text-2xl">{squad.icon}</div>
+                          <div>
+                            <h4 className={`font-semibold capitalize ${squad.color}`}>
+                              {squad.squad} Squad
+                            </h4>
+                            <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
+                              <span>{squad.memberCount} members</span>
+                              <span>{squad.activeThisWeek} active this week</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-gray-300 mb-1">Recent Activity:</div>
+                          <ul className="text-xs text-gray-400 space-y-1">
+                            {squad.activities.slice(0, 2).map((activity, index) => (
+                              <li key={index} className="flex items-center gap-1">
+                                <span className="w-1 h-1 bg-cyan-400 rounded-full"></span>
+                                {activity}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* To-Do List */}
             <Card className="bg-slate-800/50 border-green-500/30">
@@ -453,24 +831,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Global Bulletin Board */}
-            <Card className="bg-slate-800/50 border-blue-500/30">
-              <CardHeader>
-                <CardTitle className="text-blue-400 flex items-center space-x-2">
-                  <Bell className="w-5 h-5" />
-                  <span>Global Bulletin Board</span>
-                  {squadId && (
-                    <Badge variant="outline" className="text-xs border-cyan-500/30 text-cyan-400">
-                      {squadId}
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <GlobalBulletinBoard squadId={squadId} />
-              </CardContent>
-            </Card>
-
             {/* Scheduled Announcements */}
             {getScheduledAnnouncements().length > 0 && (
               <Card className="bg-slate-800/50 border-cyan-500/30">
@@ -505,42 +865,6 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Progress Overview */}
-            <Card className="bg-slate-800/50 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-purple-400">Overall Academy Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-300">Progress</span>
-                      <span className="text-purple-400">{overallProgress}%</span>
-                    </div>
-                    <Progress value={overallProgress} className="h-3 bg-slate-700 [&>div]:bg-gradient-to-r [&>div]:from-purple-500 [&>div]:to-pink-500" />
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold text-cyan-400">{completedCoursesCount}</p>
-                      <p className="text-sm text-gray-400">Courses Completed</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-green-400">15</p>
-                      <p className="text-sm text-gray-400">Lessons Finished</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-yellow-400">8</p>
-                      <p className="text-sm text-gray-400">Quizzes Passed</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-pink-400">5</p>
-                      <p className="text-sm text-gray-400">NFT Badges</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </main>
         </div>
       </div>
