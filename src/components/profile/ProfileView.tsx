@@ -109,13 +109,19 @@ export function ProfileView() {
               setOriginalDisplayName(userData.display_name);
             }
             if (userData.squad) {
-              localStorage.setItem('userSquad', JSON.stringify({
-                name: userData.squad,
-                assignedAt: userData.created_at,
-                testVersion: '1.0'
-              }));
-              setSquad(userData.squad);
-              setUserSquad({ name: userData.squad });
+              // Only set squad from Supabase if no local squad test result exists
+              const existingSquadResult = localStorage.getItem('userSquad');
+              if (!existingSquadResult) {
+                localStorage.setItem('userSquad', JSON.stringify({
+                  name: userData.squad,
+                  assignedAt: userData.created_at,
+                  testVersion: '1.0'
+                }));
+                setSquad(userData.squad);
+                setUserSquad({ name: userData.squad });
+              } else {
+                console.log('Keeping existing squad test result, not overwriting with Supabase data');
+              }
             }
             if (userData.squad_test_completed) {
               localStorage.setItem('placementTestCompleted', 'true');

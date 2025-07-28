@@ -380,6 +380,7 @@ export default function CoursesPageClient() {
       localStorage.removeItem('walletWizardryFinalExamPassed');
       
       // Clear placement test results
+      console.log('Clearing userSquad from localStorage in resetAllCourses');
       localStorage.removeItem('userSquad');
       
       // Clear onboarding completion

@@ -137,7 +137,9 @@ export default function SquadTestPage() {
       assignedAt: new Date().toISOString(),
       testVersion: '1.0'
     };
+    console.log('Saving squad result to localStorage:', squadResult);
     localStorage.setItem('userSquad', JSON.stringify(squadResult));
+    console.log('Squad result saved successfully');
     
     // Mark placement test as completed
     localStorage.setItem('placementTestCompleted', 'true');

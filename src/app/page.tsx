@@ -159,18 +159,24 @@ export default function HoodieAcademy() {
 
     // Get squad placement result
     const squadResult = typeof window !== 'undefined' ? localStorage.getItem('userSquad') : null;
+    console.log('Raw squad result from localStorage:', squadResult);
     if (squadResult) {
       try {
         const result = JSON.parse(squadResult);
+        console.log('Parsed squad result:', result);
         if (typeof result === 'object' && result.name) {
+          console.log('Setting squad to:', result.name);
           setUserSquad(result.name);
         } else if (typeof result === 'string') {
+          console.log('Setting squad to string:', result);
           setUserSquad(result);
         }
       } catch (error) {
         console.error('Error parsing squad result:', error);
         setUserSquad(squadResult);
       }
+    } else {
+      console.log('No squad result found in localStorage');
     }
 
     // Check if user needs to complete onboarding
