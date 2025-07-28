@@ -396,64 +396,7 @@ export default function DashboardPage() {
               </Card>
             )}
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="bg-slate-800/50 border-cyan-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-cyan-500/20 rounded-lg">
-                      <BookOpen className="w-6 h-6 text-cyan-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Courses Completed</p>
-                      <p className="text-2xl font-bold text-cyan-400">{completedCoursesCount}/{totalCoursesCount}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card className="bg-slate-800/50 border-green-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-green-500/20 rounded-lg">
-                      <Award className="w-6 h-6 text-green-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">NFT Badges</p>
-                      <p className="text-2xl font-bold text-green-400">5</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800/50 border-purple-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-purple-500/20 rounded-lg">
-                      <TrendingUp className="w-6 h-6 text-purple-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Overall Progress</p>
-                      <p className="text-2xl font-bold text-purple-400">{overallProgress}%</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800/50 border-pink-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-pink-500/20 rounded-lg">
-                      <Video className="w-6 h-6 text-pink-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Hours Watched</p>
-                      <p className="text-2xl font-bold text-pink-400">12.5</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
             {/* To-Do List */}
             <Card className="bg-slate-800/50 border-green-500/30">
