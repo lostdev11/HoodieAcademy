@@ -15,6 +15,7 @@ import { Connection } from '@solana/web3.js';
 import SquadBadge from '@/components/SquadBadge';
 import { NFTProfileSelector } from '@/components/profile/NFTProfileSelector';
 import { NFT } from '@/services/nft-service';
+import { fetchUserByWallet } from '@/lib/supabase';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -79,22 +80,55 @@ export function ProfileView() {
 
   // Auto-detect connected wallet from localStorage or session
   useEffect(() => {
-    const detectConnectedWallet = () => {
+    const detectConnectedWallet = async () => {
       // Check localStorage for connected wallet (from TokenGate)
       const connectedWallet = localStorage.getItem('connectedWallet');
       const walletAddress = localStorage.getItem('walletAddress');
       
+      let currentWallet = '';
       if (walletAddress) {
-        setWallet(walletAddress);
+        currentWallet = walletAddress;
       } else if (connectedWallet) {
-        setWallet(connectedWallet);
+        currentWallet = connectedWallet;
       } else {
         // For demo purposes, use a test wallet that has a .sol domain
-        setWallet('JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU');
+        currentWallet = 'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU';
+      }
+      
+      setWallet(currentWallet);
+
+      // Try to fetch user data from Supabase first
+      if (currentWallet) {
+        try {
+          const userData = await fetchUserByWallet(currentWallet);
+          if (userData) {
+            // Update localStorage with Supabase data
+            if (userData.display_name) {
+              localStorage.setItem('userDisplayName', userData.display_name);
+              setDisplayName(userData.display_name);
+              setOriginalDisplayName(userData.display_name);
+            }
+            if (userData.squad) {
+              localStorage.setItem('userSquad', JSON.stringify({
+                name: userData.squad,
+                assignedAt: userData.created_at,
+                testVersion: '1.0'
+              }));
+              setSquad(userData.squad);
+              setUserSquad({ name: userData.squad });
+            }
+            if (userData.squad_test_completed) {
+              localStorage.setItem('placementTestCompleted', 'true');
+              setPlacementTestCompleted(true);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user data from Supabase:', error);
+        }
       }
     };
 
-    // Check for squad placement result
+    // Check for squad placement result from localStorage as fallback
     const squadResult = localStorage.getItem('userSquad');
     const testCompleted = localStorage.getItem('placementTestCompleted');
     
@@ -165,13 +199,38 @@ export function ProfileView() {
     }
   }, [wallet, snsResolver, connection]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (displayName.trim()) {
       const trimmedName = displayName.trim();
       localStorage.setItem('userDisplayName', trimmedName);
       setOriginalDisplayName(trimmedName);
       setEditMode(false);
-      // Optional: Add a success message or toast notification here
+      
+      // Sync with Supabase
+      if (wallet) {
+        try {
+          const { supabase } = await import('@/lib/supabase');
+          const { data, error } = await supabase
+            .from('users')
+            .upsert([
+              {
+                wallet_address: wallet,
+                display_name: trimmedName,
+                last_active: new Date().toISOString(),
+              }
+            ], {
+              onConflict: 'wallet_address'
+            });
+          
+          if (error) {
+            console.error('Error updating display name in Supabase:', error);
+          } else {
+            console.log('Successfully updated display name in Supabase');
+          }
+        } catch (error) {
+          console.error('Error syncing display name with Supabase:', error);
+        }
+      }
     } else {
       // Don't save if display name is empty
       alert('Display name cannot be empty');

@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import Link from "next/link"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
+import { MobileNavigation } from "@/components/dashboard/MobileNavigation"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
 import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
@@ -246,6 +247,30 @@ export default function HoodieAcademy() {
 
   return (
     <TokenGate>
+      {/* Structured Data for Homepage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Hoodie Academy",
+            "description": "Master Web3, NFTs, and crypto trading with gamified learning. Join the Hoodie Academy community and become a Web3 expert.",
+            "url": "https://hoodieacademy.xyz",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://hoodieacademy.xyz/courses?search={search_term_string}",
+              "query-input": "required name=search_term_string"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Hoodie Academy",
+              "url": "https://hoodieacademy.xyz"
+            }
+          })
+        }}
+      />
+      
       <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         {/* Sidebar */}
         <DashboardSidebar 
@@ -255,60 +280,63 @@ export default function HoodieAcademy() {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <div>
-                  <h1 className="text-3xl font-bold text-cyan-400">Welcome to Hoodie Academy</h1>
-                  <p className="text-gray-300">Your Web3 learning journey starts here!</p>
-                </div>
-                
-                {/* Squad Badge */}
-                {userSquad && (
-                  <div className="hidden md:block">
-                    <SquadBadge squad={typeof userSquad === 'string' ? userSquad.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '') : 'Unknown Squad'} />
-                  </div>
-                )}
+                  {/* Header */}
+        <header className="bg-slate-800/50 border-b border-cyan-500/30 px-4 py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-4 sm:space-x-6">
+              {/* Mobile Navigation */}
+              <MobileNavigation userSquad={userSquad} isAdmin={isAdmin} />
+              
+              <div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-cyan-400">Welcome to Hoodie Academy</h1>
+                <p className="text-sm sm:text-base text-gray-300">Your Web3 learning journey starts here!</p>
               </div>
-              <div className="flex items-center space-x-4">
-                {/* Wallet Info */}
-                {walletAddress && (
-                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30">
-                    <User className="w-4 h-4 text-cyan-400" />
-                    <span className="text-sm text-cyan-400 font-mono">
-                      {formatWalletAddress(walletAddress)}
-                    </span>
-                    {isDemoWallet && (
-                      <Badge variant="outline" className="ml-2 text-yellow-400 border-yellow-500/30 text-xs">
-                        DEMO
-                      </Badge>
-                    )}
-                  </div>
-                )}
-                
-                {/* Disconnect Button */}
-                <Button
-                  onClick={handleDisconnect}
-                  variant="outline"
-                  size="sm"
-                  className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Disconnect
-                </Button>
-                
-                {/* Time */}
-                <div className="text-right">
-                  <div className="text-sm text-gray-400">Current Time</div>
-                  <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
+              
+              {/* Squad Badge */}
+              {userSquad && (
+                <div className="hidden md:block">
+                  <SquadBadge squad={typeof userSquad === 'string' ? userSquad.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '') : 'Unknown Squad'} />
                 </div>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+              {/* Wallet Info */}
+              {walletAddress && (
+                <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30 w-full sm:w-auto">
+                  <User className="w-4 h-4 text-cyan-400" />
+                  <span className="text-sm text-cyan-400 font-mono">
+                    {formatWalletAddress(walletAddress)}
+                  </span>
+                  {isDemoWallet && (
+                    <Badge variant="outline" className="ml-2 text-yellow-400 border-yellow-500/30 text-xs">
+                      DEMO
+                    </Badge>
+                  )}
+                </div>
+              )}
+              
+              {/* Disconnect Button */}
+              <Button
+                onClick={handleDisconnect}
+                variant="outline"
+                size="sm"
+                className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300 w-full sm:w-auto min-h-[44px]"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Disconnect
+              </Button>
+              
+              {/* Time */}
+              <div className="text-right w-full sm:w-auto">
+                <div className="text-sm text-gray-400">Current Time</div>
+                <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
               </div>
             </div>
-          </header>
+          </div>
+        </header>
 
           {/* Dashboard Content */}
-          <main className="flex-1 p-6 space-y-6">
+          <main className="flex-1 px-4 py-6 space-y-6">
             {/* Demo Wallet Banner */}
             {isDemoWallet && (
               <Card className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 border-yellow-500/30">
@@ -494,7 +522,7 @@ export default function HoodieAcademy() {
               </Card>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Leaderboard Preview */}
               <Card className="bg-slate-800/50 border-yellow-500/30 lg:col-span-1">
                 <CardHeader>
@@ -673,22 +701,22 @@ export default function HoodieAcademy() {
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                     <div>
-                      <p className="text-2xl font-bold text-cyan-400">
+                      <p className="text-xl sm:text-2xl font-bold text-cyan-400">
                         {Math.floor((overallProgress / 100) * 6)}/6
                       </p>
-                      <p className="text-sm text-gray-400">Courses Completed</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Courses Completed</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-green-400">{realAnnouncements.length}</p>
-                      <p className="text-sm text-gray-400">Active Announcements</p>
+                      <p className="text-xl sm:text-2xl font-bold text-green-400">{realAnnouncements.length}</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Active Announcements</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-yellow-400">{userRank > 0 ? userRank : 'N/A'}</p>
-                      <p className="text-sm text-gray-400">Leaderboard Rank</p>
+                      <p className="text-xl sm:text-2xl font-bold text-yellow-400">{userRank > 0 ? userRank : 'N/A'}</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Leaderboard Rank</p>
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-pink-400">{userScore.toLocaleString()}</p>
-                      <p className="text-sm text-gray-400">Total Score</p>
+                      <p className="text-xl sm:text-2xl font-bold text-pink-400">{userScore.toLocaleString()}</p>
+                      <p className="text-xs sm:text-sm text-gray-400">Total Score</p>
                     </div>
                   </div>
                 </div>

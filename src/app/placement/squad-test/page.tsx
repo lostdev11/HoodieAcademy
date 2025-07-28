@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle, Trophy, Users, Target, Zap, User } from 'lucide-react';
 import SquadBadge from '@/components/SquadBadge';
+import { recordPlacementTest } from '@/lib/supabase';
 
 interface QuizOption {
   id: string;
@@ -46,29 +47,43 @@ export default function SquadTestPage() {
   const [showResults, setShowResults] = useState(false);
   const [assignedSquad, setAssignedSquad] = useState<SquadInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if user has already taken the test
     const existingResult = localStorage.getItem('userSquad');
     if (existingResult) {
-      const result = JSON.parse(existingResult);
-      setAssignedSquad(result);
-      setShowResults(true);
-      setIsLoading(false);
-      return;
+      try {
+        const result = JSON.parse(existingResult);
+        setAssignedSquad(result);
+        setShowResults(true);
+        setIsLoading(false);
+        return;
+      } catch (error) {
+        console.error('Error parsing existing squad result:', error);
+        localStorage.removeItem('userSquad');
+      }
     }
 
-    // Load quiz data
-    fetch('/placement/squad-test/quiz.json')
-      .then(response => response.json())
-      .then(data => {
+    // Load quiz data with retry mechanism
+    const loadQuizData = async () => {
+      try {
+        const response = await fetch('/placement/squad-test/quiz.json');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
         setQuizData(data);
         setIsLoading(false);
-      })
-      .catch(error => {
+      } catch (error) {
         console.error('Error loading quiz data:', error);
         setIsLoading(false);
-      });
+        setError(error instanceof Error ? error.message : 'Unknown error occurred');
+        // Don't retry on error to prevent infinite loops
+      }
+    };
+
+    loadQuizData();
   }, []);
 
   const handleAnswerSelect = (questionId: string, optionId: string) => {
@@ -92,7 +107,7 @@ export default function SquadTestPage() {
     }
   };
 
-  const calculateSquad = () => {
+  const calculateSquad = async () => {
     if (!quizData) return;
 
     const squadScores: Record<string, number> = {};
@@ -127,8 +142,22 @@ export default function SquadTestPage() {
     // Mark placement test as completed
     localStorage.setItem('placementTestCompleted', 'true');
     
-    // If user doesn't have a display name, suggest they set one
+    // Get wallet address and display name
+    const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
     const displayName = localStorage.getItem('userDisplayName');
+    
+    // Sync with Supabase
+    if (walletAddress) {
+      try {
+        await recordPlacementTest(walletAddress, topSquad, displayName || undefined);
+        console.log('Successfully synced placement test with Supabase');
+      } catch (error) {
+        console.error('Error syncing placement test with Supabase:', error);
+        // Continue with localStorage even if Supabase sync fails
+      }
+    }
+    
+    // If user doesn't have a display name, suggest they set one
     if (!displayName) {
       localStorage.setItem('suggestDisplayName', 'true');
     }
@@ -148,6 +177,20 @@ export default function SquadTestPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-cyan-400 text-2xl animate-pulse">Loading squad test...</div>
+      </div>
+    );
+  }
+
+  // Error boundary for any unexpected errors
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-red-400 text-xl text-center">
+          <div className="mb-4">Error loading squad test</div>
+          <Button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700">
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }
@@ -246,7 +289,7 @@ export default function SquadTestPage() {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button
-              onClick={() => {
+              onClick={async () => {
                 // Check if user is in onboarding flow
                 const isOnboarding = !localStorage.getItem('onboardingCompleted');
                 if (isOnboarding) {

@@ -234,7 +234,7 @@ const sidebarItems: SidebarItem[] = [
   return (
     <div className={`bg-slate-900/80 border-r border-cyan-500/30 backdrop-blur-sm transition-all duration-300 ${
       collapsed ? 'w-16' : 'w-64'
-    } min-h-screen flex flex-col`}>
+    } min-h-screen flex flex-col hidden sm:flex`}>
       
       {/* Header */}
       <div className="p-4 border-b border-cyan-500/20">

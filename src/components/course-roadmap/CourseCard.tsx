@@ -31,7 +31,7 @@ export function CourseCard({ id, title, description, badge, emoji, pathType, hre
   const [showSyllabus, setShowSyllabus] = useState(false);
   const squad = getSquadForCourse(id);
   
-  const baseBorderClass = "border-2 rounded-xl p-5 md:p-6 transition-all duration-300 w-full min-h-[300px] md:min-h-[340px] flex flex-col"; // Adjusted min-height
+  const baseBorderClass = "border-2 rounded-xl p-4 sm:p-5 md:p-6 transition-all duration-300 w-full min-h-[280px] sm:min-h-[300px] md:min-h-[340px] flex flex-col"; // Adjusted min-height for mobile
   const techClass = "neon-border-purple hover:shadow-[0_0_25px_rgba(168,85,247,1)] bg-card";
   const socialClass = "neon-border-blue hover:shadow-[0_0_25px_rgba(59,130,246,1)] bg-card";
   const convergedClass = "neon-border-cyan hover:shadow-[0_0_25px_rgba(6,182,212,1)] bg-card"; // Cyan for converged
@@ -68,15 +68,15 @@ export function CourseCard({ id, title, description, badge, emoji, pathType, hre
       )}
       
       <div className={`${baseBorderClass} ${pathClasses}`}>
-        <div className="flex items-start gap-3 mb-3 md:mb-4"> {/* Changed to items-start and gap-3 */}
+        <div className="flex items-start gap-2 sm:gap-3 mb-3 md:mb-4"> {/* Changed to items-start and gap-3 */}
           {/* Use emoji span instead of Icon component */}
-          <span className="text-3xl md:text-4xl mt-1 flex-shrink-0">{emoji}</span> {/* Added mt-1 and flex-shrink-0 */}
+          <span className="text-2xl sm:text-3xl md:text-4xl mt-1 flex-shrink-0">{emoji}</span> {/* Added mt-1 and flex-shrink-0 */}
           <div className="flex-grow"> {/* Added flex-grow wrapper */}
-            <h3 className="text-xl md:text-2xl font-bold text-foreground flex items-center">
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-foreground flex items-center">
               {title}
-              {isCompleted && <CheckCircle size={22} className="ml-2 text-green-500 flex-shrink-0" />}
+              {isCompleted && <CheckCircle size={20} className="ml-2 text-green-500 flex-shrink-0" />}
             </h3>
-             <p className="text-sm md:text-md text-muted-foreground mt-1">{description}</p> {/* Moved description here */}
+             <p className="text-xs sm:text-sm md:text-md text-muted-foreground mt-1">{description}</p> {/* Moved description here */}
           </div>
         </div>
         <p className="flex-grow text-sm md:text-md text-muted-foreground"></p> {/* Spacer */}
@@ -88,15 +88,15 @@ export function CourseCard({ id, title, description, badge, emoji, pathType, hre
           </div>
           <Progress value={progress} className={`h-2 [&>div]:${progressClass}`} />
         </div>
-         <div className="mt-4 pt-3 border-t border-border/50 flex justify-between items-center">
+         <div className="mt-4 pt-3 border-t border-border/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
            <p className="text-xs md:text-sm font-semibold text-primary">REWARD: {badge} NFT</p>
-           <div className="flex gap-2">
+           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
              {/* Syllabus Button */}
              <Button
                variant="outline"
                size="sm"
                onClick={() => setShowSyllabus(!showSyllabus)}
-               className="text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10"
+               className="text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10 w-full sm:w-auto min-h-[44px]"
              >
                <BookOpen className="w-4 h-4 mr-1" />
                Syllabus
@@ -107,7 +107,7 @@ export function CourseCard({ id, title, description, badge, emoji, pathType, hre
                  variant="outline"
                  size="sm"
                  onClick={() => onResetCourse(id)}
-                 className="text-orange-400 hover:text-orange-300 border-orange-500/30 hover:bg-orange-500/10"
+                 className="text-orange-400 hover:text-orange-300 border-orange-500/30 hover:bg-orange-500/10 w-full sm:w-auto min-h-[44px]"
                >
                  Reset
                </Button>
@@ -116,9 +116,9 @@ export function CourseCard({ id, title, description, badge, emoji, pathType, hre
              <Button 
                 asChild={true} 
                 size="sm" 
-                className={`${buttonClass} text-white`}
+                className={`${buttonClass} text-white w-full sm:w-auto min-h-[44px]`}
               >
-                <Link href={href} className="flex items-center space-x-1">
+                <Link href={href} className="flex items-center justify-center space-x-1">
                   <span>Begin</span>
                   <ArrowRight size={14} />
                 </Link>
