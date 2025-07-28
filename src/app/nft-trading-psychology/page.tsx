@@ -664,7 +664,7 @@ export default function NftTradingPsychologyPage() {
   const handleAdminPasswordSubmit = () => {
     if (adminPassword === 'hoodieadmin2024') {
       setIsAdmin(true);
-      const newStatus = lessonStatus.map(() => 'unlocked');
+      const newStatus: Array<'locked' | 'unlocked' | 'completed'> = lessonStatus.map(() => 'unlocked');
       saveProgress(newStatus);
       setShowAdminDialog(false);
       setAdminPassword('');
