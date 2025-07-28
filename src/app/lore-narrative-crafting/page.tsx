@@ -614,7 +614,7 @@ export default function LoreNarrativeCraftingPage() {
       }
       
       saveProgress(newStatus);
-      updateScoreForQuizCompletion('lore-narrative-crafting', currentLesson.id, passRate);
+      updateScoreForQuizCompletion(walletAddress, 'lore-narrative-crafting', passRate, currentLesson.quiz.length, currentLessonIndex + 1, lessonsData.length);
     }
   };
 

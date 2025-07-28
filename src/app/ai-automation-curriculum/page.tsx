@@ -686,7 +686,7 @@ export default function AiAutomationCurriculumPage() {
       }
       
       saveProgress(newStatus);
-      updateScoreForQuizCompletion('ai-automation-curriculum', currentLesson.id, passRate);
+      updateScoreForQuizCompletion(walletAddress, 'ai-automation-curriculum', passRate, currentLesson.quiz.length, currentLessonIndex + 1, lessonsData.length);
     }
   };
 

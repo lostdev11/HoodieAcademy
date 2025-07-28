@@ -614,7 +614,7 @@ export default function CybersecurityWalletPracticesPage() {
       }
       
       saveProgress(newStatus);
-      updateScoreForQuizCompletion('cybersecurity-wallet-practices', currentLesson.id, passRate);
+      updateScoreForQuizCompletion(walletAddress, 'cybersecurity-wallet-practices', passRate, currentLesson.quiz.length, currentLessonIndex + 1, lessonsData.length);
     }
   };
 

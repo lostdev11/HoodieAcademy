@@ -639,7 +639,7 @@ export default function NftTradingPsychologyPage() {
       }
       
       saveProgress(newStatus);
-      updateScoreForQuizCompletion('nft-trading-psychology', currentLesson.id, passRate);
+      updateScoreForQuizCompletion(walletAddress, 'nft-trading-psychology', passRate, currentLesson.quiz.length, currentLessonIndex + 1, lessonsData.length);
     }
   };
 
