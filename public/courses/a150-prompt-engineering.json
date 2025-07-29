@@ -1,0 +1,69 @@
+{
+  "id": "a150-prompt-engineering",
+  "slug": "a150-prompt-engineering",
+  "title": "Prompt Engineering for AI Assistants",
+  "description": "Master the art of crafting effective prompts for AI assistants to enhance community engagement, automate tasks, and amplify your communication impact.",
+  "badge": "AI Amplifier",
+  "emoji": "🤖",
+  "pathType": "automation",
+  "href": "/courses/a150-prompt-engineering",
+  "localStorageKey": "a150PromptEngineeringProgress",
+  "totalLessons": 4,
+  "squad": "Speakers",
+  "category": "automation-enablement",
+  "level": "intermediate",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "AI Assistant Basics",
+      "description": "Understand how AI assistants work and how to leverage them effectively",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Understanding AI Assistants",
+          "content": "AI assistants are powerful tools that can amplify your communication, automate tasks, and enhance community engagement. Understanding how to work with them effectively is crucial for modern community building.\n\n**AI Assistant Capabilities:**\n• Natural language processing\n• Task automation\n• Content generation\n• Data analysis\n• Communication enhancement\n\n**Common Use Cases:**\n• Community moderation\n• Content creation\n• Member onboarding\n• Event coordination\n• Knowledge management\n\n**Benefits for Speakers:**\n• Scale communication\n• Automate routine tasks\n• Enhance engagement\n• Improve efficiency\n• Focus on high-value activities",
+          "video": "/videos/ai-assistant-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Prompt Fundamentals",
+          "content": "**Prompt Components:**\n• Clear instructions\n• Context provision\n• Output specification\n• Tone guidance\n• Format requirements\n\n**Prompt Types:**\n• Information retrieval\n• Content creation\n• Task automation\n• Analysis requests\n• Creative generation\n\n**Best Practices:**\n• Be specific\n• Provide context\n• Set clear expectations\n• Iterate and refine\n• Test thoroughly",
+          "video": "/videos/prompt-fundamentals.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Effective Prompting",
+      "description": "Learn to craft prompts that produce high-quality, useful outputs",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Prompt Design",
+          "content": "**Design Principles:**\n• Clarity and specificity\n• Context provision\n• Output specification\n• Tone alignment\n• Quality standards\n\n**Prompt Structure:**\n• Clear objective\n• Relevant context\n• Specific instructions\n• Expected output\n• Quality criteria\n\n**Optimization Techniques:**\n• Iterative refinement\n• A/B testing\n• Feedback incorporation\n• Continuous improvement\n• Performance monitoring",
+          "video": "/videos/prompt-design.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Community Applications",
+          "content": "**Onboarding Automation:**\n• Welcome messages\n• FAQ responses\n• Resource sharing\n• Member guidance\n• Progress tracking\n\n**Content Creation:**\n• Post generation\n• Thread creation\n• Event announcements\n• Newsletter content\n• Social media posts\n\n**Engagement Enhancement:**\n• Conversation starters\n• Poll creation\n• Event coordination\n• Member interaction\n• Community feedback",
+          "video": "/videos/community-applications.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Advanced Applications",
+      "description": "Master advanced AI assistant applications for community building",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Automation Strategies",
+          "content": "**Task Automation:**\n• Routine communications\n• Content scheduling\n• Member tracking\n• Event coordination\n• Data analysis\n\n**Quality Control:**\n• Output review\n• Human oversight\n• Continuous monitoring\n• Feedback loops\n• Improvement cycles\n\n**Integration:**\n• Platform compatibility\n• Workflow integration\n• Team coordination\n• Performance tracking\n• Success measurement",
+          "video": "/videos/automation-strategies.mp4"
+        }
+      ]
+    }
+  ]
+} 

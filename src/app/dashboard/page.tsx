@@ -31,6 +31,7 @@ import Link from 'next/link';
 import { getActiveAnnouncements, Announcement, getScheduledAnnouncements, getCompletedCoursesCount, getTotalCoursesCount } from '@/lib/utils';
 import GlobalBulletinBoard from '@/components/GlobalBulletinBoard';
 import { squadTracks, SquadTrack } from '@/lib/squadData';
+import { useUserXP } from '@/hooks/useUserXP';
 
 interface TodoItem {
   id: string;
@@ -332,6 +333,9 @@ export default function DashboardPage() {
   const [weeklyAssignments, setWeeklyAssignments] = useState<WeeklyAssignment[]>([]);
   const [squadActivity, setSquadActivity] = useState<SquadActivity[]>([]);
   const [userSquadInfo, setUserSquadInfo] = useState<SquadTrack | null>(null);
+  
+  // XP System
+  const { totalXP, completedCourses, streak, completeCourse, badges } = useUserXP();
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -575,6 +579,124 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* XP Progress & Stats */}
+            <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30">
+              <CardHeader>
+                <CardTitle className="text-purple-400 flex items-center space-x-2">
+                  <Sparkles className="w-5 h-5" />
+                  <span>XP Progress & Stats</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Total XP */}
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-purple-400 mb-2">{totalXP}</div>
+                    <div className="text-sm text-gray-400">Total XP</div>
+                  </div>
+                  
+                  {/* Courses Completed */}
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-cyan-400 mb-2">{completedCourses.length}</div>
+                    <div className="text-sm text-gray-400">Courses Completed</div>
+                  </div>
+                  
+                  {/* Streak */}
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-orange-400 mb-2">{streak}</div>
+                    <div className="text-sm text-gray-400">Day Streak</div>
+                  </div>
+                </div>
+                
+                {/* XP Progress Bar */}
+                <div className="mt-6">
+                  <div className="flex justify-between text-sm text-gray-400 mb-2">
+                    <span>Level Progress</span>
+                    <span>{totalXP} / 1000 XP</span>
+                  </div>
+                  <Progress value={(totalXP % 1000) / 10} className="h-3" />
+                  <div className="text-xs text-gray-500 mt-1">
+                    Level {Math.floor(totalXP / 1000) + 1} • {totalXP % 1000} XP to next level
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Badges Section */}
+            <Card className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30">
+              <CardHeader>
+                <CardTitle className="text-yellow-400 flex items-center space-x-2">
+                  <Award className="w-5 h-5" />
+                  <span>Achievements & Badges</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {badges.map((badge) => (
+                    <div
+                      key={badge.id}
+                      className={`text-center p-4 rounded-lg border-2 transition-all duration-300 ${
+                        badge.unlocked
+                          ? 'bg-gradient-to-br from-yellow-400/20 to-orange-400/20 border-yellow-400/50 shadow-lg'
+                          : 'bg-gray-800/50 border-gray-600/30 opacity-50'
+                      }`}
+                    >
+                      <div className="text-3xl mb-2">{badge.icon}</div>
+                      <div className={`text-sm font-semibold ${
+                        badge.unlocked ? 'text-yellow-400' : 'text-gray-400'
+                      }`}>
+                        {badge.name}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {badge.description}
+                      </div>
+                      {badge.unlocked && (
+                        <div className="text-xs text-green-400 mt-2">✓ Unlocked</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Course Progress Section */}
+            <Card className="bg-slate-800/50 border-blue-500/30">
+              <CardHeader>
+                <CardTitle className="text-blue-400 flex items-center space-x-2">
+                  <BookOpen className="w-5 h-5" />
+                  <span>Course Progress</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {completedCourses.map((courseSlug) => {
+                    const progress = 100; // Completed courses
+                    return (
+                      <div key={courseSlug} className="flex items-center gap-4 p-3 bg-slate-700/30 rounded-lg">
+                        <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-4 h-4 text-green-400" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-gray-200 capitalize">
+                            {courseSlug.replace(/-/g, ' ')}
+                          </div>
+                          <div className="text-xs text-gray-400">Completed</div>
+                        </div>
+                        <div className="text-sm text-green-400 font-semibold">100%</div>
+                      </div>
+                    );
+                  })}
+                  {completedCourses.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No courses completed yet.</p>
+                      <p className="text-sm">Start your learning journey!</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Squad Affiliation & Track Progress */}
             {userSquadInfo && (

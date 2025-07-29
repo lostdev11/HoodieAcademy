@@ -1,0 +1,26 @@
+[
+  {
+    "slug": "v100-pixel-art-basics",
+    "content": "I created a pixel art character for my NFT project! Used a limited 8-color palette with cel shading. The character has a cyberpunk aesthetic with neon green highlights. Here's the link: https://example.com/my-pixel-art.png",
+    "timestamp": "2024-01-15T10:30:00.000Z",
+    "status": "approved"
+  },
+  {
+    "slug": "v120-meme-creation",
+    "content": "Made a meme about the recent market dip using the Drake format. Top text: 'Checking portfolio every 5 minutes', bottom text: 'Still checking portfolio every 5 minutes'. Posted it on Twitter and got 50+ retweets!",
+    "timestamp": "2024-01-14T15:45:00.000Z",
+    "status": "pending"
+  },
+  {
+    "slug": "v150-visual-composition",
+    "content": "Designed a banner for our Discord server using the rule of thirds and golden ratio. Incorporated our project's lore elements - the hoodie character in the foreground with the city skyline in the background. Used complementary colors (purple/orange) for maximum impact.",
+    "timestamp": "2024-01-13T09:20:00.000Z",
+    "status": "approved"
+  },
+  {
+    "slug": "v200-custom-trait-creation",
+    "content": "Created 5 custom traits for our NFT collection: 1) Cyber Hoodie (rare), 2) Neon Glasses (uncommon), 3) Pixel Sword (legendary), 4) Retro Backpack (common), 5) Glitch Effect (epic). Each trait has 3-5 variations. Files are ready for minting!",
+    "timestamp": "2024-01-12T14:15:00.000Z",
+    "status": "rejected"
+  }
+] 

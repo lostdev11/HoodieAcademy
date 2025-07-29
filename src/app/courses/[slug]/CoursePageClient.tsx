@@ -18,6 +18,7 @@ import {
   Circle
 } from 'lucide-react';
 import TokenGate from "@/components/TokenGate";
+import { useUserXP } from '@/hooks/useUserXP';
 
 interface Lesson {
   id: string;
@@ -60,6 +61,7 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
   const [activeModule, setActiveModule] = useState(0);
   const [activeLesson, setActiveLesson] = useState(0);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const { completeCourse } = useUserXP();
 
   useEffect(() => {
     // Load progress from localStorage
@@ -68,6 +70,17 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
       setCompletedLessons(JSON.parse(savedProgress));
     }
   }, [course.localStorageKey]);
+
+  // Award XP when course is completed
+  useEffect(() => {
+    const totalLessons = course?.modules.reduce((total, module) => total + module.lessons.length, 0) || 0;
+    const isCompleted = completedLessons.length === totalLessons && totalLessons > 0;
+    
+    if (isCompleted) {
+      // Award XP for course completion
+      completeCourse(course.id, 100);
+    }
+  }, [completedLessons, course, completeCourse]);
 
   const currentModule = course?.modules[activeModule];
   const currentLesson = currentModule?.lessons[activeLesson];
@@ -280,6 +293,22 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
                       <div className="border-t border-cyan-500/30 pt-6">
                         <h3 className="text-lg font-semibold text-cyan-400 mb-4">Quiz</h3>
                         <p className="text-gray-400 text-sm">Quiz functionality coming soon...</p>
+                      </div>
+                    )}
+
+                    {/* Assignment Submission */}
+                    {activeModule === course.modules.length - 1 && activeLesson === currentModule!.lessons.length - 1 && (
+                      <div className="border-t border-cyan-500/30 pt-6">
+                        <h3 className="text-lg font-semibold text-cyan-400 mb-4">🎯 Course Assignment</h3>
+                        <p className="text-gray-400 text-sm mb-4">
+                          You've completed the course! Now submit your assignment to earn XP and contribute to the Academy.
+                        </p>
+                        <Button
+                          onClick={() => router.push(`/courses/${course.id}/submit`)}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          Submit Assignment
+                        </Button>
                       </div>
                     )}
                   </CardContent>

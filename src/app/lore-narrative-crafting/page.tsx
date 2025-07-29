@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { ArrowLeft, CheckCircle, XCircle, Lock, Unlock, BookOpen, AlertTriangle, Wallet, PenTool, Users } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Lock, Unlock, BookOpen, AlertTriangle, Wallet, PenTool, Users, Target, Trophy, ArrowRight } from 'lucide-react';
 import { updateScoreForQuizCompletion } from '@/lib/utils';
 import {
   AlertDialog,
@@ -887,6 +887,130 @@ export default function LoreNarrativeCraftingPage() {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Squad Placement Section */}
+        <div className="mt-12">
+          <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+            <CardContent className="p-8">
+              <div className="text-center mb-8">
+                <Trophy className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                <h2 className="text-3xl font-bold text-purple-400 mb-2">Find Your Squad</h2>
+                <p className="text-gray-300 text-lg">
+                  Explore different squad tracks and discover where you belong in the Hoodie Academy.
+                </p>
+              </div>
+
+              {/* Squad Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">🎨</span>
+                    <h3 className="text-lg font-semibold text-yellow-400">Hoodie Creators</h3>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-3">
+                    Content creators, artists, and storytellers who build the cultural foundation.
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs rounded">Content</span>
+                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs rounded">Art</span>
+                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 text-xs rounded">Storytelling</span>
+                  </div>
+                </div>
+
+                <div className="bg-gray-500/10 border border-gray-500/30 rounded-lg p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">🧠</span>
+                    <h3 className="text-lg font-semibold text-gray-300">Hoodie Decoders</h3>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-3">
+                    Technical analysts, researchers, and data-driven decision makers.
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="px-2 py-1 bg-gray-500/20 text-gray-300 text-xs rounded">Analysis</span>
+                    <span className="px-2 py-1 bg-gray-500/20 text-gray-300 text-xs rounded">Research</span>
+                    <span className="px-2 py-1 bg-gray-500/20 text-gray-300 text-xs rounded">Data</span>
+                  </div>
+                </div>
+
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">🎤</span>
+                    <h3 className="text-lg font-semibold text-red-400">Hoodie Speakers</h3>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-3">
+                    Community leaders, moderators, and communication specialists.
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded">Leadership</span>
+                    <span className="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded">Communication</span>
+                    <span className="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded">Community</span>
+                  </div>
+                </div>
+
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">⚔️</span>
+                    <h3 className="text-lg font-semibold text-blue-400">Hoodie Raiders</h3>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-3">
+                    Traders, strategists, and risk-takers who navigate market dynamics.
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">Trading</span>
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">Strategy</span>
+                    <span className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded">Risk</span>
+                  </div>
+                </div>
+
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-6 md:col-span-2 lg:col-span-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-2xl">🦅</span>
+                    <h3 className="text-lg font-semibold text-purple-400">Hoodie Rangers</h3>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-3">
+                    Explorers, scouts, and pioneers who discover new opportunities and territories.
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded">Exploration</span>
+                    <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded">Discovery</span>
+                    <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded">Innovation</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Button
+                  asChild
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                >
+                  <Link href="/placement/squad-test">
+                    <Target className="w-4 h-4 mr-2" />
+                    Take Squad Placement Test
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
+                </Button>
+                
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-cyan-500/30 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                >
+                  <Link href="/courses">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Explore Course Tracks
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="text-center mt-6">
+                <p className="text-sm text-gray-400">
+                  Take the personality test to get matched with your ideal squad, or explore courses to discover your path naturally.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

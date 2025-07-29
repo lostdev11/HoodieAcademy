@@ -7,7 +7,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle, Trophy, Users, Target, Zap, User } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Trophy, Users, Target, Zap, User, AlertTriangle, Clock } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import SquadBadge from '@/components/SquadBadge';
 import { recordPlacementTest } from '@/lib/supabase';
 
@@ -48,6 +58,8 @@ export default function SquadTestPage() {
   const [assignedSquad, setAssignedSquad] = useState<SquadInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingSquad, setPendingSquad] = useState<SquadInfo | null>(null);
 
   useEffect(() => {
     // Check if user has already taken the test
@@ -129,12 +141,22 @@ export default function SquadTestPage() {
     )[0];
 
     const squadInfo = quizData.squads[topSquad];
-    setAssignedSquad(squadInfo);
+    setPendingSquad(squadInfo);
+    setShowConfirmation(true);
+  };
+
+  const handleConfirmSquadAssignment = async () => {
+    if (!pendingSquad) return;
     
-    // Save result to localStorage with timestamp
+    // Calculate lock end date (30 days from now)
+    const lockEndDate = new Date();
+    lockEndDate.setDate(lockEndDate.getDate() + 30);
+    
+    // Save result to localStorage with timestamp and lock info
     const squadResult = {
-      ...squadInfo,
+      ...pendingSquad,
       assignedAt: new Date().toISOString(),
+      lockEndDate: lockEndDate.toISOString(),
       testVersion: '1.0'
     };
     console.log('Saving squad result to localStorage:', squadResult);
@@ -151,7 +173,7 @@ export default function SquadTestPage() {
     // Sync with Supabase
     if (walletAddress) {
       try {
-        await recordPlacementTest(walletAddress, topSquad, displayName || undefined);
+        await recordPlacementTest(walletAddress, pendingSquad.name, displayName || undefined);
         console.log('Successfully synced placement test with Supabase');
       } catch (error) {
         console.error('Error syncing placement test with Supabase:', error);
@@ -164,6 +186,9 @@ export default function SquadTestPage() {
       localStorage.setItem('suggestDisplayName', 'true');
     }
     
+    setAssignedSquad(pendingSquad);
+    setShowConfirmation(false);
+    setPendingSquad(null);
     setShowResults(true);
   };
 
@@ -173,6 +198,8 @@ export default function SquadTestPage() {
     setCurrentQuestion(0);
     setShowResults(false);
     setAssignedSquad(null);
+    setShowConfirmation(false);
+    setPendingSquad(null);
   };
 
   if (isLoading) {
@@ -292,20 +319,12 @@ export default function SquadTestPage() {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button
               onClick={async () => {
-                // Check if user is in onboarding flow
-                const isOnboarding = !localStorage.getItem('onboardingCompleted');
-                if (isOnboarding) {
-                  // Complete onboarding and redirect to dashboard
-                  localStorage.setItem('onboardingCompleted', 'true');
-                  window.location.href = '/';
-                } else {
-                  // Regular flow - go to courses
-                  window.location.href = '/courses';
-                }
+                // Always go to courses since onboarding is now separate
+                window.location.href = '/courses';
               }}
               className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
             >
-              {!localStorage.getItem('onboardingCompleted') ? 'Complete Setup' : 'Explore Courses'}
+              Explore Courses
             </Button>
             
             {/* Profile Button */}
@@ -338,11 +357,79 @@ export default function SquadTestPage() {
             <p className="text-xs text-gray-500">
               You can retake this test anytime to change your squad assignment.
             </p>
-          </div>
-        </div>
+                  </div>
       </div>
-    );
-  }
+
+      {/* Squad Assignment Confirmation Dialog */}
+      <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <AlertDialogContent className="bg-slate-800 border-purple-500/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-purple-400 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Confirm Squad Assignment
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                  <Clock className="w-5 h-5 text-yellow-400" />
+                  <div>
+                    <p className="font-semibold text-yellow-400">30-Day Lock Period</p>
+                    <p className="text-sm text-gray-300">
+                      Once assigned, you cannot change your squad for 30 days. This prevents gaming the system and ensures focused learning.
+                    </p>
+                  </div>
+                </div>
+                
+                {pendingSquad && (
+                  <div className="p-4 bg-slate-700/30 border border-slate-600/30 rounded-lg">
+                    <h4 className="font-semibold text-cyan-400 mb-2">Your Assigned Squad:</h4>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
+                        pendingSquad.name.includes('Creators') ? 'bg-yellow-500/20' :
+                        pendingSquad.name.includes('Decoders') ? 'bg-gray-500/20' :
+                        pendingSquad.name.includes('Speakers') ? 'bg-red-500/20' :
+                        pendingSquad.name.includes('Raiders') ? 'bg-blue-500/20' :
+                        'bg-purple-500/20'
+                      }`}>
+                        {pendingSquad.name.includes('Creators') ? '🎨' :
+                         pendingSquad.name.includes('Decoders') ? '🧠' :
+                         pendingSquad.name.includes('Speakers') ? '🎤' :
+                         pendingSquad.name.includes('Raiders') ? '⚔️' :
+                         '🦅'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-white">{pendingSquad.name}</p>
+                        <p className="text-sm text-gray-300">{pendingSquad.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="text-sm text-gray-400">
+                  <p>• You'll have access to squad-specific courses and challenges</p>
+                  <p>• Your progress will be tracked within your squad</p>
+                  <p>• You can participate in squad competitions and events</p>
+                  <p>• After 30 days, you can request a squad change</p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-gray-500/30 text-gray-300 hover:text-gray-200 hover:bg-gray-500/10">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmSquadAssignment}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+            >
+              Confirm Assignment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
 
   if (!quizData) {
     return (

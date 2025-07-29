@@ -142,6 +142,7 @@ export default function HoodieAcademy() {
   const [currentTime, setCurrentTime] = useState<string>("");
   const [walletAddress, setWalletAddress] = useState<string>("");
   const [userSquad, setUserSquad] = useState<string | null>(null);
+  const [squadLockExpired, setSquadLockExpired] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isDemoWallet, setIsDemoWallet] = useState(false);
   const [currentSpotlightIndex, setCurrentSpotlightIndex] = useState(0);
@@ -164,12 +165,32 @@ export default function HoodieAcademy() {
       try {
         const result = JSON.parse(squadResult);
         console.log('Parsed squad result:', result);
-        if (typeof result === 'object' && result.name) {
-          console.log('Setting squad to:', result.name);
-          setUserSquad(result.name);
-        } else if (typeof result === 'string') {
-          console.log('Setting squad to string:', result);
-          setUserSquad(result);
+        
+        // Check if lock period has expired
+        if (result.lockEndDate) {
+          const lockEnd = new Date(result.lockEndDate);
+          const now = new Date();
+          if (now > lockEnd) {
+            setSquadLockExpired(true);
+            localStorage.removeItem('userSquad');
+            console.log('Squad lock period expired');
+          } else {
+            if (typeof result === 'object' && result.name) {
+              console.log('Setting squad to:', result.name);
+              setUserSquad(result.name);
+            } else if (typeof result === 'string') {
+              console.log('Setting squad to string:', result);
+              setUserSquad(result);
+            }
+          }
+        } else {
+          if (typeof result === 'object' && result.name) {
+            console.log('Setting squad to:', result.name);
+            setUserSquad(result.name);
+          } else if (typeof result === 'string') {
+            console.log('Setting squad to string:', result);
+            setUserSquad(result);
+          }
         }
       } catch (error) {
         console.error('Error parsing squad result:', error);
@@ -333,6 +354,40 @@ export default function HoodieAcademy() {
               <h1 className="text-3xl font-bold text-cyan-400 mb-2">🏛️ Welcome to Hoodie Academy</h1>
               <p className="text-muted-foreground text-lg">Your entry into the elite Web3 scholars campus</p>
             </div>
+
+            {/* Squad Assignment CTA - Only show if user hasn't been assigned a squad */}
+            {!userSquad && (
+              <Card className={`bg-gradient-to-r from-purple-800/50 to-pink-800/50 border-purple-500/30 ${squadLockExpired ? '' : 'animate-pulse'}`}>
+                <CardContent className="p-8 text-center">
+                  <div className="flex items-center justify-center mb-4">
+                    <Trophy className="w-12 h-12 text-purple-400 mr-4" />
+                    <div>
+                      <h2 className="text-2xl font-bold text-purple-400 mb-2">
+                        {squadLockExpired ? 'Choose a New Squad' : 'Choose Your Squad'}
+                      </h2>
+                      <p className="text-gray-300">
+                        {squadLockExpired ? 'Your 30-day lock period has expired. Time to explore new paths!' : 'Discover your path in the Hoodie Academy'}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+                    {squadLockExpired 
+                      ? "Your previous squad assignment has expired. You can now choose a new squad and start a fresh 30-day learning journey with different courses and challenges."
+                      : "Before you can access courses and join the community, you need to choose your squad. Each squad has unique specialties and learning paths. Take your time to explore and find your perfect match."
+                    }
+                  </p>
+                  <Button
+                    size="lg"
+                    onClick={() => window.location.href = '/choose-your-squad'}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3"
+                  >
+                    <Target className="w-5 h-5 mr-2" />
+                    {squadLockExpired ? 'Choose New Squad' : 'Explore Squads & Choose Your Path'}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Top Council Notice */}
             <Card className="border-l-4 border-amber-400 bg-slate-800/50">

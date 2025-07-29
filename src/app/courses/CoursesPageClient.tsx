@@ -21,6 +21,7 @@ import { isCurrentUserAdmin, getConnectedWallet, getCompletedCoursesCount } from
 import { fetchUserByWallet } from "@/lib/supabase";
 import SquadFilter from '@/components/SquadFilter';
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation';
+import { SyllabusPanel } from '@/components/SyllabusPanel';
 
 // Simple course data
 const allCourses: Array<{
@@ -85,15 +86,15 @@ const allCourses: Array<{
   },
   {
     id: 'n120-nft-lingo-decoded',
-    title: "N120 – NFT Lingo Decoded",
+    title: "🧠 NFT Lingo Decoded",
     description: "Master the language of NFT Twitter and Web3 culture. Learn to speak like a true degen and decode the hidden meanings behind NFT slang.",
     badge: "Lingo Master",
     emoji: "🗣️",
     pathType: "social",
     href: "/courses/n120-nft-lingo-decoded",
     localStorageKey: "n120NftLingoDecodedProgress",
-    totalLessons: 5,
-    squad: "Speakers",
+    totalLessons: 4,
+    squad: "Decoders",
     category: "culture",
     level: "beginner",
     access: "free",
@@ -293,6 +294,15 @@ export default function CoursesPageClient() {
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [passwordAttempt, setPasswordAttempt] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [syllabusPanel, setSyllabusPanel] = useState<{
+    isOpen: boolean;
+    data: any;
+    courseTitle: string | null;
+  }>({
+    isOpen: false,
+    data: null,
+    courseTitle: null
+  });
 
   // Update current time
   useEffect(() => {
@@ -406,6 +416,27 @@ export default function CoursesPageClient() {
       // Refresh the page to update the UI
       window.location.reload();
     }
+  };
+
+  const openSyllabusPanel = (courseId: string, courseTitle: string) => {
+    const syllabusData = require('@/lib/syllabusData').syllabusData;
+    const data = syllabusData[courseId];
+    
+    if (data) {
+      setSyllabusPanel({
+        isOpen: true,
+        data,
+        courseTitle
+      });
+    }
+  };
+
+  const closeSyllabusPanel = () => {
+    setSyllabusPanel({
+      isOpen: false,
+      data: null,
+      courseTitle: null
+    });
   };
 
   // Filter courses based on active filter, selected squad, and user's squad
@@ -648,6 +679,7 @@ export default function CoursesPageClient() {
                   progress={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.progress : 0}
                   isAdmin={isAdmin}
                   onResetCourse={resetIndividualCourse}
+                  onOpenSyllabus={openSyllabusPanel}
                 />
               )
             ))}
@@ -683,6 +715,14 @@ export default function CoursesPageClient() {
             </p>
           </div>
         </div>
+
+        {/* Syllabus Panel */}
+        <SyllabusPanel
+          data={syllabusPanel.data}
+          courseTitle={syllabusPanel.courseTitle}
+          isOpen={syllabusPanel.isOpen}
+          onClose={closeSyllabusPanel}
+        />
       </div>
     </TokenGate>
   );

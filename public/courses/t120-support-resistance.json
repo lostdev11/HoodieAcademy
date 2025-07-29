@@ -1,116 +1,67 @@
 {
   "id": "t120-support-resistance",
-  "title": "T120 – Support, Resistance & Volume Zones",
-  "description": "Master the art of identifying key price levels and understanding how volume confirms market structure. Learn to spot accumulation zones and psychological price points.",
-  "badge": "Level Master",
+  "slug": "t120-support-resistance",
+  "title": "Support, Resistance, & Volume Zones",
+  "description": "Master the identification and analysis of key price levels. Learn to spot support, resistance, and volume zones that drive market psychology.",
+  "badge": "Level Hunter",
   "emoji": "🎯",
-  "pathType": "tech",
+  "pathType": "price-action",
   "href": "/courses/t120-support-resistance",
   "localStorageKey": "t120SupportResistanceProgress",
-  "totalLessons": 5,
+  "totalLessons": 6,
   "squad": "Decoders",
-  "category": "technical-analysis",
+  "category": "price-action-literacy",
   "level": "beginner",
   "access": "free",
   "modules": [
     {
       "id": "module-1",
-      "title": "Understanding Support & Resistance",
-      "description": "Learn how price zones act like magnets or ceilings. Support = where buyers stack. Resistance = where sellers wait.",
+      "title": "Price Level Psychology",
+      "description": "Understand the psychology behind support and resistance levels",
       "lessons": [
         {
           "id": "lesson-1-1",
-          "title": "The Basics of Support and Resistance",
-          "content": "**What is Support?**\nSupport is a price level where buying interest is strong enough to prevent the price from falling further.\n\n**Key Characteristics:**\n• **Buyer Concentration**: Multiple buyers willing to buy at this level\n• **Price Bounce**: Price tends to bounce off this level\n• **Volume Confirmation**: High volume when price touches support\n• **Psychological Level**: Often at round numbers or previous lows\n• **Multiple Touches**: The more touches, the stronger the support\n\n**What is Resistance?**\nResistance is a price level where selling interest is strong enough to prevent the price from rising further.\n\n**Key Characteristics:**\n• **Seller Concentration**: Multiple sellers willing to sell at this level\n• **Price Rejection**: Price tends to reject from this level\n• **Volume Confirmation**: High volume when price touches resistance\n• **Psychological Level**: Often at round numbers or previous highs\n• **Multiple Touches**: The more touches, the stronger the resistance\n\n**Why Support and Resistance Work:**\n• **Market Memory**: Traders remember key levels\n• **Order Clustering**: Orders accumulate at these levels\n• **Psychology**: Fear and greed drive behavior\n• **Self-Fulfilling**: Belief creates reality\n• **Technical Analysis**: Widely used by traders\n\n**Types of Support/Resistance:**\n• **Static**: Fixed price levels (round numbers)\n• **Dynamic**: Moving levels (trend lines, moving averages)\n• **Major**: Long-term, significant levels\n• **Minor**: Short-term, less significant levels\n• **Psychological**: Round numbers and key levels",
+          "title": "Support & Resistance Basics",
+          "content": "Support and resistance are psychological price levels where buyers and sellers congregate. Understanding these levels is crucial for entry and exit timing.\n\n**Support Levels:**\n• Price level where buying interest increases\n• Previous lows that held\n• Round numbers and psychological levels\n• Areas of accumulation\n• Stop-loss clusters\n\n**Resistance Levels:**\n• Price level where selling interest increases\n• Previous highs that held\n• Round numbers and psychological levels\n• Areas of distribution\n• Take-profit clusters\n\n**Why Levels Work:**\n• Self-fulfilling prophecy\n• Institutional order placement\n• Retail trader psychology\n• Technical analysis convergence",
           "video": "/videos/support-resistance-basics.mp4"
         },
         {
           "id": "lesson-1-2",
-          "title": "Support and Resistance in Action",
-          "content": "**Real-World Examples:**\n\n**Support Examples:**\n• **Bitcoin $30,000**: Major psychological support level\n• **Ethereum $1,500**: Key support during bear markets\n• **SOL $20**: Strong support level with multiple touches\n• **Round Numbers**: $1.00, $10.00, $100.00 often act as support\n\n**Resistance Examples:**\n• **Bitcoin $40,000**: Major resistance during recovery\n• **Ethereum $2,000**: Key resistance level\n• **SOL $30**: Strong resistance with multiple rejections\n• **Previous Highs**: Often act as resistance\n\n**How to Identify Strong Levels:**\n• **Multiple Touches**: More touches = stronger level\n• **Volume Confirmation**: High volume at the level\n• **Time Factor**: Longer-held levels are stronger\n• **Price Action**: Sharp bounces or rejections\n• **Market Context**: Levels that align with trends\n\n**Common Mistakes:**\n• **Over-analyzing**: Too many levels on chart\n• **Ignoring Volume**: Not confirming with volume\n• **Forcing Levels**: Drawing lines that don't fit\n• **Not Updating**: Failing to adjust levels\n• **Ignoring Context**: Not considering market conditions\n\n**Pro Tips:**\n• Start with major levels only\n• Use volume to confirm levels\n• Consider market context\n• Update levels regularly\n• Practice on multiple timeframes",
-          "video": "/videos/support-resistance-examples.mp4"
+          "title": "Level Identification",
+          "content": "**Visual Identification:**\n• Multiple touches at same level\n• Strong rejection candles\n• Volume spikes at levels\n• Price action respect\n• Time spent at level\n\n**Level Types:**\n• Static (horizontal lines)\n• Dynamic (trending levels)\n• Psychological (round numbers)\n• Fibonacci levels\n• Pivot points\n\n**Confirmation Methods:**\n• Multiple timeframes\n• Volume analysis\n• Price action patterns\n• Market structure",
+          "video": "/videos/level-identification.mp4"
         }
       ]
     },
     {
       "id": "module-2",
-      "title": "Drawing Horizontal Levels",
-      "description": "Marking local highs and lows using candle bodies and wicks. Practice marking recent chop zones on a SOL chart.",
+      "title": "Volume Zone Analysis",
+      "description": "Learn to identify and analyze volume zones",
       "lessons": [
         {
           "id": "lesson-2-1",
-          "title": "Drawing Support Levels",
-          "content": "**How to Draw Support Levels:**\n\n**Step 1: Identify Swing Lows**\n• Look for price bounces from the same level\n• Focus on significant lows, not every minor low\n• Use multiple timeframes for confirmation\n• Consider the overall trend context\n\n**Step 2: Connect the Dots**\n• Draw horizontal lines through swing lows\n• The more touches, the stronger the support\n• Use the body of candles, not just wicks\n• Extend lines to the right for future reference\n\n**Step 3: Validate with Volume**\n• High volume at support confirms the level\n• Low volume suggests weak support\n• Look for volume spikes on bounces\n• Consider volume profile analysis\n\n**Step 4: Mark Key Levels**\n• Round numbers ($1.00, $10.00, $100.00)\n• Previous major lows\n• Psychological levels\n• Areas with high trading activity\n\n**Pro Tips for Drawing Support:**\n• **Use Multiple Timeframes**: Confirm on 1H, 4H, 1D\n• **Focus on Quality**: Fewer, stronger levels are better\n• **Consider Context**: Support in uptrend vs downtrend\n• **Update Regularly**: Markets change, so should your levels\n• **Use Volume**: Always confirm with volume analysis\n\n**Common Support Patterns:**\n• **Double Bottom**: Two lows at same level\n• **Triple Bottom**: Three lows at same level\n• **Flat Base**: Extended period at support\n• **V-Bottom**: Sharp bounce from support\n• **Rounded Bottom**: Gradual turn at support",
-          "video": "/videos/drawing-support-levels.mp4"
+          "title": "Volume Profile",
+          "content": "**Volume Profile Concepts:**\n• Point of Control (POC)\n• Value Area (VA)\n• High Volume Nodes (HVN)\n• Low Volume Nodes (LVN)\n• Volume Weighted Average Price (VWAP)\n\n**Volume Zone Types:**\n• High volume = strong level\n• Low volume = weak level\n• Volume gap = potential target\n• Volume cluster = support/resistance\n\n**Trading Applications:**\n• Entry timing\n• Exit planning\n• Risk management\n• Position sizing",
+          "video": "/videos/volume-profile.mp4"
         },
         {
           "id": "lesson-2-2",
-          "title": "Drawing Resistance Levels",
-          "content": "**How to Draw Resistance Levels:**\n\n**Step 1: Identify Swing Highs**\n• Look for price rejections from the same level\n• Focus on significant highs, not every minor high\n• Use multiple timeframes for confirmation\n• Consider the overall trend context\n\n**Step 2: Connect the Dots**\n• Draw horizontal lines through swing highs\n• The more touches, the stronger the resistance\n• Use the body of candles, not just wicks\n• Extend lines to the right for future reference\n\n**Step 3: Validate with Volume**\n• High volume at resistance confirms the level\n• Low volume suggests weak resistance\n• Look for volume spikes on rejections\n• Consider volume profile analysis\n\n**Step 4: Mark Key Levels**\n• Round numbers ($1.00, $10.00, $100.00)\n• Previous major highs\n• Psychological levels\n• Areas with high trading activity\n\n**Pro Tips for Drawing Resistance:**\n• **Use Multiple Timeframes**: Confirm on 1H, 4H, 1D\n• **Focus on Quality**: Fewer, stronger levels are better\n• **Consider Context**: Resistance in uptrend vs downtrend\n• **Update Regularly**: Markets change, so should your levels\n• **Use Volume**: Always confirm with volume analysis\n\n**Common Resistance Patterns:**\n• **Double Top**: Two highs at same level\n• **Triple Top**: Three highs at same level\n• **Flat Top**: Extended period at resistance\n• **V-Top**: Sharp rejection from resistance\n• **Rounded Top**: Gradual turn at resistance",
-          "video": "/videos/drawing-resistance-levels.mp4"
+          "title": "Volume Zone Trading",
+          "content": "**Volume Zone Strategies:**\n• Buy at support with volume\n• Sell at resistance with volume\n• Avoid low volume areas\n• Use volume gaps as targets\n\n**Risk Management:**\n• Stop loss below support\n• Take profit at resistance\n• Position size based on volume\n• Multiple confirmations\n\n**Advanced Concepts:**\n• Volume divergence\n• Volume climax\n• Volume dry-up\n• Institutional activity",
+          "video": "/videos/volume-zone-trading.mp4"
         }
       ]
     },
     {
       "id": "module-3",
-      "title": "Psychological Price Points",
-      "description": "Why round numbers matter — $1.00, $3.33, $10.00 — and how traders cluster around them.",
+      "title": "Level Trading Strategies",
+      "description": "Develop strategies for trading support and resistance levels",
       "lessons": [
         {
           "id": "lesson-3-1",
-          "title": "The Psychology of Round Numbers",
-          "content": "**Why Round Numbers Matter:**\n\n**Human Psychology:**\n• **Mental Anchoring**: We think in round numbers\n• **Order Placement**: Traders place orders at round levels\n• **Stop Losses**: Often set at round numbers\n• **Take Profits**: Often set at round numbers\n• **News Headlines**: Media focuses on round numbers\n\n**Common Psychological Levels:**\n• **$1.00**: Major psychological barrier\n• **$10.00**: Significant milestone\n• **$100.00**: Major psychological level\n• **$1,000**: Bitcoin's psychological level\n• **$0.50, $0.75**: Common fractional levels\n\n**Why Traders Cluster at These Levels:**\n• **Order Flow**: Large orders accumulate at round numbers\n• **Stop Losses**: Many stops placed just below/above\n• **Take Profits**: Many targets set at round numbers\n• **Mental Accounting**: Easier to track at round numbers\n• **Media Attention**: Round numbers get more coverage\n\n**How to Use Psychological Levels:**\n• **Entry Points**: Enter near psychological support\n• **Exit Points**: Exit near psychological resistance\n• **Stop Losses**: Place stops below psychological support\n• **Take Profits**: Set targets at psychological resistance\n• **Risk Management**: Use levels for position sizing\n\n**Pro Tips:**\n• **Don't Rely Solely**: Use with other analysis\n• **Consider Context**: Market conditions matter\n• **Use Multiple Timeframes**: Confirm on different timeframes\n• **Watch for Breaks**: False breaks are common\n• **Volume Confirmation**: Always confirm with volume",
-          "video": "/videos/psychological-levels.mp4"
-        },
-        {
-          "id": "lesson-3-2",
-          "title": "Trading Around Psychological Levels",
-          "content": "**Trading Strategies for Psychological Levels:**\n\n**Support Trading:**\n• **Entry**: Buy near psychological support\n• **Stop Loss**: Place below the support level\n• **Target**: Aim for next psychological resistance\n• **Risk**: 1-2% of account per trade\n• **Confirmation**: Wait for bounce confirmation\n\n**Resistance Trading:**\n• **Entry**: Sell near psychological resistance\n• **Stop Loss**: Place above the resistance level\n• **Target**: Aim for next psychological support\n• **Risk**: 1-2% of account per trade\n• **Confirmation**: Wait for rejection confirmation\n\n**Breakout Trading:**\n• **Entry**: Enter on break of psychological level\n• **Stop Loss**: Place on other side of level\n• **Target**: Aim for next psychological level\n• **Risk**: 1-2% of account per trade\n• **Confirmation**: High volume on break\n\n**False Break Trading:**\n• **Entry**: Enter on false break of level\n• **Stop Loss**: Place beyond the false break\n• **Target**: Aim for opposite psychological level\n• **Risk**: 1-2% of account per trade\n• **Confirmation**: Price returns to original side\n\n**Pro Tips:**\n• **Always Use Stops**: Never trade without stop loss\n• **Confirm with Volume**: High volume confirms moves\n• **Consider Market Context**: Trend direction matters\n• **Use Multiple Timeframes**: Confirm on different timeframes\n• **Practice Risk Management**: Never risk more than 2%",
-          "video": "/videos/trading-psychological-levels.mp4"
-        }
-      ]
-    },
-    {
-      "id": "module-4",
-      "title": "Volume and Accumulation Zones",
-      "description": "Combine price action with volume spikes to identify real accumulation vs traps.",
-      "lessons": [
-        {
-          "id": "lesson-4-1",
-          "title": "Understanding Volume Analysis",
-          "content": "**What is Volume?**\nVolume is the number of shares or contracts traded in a given period.\n\n**Why Volume Matters:**\n• **Confirmation**: Volume confirms price moves\n• **Strength**: High volume = strong move\n• **Weakness**: Low volume = weak move\n• **Divergence**: Price vs volume disagreement\n• **Accumulation**: Smart money buying\n• **Distribution**: Smart money selling\n\n**Volume Patterns:**\n\n**High Volume on Breakouts:**\n• **Bullish**: Price breaks up with high volume\n• **Bearish**: Price breaks down with high volume\n• **Confirmation**: Volume confirms the break\n• **Strength**: High volume = strong break\n• **Follow-through**: Expect continuation\n\n**Low Volume on Breakouts:**\n• **Weakness**: Low volume = weak break\n• **False Break**: Often leads to reversal\n• **Caution**: Be careful with low volume breaks\n• **Confirmation**: Wait for volume confirmation\n• **Risk**: Higher chance of failure\n\n**Volume Divergence:**\n• **Bullish Divergence**: Price down, volume down\n• **Bearish Divergence**: Price up, volume down\n• **Warning Sign**: Often precedes reversal\n• **Confirmation**: Look for other signals\n• **Action**: Consider reducing position\n\n**Pro Tips:**\n• **Compare to Average**: Is volume above/below average?\n• **Look for Spikes**: Sudden volume increases\n• **Consider Context**: Market conditions matter\n• **Use Multiple Timeframes**: Confirm on different timeframes\n• **Practice**: Volume analysis takes time to master",
-          "video": "/videos/volume-analysis.mp4"
-        },
-        {
-          "id": "lesson-4-2",
-          "title": "Identifying Accumulation Zones",
-          "content": "**What is Accumulation?**\nAccumulation is when smart money (institutional investors) buys large amounts of an asset over time.\n\n**Signs of Accumulation:**\n• **High Volume**: Unusually high trading volume\n• **Price Stability**: Price holds at support level\n• **Large Orders**: Big orders being filled\n• **Time Factor**: Extended period of buying\n• **Stealth**: Often happens quietly\n• **Patience**: Can take weeks or months\n\n**How to Spot Accumulation:**\n\n**Volume Analysis:**\n• **Volume Spikes**: Sudden increases in volume\n• **Volume Profile**: High volume at certain levels\n• **Order Flow**: Large orders being filled\n• **Time and Sales**: Watch for large trades\n• **Level 2 Data**: See order book depth\n\n**Price Action:**\n• **Support Holds**: Price bounces from support\n• **Limited Downside**: Price doesn't fall much\n• **Gradual Recovery**: Slow but steady price increase\n• **Higher Lows**: Each low is higher than the last\n• **Consolidation**: Price moves sideways\n\n**Technical Indicators:**\n• **RSI**: Oversold conditions\n• **MACD**: Positive divergence\n• **Moving Averages**: Price above key MAs\n• **Bollinger Bands**: Price near lower band\n• **Stochastic**: Oversold readings\n\n**Pro Tips:**\n• **Be Patient**: Accumulation takes time\n• **Use Multiple Timeframes**: Confirm on different timeframes\n• **Watch for Catalysts**: News or events that trigger buying\n• **Consider Market Context**: Overall market conditions\n• **Don't Chase**: Wait for confirmation before buying",
-          "video": "/videos/accumulation-zones.mp4"
-        }
-      ]
-    },
-    {
-      "id": "module-5",
-      "title": "Bonus Chart Study",
-      "description": "Study 3 coins that ran in previous cycles. Identify where volume confirmed a breakout.",
-      "lessons": [
-        {
-          "id": "lesson-5-1",
-          "title": "Case Study: Bitcoin 2020-2021",
-          "content": "**Bitcoin's 2020-2021 Bull Run Analysis:**\n\n**Key Support Levels:**\n• **$30,000**: Major psychological support\n• **$20,000**: Previous cycle high (2017)\n• **$10,000**: Strong support during accumulation\n• **$5,000**: COVID crash low\n\n**Key Resistance Levels:**\n• **$40,000**: First major resistance\n• **$50,000**: Psychological milestone\n• **$60,000**: Previous cycle high\n• **$69,000**: All-time high\n\n**Volume Analysis:**\n• **Accumulation Phase**: High volume at $30,000 support\n• **Breakout Phase**: Massive volume on break above $40,000\n• **Distribution Phase**: High volume at $69,000 top\n• **Correction Phase**: High volume on breakdown\n\n**Key Lessons:**\n• **Support Holds**: $30,000 acted as strong support\n• **Volume Confirms**: High volume confirmed breakouts\n• **Psychological Levels**: Round numbers mattered\n• **Time Factor**: Accumulation took months\n• **Catalyst**: Institutional adoption drove the move\n\n**Trading Opportunities:**\n• **Entry**: Buy at $30,000 support\n• **Stop Loss**: Below $30,000\n• **Target**: $40,000 resistance\n• **Risk**: 1-2% of account\n• **Confirmation**: High volume on break",
-          "video": "/videos/bitcoin-case-study.mp4"
-        },
-        {
-          "id": "lesson-5-2",
-          "title": "Case Study: Ethereum 2021",
-          "content": "**Ethereum's 2021 Bull Run Analysis:**\n\n**Key Support Levels:**\n• **$1,500**: Major support during accumulation\n• **$1,000**: Psychological support level\n• **$500**: Previous cycle high\n• **$200**: COVID crash low\n\n**Key Resistance Levels:**\n• **$2,000**: First major resistance\n• **$3,000**: Psychological milestone\n• **$4,000**: Previous cycle high\n• **$4,800**: All-time high\n\n**Volume Analysis:**\n• **Accumulation Phase**: High volume at $1,500 support\n• **Breakout Phase**: Massive volume on break above $2,000\n• **Distribution Phase**: High volume at $4,800 top\n• **Correction Phase**: High volume on breakdown\n\n**Key Lessons:**\n• **Support Holds**: $1,500 acted as strong support\n• **Volume Confirms**: High volume confirmed breakouts\n• **Psychological Levels**: Round numbers mattered\n• **Time Factor**: Accumulation took months\n• **Catalyst**: DeFi boom drove the move\n\n**Trading Opportunities:**\n• **Entry**: Buy at $1,500 support\n• **Stop Loss**: Below $1,500\n• **Target**: $2,000 resistance\n• **Risk**: 1-2% of account\n• **Confirmation**: High volume on break",
-          "video": "/videos/ethereum-case-study.mp4"
-        },
-        {
-          "id": "lesson-5-3",
-          "title": "Case Study: Solana 2021",
-          "content": "**Solana's 2021 Bull Run Analysis:**\n\n**Key Support Levels:**\n• **$20**: Major support during accumulation\n• **$10**: Psychological support level\n• **$5**: Previous cycle high\n• **$1**: COVID crash low\n\n**Key Resistance Levels:**\n• **$30**: First major resistance\n• **$50**: Psychological milestone\n• **$100**: Previous cycle high\n• **$260**: All-time high\n\n**Volume Analysis:**\n• **Accumulation Phase**: High volume at $20 support\n• **Breakout Phase**: Massive volume on break above $30\n• **Distribution Phase**: High volume at $260 top\n• **Correction Phase**: High volume on breakdown\n\n**Key Lessons:**\n• **Support Holds**: $20 acted as strong support\n• **Volume Confirms**: High volume confirmed breakouts\n• **Psychological Levels**: Round numbers mattered\n• **Time Factor**: Accumulation took months\n• **Catalyst**: NFT boom drove the move\n\n**Trading Opportunities:**\n• **Entry**: Buy at $20 support\n• **Stop Loss**: Below $20\n• **Target**: $30 resistance\n• **Risk**: 1-2% of account\n• **Confirmation**: High volume on break",
-          "video": "/videos/solana-case-study.mp4"
+          "title": "Level Breakout Trading",
+          "content": "**Breakout Confirmation:**\n• Strong volume on breakout\n• Price closes beyond level\n• Multiple timeframes confirm\n• No false breakouts\n\n**Breakout Types:**\n• Clean breakout (strong)\n• False breakout (weak)\n• Retest breakout (normal)\n• Gap breakout (strong)\n\n**Entry Strategies:**\n• Breakout entry\n• Retest entry\n• Pullback entry\n• Momentum entry\n\n**Risk Management:**\n• Stop loss below breakout level\n• Position sizing\n• Multiple confirmations\n• Time-based exits",
+          "video": "/videos/breakout-trading.mp4"
         }
       ]
     }

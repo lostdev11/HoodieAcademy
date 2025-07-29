@@ -1,6 +1,7 @@
 import type {Metadata, Viewport} from 'next';
 import { Inter, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
+import SquadAssignmentGuard from '@/components/SquadAssignmentGuard';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -167,7 +168,9 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} ${ibmPlexMono.variable} antialiased scrollbar-thin`}>
-        {children}
+        <SquadAssignmentGuard>
+          {children}
+        </SquadAssignmentGuard>
       </body>
     </html>
   );

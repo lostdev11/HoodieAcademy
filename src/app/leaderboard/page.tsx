@@ -1,5 +1,5 @@
-import LeaderboardPage from '@/components/leaderboard/LeaderboardPage';
+import EnhancedLeaderboardPage from '@/components/leaderboard/EnhancedLeaderboardPage';
 
 export default function Leaderboard() {
-  return <LeaderboardPage />;
+  return <EnhancedLeaderboardPage />;
 } 

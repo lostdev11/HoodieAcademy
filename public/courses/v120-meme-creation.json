@@ -1,0 +1,69 @@
+{
+  "id": "v120-meme-creation",
+  "slug": "v120-meme-creation",
+  "title": "Meme Creation for Lore & Laughs",
+  "description": "Learn to craft viral memes that spread lore and build community. Master the art of visual storytelling through humor and cultural references.",
+  "badge": "Meme Master",
+  "emoji": "😂",
+  "pathType": "communication",
+  "href": "/courses/v120-meme-creation",
+  "localStorageKey": "v120MemeCreationProgress",
+  "totalLessons": 4,
+  "squad": "Creators",
+  "category": "communication-design",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Meme Psychology & Virality",
+      "description": "Understand what makes memes spread and how to craft viral content",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "The Science of Memes",
+          "content": "Memes are cultural units that spread through imitation. In Web3, they're powerful tools for community building and lore propagation.\n\n**Why Memes Work:**\n• Relatability - people see themselves\n• Simplicity - easy to understand\n• Shareability - designed to spread\n• Timeliness - relevant to current events\n• Emotional resonance - makes people feel\n\n**Web3 Meme Culture:**\n• Community in-jokes\n• Project-specific references\n• Market sentiment expression\n• Governance commentary\n• Technical humor",
+          "video": "/videos/meme-psychology.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Viral Mechanics",
+          "content": "**The Viral Formula:**\n• Hook (attention-grabbing)\n• Story (narrative arc)\n• Emotion (feeling)\n• Call to action (sharing)\n\n**Platform-Specific Strategies:**\n• Twitter: Short, punchy, hashtag-friendly\n• Discord: Community-focused, inside jokes\n• Reddit: Subculture-specific, detailed\n• TikTok: Trend-riding, music-driven\n• Instagram: Visual-first, aesthetic-focused\n\n**Timing & Trends:**\n• Ride existing trends\n• Create new trends\n• Respond to current events\n• Anticipate market moves",
+          "video": "/videos/viral-mechanics.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Visual Meme Creation",
+      "description": "Master the technical skills of creating visual memes",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Meme Templates & Formats",
+          "content": "**Classic Meme Formats:**\n• Wojak variations\n• Drake format\n• Distracted boyfriend\n• Two buttons\n• Expanding brain\n• Success kid\n\n**Web3-Specific Templates:**\n• Chart patterns\n• Wallet reactions\n• Gas fee complaints\n• NFT floor drops\n• Governance voting\n• Technical difficulties\n\n**Creating Your Own:**\n• Start with simple concepts\n• Use consistent visual style\n• Make it easily customizable\n• Test with community",
+          "video": "/videos/meme-templates.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Text & Typography",
+          "content": "**Font Selection:**\n• Impact (classic meme font)\n• Comic Sans (ironic usage)\n• Arial Black (clean, readable)\n• Custom fonts (brand identity)\n\n**Text Placement:**\n• Top text (setup)\n• Bottom text (punchline)\n• Center text (emphasis)\n• Side text (context)\n\n**Typography Rules:**\n• High contrast for readability\n• Appropriate sizing\n• Consistent spacing\n• Color psychology\n• Stroke/outline for visibility",
+          "video": "/videos/meme-typography.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Lore Integration",
+      "description": "Learn to weave project lore into meme content",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Lore-Driven Memes",
+          "content": "**Lore Elements to Meme:**\n• Character backstories\n• Historical events\n• Community milestones\n• Inside jokes\n• Project mythology\n• Future predictions\n\n**Balancing Act:**\n• Accessible to newcomers\n• Rewarding for veterans\n• Educational value\n• Entertainment factor\n• Community building\n\n**Lore Meme Examples:**\n• Origin story references\n• Character interactions\n• Timeline events\n• Prophecy fulfillment\n• Community reactions",
+          "video": "/videos/lore-memes.mp4"
+        }
+      ]
+    }
+  ]
+} 

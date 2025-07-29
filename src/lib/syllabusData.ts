@@ -95,6 +95,48 @@ export const syllabusData: Record<string, SyllabusData> = {
       topics: ['Market Analysis', 'Risk Management', 'Portfolio Strategy', 'Scam Detection']
     }
   },
+  'n120-nft-lingo-decoded': {
+    overview: "Master the language of NFT Twitter and Web3 culture. Learn to speak like a true degen and decode the hidden meanings behind NFT slang, floor price mechanics, trait rankings, and red flag detection.",
+    objectives: [
+      "Understand and use common NFT Twitter slang and terminology",
+      "Master floor price mechanics and undercutting strategies",
+      "Learn trait meta and rarity ranking systems",
+      "Identify red flags and exit signals in NFT communities",
+      "Navigate NFT culture with confidence and authenticity"
+    ],
+    materials: [
+      {
+        type: 'video',
+        title: 'Degen Language Intro',
+        url: '/videos/degen-language-intro.mp4',
+        description: 'Introduction to NFT Twitter slang and culture'
+      },
+      {
+        type: 'video',
+        title: 'Floor Price Mechanics',
+        url: '/videos/floor-mechanics.mp4',
+        description: 'Understanding how floor prices work and move'
+      },
+      {
+        type: 'video',
+        title: 'Trait Meta Analysis',
+        url: '/videos/trait-meta.mp4',
+        description: 'How to analyze NFT traits and rarity'
+      },
+      {
+        type: 'video',
+        title: 'Red Flags Detection',
+        url: '/videos/red-flags.mp4',
+        description: 'Spotting warning signs in NFT projects'
+      }
+    ],
+    estimatedTime: "1-2 hours",
+    quizOverview: {
+      totalQuestions: 8,
+      passingScore: 75,
+      topics: ['NFT Lingo', 'Floor Mechanics', 'Trait Analysis', 'Red Flags']
+    }
+  },
   'community-strategy': {
     overview: "Master the art of building and managing thriving Web3 communities. Learn social dynamics, engagement strategies, and governance structures that drive successful decentralized communities.",
     objectives: [

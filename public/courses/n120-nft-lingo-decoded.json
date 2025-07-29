@@ -1,94 +1,70 @@
 {
   "id": "n120-nft-lingo-decoded",
-  "title": "N120 – NFT Lingo Decoded",
+  "title": "🧠 NFT Lingo Decoded",
   "description": "Master the language of NFT Twitter and Web3 culture. Learn to speak like a true degen and decode the hidden meanings behind NFT slang.",
   "badge": "Lingo Master",
   "emoji": "🗣️",
   "pathType": "social",
   "href": "/courses/n120-nft-lingo-decoded",
   "localStorageKey": "n120NftLingoDecodedProgress",
-  "totalLessons": 5,
-  "squad": "Speakers",
+  "totalLessons": 4,
+  "squad": "Decoders",
   "category": "culture",
   "level": "beginner",
   "access": "free",
   "modules": [
     {
       "id": "module-1",
-      "title": "What is Degen Language?",
-      "description": "Explore why NFT Twitter has its own lingo and how it spreads culture.",
+      "title": "Module 1: Speak Like a Degen",
+      "description": "Welcome to the world of NFTs, where the memes are strong and the lingo is stronger. In this module, we'll decode everyday NFT slang—like 'WAGMI', 'rug', 'paper hands', and more. Get ready to talk the talk.",
       "lessons": [
         {
           "id": "lesson-1-1",
-          "title": "The Language of Web3",
-          "content": "NFT Twitter has developed its own unique language that serves multiple purposes in the Web3 ecosystem.\n\n**Why Degen Language Exists:**\n• **Community Building**: Creates insider culture and belonging\n• **Efficiency**: Short phrases convey complex ideas quickly\n• **Humor**: Memes and jokes make trading more fun\n• **Status Signaling**: Shows you're part of the community\n• **Information Sharing**: Spreads news and trends rapidly\n\n**How Language Spreads:**\n• **Viral Memes**: Catchy phrases that stick\n• **Influencer Adoption**: Big accounts popularize terms\n• **Community Events**: Drops, launches, and drama create new terms\n• **Cross-Platform**: Terms spread from Discord to Twitter to TikTok\n\n**The Psychology Behind It:**\n• **FOMO**: Language creates urgency and excitement\n• **Social Proof**: Everyone using the same terms\n• **Identity**: Speaking the lingo shows you belong\n• **Exclusivity**: Understanding gives you an edge\n\n**Examples of Cultural Terms:**\n• 'WAGMI' (We're All Gonna Make It)\n• 'NGMI' (Not Gonna Make It)\n• 'Diamond Hands' vs 'Paper Hands'\n• 'Ape In' (buy aggressively)\n• 'FUD' (Fear, Uncertainty, Doubt)",
+          "title": "Translate the Tweet",
+          "content": "Break down this tweet: 'Just swept 6 rank 100s under .03—vibes immaculate. WAGMI frfr.' \n\nExplain what each part means in plain English:\n\n- 'swept 6 rank 100s': Bought 6 NFTs with rank 100 (rarity)\n- 'under .03': For less than 0.03 SOL each\n- 'vibes immaculate': The feeling is perfect\n- 'WAGMI frfr': We're All Gonna Make It, for real for real\n\nThis tweet shows someone buying multiple rare NFTs at a good price and feeling optimistic about the project.",
           "video": "/videos/degen-language-intro.mp4"
         }
       ]
     },
     {
       "id": "module-2",
-      "title": "Top 10 Terms to Know",
-      "description": "WAGMI, undercut, sweeping, thin floor, rank 4 — learn what they actually mean in context.",
+      "title": "Module 2: Floor Price Mechanics",
+      "description": "Terms like 'undercut', 'thin floor', and 'sweeping' describe how NFTs move on marketplaces. We'll explain how flippers operate, what a 'floor' really is, and why some people get mad when it drops.",
       "lessons": [
         {
           "id": "lesson-2-1",
-          "title": "Essential Trading Terms",
-          "content": "**1. WAGMI (We're All Gonna Make It)**\n• **Meaning**: Optimistic belief that everyone will succeed\n• **Usage**: Used to encourage community during dips\n• **Context**: Often said ironically or sincerely\n\n**2. Undercut**\n• **Meaning**: Listing an NFT below the current floor price\n• **Usage**: 'Don't undercut the floor!'\n• **Context**: Can be seen as helping or hurting the community\n\n**3. Sweeping**\n• **Meaning**: Buying multiple NFTs from a collection at once\n• **Usage**: 'Whales are sweeping the floor'\n• **Context**: Usually indicates strong buying pressure\n\n**4. Thin Floor**\n• **Meaning**: Low number of NFTs listed for sale\n• **Usage**: 'The floor is thin, price might pump'\n• **Context**: Suggests potential price movement\n\n**5. Rank 4**\n• **Meaning**: A rare trait in an NFT collection\n• **Usage**: 'I got a rank 4, this is rare!'\n• **Context**: Rarity affects value significantly",
-          "video": "/videos/top-10-terms.mp4"
-        },
-        {
-          "id": "lesson-2-2",
-          "title": "Community and Culture Terms",
-          "content": "**6. FOMO (Fear of Missing Out)**\n• **Meaning**: Anxiety about missing a good opportunity\n• **Usage**: 'I FOMO'd into that collection'\n• **Context**: Often leads to impulsive decisions\n\n**7. Diamond Hands**\n• **Meaning**: Holding through volatility and dips\n• **Usage**: 'Diamond hands, not selling!'\n• **Context**: Opposite of 'paper hands' who sell quickly\n\n**8. Ape In**\n• **Meaning**: Buying aggressively without much research\n• **Usage**: 'I'm gonna ape into this'\n• **Context**: High-risk, high-reward strategy\n\n**9. Floor Price**\n• **Meaning**: Lowest listed price for an NFT in a collection\n• **Usage**: 'The floor is 2 SOL'\n• **Context**: Key metric for collection value\n\n**10. Mint**\n• **Meaning**: Creating/buying an NFT during initial sale\n• **Usage**: 'I minted 3 from the drop'\n• **Context**: Usually cheaper than buying on secondary market\n\n**Pro Tips:**\n• Use these terms naturally in conversation\n• Understand the context before using\n• Don't overuse - authenticity matters\n• Learn the subtle variations in meaning",
-          "video": "/videos/community-terms.mp4"
+          "title": "Thin Floor Simulation",
+          "content": "Given a fictional NFT collection, simulate a thin floor scenario and explain how undercutting affects price action. Use at least 3 mock listings.\n\n**Scenario:** WifHoodie collection with thin floor\n\n**Current Listings:**\n- Hoodie #123: 2.5 SOL\n- Hoodie #456: 2.4 SOL (undercut)\n- Hoodie #789: 2.3 SOL (undercut)\n\n**What happens:**\n1. Floor drops from 2.5 to 2.3 SOL\n2. Other holders panic and list lower\n3. Floor continues dropping\n4. Creates selling pressure\n\n**Key lesson:** Undercutting can trigger a cascade of lower listings.",
+          "video": "/videos/floor-mechanics.mp4"
         }
       ]
     },
     {
       "id": "module-3",
-      "title": "The Red Flag Decoder",
-      "description": "10 phrases that might signal FUD, exit scams, or peak hopium. Learn to read between the lines.",
+      "title": "Module 3: Trait Meta + Rankings",
+      "description": "What does 'Rank 4' mean? And why does it matter? This module introduces rarity ranking, metadata sorting, and how it impacts buying decisions.",
       "lessons": [
         {
           "id": "lesson-3-1",
-          "title": "Red Flags to Watch For",
-          "content": "**🚩 Red Flag Phrases:**\n\n**1. 'This is the next BAYC'**\n• **Why it's suspicious**: Overly ambitious claims\n• **Reality check**: BAYC was a once-in-a-lifetime success\n• **What to look for**: Actual utility and community\n\n**2. 'Team is doxxed' (but no proof)**\n• **Why it's suspicious**: Easy to fake\n• **Reality check**: Real doxxing means public identities\n• **What to look for**: LinkedIn profiles, social media history\n\n**3. 'Rug pull incoming'**\n• **Why it's suspicious**: Often said by competitors\n• **Reality check**: Could be FUD or legitimate warning\n• **What to look for**: Evidence, not just rumors\n\n**4. 'Moon soon'**\n• **Why it's suspicious**: Vague promises\n• **Reality check**: No one can predict the market\n• **What to look for**: Specific catalysts and timelines\n\n**5. 'Whales are accumulating'**\n• **Why it's suspicious**: Unverifiable claim\n• **Reality check**: Easy to fake with multiple wallets\n• **What to look for**: On-chain data and transparency",
-          "video": "/videos/red-flags-part1.mp4"
-        },
-        {
-          "id": "lesson-3-2",
-          "title": "More Red Flags and How to Spot Them",
-          "content": "**🚩 More Red Flag Phrases:**\n\n**6. 'This is just the beginning'**\n• **Why it's suspicious**: Generic hype language\n• **Reality check**: Every project says this\n• **What to look for**: Specific roadmap and milestones\n\n**7. 'Team is working hard behind the scenes'**\n• **Why it's suspicious**: No visible progress\n• **Reality check**: Real work produces visible results\n• **What to look for**: Regular updates and deliverables\n\n**8. 'FUD is good for the project'**\n• **Why it's suspicious**: Dismissing legitimate concerns\n• **Reality check**: Good projects address concerns\n• **What to look for**: Transparent communication\n\n**9. 'Paper hands are leaving'**\n• **Why it's suspicious**: Blaming holders for price drops\n• **Reality check**: Good projects retain holders\n• **What to look for**: Strong fundamentals and utility\n\n**10. 'Trust the process'**\n• **Why it's suspicious**: Asking for blind faith\n• **Reality check**: Transparency builds trust\n• **What to look for**: Clear communication and progress\n\n**How to Spot Red Flags:**\n• **Check the source**: Who's saying it?\n• **Look for evidence**: Can claims be verified?\n• **Compare to reality**: Does it match what you see?\n• **Trust your gut**: If it feels off, it probably is",
-          "video": "/videos/red-flags-part2.mp4"
+          "title": "Rank Reveal",
+          "content": "Pick one WifHoodie or similar NFT project. Identify the traits of a top-10 ranked NFT and explain why its rank might influence buyer behavior.\n\n**Example Analysis:**\n\n**WifHoodie #42 (Rank 4)**\n- **Traits:** Gold Hoodie, Diamond Eyes, Crown\n- **Rarity:** Extremely rare combination\n- **Value:** Commands premium price\n- **Demand:** High from collectors\n\n**Why Rank Matters:**\n- Rarity drives value\n- Collectors pay premiums\n- Trading volume higher\n- Price stability better\n\n**Buyer Behavior:**\n- Willing to pay 5-10x floor\n- Hold for longer periods\n- Less likely to panic sell\n- More strategic trading",
+          "video": "/videos/trait-meta.mp4"
         }
       ]
     },
     {
       "id": "module-4",
-      "title": "Matching Game",
-      "description": "Match phrases to definitions. Bonus: spot the made-up ones.",
+      "title": "Module 4: Red Flags & Exit Signals",
+      "description": "Not all hype is healthy. Learn to spot 10 common red flags in NFT communities—from fake sweep bots to influencer exit pumps.",
       "lessons": [
         {
           "id": "lesson-4-1",
-          "title": "Interactive Lingo Quiz",
-          "content": "**🎯 Matching Game: Real vs Fake NFT Terms**\n\n**Instructions:**\nMatch each phrase with its correct definition. Some terms are real, others are made up!\n\n**Real Terms:**\n• **WAGMI** → We're All Gonna Make It\n• **FUD** → Fear, Uncertainty, Doubt\n• **Floor Price** → Lowest listed price in collection\n• **Mint** → Buy NFT during initial sale\n• **Diamond Hands** → Hold through volatility\n• **Ape In** → Buy aggressively without research\n• **Undercut** → List below floor price\n• **Sweep** → Buy multiple NFTs at once\n• **Thin Floor** → Low number of listings\n• **Rank 4** → Rare trait in collection\n\n**Made Up Terms (Don't Use These!):**\n• **CryptoFloof** → Fake term for NFT holder\n• **BlockchainBounce** → Fake term for price movement\n• **DigitalDegen** → Fake term for trader\n• **NFTNoodle** → Fake term for newbie\n• **Web3Wobble** → Fake term for market volatility\n\n**Pro Tip:**\nAlways verify terms before using them. If you're not sure, ask the community!",
-          "video": "/videos/matching-game.mp4"
-        }
-      ]
-    },
-    {
-      "id": "module-5",
-      "title": "Assignment",
-      "description": "Use 3 lingo terms in one sentence and post it to Discord in character.",
-      "lessons": [
-        {
-          "id": "lesson-5-1",
-          "title": "Your Lingo Assignment",
-          "content": "**🎯 Assignment: Speak Like a Degen**\n\n**Objective:**\nPractice using NFT lingo naturally in conversation and demonstrate your understanding of the culture.\n\n**Requirements:**\n• Use at least 3 different lingo terms in one sentence\n• Post your sentence in the Speakers Discord thread\n• Stay in character as a Web3 native\n• Be creative and authentic\n\n**Example Sentences:**\n• 'Just aped into a thin floor collection, diamond hands WAGMI!'\n• 'FOMO'd into the mint, now sweeping the floor like a true degen.'\n• 'Rank 4 traits are mooning, paper hands are getting rekt!'\n\n**Step-by-Step Instructions:**\n\n**1. Choose Your Terms**\n• Pick 3 terms from the course\n• Make sure you understand their meanings\n• Consider the context you want to create\n\n**2. Craft Your Sentence**\n• Make it sound natural and authentic\n• Don't force the terms together\n• Create a realistic scenario\n• Add some personality and humor\n\n**3. Post to Discord**\n• Go to the Speakers Discord thread\n• Post your sentence with confidence\n• Engage with other students' posts\n• Discuss the terms you used\n\n**4. Reflect on the Experience**\n• How did it feel using the lingo?\n• Did others understand your message?\n• What did you learn about the culture?\n\n**Success Criteria:**\n✅ Used 3+ lingo terms correctly\n✅ Posted in Discord thread\n✅ Stayed in character\n✅ Engaged with community\n\n**Bonus Challenges:**\n• Try using terms in different contexts\n• Create a short story using multiple terms\n• Respond to others using appropriate lingo\n• Learn new terms from the community",
-          "video": "/videos/assignment-guide.mp4"
+          "title": "Signal Scanner",
+          "content": "List 5 red flags you've personally seen in a hyped project. Briefly explain how each one should've been a signal to stay out or take profits.\n\n**Common Red Flags:**\n\n1. **'This is the next BAYC'**\n   - Why suspicious: Overly ambitious claims\n   - Signal: Stay out, unrealistic expectations\n\n2. **Team is 'doxxed' but no proof**\n   - Why suspicious: Easy to fake\n   - Signal: Verify identities before investing\n\n3. **'Moon soon' with no catalyst**\n   - Why suspicious: Vague promises\n   - Signal: Look for specific roadmaps\n\n4. **Influencers suddenly pumping**\n   - Why suspicious: Often exit strategy\n   - Signal: Take profits, don't FOMO\n\n5. **Community attacking critics**\n   - Why suspicious: Suppressing dissent\n   - Signal: Unhealthy community, exit",
+          "video": "/videos/red-flags.mp4"
         }
       ]
     }
-  ]
+  ],
+  "completionText": "✅ You now speak fluent JPEG. From lingo to liquidation traps, you're one step closer to decoding every chart and community meme like a pro."
 } 

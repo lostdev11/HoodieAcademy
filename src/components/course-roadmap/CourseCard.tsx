@@ -6,9 +6,6 @@ import { ArrowRight, CheckCircle, BookOpen } from "lucide-react";
 import { RiskArt } from "./RiskArt"; // Import RiskArt
 import { Progress } from "@/components/ui/progress"; // Import Progress
 import { getSquadForCourse } from "@/lib/squadData"; // Import squad data
-import { Syllabus } from "@/components/Syllabus"; // Import Syllabus component
-import { syllabusData } from "@/lib/syllabusData"; // Import syllabus data
-import { useState } from "react"; // Import useState
 
 export interface CourseCardProps {
   id: string;
@@ -25,10 +22,10 @@ export interface CourseCardProps {
   totalLessons?: number; // To help verify completion
   isAdmin?: boolean; // New prop for admin mode
   onResetCourse?: (courseId: string) => void; // New prop for reset function
+  onOpenSyllabus?: (courseId: string, courseTitle: string) => void; // New prop for syllabus panel
 }
 
-export function CourseCard({ id, title, description, badge, emoji, pathType, href, riskType, isCompleted, progress, isAdmin, onResetCourse }: CourseCardProps) {
-  const [showSyllabus, setShowSyllabus] = useState(false);
+export function CourseCard({ id, title, description, badge, emoji, pathType, href, riskType, isCompleted, progress, isAdmin, onResetCourse, onOpenSyllabus }: CourseCardProps) {
   const squad = getSquadForCourse(id);
   
   const baseBorderClass = "border-2 rounded-xl p-4 sm:p-5 md:p-6 transition-all duration-300 w-full min-h-[280px] sm:min-h-[300px] md:min-h-[340px] flex flex-col"; // Adjusted min-height for mobile
@@ -95,7 +92,7 @@ export function CourseCard({ id, title, description, badge, emoji, pathType, hre
              <Button
                variant="outline"
                size="sm"
-               onClick={() => setShowSyllabus(!showSyllabus)}
+               onClick={() => onOpenSyllabus?.(id, title)}
                className="text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10 w-full sm:w-auto min-h-[44px]"
              >
                <BookOpen className="w-4 h-4 mr-1" />
@@ -133,12 +130,6 @@ export function CourseCard({ id, title, description, badge, emoji, pathType, hre
          )}
       </div>
       
-      {/* Syllabus Modal */}
-      {showSyllabus && syllabusData[id] && (
-        <div className="mt-4">
-          <Syllabus data={syllabusData[id]} courseTitle={title} />
-        </div>
-      )}
     </div>
   );
 }

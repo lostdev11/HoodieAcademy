@@ -405,7 +405,7 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-slate-800">
+          <TabsList className="grid w-full grid-cols-6 bg-slate-800">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -413,6 +413,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
               Courses
+            </TabsTrigger>
+            <TabsTrigger value="assignments" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Assignments
             </TabsTrigger>
             <TabsTrigger value="finalexams" className="flex items-center gap-2">
               <Trophy className="w-4 h-4" />
@@ -575,6 +579,35 @@ export default function AdminDashboard() {
                       </div>
                     );
                   })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Assignments Tab */}
+          <TabsContent value="assignments" className="space-y-6">
+            <Card className="bg-slate-800/50">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Assignment Submissions</span>
+                  <Button onClick={() => window.open('/admin/assignments', '_blank')}>
+                    <Eye className="w-4 h-4 mr-2" />
+                    View All Assignments
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500">
+                    Assignment submissions are managed in a dedicated interface.
+                  </p>
+                  <Button 
+                    onClick={() => window.open('/admin/assignments', '_blank')}
+                    className="mt-4"
+                  >
+                    Open Assignments Dashboard
+                  </Button>
                 </div>
               </CardContent>
             </Card>
