@@ -15,10 +15,13 @@ import {
   Users, 
   Target,
   CheckCircle,
-  Circle
+  Circle,
+  Award,
+  Clock
 } from 'lucide-react';
 import TokenGate from "@/components/TokenGate";
 import { useUserXP } from '@/hooks/useUserXP';
+import Link from 'next/link';
 
 interface Lesson {
   id: string;
@@ -296,19 +299,188 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
                       </div>
                     )}
 
-                    {/* Assignment Submission */}
+                                         {/* Assignment Submission */}
+                     {activeModule === course.modules.length - 1 && activeLesson === currentModule!.lessons.length - 1 && (
+                       <div className="border-t border-cyan-500/30 pt-6">
+                         <h3 className="text-lg font-semibold text-cyan-400 mb-4">🎯 Course Assignment</h3>
+                         <p className="text-gray-400 text-sm mb-4">
+                           🔥 You finished {course.title}. Now it's time to show the world.
+                         </p>
+                         <Button
+                           onClick={() => router.push(`/courses/${course.id}/submit`)}
+                           className="bg-green-600 hover:bg-green-700 text-white"
+                         >
+                           Submit Assignment
+                         </Button>
+                       </div>
+                     )}
+
+                    {/* Linked Bounties Section */}
                     {activeModule === course.modules.length - 1 && activeLesson === currentModule!.lessons.length - 1 && (
-                      <div className="border-t border-cyan-500/30 pt-6">
-                        <h3 className="text-lg font-semibold text-cyan-400 mb-4">🎯 Course Assignment</h3>
-                        <p className="text-gray-400 text-sm mb-4">
-                          You've completed the course! Now submit your assignment to earn XP and contribute to the Academy.
-                        </p>
-                        <Button
-                          onClick={() => router.push(`/courses/${course.id}/submit`)}
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          Submit Assignment
-                        </Button>
+                      <div className="border-t border-purple-500/30 pt-6">
+                        <h3 className="text-lg font-semibold text-purple-400 mb-4 flex items-center gap-2">
+                          <Target className="w-5 h-5" />
+                          📎 Linked Bounties
+                        </h3>
+                                                 <p className="text-gray-400 text-sm mb-4">
+                           🎨 Create. Submit. Win SOL. Your squad is counting on you.
+                         </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Sample linked bounties based on course */}
+                          {course.squad === 'Creators' && (
+                            <>
+                              <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                                <div className="flex items-start justify-between mb-2">
+                                  <h4 className="font-semibold text-white">🎨 Create a Hoodie Visual</h4>
+                                  <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                                    Creators
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-gray-400 mb-3">
+                                  Create a unique Hoodie Academy-themed image featuring WifHoodie-style characters
+                                </p>
+                                <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+                                  <div className="flex items-center gap-1">
+                                    <Award className="w-3 h-3" />
+                                    <span>0.05 SOL (1st)</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Due: Mar 15</span>
+                                  </div>
+                                </div>
+                                <Button asChild size="sm" className="w-full bg-purple-600 hover:bg-purple-700">
+                                  <Link href="/bounties/hoodie-visual">
+                                    View Bounty
+                                  </Link>
+                                </Button>
+                              </div>
+
+                              <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                                <div className="flex items-start justify-between mb-2">
+                                  <h4 className="font-semibold text-white">Hoodie Academy Logo Redesign</h4>
+                                  <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                                    Creators
+                                  </Badge>
+                                </div>
+                                <p className="text-sm text-gray-400 mb-3">
+                                  Create a modern, pixel-art inspired logo that captures the essence of Hoodie Academy
+                                </p>
+                                <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+                                  <div className="flex items-center gap-1">
+                                    <Award className="w-3 h-3" />
+                                    <span>2.5 SOL</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    <span>Due: Feb 15</span>
+                                  </div>
+                                </div>
+                                <Button asChild size="sm" className="w-full bg-purple-600 hover:bg-purple-700">
+                                  <Link href="/bounties/logo-redesign">
+                                    View Bounty
+                                  </Link>
+                                </Button>
+                              </div>
+                            </>
+                          )}
+
+                          {course.squad === 'Decoders' && (
+                            <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-semibold text-white">Technical Analysis Tutorial Video</h4>
+                                <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/30 text-xs">
+                                  Decoders
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-400 mb-3">
+                                Create a 5-minute tutorial on support and resistance levels
+                              </p>
+                              <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+                                <div className="flex items-center gap-1">
+                                  <Award className="w-3 h-3" />
+                                  <span>3.2 SOL</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>Due: Feb 25</span>
+                                </div>
+                              </div>
+                              <Button asChild size="sm" className="w-full bg-purple-600 hover:bg-purple-700">
+                                <Link href="/bounties/ta-tutorial">
+                                  View Bounty
+                                </Link>
+                              </Button>
+                            </div>
+                          )}
+
+                          {course.squad === 'Speakers' && (
+                            <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-semibold text-white">Community Onboarding Guide</h4>
+                                <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
+                                  Speakers
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-400 mb-3">
+                                Write a comprehensive guide for new Hoodie Academy members
+                              </p>
+                              <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+                                <div className="flex items-center gap-1">
+                                  <Award className="w-3 h-3" />
+                                  <span>2.0 SOL</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>Due: Feb 18</span>
+                                </div>
+                              </div>
+                              <Button asChild size="sm" className="w-full bg-purple-600 hover:bg-purple-700">
+                                <Link href="/bounties/onboarding-guide">
+                                  View Bounty
+                                </Link>
+                              </Button>
+                            </div>
+                          )}
+
+                          {course.squad === 'Raiders' && (
+                            <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+                              <div className="flex items-start justify-between mb-2">
+                                <h4 className="font-semibold text-white">NFT Market Analysis Report</h4>
+                                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 text-xs">
+                                  Raiders
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-400 mb-3">
+                                Analyze current NFT market trends and provide actionable insights
+                              </p>
+                              <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+                                <div className="flex items-center gap-1">
+                                  <Award className="w-3 h-3" />
+                                  <span>4.0 SOL</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>Due: Feb 22</span>
+                                </div>
+                              </div>
+                              <Button asChild size="sm" className="w-full bg-purple-600 hover:bg-purple-700">
+                                <Link href="/bounties/market-analysis">
+                                  View Bounty
+                                </Link>
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-4 text-center">
+                          <Button asChild variant="outline" className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10">
+                            <Link href="/bounties">
+                              View All Bounties
+                            </Link>
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </CardContent>

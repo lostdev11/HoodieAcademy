@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
+import { RightSidebar } from '@/components/dashboard/RightSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -486,7 +487,7 @@ export default function DashboardPage() {
   return (
     <TokenGate>
       <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        {/* Sidebar */}
+        {/* Left Sidebar */}
         <DashboardSidebar 
           isCollapsed={sidebarCollapsed} 
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
@@ -989,6 +990,9 @@ export default function DashboardPage() {
             )}
           </main>
         </div>
+
+        {/* Right Sidebar */}
+        <RightSidebar />
       </div>
     </TokenGate>
   );

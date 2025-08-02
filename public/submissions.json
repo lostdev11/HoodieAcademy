@@ -1,26 +1,93 @@
 [
   {
-    "slug": "v100-pixel-art-basics",
-    "content": "I created a pixel art character for my NFT project! Used a limited 8-color palette with cel shading. The character has a cyberpunk aesthetic with neon green highlights. Here's the link: https://example.com/my-pixel-art.png",
+    "id": "sub_1703123456789_abc123def",
+    "title": "Cyber Hoodie Academy Student",
+    "description": "Created a pixel art character for the Hoodie Academy! Used a limited 8-color palette with cel shading. The character has a cyberpunk aesthetic with neon green highlights and is wearing the signature hoodie. Set in the Academy's dojo with training equipment in the background.",
+    "squad": "Creators",
+    "courseRef": "v100-pixel-art-basics",
+    "bountyId": "hoodie-visual",
+    "author": "PixelArtist123",
     "timestamp": "2024-01-15T10:30:00.000Z",
-    "status": "approved"
+    "status": "approved",
+    "upvotes": {
+      "🔥": [
+        { "userId": "user456", "squad": "Raiders", "timestamp": "2024-01-15T11:00:00.000Z" },
+        { "userId": "user789", "squad": "Speakers", "timestamp": "2024-01-15T12:30:00.000Z" }
+      ],
+      "⭐": [
+        { "userId": "user123", "squad": "Creators", "timestamp": "2024-01-15T11:15:00.000Z" },
+        { "userId": "user456", "squad": "Raiders", "timestamp": "2024-01-15T11:20:00.000Z" },
+        { "userId": "user789", "squad": "Speakers", "timestamp": "2024-01-15T12:00:00.000Z" },
+        { "userId": "user101", "squad": "Decoders", "timestamp": "2024-01-15T13:00:00.000Z" }
+      ],
+      "💎": [
+        { "userId": "user123", "squad": "Creators", "timestamp": "2024-01-15T11:30:00.000Z" }
+      ]
+    },
+    "totalUpvotes": 7,
+    "imageUrl": "/uploads/cyber-hoodie-student.png"
   },
   {
-    "slug": "v120-meme-creation",
-    "content": "Made a meme about the recent market dip using the Drake format. Top text: 'Checking portfolio every 5 minutes', bottom text: 'Still checking portfolio every 5 minutes'. Posted it on Twitter and got 50+ retweets!",
+    "id": "sub_1703123456790_def456ghi",
+    "title": "Academy Meme Masterpiece",
+    "description": "Made a meme about the recent market dip using the Drake format. Top text: 'Checking portfolio every 5 minutes', bottom text: 'Still checking portfolio every 5 minutes'. Added Hoodie Academy branding and posted it on Twitter - got 50+ retweets!",
+    "squad": "Speakers",
+    "courseRef": "v120-meme-creation",
+    "bountyId": "hoodie-visual",
+    "author": "MemeLord",
     "timestamp": "2024-01-14T15:45:00.000Z",
-    "status": "pending"
+    "status": "pending",
+    "upvotes": {
+      "🚀": [
+        { "userId": "user123", "squad": "Creators", "timestamp": "2024-01-14T16:00:00.000Z" },
+        { "userId": "user456", "squad": "Raiders", "timestamp": "2024-01-14T16:30:00.000Z" }
+      ],
+      "❤️": [
+        { "userId": "user789", "squad": "Speakers", "timestamp": "2024-01-14T17:00:00.000Z" }
+      ]
+    },
+    "totalUpvotes": 3,
+    "imageUrl": "/uploads/academy-meme.png"
   },
   {
-    "slug": "v150-visual-composition",
-    "content": "Designed a banner for our Discord server using the rule of thirds and golden ratio. Incorporated our project's lore elements - the hoodie character in the foreground with the city skyline in the background. Used complementary colors (purple/orange) for maximum impact.",
+    "id": "sub_1703123456791_ghi789jkl",
+    "title": "Hoodie Academy Banner Design",
+    "description": "Designed a banner for our Discord server using the rule of thirds and golden ratio. Incorporated our project's lore elements - the hoodie character in the foreground with the city skyline in the background. Used complementary colors (purple/orange) for maximum impact.",
+    "squad": "Creators",
+    "courseRef": "v150-visual-composition",
+    "bountyId": "hoodie-visual",
+    "author": "DesignGuru",
     "timestamp": "2024-01-13T09:20:00.000Z",
-    "status": "approved"
+    "status": "approved",
+    "upvotes": {
+      "⭐": [
+        { "userId": "user456", "squad": "Raiders", "timestamp": "2024-01-13T10:00:00.000Z" },
+        { "userId": "user789", "squad": "Speakers", "timestamp": "2024-01-13T10:30:00.000Z" },
+        { "userId": "user101", "squad": "Decoders", "timestamp": "2024-01-13T11:00:00.000Z" }
+      ],
+      "👑": [
+        { "userId": "user123", "squad": "Creators", "timestamp": "2024-01-13T12:00:00.000Z" }
+      ]
+    },
+    "totalUpvotes": 4,
+    "imageUrl": "/uploads/hoodie-academy-banner.png"
   },
   {
-    "slug": "v200-custom-trait-creation",
-    "content": "Created 5 custom traits for our NFT collection: 1) Cyber Hoodie (rare), 2) Neon Glasses (uncommon), 3) Pixel Sword (legendary), 4) Retro Backpack (common), 5) Glitch Effect (epic). Each trait has 3-5 variations. Files are ready for minting!",
+    "id": "sub_1703123456792_jkl012mno",
+    "title": "Custom Hoodie Traits Collection",
+    "description": "Created 5 custom traits for our NFT collection: 1) Cyber Hoodie (rare), 2) Neon Glasses (uncommon), 3) Pixel Sword (legendary), 4) Retro Backpack (common), 5) Glitch Effect (epic). Each trait has 3-5 variations. Files are ready for minting!",
+    "squad": "Creators",
+    "courseRef": "v200-custom-trait-creation",
+    "bountyId": "hoodie-visual",
+    "author": "TraitMaster",
     "timestamp": "2024-01-12T14:15:00.000Z",
-    "status": "rejected"
+    "status": "rejected",
+    "upvotes": {
+      "🔥": [
+        { "userId": "user789", "squad": "Speakers", "timestamp": "2024-01-12T15:00:00.000Z" }
+      ]
+    },
+    "totalUpvotes": 1,
+    "imageUrl": "/uploads/custom-traits.png"
   }
 ] 

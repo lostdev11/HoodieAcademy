@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink } from 'lucide-react';
+import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink, Target, Upload, Image as ImageIcon } from 'lucide-react';
 import { squadTracks } from '@/lib/squadData';
 import Link from 'next/link';
 import { getSNSResolver, formatWalletAddress, isValidSolanaAddress, isSolDomain } from '@/services/sns-resolver';
@@ -16,6 +16,7 @@ import SquadBadge from '@/components/SquadBadge';
 import { NFTProfileSelector } from '@/components/profile/NFTProfileSelector';
 import { NFT } from '@/services/nft-service';
 import { fetchUserByWallet } from '@/lib/supabase';
+import { BountySubmissionForm, BountySubmissionData } from '@/components/bounty';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -731,6 +732,92 @@ export function ProfileView() {
                 <span className="text-purple-400">{overallProgress}%</span>
               </div>
               <Progress value={overallProgress} className="h-3 bg-slate-700 [&>div]:bg-gradient-to-r [&>div]:from-purple-500 [&>div]:to-pink-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bounty Submissions Section */}
+        <Card className="w-full max-w-2xl bg-slate-800/60 border-orange-500/30 mb-8">
+          <CardHeader>
+            <CardTitle className="text-orange-400 flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Your Bounty Submissions
+              {/* Contribution Badge */}
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 ml-auto">
+                🏆 Contributor
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Submission History */}
+              <div className="mb-6">
+                <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  Recent Submissions
+                </h4>
+                <div className="space-y-3">
+                  {/* Sample submissions - in real app this would come from API/database */}
+                  <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-orange-500/20 rounded-lg">
+                          <ImageIcon className="w-4 h-4 text-orange-400" />
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-white">Hoodie Academy Visual</h5>
+                          <p className="text-sm text-gray-400">Submitted 2 days ago</p>
+                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                            Creators
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-orange-400">Pending Review</p>
+                        <p className="text-xs text-gray-400">Sit tight, the Council is watching...</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-500/20 rounded-lg">
+                          <Award className="w-4 h-4 text-green-400" />
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-white">Trading Psychology Meme</h5>
+                          <p className="text-sm text-gray-400">Submitted 1 week ago</p>
+                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                            Creators
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-green-400">Approved</p>
+                        <p className="text-xs text-gray-400">🧱 Added to the Academy Wall</p>
+                        <p className="text-xs text-yellow-400">💰 Payout: 1.8 SOL</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit New Bounty */}
+              <div className="border-t border-slate-600/30 pt-4">
+                <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Submit New Bounty Entry
+                </h4>
+                <BountySubmissionForm 
+                  onSubmit={(data: BountySubmissionData) => {
+                    console.log('Submitting bounty from profile:', data);
+                    // Handle submission logic here
+                    // In real app, this would save to database and update UI
+                  }} 
+                  className="max-w-none"
+                />
+              </div>
             </div>
           </CardContent>
         </Card>

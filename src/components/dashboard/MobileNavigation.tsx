@@ -15,7 +15,8 @@ import {
   X,
   BarChart3,
   Video,
-  MessageCircle
+  MessageCircle,
+  Target
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
 
@@ -134,6 +135,12 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
       label: 'Courses',
       icon: <BookOpen className="w-5 h-5" />,
       href: '/courses'
+    },
+    {
+      id: 'bounties',
+      label: 'Bounties',
+      icon: <Target className="w-5 h-5" />,
+      href: '/bounties'
     },
     {
       id: 'squad-chat',
