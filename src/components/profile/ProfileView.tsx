@@ -17,6 +17,7 @@ import { NFTProfileSelector } from '@/components/profile/NFTProfileSelector';
 import { NFT } from '@/services/nft-service';
 import { fetchUserByWallet } from '@/lib/supabase';
 import { BountySubmissionForm, BountySubmissionData } from '@/components/bounty';
+import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -75,6 +76,9 @@ export function ProfileView() {
   const [userData, setUserData] = useState<any>(null);
   const [profileImage, setProfileImage] = useState<string>('🧑‍🎓');
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+
+  // Wallet connection
+  const { connectWallet, disconnectWallet: disconnectWalletHook } = useWalletSupabase();
 
   const snsResolver = getSNSResolver();
   const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
@@ -297,6 +301,14 @@ export function ProfileView() {
     }
   };
 
+  const handleWalletConnect = async () => {
+    const connectedWallet = await connectWallet();
+    if (connectedWallet) {
+      setWallet(connectedWallet);
+      localStorage.setItem('walletAddress', connectedWallet);
+    }
+  };
+
   const handleDisconnectWallet = () => {
     setWallet('');
     setSolDomain(null);
@@ -310,6 +322,7 @@ export function ProfileView() {
     if (window.solana?.disconnect) {
       window.solana.disconnect();
     }
+    disconnectWalletHook();
   };
 
   const handleProfileImageChange = (imageUrl: string, nftData?: NFT) => {
@@ -444,7 +457,16 @@ export function ProfileView() {
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400">Wallet:</span>
                   {editMode ? (
-                    <Input value={wallet} onChange={e => setWallet(e.target.value)} className="w-40 bg-slate-700/50 border-cyan-500/30 text-white" />
+                    <div className="flex items-center gap-2">
+                      <Input value={wallet} onChange={e => setWallet(e.target.value)} className="w-40 bg-slate-700/50 border-cyan-500/30 text-white" />
+                      <Button
+                        size="sm"
+                        onClick={handleWalletConnect}
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        Connect Wallet
+                      </Button>
+                    </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       {getWalletDisplay()}

@@ -15,15 +15,16 @@ interface Submission {
   courseRef?: string;
   timestamp: string;
   status: 'pending' | 'approved' | 'rejected';
-  upvotes?: Record<string, Array<{ userId: string; squad: string; timestamp: string }>>;
+  upvotes?: Record<string, Array<{ walletAddress: string; squad: string; timestamp: string }>>;
   totalUpvotes?: number;
   imageUrl?: string;
   author?: string;
+  walletAddress?: string;
 }
 
 interface SubmissionCardProps {
   submission: Submission;
-  currentUserId?: string;
+  currentWalletAddress?: string;
   currentUserSquad?: string;
   onUpvote?: (submissionId: string, emoji: string) => void;
 }
@@ -39,7 +40,7 @@ const EMOJI_REACTIONS = [
 
 export const SubmissionCard = ({ 
   submission, 
-  currentUserId, 
+  currentWalletAddress, 
   currentUserSquad,
   onUpvote 
 }: SubmissionCardProps) => {
@@ -67,7 +68,7 @@ export const SubmissionCard = ({
   };
 
   const handleUpvote = async (emoji: string) => {
-    if (!currentUserId) {
+    if (!currentWalletAddress) {
       // Handle guest user or prompt login
       return;
     }
@@ -82,7 +83,7 @@ export const SubmissionCard = ({
         body: JSON.stringify({
           submissionId: submission.id,
           emoji,
-          userId: currentUserId,
+          walletAddress: currentWalletAddress,
           squad: currentUserSquad
         }),
       });
@@ -101,8 +102,8 @@ export const SubmissionCard = ({
   };
 
   const isUserUpvoted = (emoji: string) => {
-    if (!currentUserId || !upvotes[emoji]) return false;
-    return upvotes[emoji].some(vote => vote.userId === currentUserId);
+    if (!currentWalletAddress || !upvotes[emoji]) return false;
+    return upvotes[emoji].some(vote => vote.walletAddress === currentWalletAddress);
   };
 
   const getSquadFavoriteCount = () => {

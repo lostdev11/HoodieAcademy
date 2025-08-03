@@ -33,6 +33,8 @@ import { getActiveAnnouncements, Announcement, getScheduledAnnouncements, getCom
 import GlobalBulletinBoard from '@/components/GlobalBulletinBoard';
 import { squadTracks, SquadTrack } from '@/lib/squadData';
 import { useUserXP } from '@/hooks/useUserXP';
+import { retailstarIncentiveService } from '@/services/retailstar-incentive-service';
+import { RetailstarRewardCard } from '@/components/retailstar/RetailstarRewardCard';
 
 interface TodoItem {
   id: string;
@@ -334,6 +336,7 @@ export default function DashboardPage() {
   const [weeklyAssignments, setWeeklyAssignments] = useState<WeeklyAssignment[]>([]);
   const [squadActivity, setSquadActivity] = useState<SquadActivity[]>([]);
   const [userSquadInfo, setUserSquadInfo] = useState<SquadTrack | null>(null);
+  const [claimedRewards, setClaimedRewards] = useState<any[]>([]);
   
   // XP System
   const { totalXP, completedCourses, streak, completeCourse, badges } = useUserXP();
@@ -440,9 +443,14 @@ export default function DashboardPage() {
       percentage: progressPercentage
     });
     
-    // Load squad activity
-    setSquadActivity(getSquadActivity());
-  }, []);
+            // Load squad activity
+        setSquadActivity(getSquadActivity());
+
+        // Load claimed retailstar rewards
+        if (storedWallet) {
+          retailstarIncentiveService.fetchClaimedRewards(storedWallet).then(setClaimedRewards);
+        }
+      }, []);
 
   // Listen for real-time updates
   useEffect(() => {
@@ -846,6 +854,58 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <GlobalBulletinBoard squadId={squadId} />
+              </CardContent>
+            </Card>
+
+            {/* Retailstar Rewards */}
+            <Card className="bg-slate-800/50 border-indigo-500/30">
+              <CardHeader>
+                <CardTitle className="text-indigo-400 flex items-center space-x-2">
+                  <Trophy className="w-5 h-5" />
+                  <span>Retailstar Rewards</span>
+                  <Badge variant="outline" className="ml-auto border-indigo-500 text-indigo-400">
+                    {claimedRewards.length} Claimed
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {claimedRewards.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {claimedRewards.slice(0, 6).map((userReward) => {
+                      const reward = retailstarIncentiveService.getRewardById(userReward.reward_id);
+                      if (!reward) return null;
+                      
+                      return (
+                        <RetailstarRewardCard
+                          key={userReward.id}
+                          reward={reward}
+                          isAwarded={true}
+                          userSquad={squadId || undefined}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Trophy className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-400 text-sm">No rewards claimed yet</p>
+                    <p className="text-xs text-gray-500 mt-1">Complete tasks to earn rewards!</p>
+                    <Button asChild className="mt-4 bg-indigo-600 hover:bg-indigo-700">
+                      <Link href="/retailstar-incentives">
+                        View Available Rewards
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+                {claimedRewards.length > 6 && (
+                  <div className="text-center mt-4">
+                    <Button asChild variant="outline" className="border-indigo-500 text-indigo-400">
+                      <Link href="/retailstar-incentives">
+                        View All Rewards ({claimedRewards.length})
+                      </Link>
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

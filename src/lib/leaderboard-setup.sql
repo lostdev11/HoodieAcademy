@@ -1,3 +1,7 @@
+-- Leaderboard Setup for Hoodie Academy
+-- Run this AFTER running complete-database-setup.sql
+-- This creates the leaderboard function and view
+
 -- SQL function for optimized leaderboard query
 -- This can be called via Supabase RPC for better performance
 

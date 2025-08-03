@@ -5,4 +5,7 @@ export { BountySidebar } from './BountySidebar';
 export { SubmissionCard } from './SubmissionCard';
 export { SubmissionsGallery } from './SubmissionsGallery';
 export { UpvoteDemo } from './UpvoteDemo';
+export { BountyXPDisplay } from './BountyXPDisplay';
+export { BountyXPCard, BountyXPCardCompact } from './BountyXPCard';
+export { WinnerAwardPanel } from './WinnerAwardPanel';
 export type { BountySubmissionData } from './BountySubmissionForm'; 

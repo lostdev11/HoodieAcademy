@@ -1,3 +1,11 @@
+-- Leaderboard Setup for Hoodie Academy (Clean Version)
+-- Run this AFTER running complete-database-setup.sql
+-- This creates the leaderboard function and view
+
+-- Drop existing function and view if they exist
+DROP FUNCTION IF EXISTS get_leaderboard_rankings();
+DROP VIEW IF EXISTS leaderboard_view;
+
 -- SQL function for optimized leaderboard query
 -- This can be called via Supabase RPC for better performance
 
@@ -84,9 +92,6 @@ $$ LANGUAGE plpgsql;
 -- Grant execute permission
 GRANT EXECUTE ON FUNCTION get_leaderboard_rankings() TO authenticated;
 
--- Example usage in Supabase:
--- const { data } = await supabase.rpc('get_leaderboard_rankings')
-
 -- Alternative: Create a view for easier querying
 CREATE OR REPLACE VIEW leaderboard_view AS
 SELECT 
@@ -136,5 +141,5 @@ END) > 0;
 -- Grant select permission on view
 GRANT SELECT ON leaderboard_view TO authenticated;
 
--- Example usage of view:
--- SELECT *, ROW_NUMBER() OVER (ORDER BY completion_percentage DESC) as rank FROM leaderboard_view 
+-- Verification query
+SELECT '✅ Leaderboard setup completed successfully' as status; 

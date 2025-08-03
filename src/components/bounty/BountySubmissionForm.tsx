@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Image as ImageIcon } from 'lucide-react';
+import { Upload, Image as ImageIcon, Wallet, AlertCircle, Star, Trophy, Gift } from 'lucide-react';
+import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
+import { bountyXPService } from '@/services/bounty-xp-service';
+import Link from 'next/link';
 
 interface BountySubmissionFormProps {
   onSubmit: (data: BountySubmissionData) => void;
@@ -21,6 +24,7 @@ export interface BountySubmissionData {
   bountyId?: string;
   file: File | null;
   author?: string;
+  walletAddress?: string;
 }
 
 export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmissionFormProps) => {
@@ -31,6 +35,13 @@ export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmiss
     description: '',
     courseRef: ''
   });
+  
+  // Wallet connection state
+  const { wallet, connectWallet, disconnectWallet, loading: walletLoading, error: walletError } = useWalletSupabase();
+  const [showWalletAlert, setShowWalletAlert] = useState(false);
+
+  // Get XP rules for display
+  const xpRules = bountyXPService.getXPRules();
 
   // Calculate Squad XP bonus
   const getSquadXPBonus = (squad: string) => {
@@ -50,9 +61,29 @@ export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmiss
     }
   };
 
+  const handleWalletConnect = async () => {
+    const connectedWallet = await connectWallet();
+    if (connectedWallet) {
+      setShowWalletAlert(false);
+    } else {
+      setShowWalletAlert(true);
+    }
+  };
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    onSubmit({ ...formData, file: selectedFile });
+    
+    if (!wallet) {
+      setShowWalletAlert(true);
+      return;
+    }
+    
+    onSubmit({ 
+      ...formData, 
+      file: selectedFile,
+      walletAddress: wallet 
+    });
+    
     // Reset form
     setFormData({ title: '', squad: '', description: '', courseRef: '' });
     setSelectedFile(null);
@@ -64,6 +95,153 @@ export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmiss
         <Upload className="w-5 h-5 text-purple-400" />
         Submit Your Entry
       </h2>
+
+      {/* Wallet Connection Section */}
+      <div className="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Wallet className="w-5 h-5 text-purple-400" />
+            <div>
+              <h3 className="text-white font-medium">Wallet Connection</h3>
+              <p className="text-sm text-gray-400">
+                {wallet ? `Connected: ${wallet.slice(0, 6)}...${wallet.slice(-4)}` : 'Connect your wallet to submit'}
+              </p>
+            </div>
+          </div>
+          {wallet ? (
+            <Button
+              onClick={disconnectWallet}
+              variant="outline"
+              size="sm"
+              className="text-red-400 border-red-400 hover:bg-red-400/10"
+            >
+              Disconnect
+            </Button>
+          ) : (
+            <Button
+              onClick={handleWalletConnect}
+              disabled={walletLoading}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {walletLoading ? 'Connecting...' : 'Connect Wallet'}
+            </Button>
+          )}
+        </div>
+        
+        {walletError && (
+          <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400" />
+            <span className="text-sm text-red-400">{walletError}</span>
+          </div>
+        )}
+        
+        {showWalletAlert && !wallet && (
+          <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-yellow-400" />
+            <span className="text-sm text-yellow-400">Please connect your wallet to submit an entry</span>
+          </div>
+        )}
+      </div>
+
+      {/* XP Information Section */}
+      <div className="mb-6 p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-lg border border-purple-500/30">
+        <div className="flex items-center gap-2 mb-3">
+          <Star className="w-5 h-5 text-yellow-400" />
+          <h3 className="text-white font-medium">Bounty XP System</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-green-400">✅</span>
+              <span className="text-gray-300">+{xpRules.participationXP} XP per submission</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-blue-400">📊</span>
+              <span className="text-gray-300">Max {xpRules.maxSubmissionsPerBounty} submissions per bounty</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-purple-400">🎯</span>
+              <span className="text-gray-300">Max {xpRules.participationXP * xpRules.maxSubmissionsPerBounty} XP from participation</span>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-yellow-400" />
+              <span className="text-gray-300 font-medium">Winner Bonuses:</span>
+            </div>
+            <div className="ml-6 space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-400">🥇</span>
+                <span className="text-gray-300">1st: +{xpRules.winnerBonuses.first.xp} XP + {xpRules.winnerBonuses.first.sol} SOL</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400">🥈</span>
+                <span className="text-gray-300">2nd: +{xpRules.winnerBonuses.second.xp} XP + {xpRules.winnerBonuses.second.sol} SOL</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-orange-400">🥉</span>
+                <span className="text-gray-300">3rd: +{xpRules.winnerBonuses.third.xp} XP + {xpRules.winnerBonuses.third.sol} SOL</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Retailstar Rewards Section */}
+      <div className="mb-6 p-4 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-lg border border-indigo-500/30">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Gift className="w-5 h-5 text-indigo-400" />
+            <h3 className="text-white font-medium">Retailstar Rewards</h3>
+          </div>
+          <Link href="/retailstar-incentives">
+            <Button variant="outline" size="sm" className="border-indigo-500 text-indigo-400 hover:bg-indigo-500/10">
+              View All Rewards
+            </Button>
+          </Link>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-indigo-400">🎟️</span>
+              <span className="text-gray-300">Retail Tickets for raffles & events</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-indigo-400">🪪</span>
+              <span className="text-gray-300">Domain PFP upgrades</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-indigo-400">🧱</span>
+              <span className="text-gray-300">1-page landing page builds</span>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-indigo-400">🔐</span>
+              <span className="text-gray-300">Hidden lore access</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-indigo-400">📦</span>
+              <span className="text-gray-300">Mallcore asset packs</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-indigo-400">📣</span>
+              <span className="text-gray-300">Public spotlight features</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-3 p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/30">
+          <p className="text-xs text-indigo-300">
+            💡 <strong>Pro Tip:</strong> The better your submission, the bigger the reward. Tiered bonuses available for excellent and creative work!
+          </p>
+        </div>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <Label htmlFor="title" className="text-white">Artwork Title</Label>
@@ -148,9 +326,10 @@ export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmiss
 
         <Button 
           type="submit" 
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3"
+          disabled={!wallet}
+          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          🚀 Submit Bounty Entry
+          {wallet ? '🚀 Submit Bounty Entry' : '🔒 Connect Wallet to Submit'}
         </Button>
       </form>
     </div>
