@@ -1,0 +1,49 @@
+/* styles/parchment.css */
+/* Scoped medieval palette — only inside .parchment-theme */
+.parchment-theme {
+  --background: 38 40% 92%;        /* parchment base */
+  --foreground: 28 28% 18%;        /* ink/dark brown */
+  --card: 38 35% 88%;              /* lighter parchment */
+  --card-foreground: 28 28% 18%;
+  --popover: 38 40% 92%;
+  --popover-foreground: 28 28% 18%;
+
+  --primary: 45 64% 46%;           /* gold/bronze */
+  --primary-foreground: 38 40% 10%;
+
+  --secondary: 18 36% 36%;         /* leather/wood */
+  --secondary-foreground: 38 40% 92%;
+
+  --muted: 35 22% 80%;
+  --muted-foreground: 28 15% 28%;
+
+  --accent: 44 70% 55%;            /* warm gold accent */
+  --accent-foreground: 28 28% 18%;
+
+  --warning: 30 70% 45%;
+  --warning-foreground: 38 40% 92%;
+
+  --border: 30 20% 68%;
+  --input: 30 20% 68%;
+  --ring: 44 70% 55%;
+}
+
+/* Parchment background helper */
+.parchment-bg {
+  background-image:
+    radial-gradient(1200px 600px at 20% -10%, rgba(0,0,0,.06), transparent 60%),
+    radial-gradient(1000px 500px at 120% 110%, rgba(0,0,0,.05), transparent 60%),
+    url("/textures/parchment.jpg"); /* drop a texture here */
+  background-size: cover;
+  background-position: center;
+}
+
+/* Shadows & glow (class helpers here in case you want CSS not Tailwind) */
+.shadow-scroll { box-shadow: 0 0 0 1px rgba(184,115,51,.25), 0 10px 30px rgba(0,0,0,.28); }
+.shadow-glow   { box-shadow: 0 0 24px rgba(224,200,120,.35); }
+
+@keyframes parchmentGlow {
+  0%,100% { box-shadow: 0 0 18px rgba(224,200,120,.22); }
+  50%     { box-shadow: 0 0 30px rgba(224,200,120,.38); }
+}
+.animate-parchmentGlow { animation: parchmentGlow 3.8s ease-in-out infinite; }
