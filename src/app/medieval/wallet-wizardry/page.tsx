@@ -407,7 +407,7 @@ export default function WalletWizardryPage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1, duration: 0.5 }}
-                      className={`relative p-6 rounded-2xl transition-all duration-300 bg-card/90 border border-[hsl(var(--border))] shadow-scroll hover:shadow-glow animate-parchmentGlow ${
+                                             className={`relative p-6 rounded-2xl transition-all duration-500 bg-card/90 border border-[hsl(var(--border))] shadow-scroll hover-glow animate-parchmentGlow glow-border ${
                         tierStatus[index] === "completed"
                           ? "opacity-100"
                           : tierStatus[index] === "unlocked"
@@ -475,7 +475,7 @@ export default function WalletWizardryPage() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
-                    className="p-8 rounded-2xl shadow-scroll hover:shadow-glow border bg-card/90 w-full max-w-4xl text-center animate-parchmentGlow"
+                                         className="p-8 rounded-2xl shadow-scroll hover-glow border bg-card/90 w-full max-w-4xl text-center animate-parchmentGlow glow-border"
                   >
                     <Award className="w-16 h-16 mx-auto mb-4" />
                     <h2 className="text-3xl font-bold mb-4">
@@ -493,7 +493,7 @@ export default function WalletWizardryPage() {
 
                 {!allTiersCompleted && (
                   <motion.section
-                    className="bg-card/90 p-6 md:p-8 rounded-2xl shadow-scroll hover:shadow-glow w-full text-center animate-parchmentGlow"
+                                         className="bg-card/90 p-6 md:p-8 rounded-2xl shadow-scroll hover-glow w-full text-center animate-parchmentGlow glow-border"
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
@@ -554,7 +554,7 @@ export default function WalletWizardryPage() {
                   </AlertDialogContent>
                 </AlertDialog>
 
-                <section className="my-8 text-center p-6 bg-card/90 rounded-2xl shadow-scroll hover:shadow-glow w-full animate-parchmentGlow">
+                                 <section className="my-8 text-center p-6 bg-card/90 rounded-2xl shadow-scroll hover-glow w-full animate-parchmentGlow glow-border">
                   <div className="flex justify-center items-center">
                     <Button
                       onClick={() => setShowCourseWalletSelector(!showCourseWalletSelector)}

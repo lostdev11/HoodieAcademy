@@ -1,16 +1,26 @@
 // src/app/medieval/layout.tsx
 import type { ReactNode } from "react";
-
-// V0 styles (if you want their extra effects) — optional:
-import "@/styles/globals.css";       // from V0 export (optional if noisy)
-// import "@/components/fantasy.css"; // from V0 export (optional)
+import { Cinzel, UnifrakturMaguntia } from "next/font/google";
 
 // Scoped parchment vars & helpers:
-import "@/styles/parchment.css";
+import "../../../styles/parchment.css";
+
+const cinzel = Cinzel({
+  subsets: ['latin'],
+  variable: '--font-cinzel',
+  display: 'swap',
+});
+
+const unifraktur = UnifrakturMaguntia({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-unifraktur',
+  display: 'swap',
+});
 
 export default function MedievalLayout({ children }: { children: ReactNode }) {
   return (
-    <section className="parchment-theme min-h-dvh bg-background text-foreground">
+    <section className={`parchment-theme min-h-dvh bg-background text-foreground ${cinzel.variable} ${unifraktur.variable}`}>
       {children}
     </section>
   );

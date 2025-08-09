@@ -361,8 +361,12 @@ export default function TokenGate({ children }: TokenGateProps) {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center p-8 bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg relative z-10"
+        className="relative overflow-hidden text-center p-8 bg-white/5 backdrop-blur-lg backdrop-saturate-150 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.45)] ring-1 ring-white/10 z-10"
       >
+        {/* liquid glass highlights */}
+        <div className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-b from-white/25 via-white/5 to-transparent opacity-40" />
+        <div className="pointer-events-none absolute -top-24 -left-24 h-56 w-56 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.3),rgba(255,255,255,0)_60%)]" />
+        <div className="pointer-events-none absolute -bottom-28 -right-28 h-64 w-64 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,150,80,0.2),rgba(255,150,80,0)_60%)]" />
         <h2 className="text-2xl font-bold text-white mb-4">
           Course Access Required
         </h2>
@@ -372,14 +376,15 @@ export default function TokenGate({ children }: TokenGateProps) {
         {error && <p className="text-red-400 mb-4">{error}</p>}
         
         <div className="flex justify-center">
-            <Button
-              onClick={() => connectWallet('phantom')}
-              className="bg-gradient-to-r from-green-600 to-purple-600 text-white hover:from-green-500 hover:to-purple-500 px-8 py-3 w-64"
-            >
-              <Wallet className="mr-2" size={20} />
-              Connect Wallet
-            </Button>
-          </div>
+          <Button
+            onClick={() => connectWallet('phantom')}
+            className="group relative overflow-hidden px-8 py-3 w-64 font-semibold text-white rounded-xl shadow-lg ring-1 ring-white/20 bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-400 hover:via-rose-400 hover:to-violet-500"
+          >
+            <span className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-white/30 to-transparent opacity-70 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            <Wallet className="mr-2 relative z-10" size={20} />
+            <span className="relative z-10">Connect Wallet</span>
+          </Button>
+        </div>
       </motion.div>
     </div>
   );

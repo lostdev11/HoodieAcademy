@@ -506,41 +506,7 @@ export default function DashboardPage() {
               </Card>
             )}
 
-            {/* Progress Overview */}
-            <Card className="bg-slate-800/50 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-purple-400">Overall Academy Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-300">Progress</span>
-                      <span className="text-purple-400">{overallProgress}%</span>
-                    </div>
-                    <Progress value={overallProgress} className="h-3 bg-slate-700 [&>div]:bg-gradient-to-r [&>div]:from-purple-500 [&>div]:to-pink-500" />
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold text-cyan-400">{completedCoursesCount}</p>
-                      <p className="text-sm text-gray-400">Courses Completed</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-green-400">15</p>
-                      <p className="text-sm text-gray-400">Lessons Finished</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-yellow-400">8</p>
-                      <p className="text-sm text-gray-400">Quizzes Passed</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-pink-400">5</p>
-                      <p className="text-sm text-gray-400">NFT Badges</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
           </main>
         </div>
       </div>

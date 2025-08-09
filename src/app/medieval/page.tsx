@@ -13,13 +13,13 @@ export default function MedievalHome() {
         <div className="grid gap-4">
           <Link
             href="/medieval/wallet-wizardry"
-            className="inline-flex items-center justify-center px-5 py-3 rounded-xl font-semibold shadow-scroll hover:shadow-glow transition bg-card/90 animate-parchmentGlow"
+            className="inline-flex items-center justify-center px-5 py-3 rounded-xl font-semibold shadow-scroll hover-glow transition-all duration-300 bg-card/90 animate-parchmentGlow glow-border"
           >
             Enter the Academy
           </Link>
         </div>
 
-        <div className="mt-8 rounded-2xl p-6 shadow-scroll hover:shadow-glow transition animate-parchmentGlow bg-card/90">
+        <div className="mt-8 rounded-2xl p-6 shadow-scroll hover-glow transition-all duration-300 animate-parchmentGlow bg-card/90 glow-border">
           <h2 className="text-xl font-semibold mb-2">Scroll of the Day</h2>
           <p className="opacity-80">
             Placement tests are open. Choose your squad wisely.

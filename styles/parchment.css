@@ -26,6 +26,28 @@
   --border: 30 20% 68%;
   --input: 30 20% 68%;
   --ring: 44 70% 55%;
+
+  /* Medieval fonts */
+  font-family: var(--font-cinzel), serif;
+}
+
+/* Medieval typography classes */
+.parchment-theme h1, .parchment-theme h2, .parchment-theme h3 {
+  font-family: var(--font-unifraktur), serif;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+}
+
+.parchment-theme .medieval-title {
+  font-family: var(--font-unifraktur), serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.parchment-theme .medieval-body {
+  font-family: var(--font-cinzel), serif;
+  line-height: 1.6;
 }
 
 /* Parchment background helper */
@@ -39,11 +61,61 @@
 }
 
 /* Shadows & glow (class helpers here in case you want CSS not Tailwind) */
-.shadow-scroll { box-shadow: 0 0 0 1px rgba(184,115,51,.25), 0 10px 30px rgba(0,0,0,.28); }
-.shadow-glow   { box-shadow: 0 0 24px rgba(224,200,120,.35); }
+.shadow-scroll { 
+  box-shadow: 0 0 0 1px rgba(184,115,51,.25), 0 10px 30px rgba(0,0,0,.28) !important; 
+}
+
+.shadow-glow { 
+  box-shadow: 0 0 30px rgba(224,200,120,.4), 0 0 50px rgba(224,200,120,.2) !important; 
+}
 
 @keyframes parchmentGlow {
-  0%,100% { box-shadow: 0 0 18px rgba(224,200,120,.22); }
-  50%     { box-shadow: 0 0 30px rgba(224,200,120,.38); }
+  0%,100% { 
+    box-shadow: 0 0 25px rgba(224,200,120,.3), 0 0 50px rgba(224,200,120,.15) !important; 
+  }
+  50%     { 
+    box-shadow: 0 0 45px rgba(224,200,120,.6), 0 0 80px rgba(224,200,120,.3) !important; 
+  }
 }
-.animate-parchmentGlow { animation: parchmentGlow 3.8s ease-in-out infinite; }
+
+.animate-parchmentGlow { 
+  animation: parchmentGlow 4s ease-in-out infinite !important; 
+}
+
+/* Enhanced glow for interactive elements with higher specificity */
+.parchment-theme .shadow-glow {
+  box-shadow: 0 0 35px rgba(224,200,120,.5), 0 0 60px rgba(224,200,120,.25) !important;
+  transition: all 0.3s ease-in-out;
+}
+
+.parchment-theme .shadow-scroll {
+  box-shadow: 0 0 0 1px rgba(184,115,51,.35), 0 10px 30px rgba(0,0,0,.35) !important;
+  transition: all 0.3s ease-in-out;
+}
+
+.parchment-theme .animate-parchmentGlow {
+  animation: parchmentGlow 4s ease-in-out infinite !important;
+}
+
+/* Additional glow effects for better visibility */
+.parchment-theme .glow-border {
+  border: 2px solid rgba(224,200,120,.3) !important;
+  box-shadow: 
+    0 0 20px rgba(224,200,120,.2),
+    inset 0 0 20px rgba(224,200,120,.1) !important;
+}
+
+.parchment-theme .glow-text {
+  text-shadow: 
+    0 0 10px rgba(224,200,120,.5),
+    0 0 20px rgba(224,200,120,.3) !important;
+}
+
+/* Enhanced hover effects */
+.parchment-theme .hover-glow:hover {
+  box-shadow: 
+    0 0 40px rgba(224,200,120,.6),
+    0 0 80px rgba(224,200,120,.3) !important;
+  transform: translateY(-2px) !important;
+  transition: all 0.3s ease-in-out !important;
+}
