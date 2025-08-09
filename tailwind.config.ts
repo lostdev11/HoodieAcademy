@@ -95,8 +95,8 @@ export default {
           "50%": { boxShadow: "0 0 30px rgba(224,200,120,.38)" },
         },
         emberFlicker: {
-          "0%, 100%": { opacity: 0.45 },
-          "50%": { opacity: 0.9 },
+          "0%, 100%": { opacity: "0.45" },
+          "50%": { opacity: "0.9" },
         },
       },
       animation: {
