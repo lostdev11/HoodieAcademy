@@ -315,7 +315,7 @@ export default function TokenGate({ children }: TokenGateProps) {
     );
   }
 
-  if (walletAddress && !loading && !isHolder) {
+      if (walletAddress && !loading && !isHolder) {
       return (
         <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900">
             <motion.div
@@ -339,55 +339,38 @@ export default function TokenGate({ children }: TokenGateProps) {
               </Button>
                <Button variant="link" onClick={disconnectWallet} className="text-gray-400 mt-2">
                 Try a different wallet
-              </Button>
+               </Button>
             </motion.div>
         </div>
       )
   }
 
   return (
-    <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900">
+    <div 
+      className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900 relative overflow-hidden"
+      style={{
+        backgroundImage: 'url("/images/academy-castle-bg.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Dark overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/50"></div>
+      
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center p-8 bg-gray-800 rounded-xl shadow-lg"
+        className="text-center p-8 bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg relative z-10"
       >
         <h2 className="text-2xl font-bold text-white mb-4">
-          {/* {hasBeenConnected ? 'Welcome Back!' : 'Course Access Required'} */}
           Course Access Required
         </h2>
         <p className="text-gray-300 mb-6">
-          {/* {hasBeenConnected 
-            ? 'Please reconnect your wallet to continue your learning journey.'
-            : 'Connect your wallet to verify your WifHoodie NFT and access this course.'
-          } */}
           Connect your wallet to verify your WifHoodie NFT and access this course.
         </p>
         {error && <p className="text-red-400 mb-4">{error}</p>}
         
-        {/* {!showWalletSelector ? ( // This state is no longer needed
-          <div className="flex justify-center">
-            <Button
-              onClick={() => setShowWalletSelector(true)}
-              className="bg-gradient-to-r from-green-600 to-purple-600 text-white hover:from-green-500 hover:to-purple-500 px-8 py-3 w-64"
-            >
-              <Wallet className="mr-2" size={20} />
-              Connect Wallet
-            </Button>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center space-y-3">
-             <Button
-                onClick={() => connectWallet('phantom')}
-                className="bg-purple-600 hover:bg-purple-700 text-white w-64"
-             >
-                Connect Phantom
-             </Button>
-             <Button variant="ghost" onClick={() => setShowWalletSelector(false)} className="text-gray-400">
-                Cancel
-             </Button>
-          </div>
-        )} */}
         <div className="flex justify-center">
             <Button
               onClick={() => connectWallet('phantom')}
