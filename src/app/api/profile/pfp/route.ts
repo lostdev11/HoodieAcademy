@@ -26,9 +26,10 @@ export async function POST(req: NextRequest) {
       console.log('API: Parsed JSON body:', body);
     } catch (parseError) {
       console.error('API: JSON parse error:', parseError);
+      const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown parsing error';
       return NextResponse.json({ 
         error: 'Invalid JSON in request body',
-        details: parseError.message,
+        details: errorMessage,
         rawBody: rawBody.substring(0, 200) // First 200 chars for debugging
       }, { status: 400 });
     }
