@@ -1,11 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    unoptimized: true,
-  },
-  env: {
-    NEXT_PUBLIC_HELIUS_API_KEY: process.env.NEXT_PUBLIC_HELIUS_API_KEY,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'ipfs.io' },
+      { protocol: 'https', hostname: 'arweave.net' },
+      { protocol: 'https', hostname: 'nftstorage.link' },
+      { protocol: 'https', hostname: '**.dweb.link' },
+      { protocol: 'https', hostname: '**.cf-ipfs.com' },
+    ],
   },
 };
 
-module.exports = nextConfig; 
+export default nextConfig; 

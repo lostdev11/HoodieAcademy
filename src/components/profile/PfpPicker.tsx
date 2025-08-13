@@ -4,26 +4,49 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from '@/hooks/use-toast';
 
 // Constants - same approach as TokenGate
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
 const WIFHOODIE_COLLECTION_ID = 'H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ';
 
-// Import centralized wallet types
-import type { SolanaWallet } from '@/types/wallet';
-
+// Types
 type Props = {
-  currentPfp?: string | null;
-  userId: string; // if you pass this down or authenticate server-side
+  selectedPfpUrl?: string;
+  onChange: (url: string | null) => void;
+  userId: string;
 };
 
-export default function PfpPicker({ currentPfp, userId }: Props) {
+const isHttpUrl = (v?: string) => !!v && /^(https?:)?\/\//i.test(v);
+
+// --- NEW: Normalize NFT images to HTTP(S) ---
+function normalizeNftImageUrl(raw?: string | null): string | null {
+  if (!raw) return null;
+
+  // ipfs://<cid>/<path?>
+  if (raw.startsWith('ipfs://')) {
+    const path = raw.replace('ipfs://', '');
+    // choose one gateway and stick with it (also add to next.config images.remotePatterns)
+    return `https://ipfs.io/ipfs/${path}`;
+  }
+
+  // arweave/http(s)
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  // some mints embed dweb.link, cf-ipfs, nftstorage.link, etc. If they ever
+  // show up without protocol, you can add special handling here.
+  return null;
+}
+
+export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
   const [owner, setOwner] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const [nfts, setNfts] = useState<any[]>([]); // Changed to any[] as DasAsset is removed
+  const [nfts, setNfts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const showImage = isHttpUrl(selectedPfpUrl);
 
   // Get wallet address from existing wallet connection
   useEffect(() => {
@@ -69,22 +92,17 @@ export default function PfpPicker({ currentPfp, userId }: Props) {
       setLoading(true);
       try {
         console.log('PfpPicker: Loading NFTs for wallet:', owner);
-        
-        // Check if Helius API key is defined
+
         if (!HELIUS_API_KEY) {
           throw new Error('Helius API key is missing. Please check your environment configuration.');
         }
-        
-        console.log('PfpPicker: Using Helius API key:', HELIUS_API_KEY ? 'YES' : 'NO');
-        
+
         const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
         console.log('PfpPicker: Making API request to Helius...');
-        
+
         const response = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             jsonrpc: '2.0',
             id: 'pfp-picker',
@@ -92,45 +110,46 @@ export default function PfpPicker({ currentPfp, userId }: Props) {
             params: { ownerAddress: owner, page: 1, limit: 200 },
           }),
         });
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
-        
+
         const data = await response.json();
         console.log('PfpPicker: Helius API response:', data);
-        
-        const items = data.result?.items || [];
+
+        const items: any[] = data.result?.items || [];
         console.log('PfpPicker: Total NFTs found:', items.length);
-        
-        // Filter for WifHoodie NFTs using the same logic as TokenGate
-        const filtered = items.filter((nft: any) => {
-          // Check if NFT belongs to WifHoodie collection
-          const collectionGroup = nft.grouping?.find((g: any) => g.group_key === 'collection');
-          const isWifHoodieCollection = collectionGroup?.group_value === WIFHOODIE_COLLECTION_ID;
-          
-          // Check if NFT has WifHoodie symbol
-          const isWifHoodieSymbol = nft.content?.metadata?.symbol?.toUpperCase() === 'WIFHOODIES';
-          
-          const isWifHoodie = isWifHoodieCollection || isWifHoodieSymbol;
-          console.log('PfpPicker: NFT', nft.id, 'is WifHoodie:', isWifHoodie);
-          
-          return isWifHoodie && nft.content?.links?.image;
-        });
-        
+
+        // Filter to WifHoodie and attach a normalized image URL
+        const filtered = items
+          .map((nft) => {
+            const collectionGroup = nft.grouping?.find((g: any) => g.group_key === 'collection');
+            const isWifHoodieCollection = collectionGroup?.group_value === WIFHOODIE_COLLECTION_ID;
+            const isWifHoodieSymbol = nft.content?.metadata?.symbol?.toUpperCase() === 'WIFHOODIES';
+            const isWifHoodie = isWifHoodieCollection || isWifHoodieSymbol;
+
+            const rawImg =
+              nft?.content?.links?.image ??
+              nft?.content?.metadata?.image ??
+              nft?.content?.files?.[0]?.uri ??
+              nft?.content?.json?.image ??
+              null;
+
+            const normalizedImage = normalizeNftImageUrl(rawImg);
+            console.log('PfpPicker: NFT', nft.id, 'is WifHoodie:', isWifHoodie, 'raw:', rawImg, 'normalized:', normalizedImage);
+
+            return { ...nft, _normalizedImage: normalizedImage, _isWifHoodie: isWifHoodie };
+          })
+          .filter((n) => n._isWifHoodie && isHttpUrl(n._normalizedImage));
+
         console.log('PfpPicker: WifHoodie NFTs after filtering:', filtered.length);
-        console.log('PfpPicker: Filtered NFTs:', filtered);
-        
         setNfts(filtered);
       } catch (e) {
         console.error('PfpPicker: Error loading NFTs:', e);
         const errorMessage = e instanceof Error ? e.message : 'Unknown error loading NFTs';
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
+        toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
       } finally {
         setLoading(false);
       }
@@ -139,59 +158,36 @@ export default function PfpPicker({ currentPfp, userId }: Props) {
 
   async function choose(asset: any) {
     if (!owner) {
-      toast({
-        title: "Error",
-        description: "Connect wallet first",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const imageUrl = asset.content?.links?.image;
-    if (!imageUrl) {
-      toast({
-        title: "Error",
-        description: "No image URL found for this NFT",
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: 'Connect wallet first', variant: 'destructive' });
       return;
     }
 
-    console.log('PfpPicker: Choosing asset:', asset);
-    console.log('PfpPicker: Image URL:', imageUrl);
+    const imageUrl = normalizeNftImageUrl(
+      asset._normalizedImage ?? asset?.content?.links?.image ?? null
+    );
+
+    if (!isHttpUrl(imageUrl || '')) {
+      toast({ title: 'Error', description: 'No valid image URL found for this NFT', variant: 'destructive' });
+      return;
+    }
+
+    console.log('PfpPicker: Choosing asset:', asset?.id);
+    console.log('PfpPicker: Using normalized Image URL:', imageUrl);
     console.log('PfpPicker: User ID:', userId);
 
-    // Validate all required data is present
-    if (!owner || !asset?.id || !imageUrl) {
-      console.error('PfpPicker: Missing required data:', { owner, assetId: asset?.id, imageUrl });
-      toast({
-        title: "Error",
-        description: "Missing required data for profile picture update",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Log the exact data being sent
-    const requestData = {
-      owner,
-      assetId: asset.id,
-      imageUrl
-    };
-    console.log('PfpPicker: Sending request data:', requestData);
+    const requestData = { owner, assetId: asset.id, imageUrl };
 
     try {
       const res = await fetch('/api/profile/pfp', {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'x-user-id': userId
+          'x-user-id': userId,
         },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(requestData),
       });
 
       console.log('PfpPicker: API response status:', res.status);
-      console.log('PfpPicker: API response headers:', Object.fromEntries(res.headers.entries()));
 
       if (!res.ok) {
         const errorText = await res.text();
@@ -201,74 +197,73 @@ export default function PfpPicker({ currentPfp, userId }: Props) {
 
       const j = await res.json();
       console.log('PfpPicker: API success response:', j);
-      
-      toast({
-        title: "Success",
-        description: "Profile picture updated!",
-      });
+
+      // Update the local selected value
+      onChange(imageUrl!);
+
+      toast({ title: 'Success', description: 'Profile picture updated!' });
       setOpen(false);
-      
-      // Optionally refresh the page or update the UI to show the new profile picture
-      window.location.reload();
-      
     } catch (error) {
       console.error('PfpPicker: Error updating profile picture:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to set PFP';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="secondary">Set wifhoodie PFP</Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Select your wifhoodie</DialogTitle>
-          <p className="text-sm text-gray-500 mt-2">
-            Choose a WifHoodie NFT from your wallet to set as your profile picture. Only NFTs from the verified WifHoodie collection will be displayed.
-          </p>
-        </DialogHeader>
-
-        {(!owner) && <div className="py-6 text-sm opacity-70">Connect your wallet to see your NFTs.</div>}
-
-        {loading && <div className="py-6">Loading your NFTs…</div>}
-
-        {!loading && owner && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {nfts.map((n) => {
-              console.log('PfpPicker: Rendering NFT:', n.id, 'Image URL:', n.content?.links?.image);
-              return (
-                <Card key={n.id} className="cursor-pointer hover:opacity-90" onClick={() => choose(n)}>
-                  <CardContent className="p-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={n.content?.links?.image}
-                      alt={n.content?.metadata?.name || 'NFT'}
-                      className="w-full h-40 object-cover rounded-xl"
-                      loading="lazy"
-                      onError={(e) => console.error('PfpPicker: Image failed to load:', n.id, e)}
-                      onLoad={() => console.log('PfpPicker: Image loaded successfully:', n.id)}
-                    />
-                    <div className="mt-2 text-xs truncate">{n.content?.metadata?.name || n.id}</div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+    <div className="flex items-center gap-3">
+      <Avatar className="h-16 w-16">
+        {showImage ? (
+          <AvatarImage src={selectedPfpUrl} alt="Profile picture" />
+        ) : (
+          <AvatarFallback className="text-xl">🧑‍🎓</AvatarFallback>
         )}
+      </Avatar>
 
-        {!loading && owner && nfts.length === 0 && (
-          <div className="py-6 text-sm opacity-70">
-            No wifhoodie NFTs found in this wallet.
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="secondary">Set wifhoodie PFP</Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Select your wifhoodie</DialogTitle>
+            <p className="text-sm text-gray-500 mt-2">
+              Choose a WifHoodie NFT from your wallet to set as your profile picture. Only NFTs from the verified WifHoodie collection will be displayed.
+            </p>
+          </DialogHeader>
+
+          {!owner && <div className="py-6 text-sm opacity-70">Connect your wallet to see your NFTs.</div>}
+          {loading && <div className="py-6">Loading your NFTs…</div>}
+
+          {!loading && owner && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {nfts.map((n) => {
+                const img = n._normalizedImage as string | null;
+                return (
+                  <Card key={n.id} className="cursor-pointer hover:opacity-90" onClick={() => choose(n)}>
+                    <CardContent className="p-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img ?? undefined}
+                        alt={n.content?.metadata?.name || 'NFT'}
+                        className="w-full h-40 object-cover rounded-xl"
+                        loading="lazy"
+                        onError={(e) => console.error('PfpPicker: Image failed to load:', n.id, e)}
+                        onLoad={() => console.log('PfpPicker: Image loaded successfully:', n.id)}
+                      />
+                      <div className="mt-2 text-xs truncate">{n.content?.metadata?.name || n.id}</div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {!loading && owner && nfts.length === 0 && (
+            <div className="py-6 text-sm opacity-70">No wifhoodie NFTs found in this wallet.</div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

@@ -120,14 +120,18 @@ export function ProfileView() {
     }
 
     detectConnectedWallet();
+  }, []);
 
-    // Also listen for wallet connection changes from window.solana
+  // Listen for wallet connection changes from window.solana
+  useEffect(() => {
+    if (!wallet) return;
+    
     const handleWalletConnect = () => {
       if (window.solana?.isPhantom && window.solana.isConnected) {
         const address = window.solana.publicKey?.toString();
         if (address) {
           setWallet(address);
-          console.log('ProfileView: Wallet connected via window.solana:', address);
+          console.debug("ProfileView: Wallet connected via window.solana:", address);
         }
       }
     };
@@ -152,7 +156,7 @@ export function ProfileView() {
         window.solana.removeListener('disconnect', handleWalletDisconnect);
       }
     };
-  }, []);
+  }, [wallet]); // keep deps minimal
 
   // Load real user data when wallet changes
   useEffect(() => {
@@ -482,7 +486,16 @@ export function ProfileView() {
                   
                   {/* PfpPicker for selecting new profile pictures */}
                   <PfpPicker 
-                    currentPfp={profileImage}
+                    selectedPfpUrl={profileImage}
+                    onChange={(url) => {
+                      setProfileImage(url || '🧑‍🎓');
+                      // Save to localStorage
+                      if (url) {
+                        localStorage.setItem('userProfileImage', url);
+                      } else {
+                        localStorage.removeItem('userProfileImage');
+                      }
+                    }}
                     userId={wallet} // Using wallet address as user ID for now
                   />
                 
