@@ -368,8 +368,7 @@ export default function CoursesPage() {
             activity_type: 'course_browse',
             course_data: {
               course_id: 'courses_page',
-              course_name: 'Course Catalog',
-              completion_status: 'browsing'
+              course_name: 'Course Catalog'
             },
             notes: 'User browsed available courses'
           });

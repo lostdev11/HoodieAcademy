@@ -71,8 +71,7 @@ export default function DynamicCoursePage() {
       if (walletAddress) {
         await logCourseActivity(walletAddress, 'course_start', {
           course_id: courseData.id || slug,
-          course_name: courseData.title,
-          completion_status: 'started'
+          course_name: courseData.title
         });
       }
     } catch (error) {
@@ -150,7 +149,6 @@ export default function DynamicCoursePage() {
             await logCourseActivity(walletAddress, 'course_complete', {
               course_id: course.id || slug,
               course_name: course.title,
-              completion_status: 'completed',
               score: 100, // Perfect score for completing all lessons
               time_spent: 0 // Could track actual time spent
             });
