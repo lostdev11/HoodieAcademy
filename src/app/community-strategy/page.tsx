@@ -30,12 +30,7 @@ interface PhantomResponse {
   };
 }
 
-declare global {
-  interface Window {
-    ethereum?: any;
-    solana?: any;
-  }
-}
+// Global interface declarations removed to avoid conflicts with centralized types
 
 type WalletProviderOption = 'metamask' | 'phantom' | 'jup' | 'magic-eden';
 
