@@ -249,7 +249,20 @@ export default function DashboardPage() {
 
   return (
     <TokenGate>
-      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="flex min-h-screen relative">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 -z-10 bg-cover bg-center bg-fixed"
+          style={{
+            backgroundImage: "url('/images/Hoodie Dashbaord.png')",
+          }}
+        />
+        
+        {/* Background Overlay - Enhanced for Hoodie dashboard theme */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-900/75 via-purple-900/65 to-slate-900/75" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_60%_at_50%_20%,rgba(139,92,246,0.18),transparent)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(80%_80%_at_20%_80%,rgba(6,182,212,0.12),transparent)]" />
+        
         {/* Sidebar */}
         <DashboardSidebar 
           isCollapsed={sidebarCollapsed} 
@@ -259,12 +272,12 @@ export default function DashboardPage() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
+          <header className="bg-slate-800/40 backdrop-blur-md border-b border-cyan-500/40 p-6 shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {/* Profile Picture */}
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-lg">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-500/50 shadow-lg backdrop-blur-sm">
                     {profileImage && profileImage !== '🧑‍🎓' ? (
                       <img 
                         src={profileImage} 
@@ -291,17 +304,17 @@ export default function DashboardPage() {
                 </div>
                 
                 <div>
-                  <h1 className="text-3xl font-bold text-cyan-400">Dashboard</h1>
-                  <p className="text-gray-300">Welcome back, Hoodie Scholar!</p>
+                  <h1 className="text-3xl font-bold text-cyan-400 drop-shadow-lg">Dashboard</h1>
+                  <p className="text-gray-200">Welcome back, Hoodie Scholar!</p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm text-gray-400">Current Time</div>
-                <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
+                <div className="text-sm text-gray-300">Current Time</div>
+                <div className="text-lg text-cyan-400 font-mono drop-shadow">{currentTime}</div>
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="mt-2 text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20"
+                  className="mt-2 text-xs border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20 backdrop-blur-sm"
                   onClick={() => {
                     console.log('=== Dashboard Debug ===');
                     console.log('realAnnouncements state:', realAnnouncements);
@@ -315,7 +328,7 @@ export default function DashboardPage() {
                 <Button 
                   size="sm" 
                   variant="outline" 
-                  className="mt-2 text-xs border-green-500/30 text-green-400 hover:bg-green-500/20"
+                  className="mt-2 text-xs border-green-500/50 text-green-400 hover:bg-green-500/20 backdrop-blur-sm"
                   onClick={() => {
                     // Create a test announcement
                     const testAnnouncement = {
@@ -358,19 +371,19 @@ export default function DashboardPage() {
           <main className="flex-1 p-6 space-y-6">
             {/* Profile Suggestions */}
             {showProfileSuggestion && (
-              <Card className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500/30">
+              <Card className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <AlertCircle className="w-6 h-6 text-orange-400" />
                       <div>
                         <h3 className="text-lg font-semibold text-orange-400">Complete Your Profile</h3>
-                        <p className="text-gray-300">You've completed the squad placement test! Set a display name to personalize your experience.</p>
+                        <p className="text-gray-200">You've completed the squad placement test! Set a display name to personalize your experience.</p>
                       </div>
                     </div>
                     <Button
                       asChild
-                      className="bg-orange-600 hover:bg-orange-700"
+                      className="bg-orange-600 hover:bg-orange-700 shadow-lg"
                     >
                       <Link href="/profile">
                         Set Display Name
@@ -383,28 +396,26 @@ export default function DashboardPage() {
 
             {/* Welcome Message for New Users */}
             {hasCompletedOnboarding && !showProfileSuggestion && (
-              <Card className="bg-gradient-to-r from-green-500/20 to-cyan-500/20 border-green-500/30">
+              <Card className="bg-gradient-to-r from-green-500/20 to-cyan-500/20 border-green-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <CheckCircle className="w-6 h-6 text-green-400" />
                     <div>
                       <h3 className="text-lg font-semibold text-green-400">Welcome to Hoodie Academy!</h3>
-                      <p className="text-gray-300">Your profile setup is complete. Start exploring courses and join your squad community!</p>
+                      <p className="text-gray-200">Your profile setup is complete. Start exploring courses and join your squad community!</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-
-
             {/* To-Do List */}
-            <Card className="bg-slate-800/50 border-green-500/30">
+            <Card className="bg-slate-800/40 backdrop-blur-md border-green-500/40 shadow-xl hover:shadow-2xl transition-all duration-300">
               <CardHeader>
                 <CardTitle className="text-green-400 flex items-center space-x-2">
                   <CheckCircle className="w-5 h-5" />
                   <span>To-Do List</span>
-                  <Badge variant="secondary" className="ml-auto">
+                  <Badge variant="secondary" className="ml-auto bg-green-500/20 text-green-400 border-green-500/40">
                     {completedTodos}/{totalTodos}
                   </Badge>
                 </CardTitle>
@@ -412,14 +423,14 @@ export default function DashboardPage() {
               <CardContent className="space-y-3">
                 {realTodos.length > 0 ? (
                   realTodos.map((todo) => (
-                    <div key={todo.id} className={`p-3 rounded-lg border transition-all duration-200 ${
+                    <div key={todo.id} className={`p-3 rounded-lg border transition-all duration-200 backdrop-blur-sm ${
                       todo.completed 
-                        ? 'bg-green-500/10 border-green-500/30' 
-                        : 'bg-slate-700/30 border-slate-600/30 hover:border-green-500/30'
+                        ? 'bg-green-500/15 border-green-500/40' 
+                        : 'bg-slate-700/40 border-slate-600/40 hover:border-green-500/40 hover:bg-slate-700/50'
                     }`}>
                       <div className="flex items-center space-x-3">
                         <div className={`p-1 rounded ${
-                          todo.completed ? 'bg-green-500/20' : 'bg-slate-600/20'
+                          todo.completed ? 'bg-green-500/25' : 'bg-slate-600/25'
                         }`}>
                           {getTypeIcon(todo.type)}
                         </div>
@@ -429,7 +440,7 @@ export default function DashboardPage() {
                           }`}>
                             {todo.title}
                           </p>
-                          <p className="text-sm text-gray-400">{todo.course}</p>
+                          <p className="text-sm text-gray-300">{todo.course}</p>
                           {todo.dueDate && (
                             <p className="text-xs text-yellow-400">Due: {todo.dueDate}</p>
                           )}
@@ -437,7 +448,7 @@ export default function DashboardPage() {
                         <Button 
                           size="sm" 
                           variant={todo.completed ? "outline" : "default"}
-                          className={todo.completed ? "border-green-500 text-green-400" : "bg-green-600 hover:bg-green-700"}
+                          className={todo.completed ? "border-green-500 text-green-400 backdrop-blur-sm" : "bg-green-600 hover:bg-green-700 shadow-lg"}
                         >
                           {todo.completed ? 'Done' : 'Complete'}
                         </Button>
@@ -447,20 +458,20 @@ export default function DashboardPage() {
                 ) : (
                   <div className="text-center py-8">
                     <CheckCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">No pending tasks</p>
+                    <p className="text-gray-300 text-sm">No pending tasks</p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
             {/* Global Bulletin Board */}
-            <Card className="bg-slate-800/50 border-blue-500/30">
+            <Card className="bg-slate-800/40 backdrop-blur-md border-blue-500/40 shadow-xl hover:shadow-2xl transition-all duration-300">
               <CardHeader>
                 <CardTitle className="text-blue-400 flex items-center space-x-2">
                   <Bell className="w-5 h-5" />
                   <span>Global Bulletin Board</span>
                   {squadId && (
-                    <Badge variant="outline" className="text-xs border-cyan-500/30 text-cyan-400">
+                    <Badge variant="outline" className="text-xs border-cyan-500/50 text-cyan-400 bg-cyan-500/20">
                       {squadId}
                     </Badge>
                   )}
@@ -473,26 +484,26 @@ export default function DashboardPage() {
 
             {/* Scheduled Announcements */}
             {getScheduledAnnouncements().length > 0 && (
-              <Card className="bg-slate-800/50 border-cyan-500/30">
+              <Card className="bg-slate-800/40 backdrop-blur-md border-cyan-500/40 shadow-xl hover:shadow-2xl transition-all duration-300">
                 <CardHeader>
                   <CardTitle className="text-cyan-400 flex items-center space-x-2">
                     <Clock className="w-5 h-5" />
                     <span>Upcoming Announcements</span>
-                    <Badge variant="outline" className="ml-auto border-cyan-500 text-cyan-400">
+                    <Badge variant="outline" className="ml-auto border-cyan-500 text-cyan-400 bg-cyan-500/20">
                       {getScheduledAnnouncements().length}
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {getScheduledAnnouncements().map((announcement) => (
-                    <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-cyan-500/30">
+                    <div key={announcement.id} className="p-3 bg-slate-700/40 rounded-lg border border-cyan-500/40 backdrop-blur-sm hover:bg-slate-700/50 transition-all duration-200">
                       <div className="flex items-start space-x-3">
                         <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
                           <Clock className="w-4 h-4" />
                         </div>
                         <div className="flex-1">
                           <h4 className="font-semibold text-white">{announcement.title}</h4>
-                          <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
+                          <p className="text-sm text-gray-200 mt-1">{announcement.content}</p>
                           <p className="text-xs text-cyan-400 mt-2">
                             <Clock className="w-3 h-3 inline mr-1" />
                             Starts: {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
@@ -505,7 +516,6 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             )}
-
 
           </main>
         </div>

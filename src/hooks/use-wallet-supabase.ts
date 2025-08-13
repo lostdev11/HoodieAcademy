@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { logCourseActivity, logWalletConnection } from '@/lib/activity-logger';
 
 export function useWalletSupabase() {
   const [wallet, setWallet] = useState<string | null>(null);
@@ -17,6 +18,10 @@ export function useWalletSupabase() {
       const response = await provider.connect();
       const walletAddress = response.publicKey.toString();
       setWallet(walletAddress);
+      
+      // Log wallet connection activity
+      await logWalletConnection(walletAddress, 'wallet_connect', { provider: 'phantom' });
+      
       // Upsert last_active
       await supabase
         .from('users')
@@ -41,12 +46,16 @@ export function useWalletSupabase() {
   }, []);
 
   // Disconnect wallet
-  const disconnectWallet = useCallback(() => {
+  const disconnectWallet = useCallback(async () => {
+    if (wallet) {
+      // Log wallet disconnection activity
+      await logWalletConnection(wallet, 'wallet_disconnect', { reason: 'user_disconnect' });
+    }
     setWallet(null);
     setIsAdmin(false);
     setError(null);
     // Phantom does not have a disconnect method, but you can clear state
-  }, []);
+  }, [wallet]);
 
   // Auto-connect on mount if already connected
   useEffect(() => {
@@ -62,6 +71,13 @@ export function useWalletSupabase() {
       await supabase
         .from('user_course_completions')
         .upsert({ wallet_address: wallet, course_id: course_slug, started_at: new Date().toISOString() }, { onConflict: 'wallet_address,course_id' });
+      
+      // Log course start activity
+      await logCourseActivity(wallet, 'course_start', {
+        course_id: course_slug,
+        course_name: course_slug,
+        completion_status: 'started'
+      });
     } catch (err) {
       console.error('Course start tracking failed:', err);
     }
@@ -74,6 +90,13 @@ export function useWalletSupabase() {
       await supabase
         .from('user_course_completions')
         .upsert({ wallet_address: wallet, course_id: course_slug, completed_at: new Date().toISOString() }, { onConflict: 'wallet_address,course_id' });
+      
+      // Log course completion activity
+      await logCourseActivity(wallet, 'course_complete', {
+        course_id: course_slug,
+        course_name: course_slug,
+        completion_status: 'completed'
+      });
     } catch (err) {
       console.error('Completion logging failed:', err);
     }

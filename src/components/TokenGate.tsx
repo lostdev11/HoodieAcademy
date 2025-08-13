@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { logUserActivity, logWalletConnection, logNftVerification } from '@/lib/activity-logger';
 
 // Constants
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
@@ -145,6 +146,13 @@ export default function TokenGate({ children }: TokenGateProps) {
       if (hasWifHoodie) {
         console.log("✅ Debug: Verification successful - storing session data");
         
+        // Log successful verification
+        await logNftVerification(wallet, {
+          success: true,
+          nft_count: result.items.length,
+          wifhoodie_count: wifHoodieNfts.length
+        });
+        
         // Store verification session
         const sessionData = {
           walletAddress: wallet,
@@ -185,6 +193,13 @@ export default function TokenGate({ children }: TokenGateProps) {
         }
       } else {
         console.log("❌ Debug: No WifHoodie NFTs found - verification failed");
+        
+        // Log failed verification
+        await logNftVerification(wallet, {
+          success: false,
+          nft_count: result.items.length,
+          wifhoodie_count: 0
+        });
       }
     } catch (error: any) {
       console.error("💥 Debug: NFT check failed with error:", error);
@@ -246,13 +261,21 @@ export default function TokenGate({ children }: TokenGateProps) {
   // }, [walletAddress]);
 
   const disconnectWallet = () => {
+    console.log("🔌 Debug: Disconnecting wallet:", walletAddress);
+    
+    // Log wallet disconnection
+    if (walletAddress) {
+      logWalletConnection(walletAddress, 'wallet_disconnect', { reason: 'user_disconnect' });
+    }
+    
     setWalletAddress(null);
     setIsHolder(false);
-    setError(null);
-    setShowSuccess(false);
+    setIsAuthenticated(false);
     setHasBeenConnected(false);
+    setShowSuccess(false);
+    setError(null);
     
-    // Clear all wallet-related storage
+    // Clear session and local storage
     sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('connectedWallet');
@@ -265,29 +288,55 @@ export default function TokenGate({ children }: TokenGateProps) {
 
   const connectWallet = async (providerName: WalletProvider) => {
     setError(null);
+    setIsConnecting(true);
+    
+    console.log("🔌 Debug: Starting wallet connection for provider:", providerName);
+    
     let provider;
     if (providerName === 'phantom') {
       if (window.solana?.isPhantom) {
         provider = window.solana;
+        console.log("✅ Debug: Phantom wallet found and available");
       } else {
-        setError("Phantom wallet is not installed.");
+        const errorMsg = "Phantom wallet is not installed. Please install Phantom wallet extension first.";
+        console.error("❌ Debug:", errorMsg);
+        setError(errorMsg);
+        setIsConnecting(false);
         return;
       }
     }
+    
     if (!provider) {
-      setError("Could not find a compatible Solana wallet.");
+      const errorMsg = "Could not find a compatible Solana wallet.";
+      console.error("❌ Debug:", errorMsg);
+      setError(errorMsg);
+      setIsConnecting(false);
       return;
     }
+    
     try {
-      if (provider.isConnecting) return;
+      if (provider.isConnecting) {
+        console.log("⏳ Debug: Wallet is already connecting, skipping...");
+        setIsConnecting(false);
+        return;
+      }
+      
+      console.log("🔗 Debug: Attempting to connect to wallet...");
       const response = await provider.connect();
+      console.log("✅ Debug: Wallet connected successfully:", response.publicKey.toString());
+      
+      // Log wallet connection
+      await logWalletConnection(response.publicKey.toString(), 'wallet_connect', { provider: providerName });
+      
       setWalletAddress(response.publicKey.toString());
       // Trigger verification with success message
       await checkWifHoodieOwnership(response.publicKey.toString(), true);
     } catch (error: any) {
-      setError(`Wallet connection failed: ${error.message || 'User rejected the request.'}`);
+      const errorMsg = `Wallet connection failed: ${error.message || 'User rejected the request.'}`;
+      console.error("💥 Debug: Wallet connection error:", error);
+      setError(errorMsg);
     } finally {
-      setLoading(false);
+      setIsConnecting(false);
     }
   };
 
@@ -378,12 +427,58 @@ export default function TokenGate({ children }: TokenGateProps) {
         <div className="flex justify-center">
           <Button
             onClick={() => connectWallet('phantom')}
-            className="group relative overflow-hidden px-8 py-3 w-64 font-semibold text-white rounded-xl shadow-lg ring-1 ring-white/20 bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-400 hover:via-rose-400 hover:to-violet-500"
+            disabled={isConnecting}
+            className="group relative overflow-hidden px-8 py-3 w-64 font-semibold text-white rounded-xl shadow-lg ring-1 ring-white/20 bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-400 hover:via-rose-400 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-white/30 to-transparent opacity-70 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
             <Wallet className="mr-2 relative z-10" size={20} />
-            <span className="relative z-10">Connect Wallet</span>
+            <span className="relative z-10">
+              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+            </span>
           </Button>
+        </div>
+        
+        {/* Show error if connection failed */}
+        {error && (
+          <div className="mt-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg">
+            <p className="text-red-400 text-sm">{error}</p>
+            {error.includes('Phantom wallet is not installed') && (
+              <div className="mt-2">
+                <a 
+                  href="https://phantom.app/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 text-sm underline"
+                >
+                  Install Phantom Wallet →
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Alternative connection options */}
+        <div className="mt-4 text-center">
+          <p className="text-gray-400 text-sm mb-2">Don't have Phantom wallet?</p>
+          <div className="flex justify-center gap-2">
+            <a 
+              href="https://phantom.app/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 text-sm underline"
+            >
+              Install Phantom
+            </a>
+            <span className="text-gray-500">•</span>
+            <a 
+              href="https://magiceden.us/marketplace/wifhoodies" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-amber-400 hover:text-amber-300 text-sm underline"
+            >
+              Get WifHoodie NFT
+            </a>
+          </div>
         </div>
       </motion.div>
     </div>

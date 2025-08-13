@@ -18,6 +18,7 @@ import {
   Circle
 } from 'lucide-react';
 import TokenGate from "@/components/TokenGate";
+import { logCourseActivity } from '@/lib/activity-logger';
 
 interface Lesson {
   id: string;
@@ -63,6 +64,22 @@ export default function DynamicCoursePage() {
 
   const slug = params?.slug as string;
 
+  // Track course start when first accessed
+  const trackCourseStart = async (courseData: Course) => {
+    try {
+      const walletAddress = localStorage.getItem('walletAddress');
+      if (walletAddress) {
+        await logCourseActivity(walletAddress, 'course_start', {
+          course_id: courseData.id || slug,
+          course_name: courseData.title,
+          completion_status: 'started'
+        });
+      }
+    } catch (error) {
+      console.error('Failed to log course start:', error);
+    }
+  };
+
   useEffect(() => {
     const loadCourse = async () => {
       try {
@@ -80,6 +97,9 @@ export default function DynamicCoursePage() {
         const savedProgress = localStorage.getItem(courseData.localStorageKey);
         if (savedProgress) {
           setCompletedLessons(JSON.parse(savedProgress));
+        } else {
+          // This is the first time accessing the course - track start
+          trackCourseStart(courseData);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load course');
@@ -93,6 +113,17 @@ export default function DynamicCoursePage() {
     }
   }, [slug]);
 
+  // Track course start if there's existing progress but course hasn't been logged
+  useEffect(() => {
+    if (course && completedLessons.length > 0) {
+      const courseStartLogged = localStorage.getItem(`${course.localStorageKey}_start_logged`);
+      if (!courseStartLogged) {
+        trackCourseStart(course);
+        localStorage.setItem(`${course.localStorageKey}_start_logged`, 'true');
+      }
+    }
+  }, [course, completedLessons]);
+
   const currentModule = course?.modules[activeModule];
   const currentLesson = currentModule?.lessons[activeLesson];
 
@@ -100,7 +131,7 @@ export default function DynamicCoursePage() {
   const completedCount = completedLessons.length;
   const progress = totalLessons > 0 ? (completedCount / totalLessons) * 100 : 0;
 
-  const markLessonComplete = (lessonId: string) => {
+  const markLessonComplete = async (lessonId: string) => {
     const newCompleted = completedLessons.includes(lessonId)
       ? completedLessons.filter(id => id !== lessonId)
       : [...completedLessons, lessonId];
@@ -108,6 +139,26 @@ export default function DynamicCoursePage() {
     setCompletedLessons(newCompleted);
     if (course) {
       localStorage.setItem(course.localStorageKey, JSON.stringify(newCompleted));
+      
+      // Check if course is completed (all lessons done)
+      const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
+      if (newCompleted.length === totalLessons && newCompleted.length > completedLessons.length) {
+        // Course was just completed - log completion
+        try {
+          const walletAddress = localStorage.getItem('walletAddress');
+          if (walletAddress) {
+            await logCourseActivity(walletAddress, 'course_complete', {
+              course_id: course.id || slug,
+              course_name: course.title,
+              completion_status: 'completed',
+              score: 100, // Perfect score for completing all lessons
+              time_spent: 0 // Could track actual time spent
+            });
+          }
+        } catch (error) {
+          console.error('Failed to log course completion:', error);
+        }
+      }
     }
   };
 

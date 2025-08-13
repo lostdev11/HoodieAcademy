@@ -54,8 +54,6 @@ export interface PlacementTest {
 // User tracking functions
 export async function recordPlacementTest(wallet_address: string, squad: string, display_name?: string) {
   try {
-    console.log('Recording placement test:', { wallet_address, squad, display_name })
-    
     // Upsert user record
     const { data: userData, error: userError } = await supabase
       .from('users')
@@ -93,7 +91,6 @@ export async function recordPlacementTest(wallet_address: string, squad: string,
       throw placementError
     }
 
-    console.log('Successfully recorded placement test:', { userData, placementData })
     return { userData, placementData }
   } catch (error) {
     console.error('Error in recordPlacementTest:', error)
@@ -112,8 +109,6 @@ export async function updateUserActivity(wallet_address: string, activity_type: 
       console.error('Error updating user activity:', error)
       throw error
     }
-
-    console.log('Updated user activity for:', wallet_address)
   } catch (error) {
     console.error('Error in updateUserActivity:', error)
     throw error

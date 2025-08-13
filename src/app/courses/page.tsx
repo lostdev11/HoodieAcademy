@@ -20,6 +20,7 @@ import { squadTracks, getSquadForCourse, getCoursesForSquad } from "@/lib/squadD
 import { isCurrentUserAdmin, getConnectedWallet, getCompletedCoursesCount } from "@/lib/utils";
 import { fetchUserByWallet } from "@/lib/supabase";
 import SquadFilter from '@/components/SquadFilter';
+import { logUserActivity } from '@/lib/activity-logger';
 
 // Simple course data
 const allCourses: Array<{
@@ -356,6 +357,33 @@ export default function CoursesPage() {
     loadUserData();
   }, [userSquad, isAdmin]);
 
+  // Log course browsing activity
+  useEffect(() => {
+    const logCourseBrowsing = async () => {
+      try {
+        const walletAddress = getConnectedWallet();
+        if (walletAddress) {
+          await logUserActivity({
+            wallet_address: walletAddress,
+            activity_type: 'course_browse',
+            course_data: {
+              course_id: 'courses_page',
+              course_name: 'Course Catalog',
+              completion_status: 'browsing'
+            },
+            notes: 'User browsed available courses'
+          });
+        }
+      } catch (error) {
+        console.error('Failed to log course browsing:', error);
+      }
+    };
+
+    // Log after a short delay to ensure user is actually browsing
+    const timer = setTimeout(logCourseBrowsing, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const getCompletionInfo = (key: string): { completed: boolean, progress: number } => {
     return courseCompletionStatus[key] || { completed: false, progress: 0 };
   };
@@ -410,14 +438,6 @@ export default function CoursesPage() {
   const getFilteredCourses = () => {
     let filteredCourses = allCourses;
 
-    console.log('Filtering courses:', {
-      activeFilter,
-      selectedSquad,
-      userSquad,
-      isAdmin,
-      totalCourses: allCourses.length
-    });
-
     // Apply squad filter first
     if (selectedSquad && selectedSquad !== 'All') {
       filteredCourses = filteredCourses.filter(course => course.squad === selectedSquad);
@@ -429,28 +449,19 @@ export default function CoursesPage() {
         const completedCourses = filteredCourses.filter(course => 
           course.localStorageKey && courseCompletionStatus[course.localStorageKey]?.completed
         );
-        console.log('Completed courses filter:', {
-          totalFiltered: filteredCourses.length,
-          completedCount: completedCourses.length,
-          completedCourses: completedCourses.map(c => ({ id: c.id, title: c.title })),
-          courseStatus: courseCompletionStatus
-        });
         return completedCourses;
       case 'squads':
         if (selectedSquad) {
           // Show courses for selected squad
           const squadCourseIds = getCoursesForSquad(selectedSquad);
           const squadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
-          console.log('Selected squad courses:', squadCourses.length);
           return squadCourses;
         } else if (!isAdmin && userSquad) {
           // Show courses for user's squad when no specific squad is selected
           const squadCourseIds = getCoursesForSquad(userSquad);
           const userSquadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
-          console.log('User squad courses:', userSquadCourses.length);
           return userSquadCourses;
         }
-        console.log('All courses (squads filter):', filteredCourses.length);
         return filteredCourses;
       default:
         // For 'all' filter, apply gating logic
@@ -461,9 +472,7 @@ export default function CoursesPage() {
             const is100Level = course.level === 'beginner' || course.level === '100' || course.level === '100-level';
             return isFree && is100Level;
           });
-          console.log('Filtered to 100-level free courses:', filteredCourses.length);
         }
-        console.log('All courses (all filter):', filteredCourses.length);
         return filteredCourses;
     }
   };
@@ -488,11 +497,24 @@ export default function CoursesPage() {
 
   return (
     <TokenGate>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      <div className="min-h-screen relative overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 -z-10 bg-cover bg-center bg-fixed"
+          style={{
+            backgroundImage: "url('/images/Hoodie Courses.png')",
+          }}
+        />
+        
+        {/* Background Overlay - Enhanced for Hoodie courses theme */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-900/80 via-purple-900/70 to-slate-900/80" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_60%_at_50%_20%,rgba(139,92,246,0.20),transparent)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(80%_80%_at_20%_80%,rgba(6,182,212,0.15),transparent)]" />
+        
         {/* Animated background effects */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900 to-slate-900"></div>
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        
         <div className="relative z-10 p-8">
           {/* Header */}
           <div className="text-center mb-12">
