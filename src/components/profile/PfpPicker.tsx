@@ -10,22 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
 const WIFHOODIE_COLLECTION_ID = 'H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ';
 
-// Local type declarations to avoid global conflicts
-interface SolanaWallet {
-  isPhantom?: boolean;
-  isConnected: boolean;
-  publicKey: {
-    toString(): string;
-  } | null;
-  on(event: string, callback: () => void): void;
-  removeListener(event: string, callback: () => void): void;
-}
-
-declare global {
-  interface Window {
-    solana?: SolanaWallet;
-  }
-}
+// Import centralized wallet types
+import type { SolanaWallet } from '@/types/wallet';
 
 type Props = {
   currentPfp?: string | null;
