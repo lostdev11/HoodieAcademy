@@ -70,20 +70,18 @@ export default function GlobalBulletinBoard({ squadId }: GlobalBulletinBoardProp
       try {
         setIsLoading(true);
         // For now, use mock data since we removed Netlify functions
-        const mockBulletins = [
+        const mockBulletins: Message[] = [
           {
-            id: 1,
+            id: "1",
             title: "Welcome to Hoodie Academy!",
-            content: "Your journey to Web3 mastery begins here.",
-            type: "announcement",
+            body: "Your journey to Web3 mastery begins here.",
             createdAt: new Date().toISOString(),
             priority: "high"
           },
           {
-            id: 2,
+            id: "2",
             title: "New Course Available",
-            content: "Check out our latest course on NFT trading psychology.",
-            type: "update",
+            body: "Check out our latest course on NFT trading psychology.",
             createdAt: new Date().toISOString(),
             priority: "medium"
           }

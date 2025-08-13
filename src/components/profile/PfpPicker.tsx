@@ -137,11 +137,12 @@ export default function PfpPicker({ currentPfp, userId }: Props) {
         console.log('PfpPicker: Filtered NFTs:', filtered);
         
         setNfts(filtered);
-      } catch (e: any) {
+      } catch (e) {
         console.error('PfpPicker: Error loading NFTs:', e);
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error loading NFTs';
         toast({
           title: "Error",
-          description: e.message,
+          description: errorMessage,
           variant: "destructive",
         });
       } finally {
@@ -224,11 +225,12 @@ export default function PfpPicker({ currentPfp, userId }: Props) {
       // Optionally refresh the page or update the UI to show the new profile picture
       window.location.reload();
       
-    } catch (error: any) {
+    } catch (error) {
       console.error('PfpPicker: Error updating profile picture:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to set PFP';
       toast({
         title: "Error",
-        description: error.message || 'Failed to set PFP',
+        description: errorMessage,
         variant: "destructive",
       });
     }

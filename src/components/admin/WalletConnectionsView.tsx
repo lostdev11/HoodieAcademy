@@ -76,8 +76,9 @@ export default function WalletConnectionsView() {
       } else {
         setError('Failed to fetch connections');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch connections');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch connections';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

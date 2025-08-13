@@ -88,8 +88,9 @@ export default function UserActivityView() {
       } else {
         setError('Failed to fetch activities');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch activities');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch activities';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
