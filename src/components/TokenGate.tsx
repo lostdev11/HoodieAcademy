@@ -265,7 +265,7 @@ export default function TokenGate({ children }: TokenGateProps) {
     
     // Log wallet disconnection
     if (walletAddress) {
-      logWalletConnection(walletAddress, 'wallet_disconnect', { reason: 'user_disconnect' });
+      logWalletConnection(walletAddress, 'wallet_disconnect', { provider: 'phantom' });
     }
     
     setWalletAddress(null);
