@@ -229,8 +229,7 @@ export default function AdminDashboard() {
       // Log badge approval activity
       await logCourseActivity(user_id, 'course_approval', {
         course_id: courseId,
-        course_name: courseId, // You might want to get the actual course name
-        completion_status: 'approved'
+        course_name: courseId // You might want to get the actual course name
       });
       
       // Refresh data
@@ -316,8 +315,7 @@ export default function AdminDashboard() {
       // Log course approval activity
       await logCourseActivity(wallet_address, 'course_approval', {
         course_id,
-        course_name: course_id, // You might want to get the actual course name
-        completion_status: 'approved'
+        course_name: course_id // You might want to get the actual course name
       });
       
       // Refresh completions
