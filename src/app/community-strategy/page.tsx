@@ -243,6 +243,15 @@ export default function CommunityStrategyPage() {
              }
           }
           await solProvider.connect();
+          
+          if (!solProvider.publicKey) {
+            console.error('Solana wallet public key is null after connection');
+            setWalletAlertConfig({ title: "Connection Error", description: "Failed to get wallet public key. Please try again." });
+            setShowWalletAlert(true);
+            setShowWalletSelector(false);
+            return;
+          }
+          
           const solAccount = solProvider.publicKey.toString();
           setAccount(solAccount);
           const solBalanceLamports = await solanaConnection.getBalance(new PublicKey(solAccount));
