@@ -614,6 +614,11 @@ export default function AiAutomationCurriculumPage() {
           await provider.connect();
         }
         
+        if (!provider.publicKey) {
+          console.error('Wallet public key is null');
+          return;
+        }
+        
         setWalletConnected(true);
         setWalletAddress(provider.publicKey.toString());
         
