@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Wallet } from 'lucide-react';
 
+import type { SolanaWallet } from '@/types/wallet';
+
 declare global {
   interface Window {
-    solana?: any;
+    solana?: SolanaWallet;
   }
 }
 
@@ -15,11 +17,24 @@ export default function WalletConnect() {
   const [isConnecting, setIsConnecting] = useState(false);
 
   useEffect(() => {
-    // Check if wallet is already connected
-    if (typeof window !== 'undefined' && window.solana?.isConnected) {
-      setIsConnected(true);
-      setWalletAddress(window.solana.publicKey?.toString() || null);
-    }
+    // Try to auto-connect to previously authorized wallet
+    const autoConnect = async () => {
+      if (typeof window !== 'undefined' && window.solana) {
+        try {
+          const res = await window.solana.connect({ onlyIfTrusted: true });
+          const addr = res?.publicKey?.toString?.() ?? window.solana.publicKey?.toString?.();
+          if (addr) {
+            setWalletAddress(addr);
+            setIsConnected(true);
+          }
+        } catch (error) {
+          // User hasn't authorized this site yet, which is fine
+          console.log('Auto-connect failed (not authorized yet):', error);
+        }
+      }
+    };
+    
+    autoConnect();
   }, []);
 
   const connectWallet = async () => {
@@ -30,9 +45,12 @@ export default function WalletConnect() {
 
     try {
       setIsConnecting(true);
-      const response = await window.solana.connect();
-      setIsConnected(true);
-      setWalletAddress(response.publicKey.toString());
+      const res = await window.solana.connect();
+      const addr = res?.publicKey?.toString?.() ?? window.solana.publicKey?.toString?.();
+      if (addr) {
+        setWalletAddress(addr);
+        setIsConnected(true);
+      }
     } catch (error) {
       console.error('Failed to connect wallet:', error);
     } finally {
