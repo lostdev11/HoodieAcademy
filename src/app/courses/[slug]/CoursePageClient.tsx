@@ -23,6 +23,7 @@ import TokenGate from "@/components/TokenGate";
 import { useUserXP } from '@/hooks/useUserXP';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
+import VideoPlayer from '@/components/VideoPlayer';
 
 interface Lesson {
   id: string;
@@ -273,16 +274,11 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
                   <CardContent className="space-y-6">
                                                               {/* Video Player */}
                      {currentLesson.video && (
-                       <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                         <video 
-                           controls 
-                           className="w-full h-full"
-                           preload="metadata"
-                         >
-                           <source src={`${currentLesson.video}?v=${Date.now()}`} type="video/mp4" />
-                           Your browser does not support the video tag.
-                         </video>
-                       </div>
+                       <VideoPlayer 
+                         videoUrl={currentLesson.video}
+                         title={currentLesson.title}
+                         className="mb-6"
+                       />
                      )}
 
                     {/* Lesson Content */}
