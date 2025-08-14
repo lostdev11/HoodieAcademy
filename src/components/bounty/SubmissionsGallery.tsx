@@ -1,35 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { SubmissionCard } from './SubmissionCard';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Trophy, Star, TrendingUp, Clock, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SubmissionCard } from './SubmissionCard';
+import { Users, Trophy, Star, TrendingUp } from 'lucide-react';
+import { Submission, SubmissionStats } from '@/types/submission';
 
-interface Submission {
-  id: string;
-  title: string;
-  description: string;
-  squad: string;
-  courseRef?: string;
-  timestamp: string;
-  status: 'pending' | 'approved' | 'rejected';
-  upvotes?: Record<string, Array<{ userId: string; squad: string; timestamp: string }>>;
-  totalUpvotes?: number;
-  imageUrl?: string;
-  author?: string;
-}
+type SortOption = 'newest' | 'oldest' | 'most-upvoted' | 'squad-favorites' | 'trending';
+type FilterOption = 'all' | 'creators' | 'speakers' | 'raiders' | 'decoders' | 'approved' | 'pending' | 'rejected';
 
 interface SubmissionsGalleryProps {
   bountyId: string;
   currentUserId?: string;
   currentUserSquad?: string;
 }
-
-type SortOption = 'newest' | 'oldest' | 'most-upvoted' | 'squad-favorites' | 'trending';
-type FilterOption = 'all' | 'creators' | 'speakers' | 'raiders' | 'decoders' | 'approved' | 'pending' | 'rejected';
 
 export const SubmissionsGallery = ({ 
   bountyId, 
@@ -38,24 +24,16 @@ export const SubmissionsGallery = ({
 }: SubmissionsGalleryProps) => {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [searchTerm, setSearchTerm] = useState('');
-
-  useEffect(() => {
-    fetchSubmissions();
-  }, [bountyId]);
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   const fetchSubmissions = async () => {
     try {
       const response = await fetch('/api/submissions');
       if (response.ok) {
         const data = await response.json();
-        // Filter submissions for this specific bounty
-        const bountySubmissions = data.filter((sub: any) => 
-          sub.bountyId === bountyId || sub.courseRef?.includes(bountyId)
-        );
-        setSubmissions(bountySubmissions);
+        setSubmissions(data);
       }
     } catch (error) {
       console.error('Error fetching submissions:', error);
@@ -64,32 +42,32 @@ export const SubmissionsGallery = ({
     }
   };
 
-  const handleUpvote = (submissionId: string, emoji: string) => {
-    // Update local state optimistically
-    setSubmissions(prev => prev.map(sub => {
-      if (sub.id === submissionId) {
-        const newUpvotes = { ...sub.upvotes };
-        if (!newUpvotes[emoji]) newUpvotes[emoji] = [];
-        
-        const existingVoteIndex = newUpvotes[emoji].findIndex(vote => vote.userId === currentUserId);
-        if (existingVoteIndex !== -1) {
-          newUpvotes[emoji].splice(existingVoteIndex, 1);
-        } else {
-          newUpvotes[emoji].push({
-            userId: currentUserId!,
-            squad: currentUserSquad!,
-            timestamp: new Date().toISOString()
-          });
-        }
-        
-        const totalUpvotes = Object.values(newUpvotes).reduce((total: number, votes: any) => {
-          return total + votes.length;
-        }, 0);
-        
-        return { ...sub, upvotes: newUpvotes, totalUpvotes };
+  useEffect(() => {
+    fetchSubmissions();
+  }, [bountyId]);
+
+  const handleUpvote = async (submissionId: string, emoji: string) => {
+    try {
+      const response = await fetch('/api/submissions/upvote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          submissionId,
+          emoji,
+          walletAddress: currentUserId,
+          squad: currentUserSquad
+        }),
+      });
+
+      if (response.ok) {
+        // Refresh submissions to get updated data
+        await fetchSubmissions();
       }
-      return sub;
-    }));
+    } catch (error) {
+      console.error('Error upvoting:', error);
+    }
   };
 
   const sortSubmissions = (subs: Submission[]) => {
@@ -102,26 +80,23 @@ export const SubmissionsGallery = ({
         return [...subs].sort((a, b) => (b.totalUpvotes || 0) - (a.totalUpvotes || 0));
       case 'squad-favorites':
         return [...subs].sort((a, b) => {
-          const aStars = a.upvotes?.['⭐']?.length || 0;
-          const bStars = b.upvotes?.['⭐']?.length || 0;
-          return bStars - aStars;
+          const aSquadVotes = Object.values(a.upvotes || {}).flat().filter(vote => vote.squad === a.squad).length;
+          const bSquadVotes = Object.values(b.upvotes || {}).flat().filter(vote => vote.squad === b.squad).length;
+          return bSquadVotes - aSquadVotes;
         });
       case 'trending':
         return [...subs].sort((a, b) => {
-          // Calculate trending score based on recent upvotes
-          const aRecentUpvotes = Object.values(a.upvotes || {}).reduce((total: number, votes: any) => {
-            const recentVotes = votes.filter((vote: any) => 
-              new Date(vote.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-            );
-            return total + recentVotes.length;
-          }, 0);
-          const bRecentUpvotes = Object.values(b.upvotes || {}).reduce((total: number, votes: any) => {
-            const recentVotes = votes.filter((vote: any) => 
-              new Date(vote.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000)
-            );
-            return total + recentVotes.length;
-          }, 0);
-          return bRecentUpvotes - aRecentUpvotes;
+          const aRecentVotes = Object.values(a.upvotes || {}).flat().filter(vote => {
+            const voteTime = new Date(vote.timestamp).getTime();
+            const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+            return voteTime > oneDayAgo;
+          }).length;
+          const bRecentVotes = Object.values(b.upvotes || {}).flat().filter(vote => {
+            const voteTime = new Date(vote.timestamp).getTime();
+            const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+            return voteTime > oneDayAgo;
+          }).length;
+          return bRecentVotes - aRecentVotes;
         });
       default:
         return subs;
@@ -129,51 +104,84 @@ export const SubmissionsGallery = ({
   };
 
   const filterSubmissions = (subs: Submission[]) => {
-    return subs.filter(sub => {
-      const matchesSearch = searchTerm === '' || 
+    let filtered = subs;
+
+    if (searchTerm) {
+      filtered = filtered.filter(sub => 
         sub.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.description.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesFilter = filterBy === 'all' || 
-        (filterBy === 'approved' && sub.status === 'approved') ||
-        (filterBy === 'pending' && sub.status === 'pending') ||
-        (filterBy === 'rejected' && sub.status === 'rejected') ||
-        (filterBy === 'creators' && sub.squad === 'Creators') ||
-        (filterBy === 'speakers' && sub.squad === 'Speakers') ||
-        (filterBy === 'raiders' && sub.squad === 'Raiders') ||
-        (filterBy === 'decoders' && sub.squad === 'Decoders');
-      
-      return matchesSearch && matchesFilter;
-    });
+        sub.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.squad.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    switch (filterBy) {
+      case 'creators':
+        filtered = filtered.filter(sub => sub.squad === 'Creators');
+        break;
+      case 'speakers':
+        filtered = filtered.filter(sub => sub.squad === 'Speakers');
+        break;
+      case 'raiders':
+        filtered = filtered.filter(sub => sub.squad === 'Raiders');
+        break;
+      case 'decoders':
+        filtered = filtered.filter(sub => sub.squad === 'Decoders');
+        break;
+      case 'approved':
+        filtered = filtered.filter(sub => sub.status === 'approved');
+        break;
+      case 'pending':
+        filtered = filtered.filter(sub => sub.status === 'pending');
+        break;
+      case 'rejected':
+        filtered = filtered.filter(sub => sub.status === 'rejected');
+        break;
+    }
+
+    return filtered;
   };
 
-  const processedSubmissions = sortSubmissions(filterSubmissions(submissions));
-
-  const getStats = () => {
+  const getStats = (): SubmissionStats => {
     const totalSubmissions = submissions.length;
     const totalUpvotes = submissions.reduce((sum, sub) => sum + (sub.totalUpvotes || 0), 0);
-    const squadFavorites = submissions.filter(sub => 
-      (sub.upvotes?.['⭐']?.length || 0) >= 3
-    ).length;
+    const squadFavorites = submissions.filter(sub => {
+      const squadVotes = Object.values(sub.upvotes || {}).flat().filter(vote => vote.squad === sub.squad);
+      return squadVotes.length > 0;
+    }).length;
     const trendingSubmissions = submissions.filter(sub => {
-      const recentUpvotes = Object.values(sub.upvotes || {}).reduce((total: number, votes: any) => {
-        const recentVotes = votes.filter((vote: any) => 
-          new Date(vote.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000)
-        );
-        return total + recentVotes.length;
-      }, 0);
-      return recentUpvotes >= 5;
+      const recentVotes = Object.values(sub.upvotes || {}).flat().filter(vote => {
+        const voteTime = new Date(vote.timestamp).getTime();
+        const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+        return voteTime > oneDayAgo;
+      });
+      return recentVotes.length >= 3;
     }).length;
 
-    return { totalSubmissions, totalUpvotes, squadFavorites, trendingSubmissions };
+    return {
+      totalSubmissions,
+      totalUpvotes,
+      squadFavorites,
+      trendingSubmissions
+    };
   };
 
   const stats = getStats();
+  const processedSubmissions = sortSubmissions(filterSubmissions(submissions));
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 animate-pulse">
+              <div className="h-4 bg-gray-700 rounded mb-2"></div>
+              <div className="h-8 bg-gray-700 rounded"></div>
+            </div>
+          ))}
+        </div>
+        <div className="text-center py-12">
+          <div className="text-gray-400">Loading submissions...</div>
+        </div>
       </div>
     );
   }
@@ -265,7 +273,7 @@ export const SubmissionsGallery = ({
             <SubmissionCard
               key={submission.id}
               submission={submission}
-              currentUserId={currentUserId}
+              currentWalletAddress={currentUserId}
               currentUserSquad={currentUserSquad}
               onUpvote={handleUpvote}
             />

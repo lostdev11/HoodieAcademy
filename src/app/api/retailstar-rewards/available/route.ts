@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Only create client if environment variables are available
+const createSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase configuration is missing');
+  }
+  
+  return createClient(supabaseUrl, supabaseKey);
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +23,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Create Supabase client
+    const supabase = createSupabaseClient();
 
     // Get available rewards using the database function
     const { data: availableRewards, error } = await supabase.rpc('get_user_available_rewards', {

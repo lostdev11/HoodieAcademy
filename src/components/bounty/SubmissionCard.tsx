@@ -1,26 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Heart, Star, Trophy, Users, Calendar } from 'lucide-react';
-
-interface Submission {
-  id: string;
-  title: string;
-  description: string;
-  squad: string;
-  courseRef?: string;
-  timestamp: string;
-  status: 'pending' | 'approved' | 'rejected';
-  upvotes?: Record<string, Array<{ walletAddress: string; squad: string; timestamp: string }>>;
-  totalUpvotes?: number;
-  imageUrl?: string;
-  author?: string;
-  walletAddress?: string;
-}
+import { Trophy, Star, TrendingUp, Clock, Users } from 'lucide-react';
+import { Submission } from '@/types/submission';
 
 interface SubmissionCardProps {
   submission: Submission;
@@ -106,133 +91,111 @@ export const SubmissionCard = ({
     return upvotes[emoji].some(vote => vote.walletAddress === currentWalletAddress);
   };
 
-  const getSquadFavoriteCount = () => {
-    if (!upvotes['⭐']) return 0;
-    return upvotes['⭐'].length;
+  const getUpvoteCount = (emoji: string) => {
+    return upvotes[emoji]?.length || 0;
   };
 
   const isSquadFavorite = () => {
-    return getSquadFavoriteCount() >= 3; // Consider it a squad favorite if 3+ stars
+    if (!currentUserSquad) return false;
+    const squadVotes = Object.values(upvotes).flat().filter(vote => vote.squad === currentUserSquad);
+    return squadVotes.length > 0;
+  };
+
+  const isTrending = () => {
+    const recentVotes = Object.values(upvotes).flat().filter(vote => {
+      const voteTime = new Date(vote.timestamp).getTime();
+      const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+      return voteTime > oneDayAgo;
+    });
+    return recentVotes.length >= 3;
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${Math.floor(diffInHours)}h ago`;
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
+    return date.toLocaleDateString();
   };
 
   return (
-    <Card className="border border-indigo-500/30 bg-gray-800/50 hover:shadow-indigo-500/30 transition-all duration-300">
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
-              <AvatarImage src={submission.author ? `/api/avatar/${submission.author}` : undefined} />
-              <AvatarFallback className="bg-purple-600 text-white">
-                {submission.author ? submission.author.charAt(0).toUpperCase() : 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="text-lg font-semibold text-white">{submission.title}</h3>
-              <div className="flex items-center gap-2 mt-1">
-                {submission.squad && (
-                  <Badge className={`${getSquadColor(submission.squad)} text-xs`}>
-                    {submission.squad}
-                  </Badge>
-                )}
-                <Badge className={`${getStatusColor(submission.status)} text-xs`}>
-                  {submission.status}
-                </Badge>
-                {isSquadFavorite() && (
-                  <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs flex items-center gap-1">
-                    <Star className="w-3 h-3" />
-                    Squad Favorite
-                  </Badge>
-                )}
-              </div>
-            </div>
+    <Card className="bg-gray-800/50 border-gray-700 hover:border-gray-600 transition-colors">
+      <CardHeader>
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1">
+            <CardTitle className="text-white text-lg mb-2">{submission.title}</CardTitle>
+            <p className="text-gray-300 text-sm line-clamp-3">{submission.description}</p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-400">
-            <Calendar className="w-4 h-4" />
-            {new Date(submission.timestamp).toLocaleDateString()}
+          <div className="flex flex-col gap-2">
+            <Badge className={getSquadColor(submission.squad)}>
+              {submission.squad}
+            </Badge>
+            <Badge className={getStatusColor(submission.status)}>
+              {submission.status}
+            </Badge>
           </div>
         </div>
       </CardHeader>
-
-      <CardContent className="space-y-4">
-        {submission.imageUrl && (
-          <div className="rounded-lg overflow-hidden">
-            <img 
-              src={submission.imageUrl} 
-              alt={submission.title}
-              className="w-full h-48 object-cover"
-            />
+      
+      <CardContent>
+        {/* Stats Row */}
+        <div className="flex items-center gap-4 mb-4 text-sm text-gray-400">
+          <div className="flex items-center gap-1">
+            <Clock className="w-4 h-4" />
+            <span>{formatTimestamp(submission.timestamp)}</span>
           </div>
-        )}
-
-        <p className="text-gray-300 leading-relaxed">{submission.description}</p>
-
-        {submission.courseRef && (
-          <div className="text-sm text-purple-400">
-            📚 Related Course: {submission.courseRef}
-          </div>
-        )}
-
-        {/* Emoji Reactions */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm text-gray-400">
+          <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            <span>{totalUpvotes} reactions</span>
-            {getSquadFavoriteCount() > 0 && (
-              <span className="flex items-center gap-1 text-yellow-400">
-                <Star className="w-4 h-4" />
-                {getSquadFavoriteCount()} squad favorites
-              </span>
-            )}
+            <span>{submission.author || 'Anonymous'}</span>
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            {EMOJI_REACTIONS.map(({ emoji, label, color }) => {
-              const voteCount = upvotes[emoji]?.length || 0;
-              const isUpvoted = isUserUpvoted(emoji);
-              
-              return (
-                <Button
-                  key={emoji}
-                  variant="outline"
-                  size="sm"
-                  disabled={isLoading}
-                  onClick={() => handleUpvote(emoji)}
-                  className={`
-                    ${isUpvoted ? 'bg-purple-500/20 border-purple-500/50' : 'border-gray-600'}
-                    ${color} hover:bg-purple-500/20 transition-all duration-200
-                  `}
-                >
-                  <span className="text-lg mr-1">{emoji}</span>
-                  <span className="text-xs">{voteCount}</span>
-                </Button>
-              );
-            })}
-          </div>
+          {isSquadFavorite() && (
+            <div className="flex items-center gap-1 text-yellow-400">
+              <Star className="w-4 h-4" />
+              <span>Squad Favorite</span>
+            </div>
+          )}
+          {isTrending() && (
+            <div className="flex items-center gap-1 text-green-400">
+              <TrendingUp className="w-4 h-4" />
+              <span>Trending</span>
+            </div>
+          )}
         </div>
 
-        {/* Squad Breakdown */}
-        {Object.keys(upvotes).length > 0 && (
-          <div className="pt-3 border-t border-gray-700">
-            <h4 className="text-sm font-medium text-gray-400 mb-2">Squad Reactions:</h4>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(upvotes).map(([emoji, votes]) => {
-                const squadBreakdown = votes.reduce((acc: Record<string, number>, vote: any) => {
-                  acc[vote.squad] = (acc[vote.squad] || 0) + 1;
-                  return acc;
-                }, {});
+        {/* Upvote Reactions */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {EMOJI_REACTIONS.map(({ emoji, label, color }) => {
+            const count = getUpvoteCount(emoji);
+            const isUpvoted = isUserUpvoted(emoji);
+            
+            return (
+              <Button
+                key={emoji}
+                variant="outline"
+                size="sm"
+                onClick={() => handleUpvote(emoji)}
+                disabled={isLoading}
+                className={`border-gray-600 hover:border-gray-500 ${
+                  isUpvoted ? 'bg-gray-700 border-gray-500' : 'bg-gray-800'
+                }`}
+              >
+                <span className="text-lg mr-1">{emoji}</span>
+                <span className={`text-sm ${isUpvoted ? color : 'text-gray-400'}`}>
+                  {count}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
 
-                return (
-                  <div key={emoji} className="flex items-center gap-1 text-xs">
-                    <span>{emoji}</span>
-                    {Object.entries(squadBreakdown).map(([squad, count]) => (
-                      <Badge key={squad} className={`${getSquadColor(squad)} text-xs`}>
-                        {squad}: {count}
-                      </Badge>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
+        {/* Total Upvotes */}
+        {totalUpvotes > 0 && (
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <Trophy className="w-4 h-4 text-yellow-400" />
+            <span>{totalUpvotes} total reactions</span>
           </div>
         )}
       </CardContent>

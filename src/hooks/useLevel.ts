@@ -51,7 +51,7 @@ export const useLevel = (xp: number): LevelData => {
       unlocks,
       totalUnlocks,
       isMaxLevel,
-      nextLevel
+      nextLevel: nextLevel || undefined
     };
   }, [xp]);
 };

@@ -22,6 +22,7 @@ import {
 import TokenGate from "@/components/TokenGate";
 import { useUserXP } from '@/hooks/useUserXP';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
 
 interface Lesson {
   id: string;
@@ -270,24 +271,37 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {/* Video Player */}
-                    {currentLesson.video && (
-                      <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                        <video 
-                          controls 
-                          className="w-full h-full"
-                          poster="/images/video-placeholder.jpg"
-                        >
-                          <source src={currentLesson.video} type="video/mp4" />
-                          Your browser does not support the video tag.
-                        </video>
-                      </div>
-                    )}
+                                                              {/* Video Player */}
+                     {currentLesson.video && (
+                       <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                         <video 
+                           controls 
+                           className="w-full h-full"
+                           preload="metadata"
+                         >
+                           <source src={`${currentLesson.video}?v=${Date.now()}`} type="video/mp4" />
+                           Your browser does not support the video tag.
+                         </video>
+                       </div>
+                     )}
 
                     {/* Lesson Content */}
                     <div className="prose prose-invert max-w-none">
                       <div className="text-gray-300 leading-relaxed">
-                        {currentLesson.content}
+                        <ReactMarkdown 
+                          components={{
+                            h1: ({children}) => <h1 className="text-2xl font-bold text-cyan-400 mb-4">{children}</h1>,
+                            h2: ({children}) => <h2 className="text-xl font-semibold text-cyan-300 mb-3">{children}</h2>,
+                            h3: ({children}) => <h3 className="text-lg font-medium text-cyan-200 mb-2">{children}</h3>,
+                            p: ({children}) => <p className="mb-4 text-gray-300">{children}</p>,
+                            ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1">{children}</ul>,
+                            li: ({children}) => <li className="text-gray-300">{children}</li>,
+                            strong: ({children}) => <strong className="font-semibold text-cyan-200">{children}</strong>,
+                            hr: () => <hr className="border-cyan-500/30 my-6" />
+                          }}
+                        >
+                          {currentLesson.content}
+                        </ReactMarkdown>
                       </div>
                     </div>
 

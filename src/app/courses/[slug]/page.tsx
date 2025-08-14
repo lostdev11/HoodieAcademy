@@ -5,7 +5,7 @@ import CoursePageClient from './CoursePageClient';
 // Generate metadata for each course
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/courses/${params.slug}.json`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/courses/${params.slug}.json?v=${Date.now()}`);
     
     if (!response.ok) {
       return {
@@ -112,7 +112,7 @@ function generateStructuredData(course: any) {
 
 export default async function CoursePage({ params }: { params: { slug: string } }) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/courses/${params.slug}.json`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/courses/${params.slug}.json?v=${Date.now()}`);
     
     if (!response.ok) {
       notFound();
