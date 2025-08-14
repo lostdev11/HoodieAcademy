@@ -285,6 +285,13 @@ export default function TokenGate({ children }: TokenGateProps) {
 
   const connectWallet = async (providerName: WalletProvider) => {
     setError(null);
+    
+    // Guard against multiple simultaneous connections
+    if (isConnecting) {
+      console.log("⏳ Debug: Wallet is already connecting, skipping...");
+      return;
+    }
+    
     setIsConnecting(true);
     
     console.log("🔌 Debug: Starting wallet connection for provider:", providerName);
@@ -312,12 +319,6 @@ export default function TokenGate({ children }: TokenGateProps) {
     }
     
     try {
-      if (provider.isConnecting) {
-        console.log("⏳ Debug: Wallet is already connecting, skipping...");
-        setIsConnecting(false);
-        return;
-      }
-      
       console.log("🔗 Debug: Attempting to connect to wallet...");
       const response = await provider.connect();
       console.log("✅ Debug: Wallet connected successfully:", response.publicKey.toString());
