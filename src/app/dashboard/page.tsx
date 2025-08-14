@@ -110,6 +110,7 @@ export default function DashboardPage() {
   const [squadId, setSquadId] = useState<string | null>(null);
   const [completedCoursesCount, setCompletedCoursesCount] = useState(0);
   const [totalCoursesCount, setTotalCoursesCount] = useState(6);
+  const [userDisplayName, setUserDisplayName] = useState<string>("Hoodie Scholar");
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -188,6 +189,12 @@ export default function DashboardPage() {
     const savedProfileImage = typeof window !== 'undefined' ? localStorage.getItem('userProfileImage') : null;
     if (savedProfileImage) {
       setProfileImage(savedProfileImage);
+    }
+
+    // Load user display name
+    const savedDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
+    if (savedDisplayName) {
+      setUserDisplayName(savedDisplayName);
     }
 
     // Calculate completed courses count
@@ -305,64 +312,12 @@ export default function DashboardPage() {
                 
                 <div>
                   <h1 className="text-3xl font-bold text-cyan-400 drop-shadow-lg">Dashboard</h1>
-                  <p className="text-gray-200">Welcome back, Hoodie Scholar!</p>
+                  <p className="text-gray-200">Welcome back, {userDisplayName}!</p>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-sm text-gray-300">Current Time</div>
                 <div className="text-lg text-cyan-400 font-mono drop-shadow">{currentTime}</div>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="mt-2 text-xs border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/20 backdrop-blur-sm"
-                  onClick={() => {
-                    console.log('=== Dashboard Debug ===');
-                    console.log('realAnnouncements state:', realAnnouncements);
-                    console.log('localStorage announcements:', typeof window !== 'undefined' ? localStorage.getItem('announcements') : null);
-                    console.log('getActiveAnnouncements():', getActiveAnnouncements());
-                    console.log('======================');
-                  }}
-                >
-                  Debug Announcements
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="mt-2 text-xs border-green-500/50 text-green-400 hover:bg-green-500/20 backdrop-blur-sm"
-                  onClick={() => {
-                    // Create a test announcement
-                    const testAnnouncement = {
-                      id: Date.now().toString(),
-                      title: 'Test Announcement',
-                      content: 'This is a test announcement to debug the system.',
-                      type: 'info' as const,
-                      priority: 'medium' as const,
-                      startDate: new Date().toISOString().split('T')[0], // Today
-                      endDate: undefined,
-                      isActive: true,
-                      createdBy: 'Debug',
-                      createdAt: new Date().toISOString()
-                    };
-                    
-                    console.log('Creating test announcement:', testAnnouncement);
-                    
-                    // Add to localStorage directly
-                    const existingAnnouncements = JSON.parse((typeof window !== 'undefined' ? localStorage.getItem('announcements') : '[]') || '[]');
-                    existingAnnouncements.push(testAnnouncement);
-                    if (typeof window !== 'undefined') {
-                      localStorage.setItem('announcements', JSON.stringify(existingAnnouncements));
-                    }
-                    
-                    // Trigger the event
-                    if (typeof window !== 'undefined') {
-                      window.dispatchEvent(new CustomEvent('announcementsUpdated'));
-                    }
-                    
-                    console.log('Test announcement created and event dispatched');
-                  }}
-                >
-                  Create Test Announcement
-                </Button>
               </div>
             </div>
           </header>
