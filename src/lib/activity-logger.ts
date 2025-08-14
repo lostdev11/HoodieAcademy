@@ -103,16 +103,24 @@ export async function logCourseActivity(
   });
 }
 
+export type WalletLogMeta = {
+  provider?: string;
+  verification_result?: any;
+  reason?: string;                 // ✅ add this
+  [key: string]: unknown;          // optional: future-proof arbitrary fields
+};
+
+// ensure the function uses the widened type
 export async function logWalletConnection(
   wallet_address: string, 
-  connection_type: 'wallet_connect' | 'wallet_disconnect',
-  walletData: { provider?: string; verification_result?: any }
+  connection_type: 'wallet_connect' | 'wallet_disconnect' | 'nft_verification' | 'wallet_error',
+  meta: WalletLogMeta = {}
 ) {
   return logUserActivity({
     wallet_address,
     activity_type: connection_type,
-    wallet_data: walletData,
-    notes: `Wallet ${connection_type.replace('_', ' ')}`
+    wallet_data: meta,
+    notes: `Wallet ${connection_type.replace('_', ' ')}${meta.reason ? ` - ${meta.reason}` : ''}`
   });
 }
 
