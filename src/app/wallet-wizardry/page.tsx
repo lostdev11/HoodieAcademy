@@ -24,13 +24,6 @@ import { Syllabus } from "@/components/Syllabus";
 import { syllabusData } from "@/lib/syllabusData";
 import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
 
-declare global {
-  interface Window {
-    ethereum?: any; // or add a proper EthereumProvider type
-  }
-}
-export {};
-
 type WalletProviderOption = 'metamask' | 'phantom' | 'jup' | 'magic-eden'; 
 
 

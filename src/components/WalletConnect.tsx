@@ -5,12 +5,6 @@ import { Wallet } from 'lucide-react';
 
 import type { SolanaWallet } from '@/types/wallet';
 
-declare global {
-  interface Window {
-    solana?: SolanaWallet;
-  }
-}
-
 export default function WalletConnect() {
   const [isConnected, setIsConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);

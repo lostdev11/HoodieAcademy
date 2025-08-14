@@ -15,6 +15,7 @@ import { Connection } from '@solana/web3.js';
 import SquadBadge from '@/components/SquadBadge';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import PfpPicker from '@/components/profile/PfpPicker';
+import type { SolanaWallet } from '@/types/wallet';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {

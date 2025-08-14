@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { logUserActivity, logWalletConnection, logNftVerification } from '@/lib/activity-logger';
+import type { SolanaWallet } from '@/types/wallet';
 
 // Constants
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from '@/hooks/use-toast';
+import type { SolanaWallet } from '@/types/wallet';
 
 // Constants - same approach as TokenGate
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
@@ -73,13 +74,13 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
       setNfts([]);
     };
 
-    if (window.solana) {
+    if (window.solana?.on) {
       window.solana.on('connect', handleConnect);
       window.solana.on('disconnect', handleDisconnect);
     }
 
     return () => {
-      if (window.solana) {
+      if (window.solana?.removeListener) {
         window.solana.removeListener('connect', handleConnect);
         window.solana.removeListener('disconnect', handleDisconnect);
       }

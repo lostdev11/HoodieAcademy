@@ -33,6 +33,7 @@ import {
 import {
   Announcement, Event, getAnnouncements, getEvents
 } from '@/lib/utils';
+import type { SolanaWallet } from '@/types/wallet';
 
 interface AdminStats {
   totalUsers: number;

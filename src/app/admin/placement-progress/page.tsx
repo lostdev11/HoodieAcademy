@@ -12,6 +12,7 @@ import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { fetchUserByWallet } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
+import type { SolanaWallet } from "@/types/wallet";
 
 // PlacementProgress type (adjust fields as needed)
 interface PlacementProgress {

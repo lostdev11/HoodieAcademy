@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logCourseActivity, logWalletConnection } from '@/lib/activity-logger';
+import type { SolanaWallet } from '@/types/wallet';
 
 export function useWalletSupabase() {
   const [wallet, setWallet] = useState<string | null>(null);
