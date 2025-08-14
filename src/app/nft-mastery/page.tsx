@@ -230,6 +230,11 @@ export default function NftMasteryPage() {
         await solProvider.connect(); // Typed as Promise<void>
       }
 
+      if (!solProvider.publicKey) {
+        console.error('Solana wallet public key is null after connection');
+        return;
+      }
+
       const solAccount = solProvider.publicKey.toString(); // PublicKey is typed
       setAccount(solAccount);
 

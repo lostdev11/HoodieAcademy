@@ -569,6 +569,11 @@ export default function NftTradingPsychologyPage() {
           await provider.connect();
         }
         
+        if (!provider.publicKey) {
+          console.error('Solana wallet public key is null after connection');
+          return;
+        }
+        
         setWalletConnected(true);
         setWalletAddress(provider.publicKey.toString());
         

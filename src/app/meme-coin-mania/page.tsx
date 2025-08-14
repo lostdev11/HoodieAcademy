@@ -226,6 +226,11 @@ const MemeCoinManiaPage = () => {
         await solProvider.connect();
       }
 
+      if (!solProvider.publicKey) {
+        console.error('Solana wallet public key is null after connection');
+        return;
+      }
+
       const solAccount = solProvider.publicKey.toString();
       setAccount(solAccount);
 

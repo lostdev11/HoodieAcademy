@@ -184,6 +184,12 @@ export default function WalletWizardryPage() {
           }
 
           await solProvider.connect();
+          
+          if (!solProvider.publicKey) {
+            console.error('Solana wallet public key is null after connection');
+            return;
+          }
+          
           const solAccount = solProvider.publicKey.toString();
           setCourseAccount(solAccount);
           const solBalanceLamports = await solanaConnection.getBalance(new PublicKey(solAccount));
