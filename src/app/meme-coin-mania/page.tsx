@@ -23,11 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
 
-declare global {
-  interface Window {
-    solana?: any;
-  }
-}
+
 
 type WalletProviderOption = 'phantom';
 

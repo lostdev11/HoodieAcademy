@@ -24,11 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 
-declare global {
-  interface Window {
-    solana?: any;
-  }
-}
+
 
 interface SolanaProvider {
   isPhantom?: boolean;
