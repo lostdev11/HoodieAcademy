@@ -227,16 +227,19 @@ export default function CommunityStrategyPage() {
         case 'jup': 
         case 'magic-eden':
           let solProvider: SolanaWallet | undefined;
-           if (providerName === 'phantom') {
-            if (!(window.solana && window.solana.isPhantom)) {
+          const sol: SolanaWallet | undefined = 
+            typeof window !== 'undefined' ? window.solana : undefined;
+          
+          if (providerName === 'phantom') {
+            if (!(sol?.isPhantom)) {
               setWalletAlertConfig({ title: "Phantom Not Detected", description: "Please install Phantom wallet to continue." });
               setShowWalletAlert(true);
               return;
             }
-            solProvider = window.solana;
+            solProvider = sol;
           } else { 
-             if (window.solana && window.solana.isPhantom) solProvider = window.solana;
-             else if (window.solana) solProvider = window.solana;
+             if (sol?.isPhantom) solProvider = sol;
+             else if (sol) solProvider = sol;
              else {
                 setWalletAlertConfig({ title: "Solana Wallet Not Detected", description: `Please install a compatible Solana wallet (e.g., Phantom) for ${providerName}.` });
                 setShowWalletAlert(true);

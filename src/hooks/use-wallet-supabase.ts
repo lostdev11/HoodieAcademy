@@ -60,7 +60,10 @@ export function useWalletSupabase() {
 
   // Auto-connect on mount if already connected
   useEffect(() => {
-    if (window?.solana?.isConnected && window.solana.publicKey) {
+    const sol: SolanaWallet | undefined = 
+      typeof window !== 'undefined' ? window.solana : undefined;
+    
+    if (sol?.isConnected && sol.publicKey) {
       connectWallet();
     }
   }, [connectWallet]);

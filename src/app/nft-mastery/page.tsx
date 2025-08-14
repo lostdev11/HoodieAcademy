@@ -194,8 +194,11 @@ export default function NftMasteryPage() {
       let solProvider: ProviderLike | null = null;
       let walletName = providerName;
 
+      const sol: SolanaWallet | undefined = 
+        typeof window !== 'undefined' ? window.solana : undefined;
+      
       if (providerName === 'phantom') {
-        if (!(window.solana && window.solana.isPhantom)) {
+        if (!(sol?.isPhantom)) {
           setWalletAlertConfig({
             title: "Phantom Not Detected",
             description: "Please install Phantom wallet to view your NFT status. Download it from https://phantom.app.",
@@ -203,7 +206,7 @@ export default function NftMasteryPage() {
           setShowWalletAlert(true);
           return;
         }
-        solProvider = window.solana ?? null;
+        solProvider = sol ?? null;
       }
 
       if (!solProvider) {

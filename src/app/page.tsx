@@ -216,15 +216,22 @@ export default function HoodieAcademy() {
     }
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = async () => {
     // Clear wallet data from storage
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('connectedWallet');
     sessionStorage.removeItem('wifhoodie_verification_session');
     
-    // Disconnect from wallet providers
-    if (window.solana?.disconnect) {
-      window.solana.disconnect();
+    // Disconnect from wallet providers safely
+    const sol: SolanaWallet | undefined = 
+      typeof window !== 'undefined' ? window.solana : undefined;
+
+    try {
+      if (sol?.disconnect) {
+        await sol.disconnect();
+      }
+    } catch (e) {
+      console.error("disconnect error", e);
     }
     
     // Clear the wallet address state to trigger re-render

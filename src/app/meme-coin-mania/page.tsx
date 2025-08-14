@@ -196,8 +196,11 @@ const MemeCoinManiaPage = () => {
       let solProvider: SolanaWallet | undefined;
       let walletName = providerName;
 
+       const sol: SolanaWallet | undefined = 
+         typeof window !== 'undefined' ? window.solana : undefined;
+       
        if (providerName === 'phantom') {
-        if (!(window.solana && window.solana.isPhantom)) {
+        if (!(sol?.isPhantom)) {
           setWalletAlertConfig({
             title: "Phantom Not Detected",
             description: "Please install Phantom wallet to view your NFT status. Download it from https://phantom.app.",
@@ -205,7 +208,7 @@ const MemeCoinManiaPage = () => {
           setShowWalletAlert(true);
           return;
         }
-        solProvider = window.solana;
+        solProvider = sol;
       }
 
       if (!solProvider) {
