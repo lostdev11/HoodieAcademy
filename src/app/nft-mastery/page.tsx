@@ -25,8 +25,8 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import type { SolanaWallet } from '@/types/wallet';
 
-// make the local type match your global provider
-type SolanaProvider = SolanaWallet;
+// Unify provider type across the app
+type ProviderLike = SolanaWallet;
 type WalletProviderOption = 'phantom';
 
 interface QuizOption {
