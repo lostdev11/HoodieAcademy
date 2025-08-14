@@ -22,8 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
-
-
+import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
 
 type WalletProviderOption = 'phantom';
 
@@ -194,7 +193,7 @@ const MemeCoinManiaPage = () => {
     setConnectedWalletProvider(providerName);
 
     try {
-      let solProvider: any;
+      let solProvider: SolanaWallet | undefined;
       let walletName = providerName;
 
        if (providerName === 'phantom') {

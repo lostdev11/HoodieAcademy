@@ -16,11 +16,7 @@ interface TokenGateProps {
   children: React.ReactNode;
 }
 
-declare global {
-  interface Window {
-    solana?: any;
-  }
-}
+
 
 type WalletProvider = 'phantom';
 
@@ -292,7 +288,7 @@ export default function TokenGate({ children }: TokenGateProps) {
     
     console.log("🔌 Debug: Starting wallet connection for provider:", providerName);
     
-    let provider;
+    let provider: SolanaWallet | undefined;
     if (providerName === 'phantom') {
       if (window.solana?.isPhantom) {
         provider = window.solana;

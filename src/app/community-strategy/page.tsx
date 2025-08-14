@@ -23,6 +23,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
 
 interface PhantomResponse {
   publicKey: {
@@ -225,7 +226,7 @@ export default function CommunityStrategyPage() {
         case 'phantom':
         case 'jup': 
         case 'magic-eden':
-          let solProvider;
+          let solProvider: SolanaWallet | undefined;
            if (providerName === 'phantom') {
             if (!(window.solana && window.solana.isPhantom)) {
               setWalletAlertConfig({ title: "Phantom Not Detected", description: "Please install Phantom wallet to continue." });

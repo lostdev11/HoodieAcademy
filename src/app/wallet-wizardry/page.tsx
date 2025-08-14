@@ -22,13 +22,14 @@ import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Syllabus } from "@/components/Syllabus";
 import { syllabusData } from "@/lib/syllabusData";
+import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
 
 declare global {
   interface Window {
-    ethereum?: any;
-    solana?: any;
+    ethereum?: any; // or add a proper EthereumProvider type
   }
 }
+export {};
 
 type WalletProviderOption = 'metamask' | 'phantom' | 'jup' | 'magic-eden'; 
 
@@ -165,7 +166,7 @@ export default function WalletWizardryPage() {
         case 'phantom':
         case 'jup':
         case 'magic-eden':
-          let solProvider;
+          let solProvider: SolanaWallet | undefined;
           if (providerName === 'phantom') {
             if (!(window.solana && window.solana.isPhantom)) {
               setCourseWalletAlertConfig({ title: "Phantom Not Detected", description: "Please install Phantom wallet to continue." });

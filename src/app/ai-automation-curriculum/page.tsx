@@ -20,6 +20,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
 
 interface QuizOption {
   id: string;
@@ -608,7 +609,7 @@ export default function AiAutomationCurriculumPage() {
   const handleWalletConnection = async () => {
     try {
       if (typeof window !== 'undefined' && window.solana) {
-        const provider = window.solana;
+        const provider: SolanaWallet = window.solana;
         
         if (!provider.isConnected) {
           await provider.connect();
