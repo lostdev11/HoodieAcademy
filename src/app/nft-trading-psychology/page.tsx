@@ -23,15 +23,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import type { SolanaWallet } from '@/types/wallet';
 
-
-
-interface SolanaProvider {
-  isPhantom?: boolean;
-  isConnected: boolean;
-  connect(): Promise<void>;
-  publicKey: { toString(): string };
-}
+// make the local type match your global provider
+type SolanaProvider = SolanaWallet;
 
 type WalletProviderOption = 'phantom';
 

@@ -23,17 +23,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import type { SolanaWallet } from '@/types/wallet';
 
-
-
-// Interface for Solana wallet provider to fix type errors
-interface SolanaProvider {
-  isPhantom?: boolean;
-  isConnected: boolean;
-  connect(): Promise<void>;
-  publicKey: { toString(): string };
-}
-
+// make the local type match your global provider
+type SolanaProvider = SolanaWallet;
 type WalletProviderOption = 'phantom';
 
 interface QuizOption {
@@ -198,7 +191,7 @@ export default function NftMasteryPage() {
     setConnectedWalletProvider(providerName);
 
     try {
-      let solProvider: SolanaProvider | undefined;
+      let solProvider: ProviderLike | null = null;
       let walletName = providerName;
 
       if (providerName === 'phantom') {
@@ -210,7 +203,7 @@ export default function NftMasteryPage() {
           setShowWalletAlert(true);
           return;
         }
-        solProvider = window.solana;
+        solProvider = window.solana ?? null;
       }
 
       if (!solProvider) {
@@ -223,7 +216,8 @@ export default function NftMasteryPage() {
       }
 
       if (!solProvider.isConnected) {
-        await solProvider.connect(); // Typed as Promise<void>
+        // ignore return (fine)
+        await solProvider.connect();
       }
 
       if (!solProvider.publicKey) {
@@ -231,7 +225,7 @@ export default function NftMasteryPage() {
         return;
       }
 
-      const solAccount = solProvider.publicKey.toString(); // PublicKey is typed
+      const solAccount = solProvider.publicKey.toString();
       setAccount(solAccount);
 
       try {
