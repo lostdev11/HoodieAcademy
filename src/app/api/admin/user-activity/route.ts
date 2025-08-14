@@ -1,19 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+export const runtime = 'nodejs';        // keep secrets in Node, not Edge
+export const dynamic = 'force-dynamic'; // avoid static optimization
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Missing Supabase environment variables');
+function getSupabaseAdmin() {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!url || !key) {
+    throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  }
+  
+  return createClient(url, key, { 
+    auth: { persistSession: false } 
+  });
 }
-
-const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
 // Log user activity
 export async function POST(req: NextRequest) {
   try {
+    const supabase = getSupabaseAdmin();
     const body = await req.json();
     const { 
       wallet_address, 
@@ -96,6 +103,7 @@ export async function POST(req: NextRequest) {
 // Get user activity logs for admin dashboard
 export async function GET(req: NextRequest) {
   try {
+    const supabase = getSupabaseAdmin();
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
