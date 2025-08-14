@@ -112,15 +112,15 @@ export type WalletLogMeta = {
 
 // ensure the function uses the widened type
 export async function logWalletConnection(
-  wallet_address: string, 
-  connection_type: 'wallet_connect' | 'wallet_disconnect' | 'nft_verification' | 'wallet_error',
+  wallet: string,
+  event: 'wallet_connect' | 'wallet_disconnect' | 'nft_verification' | 'wallet_error',
   meta: WalletLogMeta = {}
 ) {
   return logUserActivity({
-    wallet_address,
-    activity_type: connection_type,
+    wallet_address: wallet,
+    activity_type: event,
     wallet_data: meta,
-    notes: `Wallet ${connection_type.replace('_', ' ')}${meta.reason ? ` - ${meta.reason}` : ''}`
+    notes: `Wallet ${event.replace('_', ' ')}${meta.reason ? ` - ${meta.reason}` : ''}`
   });
 }
 
