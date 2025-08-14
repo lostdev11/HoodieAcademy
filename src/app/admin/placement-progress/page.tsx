@@ -45,8 +45,11 @@ export default function PlacementProgressAdminPage() {
   // Get wallet address from Phantom/localStorage
   useEffect(() => {
     const getWallet = () => {
-      if (typeof window !== "undefined" && window.solana?.publicKey) {
-        const address = window.solana.publicKey.toString();
+      const sol: SolanaWallet | undefined = 
+        typeof window !== "undefined" ? window.solana : undefined;
+      
+      if (sol?.publicKey) {
+        const address = sol.publicKey.toString();
         setWalletAddress(address);
         return address;
       }

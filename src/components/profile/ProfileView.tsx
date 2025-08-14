@@ -128,8 +128,11 @@ export function ProfileView() {
     if (!wallet) return;
     
     const handleWalletConnect = () => {
-      if (window.solana?.isPhantom && window.solana.isConnected) {
-        const address = window.solana.publicKey?.toString();
+      const sol: SolanaWallet | undefined = 
+        typeof window !== 'undefined' ? window.solana : undefined;
+      
+      if (sol?.isPhantom && sol.isConnected) {
+        const address = sol.publicKey?.toString();
         if (address) {
           setWallet(address);
           console.debug("ProfileView: Wallet connected via window.solana:", address);
@@ -146,15 +149,18 @@ export function ProfileView() {
     handleWalletConnect();
 
     // Listen for wallet connection changes
-    if (window.solana) {
-      window.solana.on('connect', handleWalletConnect);
-      window.solana.on('disconnect', handleWalletDisconnect);
+    const sol: SolanaWallet | undefined = 
+      typeof window !== 'undefined' ? window.solana : undefined;
+
+    if (sol?.on) {
+      sol.on('connect', handleWalletConnect);
+      sol.on('disconnect', handleWalletDisconnect);
     }
 
     return () => {
-      if (window.solana) {
-        window.solana.removeListener('connect', handleWalletConnect);
-        window.solana.removeListener('disconnect', handleWalletDisconnect);
+      if (sol?.removeListener) {
+        sol.removeListener('connect', handleWalletConnect);
+        sol.removeListener('disconnect', handleWalletDisconnect);
       }
     };
   }, [wallet]); // keep deps minimal
@@ -257,7 +263,7 @@ export function ProfileView() {
     }
   };
 
-  const handleDisconnectWallet = () => {
+  const handleDisconnectWallet = async () => {
     setWallet('');
     setSolDomain(null);
     
@@ -266,9 +272,16 @@ export function ProfileView() {
     localStorage.removeItem('connectedWallet');
     sessionStorage.removeItem('wifhoodie_verification_session');
     
-    // Disconnect from wallet providers
-    if (window.solana?.disconnect) {
-      window.solana.disconnect();
+    // Disconnect from wallet providers safely
+    const sol: SolanaWallet | undefined = 
+      typeof window !== 'undefined' ? window.solana : undefined;
+
+    try {
+      if (sol?.disconnect) {
+        await sol.disconnect();
+      }
+    } catch (e) {
+      console.error("disconnect error", e);
     }
   };
 

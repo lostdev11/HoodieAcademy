@@ -257,7 +257,7 @@ export default function TokenGate({ children }: TokenGateProps) {
   //   checkAdminStatus();
   // }, [walletAddress]);
 
-  const disconnectWallet = () => {
+  const disconnectWallet = async () => {
     console.log("🔌 Debug: Disconnecting wallet:", walletAddress);
     
     // Log wallet disconnection
@@ -277,9 +277,16 @@ export default function TokenGate({ children }: TokenGateProps) {
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('connectedWallet');
     
-    // Disconnect from wallet providers
-    if (window.solana?.disconnect) {
-      window.solana.disconnect();
+    // Disconnect from wallet providers safely
+    const sol: SolanaWallet | undefined = 
+      typeof window !== 'undefined' ? window.solana : undefined;
+
+    try {
+      if (sol?.disconnect) {
+        await sol.disconnect();
+      }
+    } catch (e) {
+      console.error("disconnect error", e);
     }
   };
 

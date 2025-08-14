@@ -13,10 +13,13 @@ export default function WalletConnect() {
   useEffect(() => {
     // Try to auto-connect to previously authorized wallet
     const autoConnect = async () => {
-      if (typeof window !== 'undefined' && window.solana) {
+      const sol: SolanaWallet | undefined = 
+        typeof window !== 'undefined' ? window.solana : undefined;
+      
+      if (sol?.isPhantom) {
         try {
-          const res = await window.solana.connect({ onlyIfTrusted: true });
-          const addr = res?.publicKey?.toString?.() ?? window.solana.publicKey?.toString?.();
+          const res = await sol.connect({ onlyIfTrusted: true });
+          const addr = res?.publicKey?.toString?.() ?? sol.publicKey?.toString?.();
           if (addr) {
             setWalletAddress(addr);
             setIsConnected(true);
@@ -32,15 +35,18 @@ export default function WalletConnect() {
   }, []);
 
   const connectWallet = async () => {
-    if (typeof window === 'undefined' || !window.solana) {
+    const sol: SolanaWallet | undefined = 
+      typeof window !== 'undefined' ? window.solana : undefined;
+
+    if (!sol?.isPhantom) {
       alert('Please install Phantom wallet');
       return;
     }
 
     try {
       setIsConnecting(true);
-      const res = await window.solana.connect();
-      const addr = res?.publicKey?.toString?.() ?? window.solana.publicKey?.toString?.();
+      const res = await sol.connect();
+      const addr = res?.publicKey?.toString?.() ?? sol.publicKey?.toString?.();
       if (addr) {
         setWalletAddress(addr);
         setIsConnected(true);
@@ -52,9 +58,17 @@ export default function WalletConnect() {
     }
   };
 
-  const disconnectWallet = () => {
-    if (typeof window !== 'undefined' && window.solana) {
-      window.solana.disconnect();
+  const disconnectWallet = async () => {
+    const sol: SolanaWallet | undefined = 
+      typeof window !== 'undefined' ? window.solana : undefined;
+
+    try {
+      if (sol?.disconnect) {
+        await sol.disconnect();
+      }
+    } catch (e) {
+      console.error("disconnect error", e);
+    } finally {
       setIsConnected(false);
       setWalletAddress(null);
     }

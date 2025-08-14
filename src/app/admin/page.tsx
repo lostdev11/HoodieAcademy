@@ -95,8 +95,11 @@ export default function AdminDashboard() {
   // Get wallet address using your existing logic
   useEffect(() => {
     const getWalletAddress = () => {
-      if (typeof window !== 'undefined' && window.solana?.publicKey) {
-        const address = window.solana.publicKey.toString();
+      const sol: SolanaWallet | undefined = 
+        typeof window !== 'undefined' ? window.solana : undefined;
+      
+      if (sol?.publicKey) {
+        const address = sol.publicKey.toString();
         if (process.env.NODE_ENV === 'development') {
           console.log('🔍 Admin: Found wallet in window.solana:', address);
         }
