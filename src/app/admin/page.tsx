@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = "force-dynamic";
-
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +34,7 @@ import {
   Announcement, Event, getAnnouncements, getEvents
 } from '@/lib/utils';
 import type { SolanaWallet } from '@/types/wallet';
+import type { PhantomProvider } from '@/types/phantom';
 
 interface AdminStats {
   totalUsers: number;
@@ -97,16 +96,16 @@ export default function AdminDashboard() {
   // Get wallet address using your existing logic
   useEffect(() => {
     const getWalletAddress = () => {
-      const sol: SolanaWallet | undefined = 
-        typeof window !== 'undefined' ? window.solana : undefined;
+      const sol =
+        (typeof window !== 'undefined' ? window.solana : undefined) as PhantomProvider | undefined;
       
       if (sol?.publicKey) {
-        const address = sol.publicKey.toString();
+        const addr = sol.publicKey.toString(); // OK
         if (process.env.NODE_ENV === 'development') {
-          console.log('🔍 Admin: Found wallet in window.solana:', address);
+          console.log('🔍 Admin: Found wallet in window.solana:', addr);
         }
-        setWalletAddress(address);
-        return address;
+        setWalletAddress(addr);
+        return addr;
       }
       
       const storedWallet = localStorage.getItem('connectedWallet');
