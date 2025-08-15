@@ -98,11 +98,21 @@ export default function CoursesPage() {
 
   // Check admin status and load user data
   useEffect(() => {
+    console.log('🔍 Debug: Courses page useEffect starting...');
+    
+    // Add a timeout to force loading to complete after 3 seconds
+    const timeoutId = setTimeout(() => {
+      console.log('🔍 Debug: Timeout reached, forcing isLoading to false');
+      setIsLoading(false);
+    }, 3000);
+    
     const checkAdminStatus = async () => {
       try {
         const walletAddress = getConnectedWallet();
+        console.log('🔍 Debug: Wallet address:', walletAddress);
         if (walletAddress) {
           const user = await fetchUserByWallet(walletAddress);
+          console.log('🔍 Debug: User data:', user);
           setIsAdmin(user?.is_admin || false);
         }
       } catch (error) {
@@ -112,14 +122,19 @@ export default function CoursesPage() {
 
     const loadUserData = async () => {
       try {
+        console.log('🔍 Debug: Loading user data...');
+        
         // Load user squad from localStorage
         const savedSquad = localStorage.getItem('userSquad');
+        console.log('🔍 Debug: Saved squad:', savedSquad);
         if (savedSquad) {
           setUserSquad(savedSquad);
         }
 
         // Load course completion status
         const status: Record<string, { completed: boolean, progress: number }> = {};
+        console.log('🔍 Debug: Loading course completion status for', allCourses.length, 'courses');
+        
         allCourses.forEach(course => {
           if (course.localStorageKey) {
             const saved = localStorage.getItem(course.localStorageKey);
@@ -136,16 +151,24 @@ export default function CoursesPage() {
             }
           }
         });
+        
+        console.log('🔍 Debug: Course completion status:', status);
         setCourseCompletionStatus(status);
+        console.log('🔍 Debug: Setting isLoading to false');
+        clearTimeout(timeoutId);
         setIsLoading(false);
       } catch (error) {
         console.error('Error loading user data:', error);
+        console.log('🔍 Debug: Error occurred, setting isLoading to false');
+        clearTimeout(timeoutId);
         setIsLoading(false);
       }
     };
 
     checkAdminStatus();
     loadUserData();
+    
+    return () => clearTimeout(timeoutId);
   }, [userSquad, isAdmin]);
 
   // Log course browsing activity
@@ -289,6 +312,7 @@ export default function CoursesPage() {
   };
 
   if (isLoading) {
+    console.log('🔍 Debug: Showing loading state...');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <span className="text-cyan-400 text-2xl animate-pulse">Loading courses...</span>
