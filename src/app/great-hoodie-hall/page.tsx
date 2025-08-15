@@ -1,5 +1,5 @@
+'use client';
 export const dynamic = "force-static";
-"use client";
 import { useState, useEffect, useCallback } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import axios from "axios";
