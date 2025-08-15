@@ -1,9 +1,9 @@
 'use client';
 
-import type { SolanaWallet } from '../lib/phantom';
-import { getWallet, ensureConnected } from '../lib/phantom';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import type { SolanaWallet } from '@/lib/phantom';
+import { getWallet, ensureConnected } from '@/lib/phantom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useState } from 'react';
 
 export default function PfpPicker() {
@@ -23,7 +23,7 @@ export default function PfpPicker() {
     if (wallet) {
       // Check if already connected by looking at publicKey existence
       if (!wallet.publicKey) {
-        await ensureConnected(wallet);
+        await wallet.connect();
       }
       const addr = wallet.publicKey?.toString() ?? null;
       setWalletAddress(addr);
