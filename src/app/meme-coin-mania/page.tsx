@@ -218,7 +218,7 @@ const MemeCoinManiaPage = () => {
         return;
       }
 
-      if (!solProvider.isConnected) {
+      if (!solProvider?.publicKey) {
         await solProvider.connect();
       }
 
