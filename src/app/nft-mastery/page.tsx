@@ -194,8 +194,7 @@ export default function NftMasteryPage() {
       let solProvider: ProviderLike | null = null;
       let walletName = providerName;
 
-      const sol: SolanaWallet | undefined = 
-        typeof window !== 'undefined' ? window.solana : undefined;
+      const sol = typeof window !== 'undefined' ? window.solana : undefined;
       
       if (providerName === 'phantom') {
         if (!(sol?.isPhantom)) {

@@ -24,7 +24,6 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
 
 interface PhantomResponse {
   publicKey: {
@@ -227,9 +226,8 @@ export default function CommunityStrategyPage() {
         case 'phantom':
         case 'jup': 
         case 'magic-eden':
-          let solProvider: SolanaWallet | undefined;
-          const sol: SolanaWallet | undefined = 
-            typeof window !== 'undefined' ? window.solana : undefined;
+          let solProvider;
+          const sol = typeof window !== 'undefined' ? window.solana : undefined;
           
           if (providerName === 'phantom') {
             if (!(sol?.isPhantom)) {

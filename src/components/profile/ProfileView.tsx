@@ -128,8 +128,7 @@ export function ProfileView() {
     if (!wallet) return;
     
     const handleWalletConnect = () => {
-      const sol: SolanaWallet | undefined = 
-        typeof window !== 'undefined' ? window.solana : undefined;
+      const sol = typeof window !== 'undefined' ? window.solana : undefined;
       
       if (sol?.isPhantom && sol.isConnected) {
         const address = sol.publicKey?.toString();
@@ -149,8 +148,7 @@ export function ProfileView() {
     handleWalletConnect();
 
     // Listen for wallet connection changes
-    const sol: SolanaWallet | undefined = 
-      typeof window !== 'undefined' ? window.solana : undefined;
+    const sol = typeof window !== 'undefined' ? window.solana : undefined;
 
     if (sol?.on) {
       sol.on('connect', handleWalletConnect);
@@ -273,8 +271,7 @@ export function ProfileView() {
     sessionStorage.removeItem('wifhoodie_verification_session');
     
     // Disconnect from wallet providers safely
-    const sol: SolanaWallet | undefined = 
-      typeof window !== 'undefined' ? window.solana : undefined;
+    const sol = typeof window !== 'undefined' ? window.solana : undefined;
 
     try {
       if (sol?.disconnect) {

@@ -52,8 +52,7 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
   // Get wallet address from existing wallet connection
   useEffect(() => {
     const getWalletAddress = () => {
-      const sol: SolanaWallet | undefined = 
-        typeof window !== 'undefined' ? window.solana : undefined;
+      const sol = typeof window !== 'undefined' ? window.solana : undefined;
       
       if (sol?.isPhantom && sol.isConnected) {
         const address = sol.publicKey?.toString();
@@ -77,8 +76,7 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
       setNfts([]);
     };
 
-    const sol: SolanaWallet | undefined = 
-      typeof window !== 'undefined' ? window.solana : undefined;
+    const sol = typeof window !== 'undefined' ? window.solana : undefined;
 
     if (sol?.on) {
       sol.on('connect', handleConnect);

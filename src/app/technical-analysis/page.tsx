@@ -22,7 +22,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
-import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
 
 type WalletProviderOption = 'metamask' | 'phantom' | 'jup' | 'magic-eden';
 
@@ -227,9 +226,8 @@ export default function TechnicalAnalysisPage() {
         case 'phantom':
         case 'jup': 
         case 'magic-eden':
-          let solProvider: SolanaWallet | undefined;
-          const sol: SolanaWallet | undefined = 
-            typeof window !== 'undefined' ? window.solana : undefined;
+          let solProvider;
+          const sol = typeof window !== 'undefined' ? window.solana : undefined;
           
           if (providerName === 'phantom') {
             if (!(sol?.isPhantom)) {

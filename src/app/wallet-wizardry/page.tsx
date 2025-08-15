@@ -22,7 +22,7 @@ import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Syllabus } from "@/components/Syllabus";
 import { syllabusData } from "@/lib/syllabusData";
-import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
+
 
 type WalletProviderOption = 'metamask' | 'phantom' | 'jup' | 'magic-eden'; 
 
@@ -159,9 +159,9 @@ export default function WalletWizardryPage() {
         case 'phantom':
         case 'jup':
         case 'magic-eden':
-          let solProvider: SolanaWallet | undefined;
-          const sol: SolanaWallet | undefined = 
-            typeof window !== 'undefined' ? window.solana : undefined;
+          let walletName = providerName;
+          let solProvider;
+          const sol = typeof window !== 'undefined' ? window.solana : undefined;
           
           if (providerName === 'phantom') {
             if (!(sol?.isPhantom)) {

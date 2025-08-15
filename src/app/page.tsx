@@ -37,7 +37,6 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
 import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
-import type { SolanaWallet } from '@/types/wallet'
 
 
 
@@ -225,8 +224,7 @@ export default function HoodieAcademy() {
     sessionStorage.removeItem('wifhoodie_verification_session');
     
     // Disconnect from wallet providers safely
-    const sol: SolanaWallet | undefined = 
-      typeof window !== 'undefined' ? window.solana : undefined;
+    const sol = typeof window !== 'undefined' ? window.solana : undefined;
 
     try {
       if (sol?.disconnect) {

@@ -96,8 +96,7 @@ export default function AdminDashboard() {
   // Get wallet address using your existing logic
   useEffect(() => {
     const getWalletAddress = () => {
-      const sol =
-        (typeof window !== 'undefined' ? window.solana : undefined) as PhantomProvider | undefined;
+      const sol = typeof window !== 'undefined' ? window.solana : undefined;
       
       if (sol?.publicKey) {
         const addr = sol.publicKey.toString(); // OK

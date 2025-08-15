@@ -1,13 +1,12 @@
 "use client";
 // NFT verification enabled with proper API configuration
 import React from 'react';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Wallet } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { logUserActivity, logWalletConnection, logNftVerification } from '@/lib/activity-logger';
-import type { SolanaWallet } from '@/types/wallet';
 
 // Constants
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
@@ -278,8 +277,7 @@ export default function TokenGate({ children }: TokenGateProps) {
     localStorage.removeItem('connectedWallet');
     
     // Disconnect from wallet providers safely
-    const sol: SolanaWallet | undefined = 
-      typeof window !== 'undefined' ? window.solana : undefined;
+    const sol = typeof window !== 'undefined' ? window.solana : undefined;
 
     try {
       if (sol?.disconnect) {
@@ -303,7 +301,7 @@ export default function TokenGate({ children }: TokenGateProps) {
     
     console.log("🔌 Debug: Starting wallet connection for provider:", providerName);
     
-    let provider: SolanaWallet | undefined;
+    let provider;
     if (providerName === 'phantom') {
       if (window.solana?.isPhantom) {
         provider = window.solana;

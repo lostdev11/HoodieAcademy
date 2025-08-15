@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Wallet } from 'lucide-react';
 
-import type { SolanaWallet } from '@/types/wallet';
-
 export default function WalletConnect() {
   const [isConnected, setIsConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -13,8 +11,7 @@ export default function WalletConnect() {
   useEffect(() => {
     // Try to auto-connect to previously authorized wallet
     const autoConnect = async () => {
-      const sol: SolanaWallet | undefined = 
-        typeof window !== 'undefined' ? window.solana : undefined;
+      const sol = typeof window !== 'undefined' ? window.solana : undefined;
       
       if (sol?.isPhantom) {
         try {
@@ -35,8 +32,7 @@ export default function WalletConnect() {
   }, []);
 
   const connectWallet = async () => {
-    const sol: SolanaWallet | undefined = 
-      typeof window !== 'undefined' ? window.solana : undefined;
+    const sol = typeof window !== 'undefined' ? window.solana : undefined;
 
     if (!sol?.isPhantom) {
       alert('Please install Phantom wallet');
@@ -59,8 +55,7 @@ export default function WalletConnect() {
   };
 
   const disconnectWallet = async () => {
-    const sol: SolanaWallet | undefined = 
-      typeof window !== 'undefined' ? window.solana : undefined;
+    const sol = typeof window !== 'undefined' ? window.solana : undefined;
 
     try {
       if (sol?.disconnect) {
