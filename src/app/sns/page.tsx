@@ -1,5 +1,7 @@
 'use client';
-      import { useState, useEffect } from "react";
+export const dynamic = "force-static";
+
+import { useState, useEffect } from "react";
       import TokenGate from "@/components/TokenGate";
       import { Button } from "@/components/ui/button";
       import Link from "next/link";

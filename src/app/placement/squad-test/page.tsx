@@ -1,5 +1,3 @@
-export const dynamic = "force-static";
-
 'use client';
 
 import { useState, useEffect } from 'react';
