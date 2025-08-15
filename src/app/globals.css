@@ -183,4 +183,11 @@
    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--primary));
   }
+
+  /* Safe area padding for modern devices */
+  .safe-padding {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
 }
