@@ -1,9 +1,9 @@
 'use client';
 
-import type { SolanaWallet } from '@/lib/phantom';
-import { getWallet, ensureConnected } from '@/lib/phantom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { SolanaWallet } from '../lib/phantom';
+import { getWallet, ensureConnected } from '../lib/phantom';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { useState } from 'react';
 
 export default function PfpPicker() {

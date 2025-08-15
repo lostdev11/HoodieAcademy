@@ -1,21 +1,11 @@
-// src/types/phantom.d.ts
-import type { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
-
-export interface PhantomProvider {
+export type PhantomProvider = {
   isPhantom?: boolean;
-  publicKey?: PublicKey | null;
-  connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: PublicKey }>;
+  publicKey?: { toString(): string } | null;
+  connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString(): string } }>;
   disconnect: () => Promise<void>;
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  signTransaction?: (tx: Transaction | VersionedTransaction) => Promise<Transaction | VersionedTransaction>;
-  signAllTransactions?: (txs: (Transaction | VersionedTransaction)[]) => Promise<(Transaction | VersionedTransaction)[]>;
-  signAndSendTransaction?: (
-    tx: Transaction | VersionedTransaction,
-    opts?: { preflightCommitment?: string }
-  ) => Promise<{ signature: string }>;
-  on?: (event: string, handler: (...args: any[]) => void) => void;
-  off?: (event: string, handler: (...args: any[]) => void) => void;
-}
+  request?: (args: { method: string; params?: any }) => Promise<any>;
+  on?: (event: 'connect' | 'disconnect' | 'accountChanged', handler: (...args: any[]) => void) => void;
+};
 
 declare global {
   interface Window {
@@ -23,4 +13,4 @@ declare global {
   }
 }
 
-export type SolanaWallet = PhantomProvider; // optional alias
+export {};
