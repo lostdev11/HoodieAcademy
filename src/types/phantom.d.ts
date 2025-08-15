@@ -12,5 +12,4 @@ declare global {
     solana?: PhantomProvider;
   }
 }
-
 export {};
