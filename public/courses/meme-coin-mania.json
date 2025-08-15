@@ -1,0 +1,55 @@
+{
+  "id": "meme-coin-mania",
+  "title": "Meme Coin Mania",
+  "description": "Analyze meme coin trends via X data, build a mock portfolio, and learn to navigate hype with live price tracking and interactive quizzes.",
+  "badge": "Moon Merchant",
+  "emoji": "💰",
+  "pathType": "social",
+  "href": "/courses/meme-coin-mania",
+  "localStorageKey": "memeCoinManiaProgress",
+  "totalLessons": 4,
+  "squad": "Raiders",
+  "category": "trading",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Understanding Meme Coins",
+      "description": "Learn the basics of meme coins and their unique characteristics",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What are Meme Coins?",
+          "content": "Meme coins are cryptocurrencies that are inspired by internet memes, jokes, or popular culture. They often start as jokes but can gain significant value through community support.\n\n**Key Characteristics:**\n• **Community-Driven**: Success depends on social media hype\n• **High Volatility**: Prices can swing dramatically\n• **Low Market Cap**: Often start with small market caps\n• **Viral Potential**: Can explode overnight\n\n**Popular Examples:**\n• Dogecoin (DOGE)\n• Shiba Inu (SHIB)\n• Pepe (PEPE)\n• Floki Inu (FLOKI)\n\n**Risk Factors:**\n• No intrinsic value\n• Highly speculative\n• Can lose value quickly\n• Often pump and dump schemes",
+          "video": "/videos/meme-coins-intro.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "The Psychology of Meme Coins",
+          "content": "**FOMO (Fear of Missing Out)**:\n• People buy because others are buying\n• Fear of missing the next big thing\n• Social proof drives decisions\n\n**Herd Mentality**:\n• People follow the crowd\n• Groupthink can override logic\n• Momentum builds on itself\n\n**Confirmation Bias**:\n• People see what they want to see\n• Ignore negative information\n• Focus on success stories\n\n**Understanding the Hype Cycle**:\n1. **Discovery**: Early adopters find the coin\n2. **Growth**: Social media spreads awareness\n3. **Peak**: Maximum hype and FOMO\n4. **Decline**: Reality sets in\n5. **Bottom**: Price stabilizes or crashes",
+          "video": "/videos/meme-psychology.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Analyzing Meme Coin Trends",
+      "description": "Learn to identify trends and patterns in meme coin markets",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Social Media Analysis",
+          "content": "**Key Platforms to Monitor**:\n• Twitter/X: Real-time sentiment\n• Reddit: Community discussions\n• TikTok: Viral content\n• Discord: Community coordination\n\n**Metrics to Track**:\n• Mention volume and frequency\n• Sentiment analysis\n• Influencer endorsements\n• Hashtag trends\n• Community growth rate\n\n**Tools and Resources**:\n• Social listening platforms\n• Sentiment analysis tools\n• Trend tracking websites\n• Community monitoring bots\n\n**Red Flags to Watch**:\n• Artificial hype creation\n• Bot activity\n• Coordinated pump schemes\n• Fake news and rumors",
+          "video": "/videos/social-analysis.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Technical Analysis Basics",
+          "content": "**Price Action Patterns**:\n• Breakouts and breakdowns\n• Support and resistance levels\n• Volume analysis\n• Price consolidation\n\n**Indicators for Meme Coins**:\n• Relative Strength Index (RSI)\n• Moving averages\n• Volume indicators\n• Social sentiment correlation\n\n**Risk Management**:\n• Set stop losses\n• Don't invest more than you can afford to lose\n• Diversify your portfolio\n• Take profits regularly\n\n**Entry and Exit Strategies**:\n• Buy on dips, not peaks\n• Have a clear exit plan\n• Don't try to catch the exact bottom or top\n• Use dollar-cost averaging",
+          "video": "/videos/technical-analysis.mp4"
+        }
+      ]
+    }
+  ]
+} 

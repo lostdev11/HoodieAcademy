@@ -1,0 +1,100 @@
+{
+  "id": "t100-chart-literacy",
+  "title": "T100 – From Lines to Candles: Chart Literacy 101",
+  "description": "Master the fundamentals of chart reading and technical analysis. Learn to interpret candlestick patterns and identify market trends.",
+  "badge": "Chart Reader",
+  "emoji": "📊",
+  "pathType": "tech",
+  "href": "/courses/t100-chart-literacy",
+  "localStorageKey": "t100ChartLiteracyProgress",
+  "totalLessons": 5,
+  "squad": "Decoders",
+  "category": "technical-analysis",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Lines vs Candles",
+      "description": "Understand the difference between line charts and candlestick charts. Why candles reveal more information.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Chart Types Explained",
+          "content": "**Line Charts vs Candlestick Charts**\n\n**Line Charts:**\n• Simple price representation\n• Shows closing prices over time\n• Easy to read and understand\n• Good for long-term trends\n• Limited information density\n\n**Candlestick Charts:**\n• Rich price information\n• Shows open, high, low, close (OHLC)\n• Reveals market sentiment\n• Better for short-term analysis\n• More complex but more informative\n\n**Why Candles Matter:**\n• **Price Action**: Shows how price moved during the period\n• **Market Sentiment**: Reveals buyer vs seller dominance\n• **Volatility**: Shows the range of price movement\n• **Pattern Recognition**: Enables technical analysis\n• **Decision Making**: Better data for trading decisions\n\n**Key Differences:**\n• **Line Charts**: Only closing prices\n• **Candles**: Full price range for each period\n• **Information**: Candles show 4x more data\n• **Analysis**: Candles enable pattern recognition\n• **Trading**: Candles better for entry/exit timing\n\n**When to Use Each:**\n• **Line Charts**: Long-term trend analysis\n• **Candles**: Short-term trading decisions\n• **Line Charts**: Simple price tracking\n• **Candles**: Technical analysis and patterns",
+          "video": "/videos/lines-vs-candles.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Candle Anatomy",
+      "description": "Open, Close, High, Low – the four points of a candle and how to read their meaning.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Understanding OHLC",
+          "content": "**OHLC = Open, High, Low, Close**\n\n**The Four Points of a Candle:**\n\n**Open (O):**\n• Price when the period started\n• Top of body for bearish candles\n• Bottom of body for bullish candles\n• Shows where trading began\n\n**High (H):**\n• Highest price reached during period\n• Top of the upper wick/shadow\n• Shows maximum buying pressure\n• Indicates resistance level\n\n**Low (L):**\n• Lowest price reached during period\n• Bottom of the lower wick/shadow\n• Shows maximum selling pressure\n• Indicates support level\n\n**Close (C):**\n• Price when the period ended\n• Bottom of body for bearish candles\n• Top of body for bullish candles\n• Most important price point\n\n**Candle Body:**\n• **Bullish (Green)**: Close > Open\n• **Bearish (Red)**: Close < Open\n• **Doji**: Close ≈ Open (neutral)\n• **Body Size**: Shows conviction\n\n**Candle Wicks/Shadows:**\n• **Upper Wick**: High to body\n• **Lower Wick**: Low to body\n• **Long Wicks**: High volatility\n• **Short Wicks**: Low volatility",
+          "video": "/videos/candle-anatomy.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Reading Candle Patterns",
+          "content": "**Common Candle Patterns:**\n\n**Bullish Patterns:**\n• **Hammer**: Long lower wick, small body\n• **Doji**: Open and close are equal\n• **Engulfing**: Current candle engulfs previous\n• **Morning Star**: Three-candle reversal pattern\n\n**Bearish Patterns:**\n• **Shooting Star**: Long upper wick, small body\n• **Hanging Man**: Similar to hammer but bearish\n• **Evening Star**: Three-candle reversal pattern\n• **Dark Cloud Cover**: Bearish engulfing pattern\n\n**Neutral Patterns:**\n• **Doji**: Open equals close\n• **Spinning Top**: Small body, long wicks\n• **High Wave**: Very long wicks, small body\n\n**What to Look For:**\n• **Body Size**: Large body = strong move\n• **Wick Length**: Long wicks = rejection\n• **Color**: Green = bullish, Red = bearish\n• **Position**: Where in the trend?\n• **Volume**: Confirms the pattern\n\n**Pro Tips:**\n• Don't trade patterns in isolation\n• Consider the overall trend\n• Look for confirmation signals\n• Use multiple timeframes\n• Practice pattern recognition",
+          "video": "/videos/candle-patterns.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "What Is a Trend?",
+      "description": "Higher highs, lower lows, and sideways action. Learn how to spot trend direction and exhaustion.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Trend Basics",
+          "content": "**What is a Trend?**\nA trend is the general direction in which a market is moving over time.\n\n**Three Types of Trends:**\n\n**1. Uptrend (Bullish):**\n• **Higher Highs**: Each peak is higher than the last\n• **Higher Lows**: Each trough is higher than the last\n• **Price Action**: Generally moving upward\n• **Momentum**: Strong buying pressure\n• **Psychology**: Optimistic market sentiment\n\n**2. Downtrend (Bearish):**\n• **Lower Highs**: Each peak is lower than the last\n• **Lower Lows**: Each trough is lower than the last\n• **Price Action**: Generally moving downward\n• **Momentum**: Strong selling pressure\n• **Psychology**: Pessimistic market sentiment\n\n**3. Sideways (Consolidation):**\n• **No Clear Direction**: Price moves sideways\n• **Range-Bound**: Price stays within a range\n• **Low Volatility**: Minimal price movement\n• **Accumulation/Distribution**: Smart money positioning\n• **Breakout Potential**: Often precedes big moves\n\n**Trend Characteristics:**\n• **Duration**: Short-term, medium-term, long-term\n• **Strength**: Strong, weak, or neutral\n• **Momentum**: Accelerating or decelerating\n• **Volume**: Confirms trend strength\n• **Support/Resistance**: Key levels to watch",
+          "video": "/videos/trend-basics.mp4"
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Trend Analysis Techniques",
+          "content": "**How to Identify Trends:**\n\n**Visual Analysis:**\n• **Higher Highs/Lows**: Draw lines connecting peaks/troughs\n• **Price Action**: Overall direction of movement\n• **Candle Patterns**: Bullish vs bearish candles\n• **Volume**: Confirms trend strength\n• **Momentum**: Rate of price change\n\n**Technical Tools:**\n• **Moving Averages**: Price relative to MA\n• **Trend Lines**: Connect highs or lows\n• **Support/Resistance**: Key price levels\n• **RSI**: Momentum indicator\n• **MACD**: Trend following indicator\n\n**Trend Exhaustion Signs:**\n• **Divergence**: Price vs indicator disagreement\n• **Volume Decline**: Less participation\n• **Pattern Completion**: Technical patterns finish\n• **Overbought/Oversold**: Extreme readings\n• **Parabolic Moves**: Unsustainable acceleration\n\n**Trend Reversal Signals:**\n• **Break of Trend Line**: Price breaks support/resistance\n• **Pattern Completion**: Reversal patterns finish\n• **Volume Spike**: High volume on break\n• **Momentum Shift**: Indicators change direction\n• **News/Events**: Fundamental catalysts\n\n**Pro Tips:**\n• Always trade with the trend\n• Don't fight the trend\n• Use multiple timeframes\n• Wait for confirmation\n• Manage your risk",
+          "video": "/videos/trend-analysis.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-4",
+      "title": "Chart Tools 101",
+      "description": "How to use TradingView, Coinhall, and DexScreener to switch chart modes and start drawing basic lines.",
+      "lessons": [
+        {
+          "id": "lesson-4-1",
+          "title": "Popular Charting Platforms",
+          "content": "**TradingView:**\n• **Best For**: Professional charting and analysis\n• **Features**: Advanced tools, indicators, drawing tools\n• **Charts**: Multiple timeframes, chart types\n• **Social**: Community ideas and analysis\n• **Cost**: Free with premium options\n\n**Coinhall:**\n• **Best For**: Solana ecosystem trading\n• **Features**: Real-time Solana data\n• **Charts**: Basic but functional\n• **Data**: Accurate Solana price feeds\n• **Cost**: Free\n\n**DexScreener:**\n• **Best For**: DeFi token analysis\n• **Features**: Multi-chain support\n• **Charts**: Real-time DEX data\n• **Data**: Live trading data\n• **Cost**: Free\n\n**Key Features to Master:**\n• **Chart Types**: Line, candlestick, bar charts\n• **Timeframes**: 1m, 5m, 15m, 1h, 4h, 1d, 1w\n• **Drawing Tools**: Trend lines, support/resistance\n• **Indicators**: RSI, MACD, moving averages\n• **Settings**: Customize appearance and data\n\n**Getting Started:**\n• Create free accounts\n• Practice with demo charts\n• Learn keyboard shortcuts\n• Save your favorite setups\n• Join community discussions",
+          "video": "/videos/chart-tools-overview.mp4"
+        },
+        {
+          "id": "lesson-4-2",
+          "title": "Drawing Basic Lines",
+          "content": "**Essential Drawing Tools:**\n\n**Trend Lines:**\n• **Uptrend**: Connect higher lows\n• **Downtrend**: Connect lower highs\n• **Horizontal**: Connect equal highs/lows\n• **Use**: Identify trend direction and support/resistance\n\n**Support and Resistance:**\n• **Support**: Price level where buying occurs\n• **Resistance**: Price level where selling occurs\n• **Drawing**: Connect multiple touches of same level\n• **Use**: Identify key price levels\n\n**Fibonacci Retracements:**\n• **Tool**: Automatic retracement levels\n• **Levels**: 23.6%, 38.2%, 50%, 61.8%\n• **Use**: Predict pullback targets\n• **Application**: Draw from swing high to low\n\n**Channels:**\n• **Parallel Lines**: Upper and lower boundaries\n• **Ascending**: Higher highs and higher lows\n• **Descending**: Lower highs and lower lows\n• **Use**: Identify trading ranges\n\n**Pro Tips:**\n• Keep lines simple and clean\n• Don't force lines to fit\n• Use multiple timeframes\n• Confirm with volume\n• Practice regularly\n\n**Common Mistakes:**\n• Too many lines on chart\n• Forcing lines through data\n• Ignoring volume\n• Not updating lines\n• Overcomplicating analysis",
+          "video": "/videos/drawing-lines.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-5",
+      "title": "Assignment",
+      "description": "Open any chart and draw two trend lines. Post a screenshot with your interpretation in the Decoder thread.",
+      "lessons": [
+        {
+          "id": "lesson-5-1",
+          "title": "Chart Analysis Assignment",
+          "content": "**🎯 Assignment: Draw Your First Trend Lines**\n\n**Objective:**\nApply your chart literacy skills by drawing trend lines on a real chart and interpreting the market structure.\n\n**Requirements:**\n• Choose any cryptocurrency chart\n• Draw at least two trend lines\n• Take a screenshot of your analysis\n• Write your interpretation\n• Share in the Decoder Discord thread\n\n**Step-by-Step Instructions:**\n\n**1. Choose Your Chart**\n• Pick any crypto: Bitcoin, Ethereum, SOL, etc.\n• Use TradingView, Coinhall, or DexScreener\n• Select a 1-hour or 4-hour timeframe\n• Look for clear trend direction\n• Choose a chart with good price action\n\n**2. Identify Key Levels**\n• Look for swing highs and swing lows\n• Find areas where price bounced multiple times\n• Identify the overall trend direction\n• Note any obvious support/resistance levels\n• Consider recent price action\n\n**3. Draw Your Trend Lines**\n• **Uptrend Line**: Connect higher lows\n• **Downtrend Line**: Connect lower highs\n• **Support Line**: Connect equal lows\n• **Resistance Line**: Connect equal highs\n• Make sure lines touch multiple points\n\n**4. Analyze the Chart**\n• What is the overall trend?\n• Where are the key support/resistance levels?\n• What does the price action tell you?\n• Are there any patterns forming?\n• What might happen next?\n\n**5. Document Your Analysis**\n• Take a clear screenshot\n• Label your trend lines\n• Write 2-3 sentences about your interpretation\n• Include your prediction for next move\n• Note any concerns or questions\n\n**6. Share with Community**\n• Post screenshot in Decoder Discord\n• Include your written analysis\n• Engage with other students' posts\n• Ask questions about their analysis\n• Learn from different perspectives\n\n**Success Criteria:**\n✅ Drew at least 2 trend lines\n✅ Used real market data\n✅ Wrote clear interpretation\n✅ Shared with community\n✅ Learned from others\n\n**Bonus Challenges:**\n• Try different timeframes\n• Draw Fibonacci retracements\n• Identify candlestick patterns\n• Use multiple indicators\n• Track your prediction accuracy",
+          "video": "/videos/assignment-guide.mp4"
+        }
+      ]
+    }
+  ]
+} 

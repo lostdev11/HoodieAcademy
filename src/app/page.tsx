@@ -37,6 +37,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
 import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
+import type { SolanaWallet } from '@/types/wallet'
 
 
 
@@ -217,15 +218,22 @@ export default function HoodieAcademy() {
     }
   };
 
-  const handleDisconnect = () => {
+  const handleDisconnect = async () => {
     // Clear wallet data from storage
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('connectedWallet');
     sessionStorage.removeItem('wifhoodie_verification_session');
     
-    // Disconnect from wallet providers
-    if (window.solana?.disconnect) {
-      window.solana.disconnect();
+    // Disconnect from wallet providers safely
+    const sol: SolanaWallet | undefined = 
+      typeof window !== 'undefined' ? window.solana : undefined;
+
+    try {
+      if (sol?.disconnect) {
+        await sol.disconnect();
+      }
+    } catch (e) {
+      console.error("disconnect error", e);
     }
     
     // Clear the wallet address state to trigger re-render
@@ -248,7 +256,19 @@ export default function HoodieAcademy() {
 
   return (
     <TokenGate>
-      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="flex min-h-screen relative">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 -z-10 bg-cover bg-center bg-fixed"
+          style={{
+            backgroundImage: "url('/images/library-background.png')",
+          }}
+        />
+        
+        {/* Background Overlay */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-900/80 via-purple-900/70 to-slate-900/80" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_60%_at_50%_20%,rgba(139,92,246,0.15),transparent)]" />
+        
         {/* Sidebar */}
         <DashboardSidebar 
           isCollapsed={sidebarCollapsed} 
@@ -258,12 +278,12 @@ export default function HoodieAcademy() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
+          <header className="bg-slate-800/40 backdrop-blur-md border-b border-cyan-500/40 p-6 shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-cyan-400">Welcome to Hoodie Academy</h1>
-                  <p className="text-gray-300">Your Web3 learning journey starts here!</p>
+                  <h1 className="text-3xl font-bold text-cyan-400 drop-shadow-lg">Welcome to Hoodie Academy</h1>
+                  <p className="text-gray-200">Your Web3 learning journey starts here!</p>
                 </div>
                 
                 {/* Squad Badge */}
@@ -276,13 +296,13 @@ export default function HoodieAcademy() {
               <div className="flex items-center space-x-4">
                 {/* Wallet Info */}
                 {walletAddress && (
-                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30">
+                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/50 backdrop-blur-sm">
                     <User className="w-4 h-4 text-cyan-400" />
                     <span className="text-sm text-cyan-400 font-mono">
                       {formatWalletAddress(walletAddress)}
                     </span>
                     {isDemoWallet && (
-                      <Badge variant="outline" className="ml-2 text-yellow-400 border-yellow-500/30 text-xs">
+                      <Badge variant="outline" className="ml-2 text-yellow-400 border-yellow-500/50 text-xs bg-yellow-500/20">
                         DEMO
                       </Badge>
                     )}
@@ -294,7 +314,7 @@ export default function HoodieAcademy() {
                   onClick={handleDisconnect}
                   variant="outline"
                   size="sm"
-                  className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
+                  className="text-red-400 border-red-500/50 hover:bg-red-500/10 hover:text-red-300 backdrop-blur-sm"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Disconnect
@@ -302,8 +322,8 @@ export default function HoodieAcademy() {
                 
                 {/* Time */}
                 <div className="text-right">
-                  <div className="text-sm text-gray-400">Current Time</div>
-                  <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
+                  <div className="text-sm text-gray-300">Current Time</div>
+                  <div className="text-lg text-cyan-400 font-mono drop-shadow">{currentTime}</div>
                 </div>
               </div>
             </div>
@@ -313,7 +333,7 @@ export default function HoodieAcademy() {
           <main className="flex-1 p-6 space-y-6">
             {/* Demo Wallet Banner */}
             {isDemoWallet && (
-              <Card className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 border-yellow-500/30">
+              <Card className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 border-yellow-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -326,7 +346,7 @@ export default function HoodieAcademy() {
                         </p>
                       </div>
                     </div>
-                    <Badge variant="outline" className="border-yellow-500 text-yellow-400">
+                    <Badge variant="outline" className="border-yellow-500 text-yellow-400 bg-yellow-500/20">
                       Demo Wallet
                     </Badge>
                   </div>
@@ -336,7 +356,7 @@ export default function HoodieAcademy() {
 
             {/* Welcome Message for New Users */}
             {showWelcomeMessage && (
-              <Card className="bg-gradient-to-r from-green-500/20 to-cyan-500/20 border-green-500/30">
+              <Card className="bg-gradient-to-r from-green-500/20 to-cyan-500/20 border-green-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center space-x-4">
                     <div className="p-3 bg-green-500/20 rounded-full">
@@ -346,7 +366,7 @@ export default function HoodieAcademy() {
                       <h3 className="text-xl font-bold text-green-400 mb-2">
                         Welcome to Hoodie Academy! 🎉
                       </h3>
-                      <p className="text-gray-300">
+                      <p className="text-gray-200">
                         Your profile is set up and you're ready to start your Web3 learning journey. 
                         Explore the courses below and begin your path to becoming a Hoodie Scholar!
                       </p>
@@ -363,89 +383,16 @@ export default function HoodieAcademy() {
                 </CardContent>
               </Card>
             )}
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <Card className="bg-slate-800/50 border-cyan-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-cyan-500/20 rounded-lg">
-                      <BookOpen className="w-6 h-6 text-cyan-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Courses Completed</p>
-                      <p className="text-2xl font-bold text-cyan-400">3/6</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <Card className="bg-slate-800/50 border-green-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-green-500/20 rounded-lg">
-                      <Award className="w-6 h-6 text-green-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">NFT Badges</p>
-                      <p className="text-2xl font-bold text-green-400">5</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800/50 border-purple-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-purple-500/20 rounded-lg">
-                      <TrendingUp className="w-6 h-6 text-purple-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Overall Progress</p>
-                      <p className="text-2xl font-bold text-purple-400">{overallProgress}%</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800/50 border-yellow-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-yellow-500/20 rounded-lg">
-                      <Trophy className="w-6 h-6 text-yellow-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Your Rank</p>
-                      <p className="text-2xl font-bold text-yellow-400">
-                        {userRank > 0 ? `#${userRank}` : 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800/50 border-pink-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-pink-500/20 rounded-lg">
-                      <Video className="w-6 h-6 text-pink-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400">Total Score</p>
-                      <p className="text-2xl font-bold text-pink-400">{userScore.toLocaleString()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
 
             {/* Admin Dashboard Access */}
             {isAdmin && !isDemoWallet && (
-              <Card className="bg-slate-800/50 border-purple-500/30 mb-6">
+              <Card className="bg-slate-800/40 border-purple-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 mb-6">
                 <CardHeader>
                   <CardTitle className="text-purple-400 flex items-center space-x-2">
                     <Shield className="w-5 h-5" />
                     <span>Admin Dashboard</span>
-                    <Badge variant="outline" className="ml-auto text-purple-400 border-purple-500/30">
+                    <Badge variant="outline" className="ml-auto text-purple-400 border-purple-500/40 bg-purple-500/20">
                       Admin Access
                     </Badge>
                   </CardTitle>
@@ -453,7 +400,7 @@ export default function HoodieAcademy() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-300 mb-2">
+                      <p className="text-gray-200 mb-2">
                         Manage users, approve exams, and monitor course progress.
                       </p>
                       <div className="flex items-center gap-2 mb-4">
@@ -461,7 +408,7 @@ export default function HoodieAcademy() {
                         <span className="text-sm text-purple-400">Password authenticated</span>
                       </div>
                     </div>
-                    <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
+                    <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg">
                       <Link href="/admin">
                         <Shield className="w-4 h-4 mr-2" />
                         Access Dashboard
@@ -474,12 +421,12 @@ export default function HoodieAcademy() {
 
             {/* Demo Wallet Admin Access Disabled */}
             {isDemoWallet && (
-              <Card className="bg-slate-800/50 border-yellow-500/30 mb-6">
+              <Card className="bg-slate-800/40 border-yellow-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 mb-6">
                 <CardHeader>
                   <CardTitle className="text-yellow-400 flex items-center space-x-2">
                     <Shield className="w-5 h-5" />
                     <span>Admin Access Disabled</span>
-                    <Badge variant="outline" className="ml-auto text-yellow-400 border-yellow-500/30">
+                    <Badge variant="outline" className="ml-auto text-yellow-400 border-yellow-500/40 bg-yellow-500/20">
                       Demo Mode
                     </Badge>
                   </CardTitle>
@@ -487,7 +434,7 @@ export default function HoodieAcademy() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-300 mb-2">
+                      <p className="text-gray-200 mb-2">
                         Admin access is disabled for the demo wallet to allow live data testing.
                         Use a different wallet to access admin features.
                       </p>
@@ -499,7 +446,7 @@ export default function HoodieAcademy() {
                     <Button
                       variant="outline"
                       disabled
-                      className="border-yellow-500/30 text-yellow-400 cursor-not-allowed"
+                      className="border-yellow-500/40 text-yellow-400 cursor-not-allowed backdrop-blur-sm"
                     >
                       <Shield className="w-4 h-4 mr-2" />
                       Access Disabled
@@ -510,7 +457,7 @@ export default function HoodieAcademy() {
             )}
 
             {/* Squad Placement Test */}
-            <Card className="bg-slate-800/50 border-cyan-500/30 mb-6">
+            <Card className="bg-slate-800/40 border-cyan-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 mb-6">
               <CardHeader>
                 <CardTitle className="text-cyan-400 flex items-center space-x-2">
                   <User className="w-5 h-5" />
@@ -520,18 +467,18 @@ export default function HoodieAcademy() {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-300 mb-2">
+                    <p className="text-gray-200 mb-2">
                       Take our personality test to discover which Hoodie squad aligns with your skills and interests!
                     </p>
                     <div className="flex flex-wrap gap-2 mb-4">
-                      <Badge variant="outline" className="text-yellow-400 border-yellow-500/30">🎨 Creators</Badge>
-                      <Badge variant="outline" className="text-gray-300 border-gray-500/30">🧠 Decoders</Badge>
-                      <Badge variant="outline" className="text-red-400 border-red-500/30">🎤 Speakers</Badge>
-                      <Badge variant="outline" className="text-blue-400 border-blue-500/30">⚔️ Raiders</Badge>
-                      <Badge variant="outline" className="text-purple-400 border-purple-500/30">🦅 Rangers</Badge>
+                      <Badge variant="outline" className="text-yellow-400 border-yellow-500/40 bg-yellow-500/20">🎨 Creators</Badge>
+                      <Badge variant="outline" className="text-gray-300 border-gray-500/40 bg-gray-500/20">🧠 Decoders</Badge>
+                      <Badge variant="outline" className="text-red-400 border-red-500/40 bg-red-500/20">🎤 Speakers</Badge>
+                      <Badge variant="outline" className="text-blue-400 border-blue-500/40 bg-blue-500/20">⚔️ Raiders</Badge>
+                      <Badge variant="outline" className="text-purple-400 border-purple-500/40 bg-purple-500/20">🦅 Rangers</Badge>
                     </div>
                   </div>
-                  <Button asChild className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700">
+                  <Button asChild className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 shadow-lg">
                     <Link href="/placement/squad-test">Take Test</Link>
                   </Button>
                 </div>
@@ -540,7 +487,7 @@ export default function HoodieAcademy() {
 
             {/* Squad Chat */}
             {userSquad && (
-              <Card className="bg-slate-800/50 border-green-500/30 mb-6">
+              <Card className="bg-slate-800/40 border-green-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 mb-6">
                 <CardHeader>
                   <CardTitle className="text-green-400 flex items-center space-x-2">
                     <Users className="w-5 h-5" />
@@ -550,7 +497,7 @@ export default function HoodieAcademy() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-gray-300 mb-2">
+                      <p className="text-gray-200 mb-2">
                         Connect with your {userSquad} squad members in real-time.
                       </p>
                       <div className="flex items-center gap-2 mb-4">
@@ -558,7 +505,7 @@ export default function HoodieAcademy() {
                         <span className="text-sm text-green-400">Live messaging</span>
                       </div>
                     </div>
-                    <Button asChild className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
+                    <Button asChild className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg">
                       <Link href={`/squads/${normalizeSquadNameForUrl(userSquad)}/chat`}>
                         <Users className="w-4 h-4 mr-2" />
                         Join Chat
@@ -571,39 +518,39 @@ export default function HoodieAcademy() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Leaderboard Preview */}
-              <Card className="bg-slate-800/50 border-yellow-500/30 lg:col-span-1">
+              <Card className="bg-slate-800/40 border-yellow-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 lg:col-span-1">
                 <CardHeader>
                   <CardTitle className="text-yellow-400 flex items-center space-x-2">
                     <Trophy className="w-5 h-5" />
                     <span>Top Performers</span>
-                    <Button size="sm" variant="outline" asChild className="ml-auto text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/10">
+                    <Button size="sm" variant="outline" asChild className="ml-auto text-yellow-400 border-yellow-500/40 hover:bg-yellow-500/10 backdrop-blur-sm">
                       <Link href="/leaderboard">View All</Link>
                     </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {userRank > 0 ? (
-                    <div className="flex items-center justify-between p-2 bg-yellow-500/10 rounded border border-yellow-500/20">
+                    <div className="flex items-center justify-between p-2 bg-yellow-500/15 rounded border border-yellow-500/25 backdrop-blur-sm">
                       <div className="flex items-center space-x-2">
                         <Trophy className="w-4 h-4 text-yellow-400" />
                         <span className="text-sm font-medium text-white">Your Rank</span>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-bold text-yellow-400">#{userRank}</div>
-                        <div className="text-xs text-gray-400">{userScore.toLocaleString()} pts</div>
+                        <div className="text-xs text-gray-300">{userScore.toLocaleString()} pts</div>
                       </div>
                     </div>
                   ) : (
                     <div className="text-center py-8">
                       <Trophy className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-400 text-sm">Complete courses to join leaderboard</p>
+                      <p className="text-gray-300 text-sm">Complete courses to join leaderboard</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Upcoming Classes */}
-              <Card className="bg-slate-800/50 border-cyan-500/30 lg:col-span-1">
+              <Card className="bg-slate-800/40 border-cyan-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 lg:col-span-1">
                 <CardHeader>
                   <CardTitle className="text-cyan-400 flex items-center space-x-2">
                     <Clock className="w-5 h-5" />
@@ -613,11 +560,11 @@ export default function HoodieAcademy() {
                 <CardContent className="space-y-4">
                   {realUpcomingClasses.length > 0 ? (
                     realUpcomingClasses.map((classItem) => (
-                      <div key={classItem.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <div key={classItem.id} className="p-3 bg-slate-700/40 rounded-lg border border-slate-600/40 backdrop-blur-sm hover:bg-slate-700/50 transition-all duration-200">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <h4 className="font-semibold text-white">{classItem.title}</h4>
-                            <p className="text-sm text-gray-400">{classItem.course}</p>
+                            <p className="text-sm text-gray-300">{classItem.course}</p>
                             <div className="flex items-center space-x-4 mt-2">
                               <span className="text-xs text-cyan-400 flex items-center">
                                 <Clock className="w-3 h-3 mr-1" />
@@ -628,7 +575,7 @@ export default function HoodieAcademy() {
                               </Badge>
                             </div>
                           </div>
-                          <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700">
+                          <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700 shadow-lg">
                             Join
                           </Button>
                         </div>
@@ -637,14 +584,14 @@ export default function HoodieAcademy() {
                   ) : (
                     <div className="text-center py-8">
                       <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-400 text-sm">No upcoming classes scheduled</p>
+                      <p className="text-gray-300 text-sm">No upcoming classes scheduled</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Announcements */}
-              <Card className="bg-slate-800/50 border-pink-500/30 lg:col-span-1">
+              <Card className="bg-slate-800/40 border-pink-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 lg:col-span-1">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-pink-400 flex items-center space-x-2">
@@ -660,7 +607,7 @@ export default function HoodieAcademy() {
                       }}
                       variant="outline"
                       size="sm"
-                      className="border-pink-500 text-pink-400 hover:bg-pink-500/10"
+                      className="border-pink-500/50 text-pink-400 hover:bg-pink-500/10 backdrop-blur-sm"
                     >
                       Refresh
                     </Button>
@@ -669,15 +616,15 @@ export default function HoodieAcademy() {
                 <CardContent className="space-y-4">
                   {realAnnouncements.length > 0 ? (
                     realAnnouncements.map((announcement) => (
-                      <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <div key={announcement.id} className="p-3 bg-slate-700/40 rounded-lg border border-slate-600/40 backdrop-blur-sm hover:bg-slate-700/50 transition-all duration-200">
                         <div className="flex items-start space-x-3">
                           <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
                             <AlertCircle className="w-4 h-4" />
                           </div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-white">{announcement.title}</h4>
-                            <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
-                            <p className="text-xs text-gray-400 mt-2">
+                            <p className="text-sm text-gray-200 mt-1">{announcement.content}</p>
+                            <p className="text-xs text-gray-300 mt-2">
                               Active from {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
                               {announcement.endDate && ` to ${new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}`}
                             </p>
@@ -688,7 +635,7 @@ export default function HoodieAcademy() {
                   ) : (
                     <div className="text-center py-8">
                       <Bell className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-400 text-sm">No announcements</p>
+                      <p className="text-gray-300 text-sm">No announcements</p>
                     </div>
                   )}
                 </CardContent>
@@ -697,12 +644,12 @@ export default function HoodieAcademy() {
 
             {/* Scheduled Announcements */}
             {getScheduledAnnouncements().length > 0 && (
-              <Card className="bg-slate-800/50 border-cyan-500/30 mb-6">
+              <Card className="bg-slate-800/40 border-cyan-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 mb-6">
                 <CardHeader>
                   <CardTitle className="text-cyan-400 flex items-center space-x-2">
                     <Clock className="w-5 h-5" />
                     <span>Upcoming Announcements</span>
-                    <Badge variant="outline" className="ml-auto border-cyan-500 text-cyan-400">
+                    <Badge variant="outline" className="ml-auto border-cyan-500 text-cyan-400 bg-cyan-500/20">
                       {getScheduledAnnouncements().length}
                     </Badge>
                   </CardTitle>
@@ -710,14 +657,14 @@ export default function HoodieAcademy() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {getScheduledAnnouncements().map((announcement) => (
-                      <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-cyan-500/30">
+                      <div key={announcement.id} className="p-3 bg-slate-700/40 rounded-lg border border-cyan-500/40 backdrop-blur-sm hover:bg-slate-700/50 transition-all duration-200">
                         <div className="flex items-start space-x-3">
                           <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
                             <Clock className="w-4 h-4" />
                           </div>
                           <div className="flex-1">
                             <h4 className="font-semibold text-white">{announcement.title}</h4>
-                            <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
+                            <p className="text-sm text-gray-200 mt-1">{announcement.content}</p>
                             <p className="text-xs text-cyan-400 mt-2">
                               <Clock className="w-3 h-3 inline mr-1" />
                               Starts: {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
@@ -732,43 +679,7 @@ export default function HoodieAcademy() {
               </Card>
             )}
 
-            {/* Progress Overview */}
-            <Card className="bg-slate-800/50 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-purple-400">Overall Academy Progress</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-300">Progress</span>
-                      <span className="text-purple-400">{overallProgress}%</span>
-                    </div>
-                    <Progress value={overallProgress} className="h-3 bg-slate-700 [&>div]:bg-gradient-to-r [&>div]:from-purple-500 [&>div]:to-pink-500" />
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold text-cyan-400">
-                        {Math.floor((overallProgress / 100) * 6)}/6
-                      </p>
-                      <p className="text-sm text-gray-400">Courses Completed</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-green-400">{realAnnouncements.length}</p>
-                      <p className="text-sm text-gray-400">Active Announcements</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-yellow-400">{userRank > 0 ? userRank : 'N/A'}</p>
-                      <p className="text-sm text-gray-400">Leaderboard Rank</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-pink-400">{userScore.toLocaleString()}</p>
-                      <p className="text-sm text-gray-400">Total Score</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
           </main>
         </div>
       </div>

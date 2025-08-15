@@ -25,6 +25,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
 
 interface PhantomResponse {
   publicKey: {
@@ -32,12 +33,7 @@ interface PhantomResponse {
   };
 }
 
-declare global {
-  interface Window {
-    ethereum?: any;
-    solana?: any;
-  }
-}
+// Global interface declarations removed to avoid conflicts with centralized types
 
 type WalletProviderOption = 'metamask' | 'phantom' | 'jup' | 'magic-eden';
 
@@ -232,17 +228,20 @@ export default function CommunityStrategyPage() {
         case 'phantom':
         case 'jup': 
         case 'magic-eden':
-          let solProvider;
-           if (providerName === 'phantom') {
-            if (!(window.solana && window.solana.isPhantom)) {
+          let solProvider: SolanaWallet | undefined;
+          const sol: SolanaWallet | undefined = 
+            typeof window !== 'undefined' ? window.solana : undefined;
+          
+          if (providerName === 'phantom') {
+            if (!(sol?.isPhantom)) {
               setWalletAlertConfig({ title: "Phantom Not Detected", description: "Please install Phantom wallet to continue." });
               setShowWalletAlert(true);
               return;
             }
-            solProvider = window.solana;
+            solProvider = sol;
           } else { 
-             if (window.solana && window.solana.isPhantom) solProvider = window.solana;
-             else if (window.solana) solProvider = window.solana;
+             if (sol?.isPhantom) solProvider = sol;
+             else if (sol) solProvider = sol;
              else {
                 setWalletAlertConfig({ title: "Solana Wallet Not Detected", description: `Please install a compatible Solana wallet (e.g., Phantom) for ${providerName}.` });
                 setShowWalletAlert(true);
@@ -250,6 +249,15 @@ export default function CommunityStrategyPage() {
              }
           }
           await solProvider.connect();
+          
+          if (!solProvider.publicKey) {
+            console.error('Solana wallet public key is null after connection');
+            setWalletAlertConfig({ title: "Connection Error", description: "Failed to get wallet public key. Please try again." });
+            setShowWalletAlert(true);
+            setShowWalletSelector(false);
+            return;
+          }
+          
           const solAccount = solProvider.publicKey.toString();
           setAccount(solAccount);
           const solBalanceLamports = await solanaConnection.getBalance(new PublicKey(solAccount));

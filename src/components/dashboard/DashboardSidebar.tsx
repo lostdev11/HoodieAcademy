@@ -19,6 +19,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
+import type { SolanaWallet } from '@/types/wallet';
 
 interface SidebarItem {
   id: string;

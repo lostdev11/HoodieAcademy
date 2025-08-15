@@ -1,0 +1,100 @@
+{
+  "id": "n150-floor-games",
+  "title": "N150 – Bids, Listings, and Floor Games",
+  "description": "Master the art of floor trading with advanced strategies for bids, listings, and market manipulation tactics.",
+  "badge": "Floor Tactician",
+  "emoji": "🎯",
+  "pathType": "tech",
+  "href": "/courses/n150-floor-games",
+  "localStorageKey": "n150FloorGamesProgress",
+  "totalLessons": 5,
+  "squad": "Raiders",
+  "category": "trading",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Bids vs Listings",
+      "description": "Understand the core mechanic of marketplace dynamics — why both sides matter.",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Marketplace Mechanics",
+          "content": "NFT marketplaces operate on a simple but powerful dynamic: **bids** and **listings**.\n\n**Bids (Buy Side):**\n• Offers to buy below current floor price\n• Can be placed on any NFT in a collection\n• Expire after set duration (1-7 days)\n• No fees if not filled\n• Create buying pressure and support levels\n\n**Listings (Sell Side):**\n• NFTs offered for sale at specific prices\n• Visible to all buyers\n• Can be cancelled anytime\n• Subject to marketplace fees (2-3%)\n• Create selling pressure and resistance levels\n\n**The Floor Price Dance:**\n• Floor price = lowest active listing\n• Bids below floor = potential support\n• Listings above floor = potential resistance\n• Market moves when bids meet listings\n\n**Why Both Matter:**\n• **Bids**: Show demand and create support\n• **Listings**: Show supply and create resistance\n• **Balance**: Determines price direction\n• **Volume**: Indicates market activity\n\n**Key Metrics to Watch:**\n• Bid-to-listing ratio\n• Floor price stability\n• Volume of trades\n• Number of active bids/listings",
+          "video": "/videos/bids-vs-listings.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Laddering 101",
+      "description": "How to set multiple bids or listings at key levels to increase fill rate and visibility.",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "What is Laddering?",
+          "content": "**Laddering** is a strategic approach to placing multiple bids or listings at different price levels to maximize your chances of success.\n\n**Bid Laddering:**\n• Place bids at 0.1 SOL intervals below floor\n• Example: Floor at 2.0 SOL, bid at 1.9, 1.8, 1.7\n• Increases chances of getting filled\n• Creates multiple support levels\n• Allows for price discovery\n\n**Listing Laddering:**\n• List NFTs at different price points\n• Example: List at floor, +0.1, +0.2, +0.3\n• Catches buyers at different price levels\n• Maximizes profit potential\n• Reduces risk of missing sales\n\n**Strategic Benefits:**\n• **Higher Fill Rate**: More chances to get filled\n• **Price Discovery**: Find where market wants to trade\n• **Risk Management**: Don't put all eggs in one basket\n• **Market Making**: Provide liquidity to the market\n\n**Pro Tips:**\n• Start with small amounts to test the market\n• Monitor which levels get filled most\n• Adjust ladder spacing based on volatility\n• Consider gas fees when placing multiple bids",
+          "video": "/videos/laddering-101.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Advanced Laddering Strategies",
+          "content": "**Tiered Laddering:**\n• **Conservative Tier**: 5-10% below floor\n• **Aggressive Tier**: 10-20% below floor\n• **Opportunistic Tier**: 20%+ below floor\n• Each tier serves different purposes\n\n**Volume-Based Laddering:**\n• **High Volume**: Tighter spacing (0.05 SOL)\n• **Low Volume**: Wider spacing (0.2 SOL)\n• **Volatile**: More tiers, wider range\n• **Stable**: Fewer tiers, tighter range\n\n**Time-Based Laddering:**\n• **Short-term**: 1-3 day bids\n• **Medium-term**: 3-7 day bids\n• **Long-term**: 7+ day bids\n• Match duration to your strategy\n\n**Collection-Specific Laddering:**\n• **Blue Chips**: Tighter spacing, higher amounts\n• **Mid-tier**: Medium spacing, moderate amounts\n• **Low-tier**: Wider spacing, smaller amounts\n• **New Collections**: Very wide spacing\n\n**Risk Management:**\n• Never ladder more than you can afford\n• Set maximum loss per collection\n• Monitor market conditions\n• Have exit strategies ready",
+          "video": "/videos/advanced-laddering.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Undercut Logic",
+      "description": "How panic undercuts happen, and how to use them as sniper fuel.",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Understanding Undercuts",
+          "content": "**Undercutting** is when someone lists an NFT below the current floor price, often triggering a cascade of panic selling.\n\n**Why Undercuts Happen:**\n• **Panic Selling**: Fear of missing out on profits\n• **Liquidity Needs**: Need to sell quickly for cash\n• **Market Manipulation**: Intentional price suppression\n• **Ignorance**: Don't understand market dynamics\n• **Competition**: Trying to sell before others\n\n**The Undercut Cascade:**\n1. **First Undercut**: Someone lists below floor\n2. **Panic Response**: Others follow suit\n3. **Floor Drop**: Price falls rapidly\n4. **Bid Fills**: Smart money buys the dip\n5. **Recovery**: Price stabilizes or rebounds\n\n**Types of Undercuts:**\n• **Accidental**: Didn't check current floor\n• **Panic**: Fear-driven selling\n• **Strategic**: Intentional price manipulation\n• **Liquidity**: Need cash immediately\n• **Competitive**: Race to the bottom\n\n**How to Spot Undercuts:**\n• Monitor listings feed\n• Watch for sudden price drops\n• Check bid wall activity\n• Look for volume spikes\n• Monitor social sentiment",
+          "video": "/videos/undercut-logic.mp4"
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Sniper Strategies",
+          "content": "**Sniper Tactics:**\n\n**Preparation:**\n• Have SOL ready in your wallet\n• Know your target collections\n• Set up quick buy tools\n• Monitor market conditions\n• Have a clear strategy\n\n**Execution:**\n• **Quick Buy**: Use 'Buy Now' for immediate purchase\n• **Bid Snipe**: Place bids just above floor\n• **Bulk Buy**: Buy multiple undercuts at once\n• **Hold Strategy**: Wait for recovery\n• **Flip Strategy**: Sell on rebound\n\n**Risk Management:**\n• Set maximum purchase amounts\n• Don't chase every undercut\n• Verify it's a real opportunity\n• Have exit plans ready\n• Don't FOMO into bad deals\n\n**Advanced Techniques:**\n• **Bid Wall Analysis**: Look for support levels\n• **Volume Analysis**: High volume = real opportunity\n• **Social Sentiment**: Check community reaction\n• **Technical Analysis**: Use charts and indicators\n• **Fundamental Analysis**: Assess collection value\n\n**Pro Tips:**\n• Focus on quality collections\n• Don't try to catch every dip\n• Build relationships with other traders\n• Learn from each trade\n• Keep detailed records",
+          "video": "/videos/sniper-strategies.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-4",
+      "title": "Meta Shift Tactics",
+      "description": "Reacting quickly when hype breaks or gas fees spike — precision timing over panic.",
+      "lessons": [
+        {
+          "id": "lesson-4-1",
+          "title": "Identifying Meta Shifts",
+          "content": "**Meta Shifts** are sudden changes in market conditions that require quick adaptation.\n\n**Types of Meta Shifts:**\n\n**Hype Breaks:**\n• Collection loses momentum\n• Social media sentiment turns negative\n• Volume drops significantly\n• Floor price starts declining\n• Community becomes inactive\n\n**Gas Fee Spikes:**\n• Network congestion increases\n• Transaction costs become prohibitive\n• Trading volume decreases\n• Only high-value trades make sense\n• Market activity slows\n\n**Market Rotation:**\n• Money flows to different collections\n• New trends emerge\n• Old favorites lose appeal\n• Seasonal patterns emerge\n• Sector rotation occurs\n\n**Regulatory Changes:**\n• New policies affect trading\n• Tax implications change\n• Legal uncertainty increases\n• Market sentiment shifts\n• Compliance requirements change\n\n**How to Spot Shifts:**\n• Monitor volume changes\n• Watch social sentiment\n• Track floor price movements\n• Follow whale activity\n• Read market news",
+          "video": "/videos/meta-shifts.mp4"
+        },
+        {
+          "id": "lesson-4-2",
+          "title": "Adapting to Market Changes",
+          "content": "**Precision Response Strategies:**\n\n**During Hype Breaks:**\n• **Immediate**: Reduce exposure to affected collections\n• **Short-term**: Focus on stable blue chips\n• **Medium-term**: Look for new opportunities\n• **Long-term**: Reassess your strategy\n\n**During Gas Spikes:**\n• **High-Value Only**: Only trade expensive NFTs\n• **Batch Transactions**: Combine multiple actions\n• **Wait for Calm**: Avoid unnecessary trades\n• **Use Layer 2**: Consider alternative networks\n\n**During Market Rotation:**\n• **Follow the Money**: Move to trending collections\n• **Diversify**: Spread across multiple sectors\n• **Stay Flexible**: Be ready to pivot quickly\n• **Monitor Trends**: Watch for new opportunities\n\n**Risk Management:**\n• **Position Sizing**: Reduce exposure during uncertainty\n• **Stop Losses**: Set clear exit points\n• **Diversification**: Don't put all eggs in one basket\n• **Liquidity**: Keep some SOL for opportunities\n\n**Pro Tips:**\n• Stay calm during volatility\n• Have multiple strategies ready\n• Learn from each shift\n• Build a resilient portfolio\n• Keep learning and adapting",
+          "video": "/videos/adapting-to-shifts.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-5",
+      "title": "Assignment",
+      "description": "Create your own 3-tier ladder (bid or listing) for any live collection and share why.",
+      "lessons": [
+        {
+          "id": "lesson-5-1",
+          "title": "Floor Games Assignment",
+          "content": "**🎯 Assignment: Create Your First Ladder**\n\n**Objective:**\nApply your knowledge of laddering strategies by creating a real 3-tier ladder for an active NFT collection.\n\n**Requirements:**\n• Choose a live NFT collection\n• Create either a bid ladder or listing ladder\n• Use 3 different price tiers\n• Document your reasoning\n• Share your strategy with the Raiders community\n\n**Step-by-Step Instructions:**\n\n**1. Choose Your Collection**\n• Pick an active collection you're familiar with\n• Research current floor price and volume\n• Understand the collection's fundamentals\n• Check recent trading activity\n• Assess market sentiment\n\n**2. Decide on Strategy**\n• **Bid Ladder**: If you want to buy\n• **Listing Ladder**: If you want to sell\n• Consider your risk tolerance\n• Factor in your budget\n• Plan your time horizon\n\n**3. Design Your Ladder**\n• **Tier 1**: Conservative level (closest to current price)\n• **Tier 2**: Moderate level (middle ground)\n• **Tier 3**: Aggressive level (best value)\n• Set appropriate amounts for each tier\n• Consider gas fees and marketplace fees\n\n**4. Execute Your Ladder**\n• Place your bids/listings on the marketplace\n• Document the exact prices and amounts\n• Take screenshots of your ladder\n• Monitor how it performs\n• Track which tiers get filled\n\n**5. Analyze Results**\n• Which tiers got filled first?\n• What was the market reaction?\n• Did you achieve your goals?\n• What would you do differently?\n• What did you learn?\n\n**6. Share Your Experience**\n• Post your ladder strategy in Raiders Discord\n• Include screenshots and reasoning\n• Discuss your thought process\n• Engage with other students\n• Learn from their strategies\n\n**Success Criteria:**\n✅ Created a 3-tier ladder\n✅ Used real market data\n✅ Documented your reasoning\n✅ Shared with community\n✅ Learned from experience\n\n**Bonus Challenges:**\n• Try both bid and listing ladders\n• Experiment with different spacing\n• Track performance over time\n• Compare with other strategies\n• Develop your own variations",
+          "video": "/videos/assignment-guide.mp4"
+        }
+      ]
+    }
+  ]
+} 

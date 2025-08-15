@@ -13,8 +13,9 @@ import Link from 'next/link';
 import { getSNSResolver, formatWalletAddress, isValidSolanaAddress, isSolDomain } from '@/services/sns-resolver';
 import { Connection } from '@solana/web3.js';
 import SquadBadge from '@/components/SquadBadge';
-import { NFTProfileSelector } from '@/components/profile/NFTProfileSelector';
-import { NFT } from '@/services/nft-service';
+import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import PfpPicker from '@/components/profile/PfpPicker';
+import type { SolanaWallet } from '@/types/wallet';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -72,7 +73,6 @@ export function ProfileView() {
   const [placementTestCompleted, setPlacementTestCompleted] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [profileImage, setProfileImage] = useState<string>('🧑‍🎓');
-  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
 
   const snsResolver = getSNSResolver();
   const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
@@ -115,23 +115,55 @@ export function ProfileView() {
 
     // Load saved profile image and NFT data
     const savedProfileImage = localStorage.getItem('userProfileImage');
-    const savedNFT = localStorage.getItem('userSelectedNFT');
     
     if (savedProfileImage) {
       setProfileImage(savedProfileImage);
     }
-    
-    if (savedNFT) {
-      try {
-        const nftData = JSON.parse(savedNFT);
-        setSelectedNFT(nftData);
-      } catch (error) {
-        console.error('Error parsing saved NFT data:', error);
-      }
-    }
 
     detectConnectedWallet();
   }, []);
+
+  // Listen for wallet connection changes from window.solana
+  useEffect(() => {
+    if (!wallet) return;
+    
+    const handleWalletConnect = () => {
+      const sol: SolanaWallet | undefined = 
+        typeof window !== 'undefined' ? window.solana : undefined;
+      
+      if (sol?.isPhantom && sol.isConnected) {
+        const address = sol.publicKey?.toString();
+        if (address) {
+          setWallet(address);
+          console.debug("ProfileView: Wallet connected via window.solana:", address);
+        }
+      }
+    };
+
+    const handleWalletDisconnect = () => {
+      console.log('ProfileView: Wallet disconnected');
+      // Keep the wallet address in state for now, but could clear it if needed
+    };
+
+    // Check immediately
+    handleWalletConnect();
+
+    // Listen for wallet connection changes
+    const sol: SolanaWallet | undefined = 
+      typeof window !== 'undefined' ? window.solana : undefined;
+
+    if (sol?.on) {
+      sol.on('connect', handleWalletConnect);
+      sol.on('disconnect', handleWalletDisconnect);
+    }
+
+    return () => {
+      if (sol?.removeListener) {
+        sol.removeListener('connect', handleWalletConnect);
+        sol.removeListener('disconnect', handleWalletDisconnect);
+      }
+    };
+  }, [wallet]); // keep deps minimal
 
   // Load real user data when wallet changes
   useEffect(() => {
@@ -231,7 +263,7 @@ export function ProfileView() {
     }
   };
 
-  const handleDisconnectWallet = () => {
+  const handleDisconnectWallet = async () => {
     setWallet('');
     setSolDomain(null);
     
@@ -240,22 +272,16 @@ export function ProfileView() {
     localStorage.removeItem('connectedWallet');
     sessionStorage.removeItem('wifhoodie_verification_session');
     
-    // Disconnect from wallet providers
-    if (window.solana?.disconnect) {
-      window.solana.disconnect();
-    }
-  };
+    // Disconnect from wallet providers safely
+    const sol: SolanaWallet | undefined = 
+      typeof window !== 'undefined' ? window.solana : undefined;
 
-  const handleProfileImageChange = (imageUrl: string, nftData?: NFT) => {
-    setProfileImage(imageUrl);
-    setSelectedNFT(nftData || null);
-    
-    // Save to localStorage
-    localStorage.setItem('userProfileImage', imageUrl);
-    if (nftData) {
-      localStorage.setItem('userSelectedNFT', JSON.stringify(nftData));
-    } else {
-      localStorage.removeItem('userSelectedNFT');
+    try {
+      if (sol?.disconnect) {
+        await sol.disconnect();
+      }
+    } catch (e) {
+      console.error("disconnect error", e);
     }
   };
 
@@ -461,10 +487,30 @@ export function ProfileView() {
                 </div>
               </div>
               <div className="flex flex-col items-center gap-4">
-                  <NFTProfileSelector 
-                    walletAddress={wallet} 
-                    currentProfileImage={profileImage}
-                    onProfileImageChange={handleProfileImageChange} 
+                  {/* Profile Picture Section */}
+                  <div className="text-center mb-2">
+                    <h3 className="text-sm font-semibold text-purple-400 mb-1">Profile Picture</h3>
+                    <p className="text-xs text-gray-400">
+                      Set your WifHoodie NFT as your profile picture to represent yourself in the community
+                    </p>
+                  </div>
+                  
+                  {/* Profile Avatar */}
+                  <ProfileAvatar pfpUrl={profileImage} size={120} />
+                  
+                  {/* PfpPicker for selecting new profile pictures */}
+                  <PfpPicker 
+                    selectedPfpUrl={profileImage}
+                    onChange={(url) => {
+                      setProfileImage(url || '🧑‍🎓');
+                      // Save to localStorage
+                      if (url) {
+                        localStorage.setItem('userProfileImage', url);
+                      } else {
+                        localStorage.removeItem('userProfileImage');
+                      }
+                    }}
+                    userId={wallet} // Using wallet address as user ID for now
                   />
                 
                 {/* Squad Badge */}
@@ -485,31 +531,6 @@ export function ProfileView() {
                     <p className="text-gray-400 text-sm">No badges earned yet</p>
                   )}
                 </div>
-
-                {/* NFT Profile Information */}
-                {selectedNFT && (
-                  <div className="text-center space-y-2 p-3 bg-slate-700/30 rounded-lg border border-purple-500/30">
-                    <h4 className="font-semibold text-purple-400 text-sm">Profile NFT</h4>
-                    <p className="text-white text-sm">{selectedNFT.name}</p>
-                    {selectedNFT.collection && (
-                      <p className="text-gray-400 text-xs">{selectedNFT.collection}</p>
-                    )}
-                    {selectedNFT.attributes && selectedNFT.attributes.length > 0 && (
-                      <div className="flex flex-wrap gap-1 justify-center">
-                        {selectedNFT.attributes.slice(0, 3).map((attr, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs bg-slate-600/50 border-purple-500/30 text-purple-300">
-                            {attr.trait_type}: {attr.value}
-                          </Badge>
-                        ))}
-                        {selectedNFT.attributes.length > 3 && (
-                          <Badge variant="outline" className="text-xs bg-slate-600/50 border-gray-500/30 text-gray-300">
-                            +{selectedNFT.attributes.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </CardContent>

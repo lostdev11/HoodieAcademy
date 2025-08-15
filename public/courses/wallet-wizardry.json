@@ -1,0 +1,55 @@
+{
+  "id": "wallet-wizardry",
+  "title": "Wallet Wizardry",
+  "description": "Master wallet setup with interactive quizzes and MetaMask integration.",
+  "badge": "Vault Keeper",
+  "emoji": "🔒",
+  "pathType": "tech",
+  "href": "/courses/wallet-wizardry",
+  "localStorageKey": "walletWizardryProgress",
+  "totalLessons": 4,
+  "squad": "Decoders",
+  "category": "wallet",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Understanding Wallets",
+      "description": "Learn the fundamentals of cryptocurrency wallets",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What is a Cryptocurrency Wallet?",
+          "content": "A cryptocurrency wallet is a digital tool that allows you to store, send, and receive cryptocurrencies. Unlike traditional bank accounts, crypto wallets give you complete control over your funds.\n\n**Key Concepts:**\n• **Private Keys**: Secret codes that prove ownership of your crypto\n• **Public Addresses**: Public identifiers others use to send you crypto\n• **Seed Phrases**: Backup words to recover your wallet\n• **Non-Custodial**: You control your keys, not a bank\n\n**Security Principle**: Whoever controls the private keys controls the cryptocurrency. This is why wallet security is absolutely critical.",
+          "video": "/videos/wallet-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Types of Wallets",
+          "content": "There are several types of wallets, each with different security characteristics:\n\n**Hot Wallets** (Connected to internet):\n• Exchange wallets (Coinbase, Binance)\n• Web wallets (MetaMask, Phantom)\n• Mobile wallets (Trust Wallet, Exodus)\n\n**Cold Wallets** (Offline):\n• Hardware wallets (Ledger, Trezor)\n• Paper wallets\n• Air-gapped computers\n\n**Security Trade-offs**:\n• Hot wallets: Convenient but more vulnerable\n• Cold wallets: More secure but less convenient\n\n**Recommendation**: Use hot wallets for small amounts and daily transactions, cold wallets for significant holdings.",
+          "video": "/videos/wallet-types.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Setting Up Your First Wallet",
+      "description": "Step-by-step guide to creating a secure wallet",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Choosing the Right Wallet",
+          "content": "When choosing your first wallet, consider these factors:\n\n**Security Level**:\n• For small amounts (<$100): Hot wallet is fine\n• For significant amounts: Hardware wallet recommended\n\n**Ease of Use**:\n• Beginners: Start with user-friendly options like MetaMask\n• Advanced users: Can handle more complex setups\n\n**Supported Cryptocurrencies**:\n• Make sure your wallet supports the cryptocurrencies you want to use\n• Some wallets are chain-specific (e.g., Phantom for Solana)\n\n**Backup Options**:\n• Look for wallets with good backup and recovery features\n• Ensure you can export your private keys if needed",
+          "video": "/videos/choosing-wallet.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Installing MetaMask",
+          "content": "**Step 1: Download MetaMask**\n• Go to metamask.io (official site only)\n• Click 'Download' and install the browser extension\n• Never download from third-party sites\n\n**Step 2: Create Your Wallet**\n• Click 'Create a Wallet'\n• Choose a strong password (12+ characters)\n• Write down your recovery phrase (12 words)\n• Store the recovery phrase securely offline\n\n**Step 3: Verify Your Setup**\n• Test with a small transaction\n• Ensure you can send and receive crypto\n• Verify your backup works\n\n**Security Tips**:\n• Never share your recovery phrase\n• Store it in multiple secure locations\n• Consider using a hardware wallet for large amounts",
+          "video": "/videos/metamask-setup.mp4"
+        }
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,74 @@
+{
+  "id": "wallet-wizardry-basics",
+  "title": "Wallet Wizardry: Security Fundamentals",
+  "description": "Master the basics of wallet security and best practices for protecting your digital assets",
+  "badge": "Security Badge",
+  "emoji": "🔐",
+  "pathType": "tech",
+  "href": "/courses/wallet-wizardry-basics",
+  "localStorageKey": "walletWizardryBasicsProgress",
+  "totalLessons": 6,
+  "squad": "Decoders",
+  "category": "security",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Understanding Wallet Security",
+      "description": "Learn the fundamental concepts of wallet security",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What is a Wallet?",
+          "content": "A cryptocurrency wallet is a digital tool that allows you to store, send, and receive cryptocurrencies. Think of it as a digital bank account, but with some key differences:\n\n• **Private Keys**: Your wallet contains private keys that prove ownership of your cryptocurrencies\n• **Public Addresses**: These are like account numbers that others can use to send you crypto\n• **No Central Authority**: Unlike traditional banks, you have full control over your wallet\n\n**Key Security Principle**: Whoever controls the private keys controls the cryptocurrency. This is why wallet security is absolutely critical.",
+          "video": "/videos/wallet-intro.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Types of Wallets",
+          "content": "There are several types of wallets, each with different security characteristics:\n\n**Hot Wallets** (Connected to internet):\n• Exchange wallets\n• Web wallets\n• Mobile wallets\n\n**Cold Wallets** (Offline):\n• Hardware wallets (Ledger, Trezor)\n• Paper wallets\n• Air-gapped computers\n\n**Security Trade-offs**: Hot wallets are convenient but more vulnerable to attacks. Cold wallets are more secure but less convenient for frequent transactions.",
+          "video": "/videos/wallet-types.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Creating Your First Wallet",
+      "description": "Step-by-step guide to setting up a secure wallet",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Choosing the Right Wallet",
+          "content": "When choosing your first wallet, consider these factors:\n\n**Security Level**:\n• For small amounts: Hot wallet is fine\n• For significant amounts: Hardware wallet recommended\n\n**Ease of Use**:\n• Beginners: Start with user-friendly options\n• Advanced users: Can handle more complex setups\n\n**Supported Cryptocurrencies**:\n• Make sure your wallet supports the cryptocurrencies you want to use\n\n**Backup Options**:\n• Look for wallets with good backup and recovery features",
+          "video": "/videos/choosing-wallet.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Setting Up Your Wallet",
+          "content": "**Step 1: Download from Official Source**\nAlways download wallet software from the official website or app store. Never trust third-party links.\n\n**Step 2: Create Your Wallet**\n• Choose a strong password\n• Write down your recovery phrase (seed phrase)\n• Store the recovery phrase securely offline\n\n**Step 3: Test with Small Amounts**\nBefore storing significant amounts, test your wallet with small transactions to ensure everything works correctly.\n\n**Step 4: Set Up Backup**\nCreate multiple secure backups of your recovery phrase and store them in different locations.",
+          "video": "/videos/setup-wallet.mp4"
+        },
+        {
+          "id": "lesson-2-3",
+          "title": "Backup and Recovery",
+          "content": "**Recovery Phrase (Seed Phrase)**\nThis is the most important piece of information for your wallet:\n\n• Usually 12-24 words\n• Must be written down exactly as shown\n• Store in multiple secure locations\n• Never share with anyone\n• Never store digitally (no photos, emails, etc.)\n\n**Backup Strategies**:\n• Write on paper and store in fireproof safe\n• Use metal backup plates (fireproof)\n• Store in multiple locations\n• Consider using a bank safety deposit box\n\n**Testing Recovery**:\nBefore storing significant amounts, test your recovery process to ensure you can restore your wallet if needed.",
+          "video": "/videos/backup-recovery.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Security Best Practices",
+      "description": "Essential security practices to protect your digital assets",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Password Security",
+          "content": "**Strong Password Requirements**:\n\n• Minimum 12 characters\n• Mix of uppercase, lowercase, numbers, symbols\n• Avoid common words or patterns\n• Use a unique password for your wallet\n• Consider using a password manager\n\n**Additional Security**:\n• Enable two-factor authentication (2FA) where available\n• Use biometric authentication on mobile wallets\n• Regularly update your wallet software\n• Be cautious of phishing attempts\n\n**Remember**: Your password is the first line of defense. Make it strong and keep it secure.",
+          "video": "/videos/password-security.mp4"
+        }
+      ]
+    }
+  ]
+} 

@@ -24,12 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
-
-declare global {
-  interface Window {
-    solana?: any;
-  }
-}
+import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
 
 type WalletProviderOption = 'phantom';
 
@@ -200,11 +195,14 @@ const MemeCoinManiaPage = () => {
     setConnectedWalletProvider(providerName);
 
     try {
-      let solProvider: any;
+      let solProvider: SolanaWallet | undefined;
       let walletName = providerName;
 
+       const sol: SolanaWallet | undefined = 
+         typeof window !== 'undefined' ? window.solana : undefined;
+       
        if (providerName === 'phantom') {
-        if (!(window.solana && window.solana.isPhantom)) {
+        if (!(sol?.isPhantom)) {
           setWalletAlertConfig({
             title: "Phantom Not Detected",
             description: "Please install Phantom wallet to view your NFT status. Download it from https://phantom.app.",
@@ -212,7 +210,7 @@ const MemeCoinManiaPage = () => {
           setShowWalletAlert(true);
           return;
         }
-        solProvider = window.solana;
+        solProvider = sol;
       }
 
       if (!solProvider) {
@@ -226,6 +224,11 @@ const MemeCoinManiaPage = () => {
 
       if (!solProvider.isConnected) {
         await solProvider.connect();
+      }
+
+      if (!solProvider.publicKey) {
+        console.error('Solana wallet public key is null after connection');
+        return;
       }
 
       const solAccount = solProvider.publicKey.toString();

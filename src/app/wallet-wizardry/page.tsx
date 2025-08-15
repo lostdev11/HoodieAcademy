@@ -22,13 +22,7 @@ import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Syllabus } from "@/components/Syllabus";
 import { syllabusData } from "@/lib/syllabusData";
-
-declare global {
-  interface Window {
-    ethereum?: any;
-    solana?: any;
-  }
-}
+import type { SolanaWallet } from "@/types/wallet"; // used below for local vars
 
 type WalletProviderOption = 'metamask' | 'phantom' | 'jup' | 'magic-eden'; 
 
@@ -165,17 +159,20 @@ export default function WalletWizardryPage() {
         case 'phantom':
         case 'jup':
         case 'magic-eden':
-          let solProvider;
+          let solProvider: SolanaWallet | undefined;
+          const sol: SolanaWallet | undefined = 
+            typeof window !== 'undefined' ? window.solana : undefined;
+          
           if (providerName === 'phantom') {
-            if (!(window.solana && window.solana.isPhantom)) {
+            if (!(sol?.isPhantom)) {
               setCourseWalletAlertConfig({ title: "Phantom Not Detected", description: "Please install Phantom wallet to continue." });
               setShowCourseWalletAlert(true);
               return;
             }
-            solProvider = window.solana;
+            solProvider = sol;
           } else {
-             if (window.solana && window.solana.isPhantom) solProvider = window.solana;
-             else if (window.solana) solProvider = window.solana;
+             if (sol?.isPhantom) solProvider = sol;
+             else if (sol) solProvider = sol;
              else {
                 setCourseWalletAlertConfig({ title: "Solana Wallet Not Detected", description: `Please install a compatible Solana wallet (e.g., Phantom) for ${providerName}.` });
                 setShowCourseWalletAlert(true);
@@ -184,6 +181,12 @@ export default function WalletWizardryPage() {
           }
 
           await solProvider.connect();
+          
+          if (!solProvider.publicKey) {
+            console.error('Solana wallet public key is null after connection');
+            return;
+          }
+          
           const solAccount = solProvider.publicKey.toString();
           setCourseAccount(solAccount);
           const solBalanceLamports = await solanaConnection.getBalance(new PublicKey(solAccount));

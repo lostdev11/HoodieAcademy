@@ -132,20 +132,23 @@ export const syllabusData: Record<string, SyllabusData> = {
     }
   },
   'sns': {
-    overview: "Master the Solana Name Service (SNS) ecosystem. Learn to register, manage, and trade .sol domain names while understanding the technical and economic aspects of decentralized naming systems.",
+    overview: "Your Journey From Domain Noob to Naming Savant - A practical and strategic curriculum for mastering SNS (Solana Name Service) domain flipping, storytelling, and ecosystem domination.",
     objectives: [
-      "Understand the Solana Name Service and its benefits",
-      "Learn to register and manage .sol domain names",
-      "Master SNS trading and valuation strategies",
-      "Navigate the SNS marketplace and tools",
-      "Understand the technical architecture of SNS"
+      "Master domain psychology and naming strategies",
+      "Learn to identify and trade domain archetypes",
+      "Create compelling lore and worldbuilding with subdomains",
+      "Understand domains as digital real estate assets",
+      "Develop advanced bidding and sniping techniques",
+      "Build multi-use domain operations and team structures",
+      "Master narrative economics and meme asset valuation",
+      "Learn domain warfare and ecosystem domination strategies"
     ],
     materials: [
       {
         type: 'video',
-        title: 'SNS Registration Tutorial',
+        title: 'Domain Psychology 101: Why Names Matter',
         url: 'https://www.youtube.com/watch?v=example5',
-        description: 'Step-by-step guide to registering .sol domains'
+        description: 'Understanding the psychology behind successful domain names'
       },
       {
         type: 'link',
@@ -155,16 +158,16 @@ export const syllabusData: Record<string, SyllabusData> = {
       },
       {
         type: 'tweet',
-        title: 'SNS Trading Tips',
+        title: 'Domain Archetypes & Use Cases',
         url: 'https://twitter.com/hoodieacademy/status/example5',
-        description: 'Advanced trading strategies for .sol domains'
+        description: 'Learn to recognize the core use cases behind successful domains'
       }
     ],
-    estimatedTime: "1-2 hours",
+    estimatedTime: "20-30 hours",
     quizOverview: {
-      totalQuestions: 6,
+      totalQuestions: 50,
       passingScore: 75,
-      topics: ['SNS Basics', 'Domain Registration', 'Trading Strategies', 'Technical Architecture']
+      topics: ['Domain Psychology', 'Archetypes', 'LoreCrafting', 'Digital Real Estate', 'Bidding Strategies', 'Multi-Use Domains', 'Narrative Economics', 'Domain Warfare']
     }
   },
   'technical-analysis': {
@@ -201,6 +204,184 @@ export const syllabusData: Record<string, SyllabusData> = {
       totalQuestions: 15,
       passingScore: 75,
       topics: ['Chart Patterns', 'Technical Indicators', 'Leverage Trading', 'Risk Management']
+    }
+  },
+  'nft-trading-psychology': {
+    overview: "Your journey from casual collector to meta-aware floor tactician. Learn NFT awareness, market instincts, and trading discipline through psychology-driven curriculum.",
+    objectives: [
+      "Master NFT marketplace navigation and trading mechanics",
+      "Understand trading psychology and behavioral patterns",
+      "Learn to identify meta shifts and trend waves",
+      "Develop floor tactics and pricing strategies",
+      "Study collector archetypes and counter-trading techniques"
+    ],
+    materials: [
+      {
+        type: 'video',
+        title: 'NFT Marketplaces 101',
+        url: 'https://www.youtube.com/watch?v=example7',
+        description: 'Introduction to Tensor, Magic Eden, and trading mechanics'
+      },
+      {
+        type: 'video',
+        title: 'Trading Psychology Fundamentals',
+        url: 'https://www.youtube.com/watch?v=example8',
+        description: 'Understanding market psychology and behavioral patterns'
+      },
+      {
+        type: 'link',
+        title: 'Tensor Analytics',
+        url: 'https://tensor.trade',
+        description: 'Advanced NFT trading analytics and tools'
+      }
+    ],
+    estimatedTime: "4-5 hours",
+    quizOverview: {
+      totalQuestions: 21,
+      passingScore: 75,
+      topics: ['Marketplace Mechanics', 'Trading Psychology', 'Meta Analysis', 'Floor Tactics', 'Archetype Study']
+    }
+  },
+  'cybersecurity-wallet-practices': {
+    overview: "Protect ya neck in Web3. Learn wallet security, browser hygiene, scam detection, and OpSec for traders. Essential knowledge for anyone in the crypto space.",
+    objectives: [
+      "Master wallet security fundamentals and seed phrase protection",
+      "Learn browser hygiene and extension security",
+      "Identify and avoid common crypto scams and phishing attempts",
+      "Implement wallet segmentation and transaction simulation",
+      "Develop OpSec practices for privacy and security",
+      "Create incident response plans for security breaches"
+    ],
+    materials: [
+      {
+        type: 'video',
+        title: 'Wallet Security Fundamentals',
+        url: 'https://www.youtube.com/watch?v=example9',
+        description: 'Understanding hot vs cold wallets and seed phrase security'
+      },
+      {
+        type: 'video',
+        title: 'Browser Security & OpSec',
+        url: 'https://www.youtube.com/watch?v=example10',
+        description: 'Browser hygiene and privacy protection techniques'
+      },
+      {
+        type: 'link',
+        title: 'Revoke.cash',
+        url: 'https://revoke.cash',
+        description: 'Token approval management and revocation'
+      }
+    ],
+    estimatedTime: "3-4 hours",
+    quizOverview: {
+      totalQuestions: 21,
+      passingScore: 75,
+      topics: ['Wallet Security', 'Browser Hygiene', 'Scam Detection', 'OpSec', 'Incident Response']
+    }
+  },
+  'ai-automation-curriculum': {
+    overview: "Learn to wield the machine. Sacred knowledge for AI literacy, prompt engineering, and automation tools. This curriculum provides the foundation for understanding and using AI effectively in Web3.",
+    objectives: [
+      "Understand LLMs and AI fundamentals in plain English",
+      "Master AI vocabulary and prompt engineering techniques",
+      "Learn AI safety and ethics in Web3 context",
+      "Develop intermediate prompting and customization skills",
+      "Understand automation tools and database structures",
+      "Explore AI agents and advanced automation concepts"
+    ],
+    materials: [
+      {
+        type: 'video',
+        title: 'LLMs for Degens: Plain English + Real Tests',
+        url: 'https://www.youtube.com/watch?v=example11',
+        description: 'Understanding AI fundamentals without the hype'
+      },
+      {
+        type: 'video',
+        title: 'Prompt Engineering: Build, Don\'t Beg',
+        url: 'https://www.youtube.com/watch?v=example12',
+        description: 'Mastering the art of effective AI prompting'
+      },
+      {
+        type: 'link',
+        title: 'Make.com Documentation',
+        url: 'https://www.make.com/en/help',
+        description: 'Automation platform for building workflows'
+      }
+    ],
+    estimatedTime: "4-5 hours",
+    quizOverview: {
+      totalQuestions: 24,
+      passingScore: 75,
+      topics: ['AI Fundamentals', 'Prompt Engineering', 'AI Safety', 'Automation Tools', 'Agent Systems']
+    }
+  },
+  'lore-narrative-crafting': {
+    overview: "Build worlds. Shape myths. Write the future. Learn storytelling, worldbuilding, and narrative development in Web3 communities. This curriculum focuses on creating compelling narratives that strengthen community bonds.",
+    objectives: [
+      "Understand the value of narrative in decentralized communities",
+      "Discover your personal archetype and identity within the community",
+      "Create compelling personal lore and character development",
+      "Learn worldbuilding techniques for community spaces",
+      "Master narrative conflict and faction development",
+      "Develop skills for translating lore into social media content",
+      "Explore advanced symbolism and recurring themes"
+    ],
+    materials: [
+      {
+        type: 'video',
+        title: 'Lore is Liquidity: Why Stories Matter in NFTs',
+        url: 'https://www.youtube.com/watch?v=example13',
+        description: 'Understanding the value of narrative in Web3 communities'
+      },
+      {
+        type: 'video',
+        title: 'From Carl Jung to Hoodie Lore: Know Thy Degen',
+        url: 'https://www.youtube.com/watch?v=example14',
+        description: 'Discovering your archetype and identity'
+      },
+      {
+        type: 'link',
+        title: 'Lore Template Resources',
+        url: 'https://notion.so',
+        description: 'Templates for creating and organizing lore content'
+      }
+    ],
+    estimatedTime: "3-4 hours",
+    quizOverview: {
+      totalQuestions: 21,
+      passingScore: 75,
+      topics: ['Lore Fundamentals', 'Archetypes', 'Worldbuilding', 'Narrative Conflict', 'Symbolism']
+    }
+  },
+  'hoodie-squad-track': {
+    overview: "Choose your squad and follow a curated learning path designed for your specific role in the Hoodie Academy ecosystem. Each squad has specialized curricula that develop the skills and knowledge needed for their unique mission.",
+    objectives: [
+      "Understand the four Hoodie squads and their distinct roles",
+      "Choose the squad that best aligns with your skills and interests",
+      "Follow a curated curriculum path for your selected squad",
+      "Develop squad-specific competencies and knowledge",
+      "Track progress across multiple courses within your squad track"
+    ],
+    materials: [
+      {
+        type: 'video',
+        title: 'Squad Overview: Decoders, Raiders, Speakers, Creators',
+        url: 'https://www.youtube.com/watch?v=example15',
+        description: 'Understanding the four Hoodie squads and their missions'
+      },
+      {
+        type: 'link',
+        title: 'Squad Selection Guide',
+        url: '/hoodie-squad-track',
+        description: 'Interactive guide to help you choose your squad'
+      }
+    ],
+    estimatedTime: "Varies by squad (4-8 hours)",
+    quizOverview: {
+      totalQuestions: 0,
+      passingScore: 0,
+      topics: ['Squad Selection', 'Curated Learning Paths', 'Progress Tracking']
     }
   }
 }; 

@@ -3,10 +3,18 @@ import { createClient } from '@supabase/supabase-js'
 console.log("✅ SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 console.log("✅ SUPABASE KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Create Supabase client only if environment variables are available and valid
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+// Check if the URL is a valid Supabase URL (not placeholder)
+const isValidSupabaseUrl = supabaseUrl && 
+  supabaseUrl !== 'your_supabase_url_here' && 
+  supabaseUrl.startsWith('https://');
+
+export const supabase = isValidSupabaseUrl && supabaseKey && supabaseKey !== 'your_supabase_anon_key_here'
+  ? createClient(supabaseUrl, supabaseKey)
+  : createClient('https://mock.supabase.co', 'mock-key');
 
 // Database types
 export interface Message {
@@ -46,8 +54,6 @@ export interface PlacementTest {
 // User tracking functions
 export async function recordPlacementTest(wallet_address: string, squad: string, display_name?: string) {
   try {
-    console.log('Recording placement test:', { wallet_address, squad, display_name })
-    
     // Upsert user record
     const { data: userData, error: userError } = await supabase
       .from('users')
@@ -85,7 +91,6 @@ export async function recordPlacementTest(wallet_address: string, squad: string,
       throw placementError
     }
 
-    console.log('Successfully recorded placement test:', { userData, placementData })
     return { userData, placementData }
   } catch (error) {
     console.error('Error in recordPlacementTest:', error)
@@ -104,8 +109,6 @@ export async function updateUserActivity(wallet_address: string, activity_type: 
       console.error('Error updating user activity:', error)
       throw error
     }
-
-    console.log('Updated user activity for:', wallet_address)
   } catch (error) {
     console.error('Error in updateUserActivity:', error)
     throw error

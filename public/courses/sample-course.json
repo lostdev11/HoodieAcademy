@@ -1,0 +1,28 @@
+{
+  "id": "sample-course",
+  "title": "Sample Course",
+  "description": "A sample course to demonstrate the getCoursePaths utility",
+  "badge": "Sample Badge",
+  "emoji": "🧪",
+  "pathType": "tech",
+  "href": "/sample-course",
+  "localStorageKey": "sampleCourseProgress",
+  "totalLessons": 3,
+  "squad": "Decoders",
+  "category": "testing",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Introduction",
+      "lessons": [
+        {
+          "id": "lesson-1",
+          "title": "Getting Started",
+          "content": "Welcome to the sample course!"
+        }
+      ]
+    }
+  ]
+} 

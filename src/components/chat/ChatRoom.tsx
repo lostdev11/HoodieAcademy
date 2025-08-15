@@ -40,8 +40,6 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        console.log('Loading messages for squad:', squad);
-        
         // Test connection first
         const { data: testData, error: testError } = await supabase
           .from('messages')
@@ -54,8 +52,6 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
           setIsLoading(false);
           return;
         }
-
-        console.log('Supabase connection test successful');
         
         const { data, error } = await supabase
           .from('messages')
@@ -68,7 +64,6 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
           console.error('Error details:', error.message, error.details, error.hint);
           alert(`Error loading messages: ${error.message}`);
         } else {
-          console.log('Loaded messages:', data);
           setMessages(data || []);
         }
       } catch (error) {
@@ -84,8 +79,6 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
 
   // Subscribe to real-time messages
   useEffect(() => {
-    console.log('Setting up real-time subscription for squad:', squad);
-    
     const channel = supabase
       .channel(`squad-${squad}`)
       .on(
@@ -97,22 +90,19 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
           filter: `squad=eq.${squad}`,
         },
         (payload) => {
-          console.log('New message received:', payload);
           const newMessage = payload.new as Message;
           setMessages((prev) => [...prev, newMessage]);
         }
       )
       .subscribe((status) => {
-        console.log('Subscription status:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to real-time updates');
+          // Successfully subscribed
         } else if (status === 'CHANNEL_ERROR') {
           console.error('Channel subscription error');
         }
       });
 
     return () => {
-      console.log('Cleaning up subscription for squad:', squad);
       supabase.removeChannel(channel);
     };
   }, [squad]);
@@ -128,8 +118,6 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         sender: currentUser,
         squad: squad,
       };
-
-      console.log('Attempting to send message:', messageData);
 
       // Test connection before sending
       const { error: testError } = await supabase
@@ -177,7 +165,6 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
           alert(`Failed to send message: ${error.message}`);
         }
       } else {
-        console.log('Message sent successfully:', data);
         setNewMessage('');
       }
     } catch (error) {

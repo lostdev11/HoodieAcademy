@@ -18,6 +18,9 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Home } from 'lucide-react';
+import WalletConnectionsView from '@/components/admin/WalletConnectionsView';
+import UserActivityView from '@/components/admin/UserActivityView';
+import { logProfileUpdate, logSquadAssignment, logCourseActivity } from '@/lib/activity-logger';
 import {
   fetchAllUsers,
   fetchAllCourseCompletions,
@@ -32,6 +35,7 @@ import {
 import {
   Announcement, Event, getAnnouncements, getEvents
 } from '@/lib/utils';
+import type { SolanaWallet } from '@/types/wallet';
 
 interface AdminStats {
   totalUsers: number;
@@ -93,8 +97,11 @@ export default function AdminDashboard() {
   // Get wallet address using your existing logic
   useEffect(() => {
     const getWalletAddress = () => {
-      if (typeof window !== 'undefined' && window.solana?.publicKey) {
-        const address = window.solana.publicKey.toString();
+      const sol: SolanaWallet | undefined = 
+        typeof window !== 'undefined' ? window.solana : undefined;
+      
+      if (sol?.publicKey) {
+        const address = sol.publicKey.toString();
         if (process.env.NODE_ENV === 'development') {
           console.log('🔍 Admin: Found wallet in window.solana:', address);
         }
@@ -224,6 +231,13 @@ export default function AdminDashboard() {
   const handleApproveBadge = async (user_id: string, courseId: string) => {
     try {
       await approveBadge(user_id, courseId);
+      
+      // Log badge approval activity
+      await logCourseActivity(user_id, 'course_approval', {
+        course_id: courseId,
+        course_name: courseId // You might want to get the actual course name
+      });
+      
       // Refresh data
       const [users, completions] = await Promise.all([
         fetchAllUsers(),
@@ -266,6 +280,24 @@ export default function AdminDashboard() {
     try {
       // Here you would typically call a function to update the user in Supabase
       console.log('Saving user:', updatedUser);
+      
+      // Log profile updates for activity tracking
+      if (editingUser && updatedUser.display_name !== editingUser.display_name) {
+        await logProfileUpdate(editingUser.wallet_address, {
+          display_name: updatedUser.display_name,
+          squad: updatedUser.squad || editingUser.squad
+        });
+      }
+      
+      // Log squad assignments for activity tracking
+      if (editingUser && updatedUser.squad !== editingUser.squad) {
+        await logSquadAssignment(
+          editingUser.wallet_address, 
+          updatedUser.squad || '', 
+          editingUser.squad
+        );
+      }
+      
       // For now, just close the form
       setShowUserEditForm(false);
       setEditingUser(null);
@@ -285,6 +317,13 @@ export default function AdminDashboard() {
     setFinalExamLoading(wallet_address + course_id + 'approve');
     try {
       await approveFinalExam(wallet_address, course_id, walletAddress);
+      
+      // Log course approval activity
+      await logCourseActivity(wallet_address, 'course_approval', {
+        course_id,
+        course_name: course_id // You might want to get the actual course name
+      });
+      
       // Refresh completions
       const completions = await fetchAllCourseCompletions();
       setCourseCompletions(completions);
@@ -407,7 +446,7 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-slate-800">
+          <TabsList className="grid w-full grid-cols-7 bg-slate-800">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -419,6 +458,14 @@ export default function AdminDashboard() {
             <TabsTrigger value="finalexams" className="flex items-center gap-2">
               <Trophy className="w-4 h-4" />
               Final Exam Approvals
+            </TabsTrigger>
+            <TabsTrigger value="wallet-connections" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              Wallet Connections
+            </TabsTrigger>
+            <TabsTrigger value="user-activity" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              User Activity
             </TabsTrigger>
             <TabsTrigger value="announcements" className="flex items-center gap-2">
               <Megaphone className="w-4 h-4" />
@@ -643,6 +690,16 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* Wallet Connections Tab */}
+          <TabsContent value="wallet-connections" className="space-y-6">
+            <WalletConnectionsView />
+          </TabsContent>
+
+          {/* User Activity Tab */}
+          <TabsContent value="user-activity" className="space-y-6">
+            <UserActivityView />
+          </TabsContent>
+
           {/* Announcements Tab */}
           <TabsContent value="announcements" className="space-y-6">
             <Card className="bg-slate-800/50">
@@ -737,6 +794,24 @@ export default function AdminDashboard() {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* User Activity Tab */}
+          <TabsContent value="user-activity" className="space-y-6">
+            <Card className="bg-slate-800/50">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>User Activity</span>
+                  <Button onClick={() => {/* No specific action for now */}}>
+                    <CalendarDays className="w-4 h-4 mr-2" />
+                    View All Activity
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <UserActivityView />
               </CardContent>
             </Card>
           </TabsContent>

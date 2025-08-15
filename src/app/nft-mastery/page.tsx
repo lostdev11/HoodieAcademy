@@ -25,21 +25,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import type { SolanaWallet } from '@/types/wallet';
 
-declare global {
-  interface Window {
-    solana?: any;
-  }
-}
-
-// Interface for Solana wallet provider to fix type errors
-interface SolanaProvider {
-  isPhantom?: boolean;
-  isConnected: boolean;
-  connect(): Promise<void>;
-  publicKey: { toString(): string };
-}
-
+// Unify provider type across the app
+type ProviderLike = SolanaWallet;
 type WalletProviderOption = 'phantom';
 
 interface QuizOption {
@@ -204,11 +193,14 @@ export default function NftMasteryPage() {
     setConnectedWalletProvider(providerName);
 
     try {
-      let solProvider: SolanaProvider | undefined;
+      let solProvider: ProviderLike | null = null;
       let walletName = providerName;
 
+      const sol: SolanaWallet | undefined = 
+        typeof window !== 'undefined' ? window.solana : undefined;
+      
       if (providerName === 'phantom') {
-        if (!(window.solana && window.solana.isPhantom)) {
+        if (!(sol?.isPhantom)) {
           setWalletAlertConfig({
             title: "Phantom Not Detected",
             description: "Please install Phantom wallet to view your NFT status. Download it from https://phantom.app.",
@@ -216,7 +208,7 @@ export default function NftMasteryPage() {
           setShowWalletAlert(true);
           return;
         }
-        solProvider = window.solana;
+        solProvider = sol ?? null;
       }
 
       if (!solProvider) {
@@ -229,10 +221,16 @@ export default function NftMasteryPage() {
       }
 
       if (!solProvider.isConnected) {
-        await solProvider.connect(); // Typed as Promise<void>
+        // ignore return (fine)
+        await solProvider.connect();
       }
 
-      const solAccount = solProvider.publicKey.toString(); // PublicKey is typed
+      if (!solProvider.publicKey) {
+        console.error('Solana wallet public key is null after connection');
+        return;
+      }
+
+      const solAccount = solProvider.publicKey.toString();
       setAccount(solAccount);
 
       try {

@@ -1,0 +1,16 @@
+# Copy this to .env.local and fill in your values
+
+# Helius API Configuration
+NEXT_PUBLIC_HELIUS_API_KEY=your_helius_api_key_here
+NEXT_PUBLIC_HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=your_helius_api_key_here
+
+# WifHoodie NFT Detection
+NEXT_PUBLIC_WIFHOODIE_COLLECTION_ADDRESS=H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ
+NEXT_PUBLIC_WIFHOODIE_SYMBOL=wifHoodies
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Other environment variables
+NODE_ENV=development

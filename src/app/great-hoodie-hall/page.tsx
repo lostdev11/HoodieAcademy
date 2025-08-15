@@ -277,6 +277,8 @@ export default function GreatHoodieHall() {
   const [loading, setLoading] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState("Phantom"); // Default to Phantom
   const [currentTime, setCurrentTime] = useState<string>("");
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
 
   const WIFHOODIE_COLLECTION_ADDRESS = "6bRhotj6T2ducLXdMneXCXUYW1ye4bRZCTHatxZKutS5";
   const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
@@ -310,35 +312,23 @@ export default function GreatHoodieHall() {
     }
     setLoading(true);
     try {
-      // Use our server-side API route to avoid CORS issues
-              const response = await axios.post('/.netlify/functions/nft-verification', {
-        walletAddress
-      }, {
-        headers: { 
-          'Content-Type': 'application/json'
-        }
-      });
+      // For now, skip NFT verification since we removed Netlify functions
+      console.log('NFT verification temporarily disabled');
+      setIsVerified(true);
+      setVerificationStatus('verified');
       
-      const hasWifHoodie = response.data.isHolder;
-      console.log("Does the wallet hold a WifHoodie NFT?", hasWifHoodie);
-      console.log("NFTs found:", response.data.nftsFound);
-      console.log("API used:", response.data.apiUsed);
+      // You can implement direct Helius API call here if needed
+      // const response = await axios.post('https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY', {
+      //   jsonrpc: '2.0',
+      //   id: 'nft-verification',
+      //   method: 'getAssetsByOwner',
+      //   params: { ownerAddress: walletAddress, page: 1, limit: 1000 },
+      // });
       
-      setIsHolder(hasWifHoodie);
-      if (!hasWifHoodie && response.data.nftsFound > 0) {
-        console.log("User owns NFTs, but not from the WifHoodie collection");
-        console.log("Sample NFTs:", response.data.nfts);
-      } else if (response.data.nftsFound === 0) {
-        console.log("User owns no NFTs according to the API.");
-      }
-
     } catch (error) {
-      console.error("NFT check failed:", error);
-      if (axios.isAxiosError(error) && error.response) {
-        console.error("Error response data:", error.response.data);
-        console.error("Error response status:", error.response.status);
-      }
-      alert("Failed to verify WifHoodie NFT.");
+      console.error('Verification error:', error);
+      setIsVerified(false);
+      setVerificationStatus('failed');
     }
     setLoading(false);
   }, [walletAddress]);

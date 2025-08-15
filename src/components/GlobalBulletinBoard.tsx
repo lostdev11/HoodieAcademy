@@ -66,47 +66,36 @@ export default function GlobalBulletinBoard({ squadId }: GlobalBulletinBoardProp
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchBulletinData = async () => {
+    const fetchBulletins = async () => {
       try {
         setIsLoading(true);
-        setError(null);
-        
-        const res = await fetch('/.netlify/functions/getBulletins');
-        if (!res.ok) {
-          throw new Error('Failed to fetch bulletin data');
-        }
-        
-        const data: BulletinData = await res.json();
-        const global = data.global || [];
-        const squad = squadId && data.squads?.[squadId] ? data.squads[squadId] : [];
-        
-        // Combine global and squad-specific messages, with global first
-        const allMessages = [...global, ...squad];
-        
-        // Sort by priority (high first) and then by creation date (newest first)
-        const sortedMessages = allMessages.sort((a, b) => {
-          const priorityOrder = { high: 3, medium: 2, low: 1 };
-          const aPriority = priorityOrder[a.priority] || 0;
-          const bPriority = priorityOrder[b.priority] || 0;
-          
-          if (aPriority !== bPriority) {
-            return bPriority - aPriority;
+        // For now, use mock data since we removed Netlify functions
+        const mockBulletins: Message[] = [
+          {
+            id: "1",
+            title: "Welcome to Hoodie Academy!",
+            body: "Your journey to Web3 mastery begins here.",
+            createdAt: new Date().toISOString(),
+            priority: "high"
+          },
+          {
+            id: "2",
+            title: "New Course Available",
+            body: "Check out our latest course on NFT trading psychology.",
+            createdAt: new Date().toISOString(),
+            priority: "medium"
           }
-          
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
+        ];
         
-        setMessages(sortedMessages);
-      } catch (err) {
-        console.error('Failed to load bulletin data:', err);
-        setError('Failed to load announcements. Please try again later.');
-        setMessages([]);
-      } finally {
+        setMessages(mockBulletins);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching bulletins:', error);
         setIsLoading(false);
       }
     };
 
-    fetchBulletinData();
+    fetchBulletins();
   }, [squadId]);
 
   if (isLoading) {

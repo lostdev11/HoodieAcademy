@@ -12,6 +12,7 @@ import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { fetchUserByWallet } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
+import type { SolanaWallet } from "@/types/wallet";
 
 // PlacementProgress type (adjust fields as needed)
 interface PlacementProgress {
@@ -44,8 +45,11 @@ export default function PlacementProgressAdminPage() {
   // Get wallet address from Phantom/localStorage
   useEffect(() => {
     const getWallet = () => {
-      if (typeof window !== "undefined" && window.solana?.publicKey) {
-        const address = window.solana.publicKey.toString();
+      const sol: SolanaWallet | undefined = 
+        typeof window !== "undefined" ? window.solana : undefined;
+      
+      if (sol?.publicKey) {
+        const address = sol.publicKey.toString();
         setWalletAddress(address);
         return address;
       }
