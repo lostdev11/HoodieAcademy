@@ -205,7 +205,7 @@ export default function NftMasteryPage() {
           setShowWalletAlert(true);
           return;
         }
-        solProvider = sol ?? null;
+        solProvider = (sol as unknown as SolanaWallet) ?? null;
       }
 
       if (!solProvider) {
@@ -591,3 +591,5 @@ export default function NftMasteryPage() {
     </div>
   );
 }
+
+

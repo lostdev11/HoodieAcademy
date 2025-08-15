@@ -975,3 +975,4 @@ export default function AiAutomationCurriculumPage() {
     </div>
   );
 } 
+
