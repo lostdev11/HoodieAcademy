@@ -218,8 +218,14 @@ export default function NftMasteryPage() {
       }
 
       if (!solProvider.isConnected) {
-        // ignore return (fine)
-        await solProvider.connect();
+        // Connect only if not already connected
+        if (!solProvider.publicKey) {
+          try {
+            await solProvider.connect({ onlyIfTrusted: true } as any);
+          } catch {
+            await solProvider.connect();
+          }
+        }
       }
 
       if (!solProvider.publicKey) {

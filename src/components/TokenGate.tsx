@@ -325,15 +325,25 @@ export default function TokenGate({ children }: TokenGateProps) {
     
     try {
       console.log("🔗 Debug: Attempting to connect to wallet...");
-      const response = await provider.connect();
-      console.log("✅ Debug: Wallet connected successfully:", response.publicKey.toString());
+      
+      // Connect only if not already connected
+      if (!provider.publicKey) {
+        try {
+          await provider.connect({ onlyIfTrusted: true } as any);
+        } catch {
+          await provider.connect();
+        }
+      }
+      
+      const walletAddress = provider.publicKey!.toString();
+      console.log("✅ Debug: Wallet connected successfully:", walletAddress);
       
       // Log wallet connection
-      await logWalletConnection(response.publicKey.toString(), 'wallet_connect', { provider: providerName });
+      await logWalletConnection(walletAddress, 'wallet_connect', { provider: providerName });
       
-      setWalletAddress(response.publicKey.toString());
+      setWalletAddress(walletAddress);
       // Trigger verification with success message
-      await checkWifHoodieOwnership(response.publicKey.toString(), true);
+      await checkWifHoodieOwnership(walletAddress, true);
     } catch (error: any) {
       const errorMsg = `Wallet connection failed: ${error.message || 'User rejected the request.'}`;
       console.error("💥 Debug: Wallet connection error:", error);

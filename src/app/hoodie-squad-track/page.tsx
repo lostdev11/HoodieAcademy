@@ -106,20 +106,28 @@ export default function HoodieSquadTrackPage() {
 
   const handleWalletConnection = async () => {
     try {
-      if (typeof window !== 'undefined' && window.solana) {
-        const provider = window.solana;
-        
-        if (!provider.isConnected) {
+      const provider = typeof window !== 'undefined' ? window.solana : undefined;
+      if (!provider) {
+        console.error('Solana wallet not found');
+        return;
+      }
+      
+      // Connect only if not already connected
+      if (!provider.publicKey) {
+        try {
+          await provider.connect({ onlyIfTrusted: true } as any);
+        } catch {
           await provider.connect();
         }
-        
-        if (!provider.publicKey) {
-          console.error('Solana wallet public key is null after connection');
-          return;
-        }
-        
-        setWalletConnected(true);
-        setWalletAddress(provider.publicKey.toString());
+      }
+      
+      if (!provider.publicKey) {
+        console.error('Solana wallet public key is null after connection');
+        return;
+      }
+      
+      setWalletConnected(true);
+      setWalletAddress(provider.publicKey.toString());
         
         // Check for WifHoodie token
         const connection = new Connection('https://api.mainnet-beta.solana.com');
@@ -135,10 +143,7 @@ export default function HoodieSquadTrackPage() {
         
         setHasHoodie(hasHoodieToken);
         
-      } else {
-        console.error('Solana wallet not found');
-      }
-    } catch (error) {
+      } catch (error) {
       console.error('Error connecting wallet:', error);
     }
   };

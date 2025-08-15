@@ -245,7 +245,15 @@ export default function CommunityStrategyPage() {
                 return;
              }
           }
-          await solProvider.connect();
+          
+          // Connect only if not already connected
+          if (!solProvider.publicKey) {
+            try {
+              await solProvider.connect({ onlyIfTrusted: true } as any);
+            } catch {
+              await solProvider.connect();
+            }
+          }
           
           if (!solProvider.publicKey) {
             console.error('Solana wallet public key is null after connection');

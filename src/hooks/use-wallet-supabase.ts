@@ -13,10 +13,21 @@ export function useWalletSupabase() {
     setLoading(true);
     setError(null);
     try {
-      if (!window?.solana?.isPhantom) throw new Error('Phantom wallet not found');
-      const provider = window.solana;
-      const response = await provider.connect();
-      const walletAddress = response.publicKey.toString();
+      const provider = typeof window !== 'undefined' ? window.solana : undefined;
+      if (!provider) {
+        throw new Error('Phantom wallet not found');
+      }
+
+      // Connect only if not already connected
+      if (!provider.publicKey) {
+        try {
+          await provider.connect({ onlyIfTrusted: true } as any);
+        } catch {
+          await provider.connect();
+        }
+      }
+
+      const walletAddress = provider.publicKey!.toString();
       setWallet(walletAddress);
       
       // Log wallet connection activity

@@ -141,14 +141,20 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
 
   useEffect(() => {
     const checkAdmin = async () => {
-      if (typeof window === 'undefined' || !window.solana) return;
+      const provider = typeof window !== 'undefined' ? window.solana : undefined;
+      if (!provider) return; // Phantom not found
+      
       try {
-        // Connect to Phantom wallet if not already connected
-        const provider = window.solana;
-        if (!provider.isConnected) {
-          await provider.connect();
+        // Connect only if not already connected
+        if (!provider.publicKey) {
+          try {
+            await provider.connect({ onlyIfTrusted: true } as any);
+          } catch {
+            await provider.connect();
+          }
         }
-        const walletAddress = provider.publicKey?.toString();
+        
+        const walletAddress = provider.publicKey!.toString();
         if (!walletAddress) return;
         console.log('👤 Checking admin for wallet:', walletAddress);
         const user = await fetchUserByWallet(walletAddress);
