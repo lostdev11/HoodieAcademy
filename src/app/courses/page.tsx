@@ -227,10 +227,14 @@ export default function CoursesPage() {
   // Filter courses based on active filter, selected squad, and user's squad
   const getFilteredCourses = () => {
     let filteredCourses = allCourses;
+    
+    console.log('🔍 Debug: Total courses available:', allCourses.length);
+    console.log('🔍 Debug: Available courses:', allCourses.map(c => c.title));
 
     // Apply squad filter first
     if (selectedSquad && selectedSquad !== 'All') {
       filteredCourses = filteredCourses.filter(course => course.squad === selectedSquad);
+      console.log('🔍 Debug: After squad filter:', filteredCourses.length, 'courses');
     }
 
     // Apply filters based on active filter
@@ -239,19 +243,23 @@ export default function CoursesPage() {
         const completedCourses = filteredCourses.filter(course => 
           course.localStorageKey && courseCompletionStatus[course.localStorageKey]?.completed
         );
+        console.log('🔍 Debug: Completed courses:', completedCourses.length);
         return completedCourses;
       case 'squads':
         if (selectedSquad) {
           // Show courses for selected squad
           const squadCourseIds = getCoursesForSquad(selectedSquad);
           const squadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
+          console.log('🔍 Debug: Squad courses:', squadCourses.length);
           return squadCourses;
         } else if (!isAdmin && userSquad) {
           // Show courses for user's squad when no specific squad is selected
           const squadCourseIds = getCoursesForSquad(userSquad);
           const userSquadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
+          console.log('🔍 Debug: User squad courses:', userSquadCourses.length);
           return userSquadCourses;
         }
+        console.log('🔍 Debug: All courses (squads filter):', filteredCourses.length);
         return filteredCourses;
       default:
         // For 'all' filter, apply gating logic
@@ -262,7 +270,10 @@ export default function CoursesPage() {
             const is100Level = course.level === 'beginner' || course.level === '100' || course.level === '100-level';
             return isFree && is100Level;
           });
+          console.log('🔍 Debug: Filtered to 100-level free courses:', filteredCourses.length);
         }
+        console.log('🔍 Debug: Final filtered courses:', filteredCourses.length);
+        console.log('🔍 Debug: Final courses:', filteredCourses.map(c => c.title));
         return filteredCourses;
     }
   };
