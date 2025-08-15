@@ -1,0 +1,15 @@
+[33m5eab3dce[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/ui-updates[m[33m, [m[1;31morigin/feature/ui-updates[m[33m)[m fix(tailwind): stringify opacity values in emberFlicker keyframes to satisfy TS on Vercel
+[33m7dae21ff[m feat(token-gate): liquid glass card + warm gradient button; add academy castle background image
+[33m905763e3[m feat(token-gate): use academy-castle image as wallet connect background
+[33m6281faf4[m feat(medieval): wallet wizardry parchment variant
+[33mdc7d2186[m feat(medieval): entry page with parchment glow
+[33mecfeac70[m feat(medieval): route layout with scoped parchment theme
+[33m299fbd7a[m chore(assets): add parchment texture
+[33mdbb60317[m feat(styles): add parchment-only scoped theme
+[33ma2769679[m chore(tailwind): scan v0 folders & add parchment glow
+[33m8970e89b[m[33m ([m[1;32mfeature/dynamic-courses[m[33m)[m Remove dashboard metrics section from main page and dashboard page
+[33m8e895a4[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/feature/ui-updates[m[33m)[m feat: improve user activity API and add environment diagnostic route - Add runtime and dynamic exports to user activity API - Improve environment variable handling with getSupabaseAdmin function - Create diagnostic route for debugging environment variables - Fix Supabase client initialization in API routes
+[33mb464bcd[m Enhance activity logger: Improve completion_status consistency and add new functions
+[33m8b18c9d[m Update logWalletConnection: Use wallet and event parameter names
+[33m2681fa3[m Update activity-logger: Add WalletLogMeta type with reason field
+[33mfab6121[m Complete wallet access refactoring: Replace all unsafe window.solana access
