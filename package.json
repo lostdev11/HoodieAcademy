@@ -67,5 +67,9 @@
     "eslint-config-next": "14.1.0",
     "postcss": "^8.4.35",
     "typescript": "^5.3.3"
+  },
+  "overrides": {
+    "qrcode.react": "^3.1.0",
+    "react-qr-reader": "^3.0.0"
   }
 }

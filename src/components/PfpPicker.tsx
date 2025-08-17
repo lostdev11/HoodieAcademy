@@ -1,12 +1,12 @@
 'use client';
 
-import type { SolanaWallet } from '@/lib/phantom';
-import { getWallet, ensureConnected } from '@/lib/phantom';
+import { useEffect, useState } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useState } from 'react';
 
-export default function PfpPicker() {
+export function PfpPicker() {
+  const { connect, connected, connecting, publicKey } = useWallet();
   const [selectedPfp, setSelectedPfp] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [pfpOptions] = useState([
@@ -18,33 +18,49 @@ export default function PfpPicker() {
     '/pfp6.png'
   ]);
 
-  const ensureWallet = async () => {
-    const wallet = getWallet();
-    if (wallet) {
-      // Check if already connected by looking at publicKey existence
-      if (!wallet.publicKey) {
-        await wallet.connect();
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      // avoid SSR issues
+      if (typeof window === "undefined") return;
+
+      // if not connected, try to connect via the hook's connect()
+      if (!connected && !connecting) {
+        try {
+          await connect();
+        } catch (e) {
+          // swallow or log; user may cancel
+          console.warn("Wallet connect failed:", e);
+        }
       }
-      const addr = wallet.publicKey?.toString() ?? null;
-      setWalletAddress(addr);
-      return addr;
-    }
-    return null;
-  };
+
+      if (!cancelled) {
+        const addr = publicKey ? publicKey.toString() : null;
+        setWalletAddress(addr);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [connect, connected, connecting, publicKey]);
 
   const handlePfpSelect = async (pfpPath: string) => {
-    const addr = await ensureWallet();
-    if (addr) {
+    if (walletAddress) {
       setSelectedPfp(pfpPath);
       // Here you can add logic to save the selected PFP to the user's profile
-      console.log(`Selected PFP: ${pfpPath} for wallet: ${addr}`);
+      console.log(`Selected PFP: ${pfpPath} for wallet: ${walletAddress}`);
     }
   };
 
   const handleConnectWallet = async () => {
-    const addr = await ensureWallet();
-    if (addr) {
-      console.log('Wallet connected:', addr);
+    try {
+      if (typeof connect === 'function') {
+        await connect();
+      }
+    } catch (err) {
+      console.error('Wallet connect failed:', err);
     }
   };
 

@@ -16,7 +16,7 @@ export default function WalletConnect() {
       if (sol?.isPhantom) {
         try {
           const res = await sol.connect({ onlyIfTrusted: true });
-          const addr = res?.publicKey?.toString?.() ?? sol.publicKey?.toString?.();
+          const addr = res?.publicKey?.toString() ?? sol.publicKey?.toString();
           if (addr) {
             setWalletAddress(addr);
             setIsConnected(true);
@@ -42,7 +42,7 @@ export default function WalletConnect() {
     try {
       setIsConnecting(true);
       const res = await sol.connect();
-      const addr = res?.publicKey?.toString?.() ?? sol.publicKey?.toString?.();
+      const addr = res?.publicKey?.toString() ?? sol.publicKey?.toString();
       if (addr) {
         setWalletAddress(addr);
         setIsConnected(true);
