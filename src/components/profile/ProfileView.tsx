@@ -22,7 +22,7 @@ import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, Chevro
 import Link from 'next/link';
 import SquadBadge from '@/components/SquadBadge';
 
-export default function ProfileView() {
+function ProfileView() {
   const { publicKey, connected } = useWallet();
   const [wallet, setWallet] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -641,4 +641,7 @@ export default function ProfileView() {
       </div>
     </div>
   );
-} 
+}
+
+export default ProfileView;
+export { ProfileView }; 
