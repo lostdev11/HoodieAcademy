@@ -1,99 +1,94 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink } from 'lucide-react';
-import { squadTracks } from '@/lib/squadData';
-import Link from 'next/link';
-import { getSNSResolver, formatWalletAddress, isValidSolanaAddress, isSolDomain } from '@/services/sns-resolver';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { Connection } from '@solana/web3.js';
-import SquadBadge from '@/components/SquadBadge';
+import { getSNSResolver } from '@/lib/sns-resolver';
+import { getRealUserData } from '@/lib/leaderboardData';
+import { isValidSolanaAddress } from '@/lib/utils';
+import { squadTracks } from '@/lib/squadData';
+import PfpPicker from './PfpPicker';
+import { useToast } from '@/hooks/use-toast';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
-import PfpPicker from '@/components/profile/PfpPicker';
-import type { SolanaWallet } from '@/types/wallet';
+import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
+import SquadBadge from '@/components/SquadBadge';
 
-// Real data functions
-const getRealUserData = (walletAddress: string) => {
-  if (!walletAddress) return null;
-  
-  const userProgress = localStorage.getItem('userProgress');
-  const userProfiles = localStorage.getItem('userProfiles');
-  
-  if (userProgress) {
-    try {
-      const progress = JSON.parse(userProgress);
-      const profiles = userProfiles ? JSON.parse(userProfiles) : {};
-      const userData = progress[walletAddress];
-      const profile = profiles[walletAddress] || {};
-      
-      if (userData) {
-        return {
-          displayName: profile.displayName || `User ${walletAddress.slice(0, 6)}...`,
-          squad: profile.squad || 'Unassigned',
-          joined: profile.createdAt || new Date().toISOString(),
-          rank: profile.rank || 'Scholar',
-          completedCourses: Object.entries(userData.courses || {}).map(([courseId, courseData]: [string, any]) => ({
-            id: courseId,
-            title: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            progress: courseData.progress ? (courseData.progress.filter((p: string) => p === 'completed').length / courseData.progress.length) * 100 : 0,
-            score: courseData.finalExam?.score || 0
-          })),
-          badges: [] // Badges would be calculated based on achievements
-        };
-      }
-    } catch (error) {
-      console.error('Error parsing user data:', error);
-    }
-  }
-  
-  return null;
-};
-
-export function ProfileView() {
-  const [editMode, setEditMode] = useState(false);
-  const [displayName, setDisplayName] = useState(() => {
-    // Get display name from localStorage
-    return localStorage.getItem('userDisplayName') || 'Hoodie Scholar';
-  });
-  const [originalDisplayName, setOriginalDisplayName] = useState(() => {
-    // Store original value for cancel functionality
-    return localStorage.getItem('userDisplayName') || 'Hoodie Scholar';
-  });
-  const [squad, setSquad] = useState('Unassigned');
-  const [wallet, setWallet] = useState<string>('');
+export default function ProfileView() {
+  const { publicKey, connected } = useWallet();
+  const [wallet, setWallet] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [solDomain, setSolDomain] = useState<string | null>(null);
   const [isLoadingDomain, setIsLoadingDomain] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [displayName, setDisplayName] = useState(() => {
+    return localStorage.getItem('userDisplayName') || 'Hoodie Scholar';
+  });
+  const [originalDisplayName, setOriginalDisplayName] = useState(() => {
+    return localStorage.getItem('userDisplayName') || 'Hoodie Scholar';
+  });
+  const [squad, setSquad] = useState('Unassigned');
   const [userSquad, setUserSquad] = useState<any>(null);
   const [placementTestCompleted, setPlacementTestCompleted] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
   const [profileImage, setProfileImage] = useState<string>('🧑‍🎓');
+  const [userData, setUserData] = useState<any>(null);
 
   const snsResolver = getSNSResolver();
   const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
 
-  // Auto-detect connected wallet from localStorage or session
-  useEffect(() => {
-    const detectConnectedWallet = () => {
-      // Check localStorage for connected wallet (from TokenGate)
-      const connectedWallet = localStorage.getItem('connectedWallet');
-      const walletAddress = localStorage.getItem('walletAddress');
-      
-      if (walletAddress) {
-        setWallet(walletAddress);
-      } else if (connectedWallet) {
-        setWallet(connectedWallet);
-      } else {
-        // For demo purposes, use a test wallet that has a .sol domain
-        setWallet('JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU');
+  // Real data functions
+  const getRealUserData = (walletAddress: string) => {
+    if (!walletAddress) return null;
+    
+    const userProgress = localStorage.getItem('userProgress');
+    const userProfiles = localStorage.getItem('userProfiles');
+    
+    if (userProgress) {
+      try {
+        const progress = JSON.parse(userProgress);
+        const profiles = userProfiles ? JSON.parse(userProfiles) : {};
+        const userData = progress[walletAddress];
+        const profile = profiles[walletAddress] || {};
+        
+        if (userData) {
+          return {
+            displayName: profile.displayName || `User ${walletAddress.slice(0, 6)}...`,
+            squad: profile.squad || 'Unassigned',
+            joined: profile.createdAt || new Date().toISOString(),
+            rank: profile.rank || 'Scholar',
+            completedCourses: Object.entries(userData.courses || {}).map(([courseId, courseData]: [string, any]) => ({
+              id: courseId,
+              title: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+              progress: courseData.progress ? (courseData.progress.filter((p: string) => p === 'completed').length / courseData.progress.length) * 100 : 0,
+              score: courseData.finalExam?.score || 0
+            })),
+            badges: [] // Badges would be calculated based on achievements
+          };
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
       }
-    };
+    }
+    
+    return null;
+  };
 
+  // Simplified wallet state management using useWallet hook
+  useEffect(() => {
+    setWallet(connected && publicKey ? publicKey.toString() : null);
+  }, [connected, publicKey]);
+
+  // Load squad placement and profile data on mount
+  useEffect(() => {
     // Check for squad placement result
     const squadResult = localStorage.getItem('userSquad');
     const testCompleted = localStorage.getItem('placementTestCompleted');
@@ -113,63 +108,12 @@ export function ProfileView() {
       setPlacementTestCompleted(true);
     }
 
-    // Load saved profile image and NFT data
+    // Load saved profile image
     const savedProfileImage = localStorage.getItem('userProfileImage');
-    
     if (savedProfileImage) {
       setProfileImage(savedProfileImage);
     }
-
-    detectConnectedWallet();
   }, []);
-
-  // Listen for wallet connection changes from window.solana
-  useEffect(() => {
-    if (!wallet) return;
-    
-    const handleWalletConnect = () => {
-      const sol = typeof window !== 'undefined' ? window.solana : undefined;
-      
-      if (sol?.isPhantom && sol.isConnected) {
-        const address = sol.publicKey?.toString();
-        if (address) {
-          setWallet(address);
-          console.debug("ProfileView: Wallet connected via window.solana:", address);
-        }
-      }
-    };
-
-    const handleWalletDisconnect = () => {
-      console.log('ProfileView: Wallet disconnected');
-      // Keep the wallet address in state for now, but could clear it if needed
-    };
-
-    // Check immediately
-    handleWalletConnect();
-
-    // Listen for wallet connection changes
-    const sol = typeof window !== 'undefined' ? window.solana : undefined;
-
-    if (sol?.on) {
-      sol.on('connect', handleWalletConnect);
-      sol.on('disconnect', handleWalletDisconnect);
-    }
-
-    return () => {
-      if (sol?.removeListener) {
-        sol.removeListener('connect', handleWalletConnect);
-        sol.removeListener('disconnect', handleWalletDisconnect);
-      }
-    };
-  }, [wallet]); // keep deps minimal
-
-  // Load real user data when wallet changes
-  useEffect(() => {
-    if (wallet) {
-      const realData = getRealUserData(wallet);
-      setUserData(realData);
-    }
-  }, [wallet]);
 
   // Resolve .sol domain when wallet changes
   useEffect(() => {
@@ -194,6 +138,14 @@ export function ProfileView() {
       resolveSolDomain();
     }
   }, [wallet, snsResolver, connection]);
+
+  // Load real user data when wallet changes
+  useEffect(() => {
+    if (wallet) {
+      const realData = getRealUserData(wallet);
+      setUserData(realData);
+    }
+  }, [wallet]);
 
   const handleSave = () => {
     if (displayName.trim()) {
