@@ -203,11 +203,27 @@ function ProfileView() {
 
   const handleCopyWallet = async () => {
     try {
-      await navigator.clipboard.writeText(wallet);
+      if (!wallet) return; // nothing to copy
+
+      // Clipboard API may be unavailable (or blocked) in some browsers/contexts.
+      if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
+        // Fallback: temporary textarea + execCommand
+        const el = document.createElement('textarea');
+        el.value = wallet;
+        el.style.position = 'fixed';
+        el.style.opacity = '0';
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+      } else {
+        await navigator.clipboard.writeText(wallet); // wallet is now narrowed to string
+      }
+
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy wallet address:', err);
+      console.error('Copy failed:', err);
     }
   };
 
