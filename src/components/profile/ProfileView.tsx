@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Connection } from '@solana/web3.js';
 import { getSNSResolver, isValidSolanaAddress } from '@/services/sns-resolver';
-import { getRealUserData } from '@/lib/leaderboardData';
 import { squadTracks } from '@/lib/squadData';
 import PfpPicker from './PfpPicker';
 import { useToast } from '@/hooks/use-toast';
