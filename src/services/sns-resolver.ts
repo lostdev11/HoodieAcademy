@@ -1,4 +1,5 @@
 import { Connection, PublicKey } from "@solana/web3.js";
+import { formatWalletAddress } from '@/lib/utils';
 
 // Mock implementation for now - in production, you'd use the actual SNS SDK
 export interface SNSResolver {
@@ -95,11 +96,7 @@ export function isSolDomain(domain: string): boolean {
   return domain.endsWith('.sol') && domain.length > 4;
 }
 
-// Utility function to format wallet address
-export function formatWalletAddress(address: string): string {
-  if (address.length <= 10) return address;
-  return `${address.slice(0, 4)}...${address.slice(-4)}`;
-}
+
 
 // Utility function to validate Solana address
 export function isValidSolanaAddress(address: string): boolean {

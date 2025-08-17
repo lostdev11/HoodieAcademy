@@ -72,7 +72,7 @@ export function useWalletSupabase() {
   useEffect(() => {
       const sol = typeof window !== 'undefined' ? window.solana : undefined;
     
-    if (sol?.isConnected && sol.publicKey) {
+    if (sol?.publicKey) {
       connectWallet();
     }
   }, [connectWallet]);

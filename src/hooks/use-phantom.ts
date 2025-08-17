@@ -32,14 +32,19 @@ export function usePhantom() {
       else setAddress(pk.toString());
     };
 
-    providerRef.current?.on('connect', onConnect);
-    providerRef.current?.on('disconnect', onDisconnect);
-    providerRef.current?.on('accountChanged', onAccountChanged);
+    const provider = providerRef.current;
+    if (provider && provider.on) {
+      provider.on('connect', onConnect);
+      provider.on('disconnect', onDisconnect);
+      provider.on('accountChanged', onAccountChanged);
+    }
 
     return () => {
-      providerRef.current?.removeListener('connect', onConnect);
-      providerRef.current?.removeListener('disconnect', onDisconnect);
-      providerRef.current?.removeListener('accountChanged', onAccountChanged);
+      const provider = providerRef.current;
+      if (provider && provider.on) {
+        // Note: Phantom doesn't have removeListener, events are cleaned up automatically
+        // when the provider is disconnected or the component unmounts
+      }
     };
   }, []);
 

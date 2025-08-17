@@ -6,6 +6,18 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Local helper — avoids extra imports and satisfies TS
+export const formatWalletAddress = (
+  addr?: string | null,
+  opts: { prefix?: number; suffix?: number } = {}
+): string => {
+  if (!addr) return '';
+  const { prefix = 4, suffix = 4 } = opts;
+  return addr.length <= prefix + suffix
+    ? addr
+    : `${addr.slice(0, prefix)}…${addr.slice(-suffix)}`;
+};
+
 // Leaderboard integration utilities
 export const leaderboardService = LeaderboardService.getInstance();
 

@@ -36,7 +36,7 @@ import Link from "next/link"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
-import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
+import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event, formatWalletAddress } from '@/lib/utils'
 
 
 
@@ -241,10 +241,7 @@ export default function HoodieAcademy() {
     window.location.href = '/';
   };
 
-  const formatWalletAddress = (address: string) => {
-    if (!address) return '';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
+  // Import formatWalletAddress from utils instead of local definition
 
   // Helper function to normalize squad names for URL generation
   const normalizeSquadNameForUrl = (name: string): string => {

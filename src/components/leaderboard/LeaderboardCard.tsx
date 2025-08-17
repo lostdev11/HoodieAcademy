@@ -19,7 +19,7 @@ import {
   Copy
 } from 'lucide-react';
 import { LeaderboardUser, Achievement } from '@/lib/leaderboardData';
-import { formatWalletAddress } from '@/services/sns-resolver';
+import { formatWalletAddress } from '@/lib/utils';
 
 interface LeaderboardCardProps {
   user: LeaderboardUser;

@@ -2,6 +2,7 @@
 
 import { Message } from '@/lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
+import { formatWalletAddress } from '@/lib/utils';
 
 interface MessageBubbleProps {
   message: Message;
@@ -17,10 +18,7 @@ export default function MessageBubble({ message, isOwnMessage }: MessageBubblePr
     }
   };
 
-  const formatWalletAddress = (address: string) => {
-    if (!address) return 'Unknown';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
+  // Import formatWalletAddress from utils instead of local definition
 
   return (
     <div className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -33,7 +31,7 @@ export default function MessageBubble({ message, isOwnMessage }: MessageBubblePr
           }`}
         >
           <div className="text-sm font-medium mb-1">
-            {formatWalletAddress(message.sender)}
+            {formatWalletAddress(message.sender) || 'Unknown'}
           </div>
           <div className="text-sm leading-relaxed break-words">
             {message.text}
