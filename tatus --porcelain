@@ -8,3 +8,9 @@
 [33mdbb60317[m feat(styles): add parchment-only scoped theme
 [33ma2769679[m chore(tailwind): scan v0 folders & add parchment glow
 [33m8970e89b[m[33m ([m[1;32mfeature/dynamic-courses[m[33m)[m Remove dashboard metrics section from main page and dashboard page
+next.config.js
+next.config.mjs
+package.json
+src/components/PfpPicker.tsx
+src/components/WalletConnect.tsx
+src/components/profile/PfpPicker.tsx
