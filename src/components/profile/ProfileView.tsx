@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { getSNSResolver, formatWalletAddress, isValidSolanaAddress, isSolDomain } from '@/services/sns-resolver';
 import { Connection } from '@solana/web3.js';
 import SquadBadge from '@/components/SquadBadge';
-import { NFTProfileSelector } from '@/components/profile/NFTProfileSelector';
+import PfpPicker from '@/components/profile/PfpPicker';
 import { NFT } from '@/services/nft-service';
 import { fetchUserByWallet } from '@/lib/supabase';
 import { BountySubmissionForm, BountySubmissionData } from '@/components/bounty';
@@ -549,10 +549,10 @@ export function ProfileView() {
                 </div>
               </div>
               <div className="flex flex-col items-center gap-4">
-                  <NFTProfileSelector 
-                    walletAddress={wallet} 
-                    currentProfileImage={profileImage}
-                    onProfileImageChange={handleProfileImageChange} 
+                  <PfpPicker 
+                    selectedPfpUrl={profileImage !== '🧑‍🎓' ? profileImage : undefined}
+                    onChange={(url) => handleProfileImageChange(url || '🧑‍🎓')}
+                    userId={wallet}
                   />
                 
                 {/* Squad Badge */}
