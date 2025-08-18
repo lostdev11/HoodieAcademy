@@ -320,16 +320,20 @@ export default function TokenGate({ children }: TokenGateProps) {
         return;
       }
     } else if (providerName === 'solflare') {
-      if (typeof window !== 'undefined' && (window.solflare || window.solana?.isSolflare)) {
-        provider = window.solflare ?? window.solana;
-        console.log("✅ Debug: Solflare wallet found and available");
-      } else {
-        const errorMsg = "Solflare wallet is not installed. Please install Solflare wallet extension first.";
-        console.warn("⚠️ Solflare not found");
-        console.error("❌ Debug:", errorMsg);
-        setError(errorMsg);
-        setIsConnecting(false);
-        return;
+      if (typeof window !== 'undefined') {
+        const solflare = (window as any).solflare;
+        const solana = (window as any).solana; // may be Phantom OR Solflare
+        if (solflare || solana?.isSolflare) {
+          provider = solflare ?? solana;
+          console.log("✅ Debug: Solflare wallet found and available");
+        } else {
+          const errorMsg = "Solflare wallet is not installed. Please install Solflare wallet extension first.";
+          console.warn("⚠️ Solflare not found");
+          console.error("❌ Debug:", errorMsg);
+          setError(errorMsg);
+          setIsConnecting(false);
+          return;
+        }
       }
     }
     
