@@ -320,11 +320,12 @@ export default function TokenGate({ children }: TokenGateProps) {
         return;
       }
     } else if (providerName === 'solflare') {
-      if (window.solflare) {
-        provider = window.solflare;
+      if (typeof window !== 'undefined' && (window.solflare || window.solana?.isSolflare)) {
+        provider = window.solflare ?? window.solana;
         console.log("✅ Debug: Solflare wallet found and available");
       } else {
         const errorMsg = "Solflare wallet is not installed. Please install Solflare wallet extension first.";
+        console.warn("⚠️ Solflare not found");
         console.error("❌ Debug:", errorMsg);
         setError(errorMsg);
         setIsConnecting(false);
