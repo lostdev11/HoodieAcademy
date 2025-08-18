@@ -511,7 +511,7 @@ export default function HoodieAcademy() {
               </Card>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* Leaderboard Preview */}
               <Card className="bg-slate-800/40 border-yellow-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 lg:col-span-1">
                 <CardHeader>
@@ -650,7 +650,7 @@ export default function HoodieAcademy() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                     {getScheduledAnnouncements().map((announcement) => (
                       <div key={announcement.id} className="p-3 bg-slate-700/40 rounded-lg border border-cyan-500/40 backdrop-blur-sm hover:bg-slate-700/50 transition-all duration-200">
                         <div className="flex items-start space-x-3">

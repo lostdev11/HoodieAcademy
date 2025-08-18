@@ -90,7 +90,7 @@ export default function AchievementsPage() {
           </Card>
 
           {/* Preview of Achievement Categories */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {/* Course Completion */}
             <Card className="bg-slate-800/50 border-cyan-500/30">
               <CardHeader>

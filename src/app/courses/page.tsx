@@ -322,112 +322,103 @@ export default function CoursesPage() {
 
   return (
     <TokenGate>
-      <div className="min-h-screen relative overflow-hidden">
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 -z-10 bg-cover bg-center bg-fixed"
-          style={{
-            backgroundImage: "url('/images/Hoodie Courses.png')",
-          }}
-        />
-        
-        {/* Background Overlay - Enhanced for Hoodie courses theme */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-900/80 via-purple-900/70 to-slate-900/80" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_60%_at_50%_20%,rgba(139,92,246,0.20),transparent)]" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(80%_80%_at_20%_80%,rgba(6,182,212,0.15),transparent)]" />
-        
-        {/* Animated background effects */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        
-        <div className="relative z-10 p-8">
-          {/* Header */}
-          <div className="text-center mb-12">
-            {/* Home Navigation Button */}
-            <div className="flex justify-start mb-6">
-              <Button
-                asChild
-                variant="outline"
-                className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300"
-              >
-                <Link href="/">
-                  <Home className="w-4 h-4 mr-2" />
-                  Back to Dashboard
-                </Link>
-              </Button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
+        {/* Header */}
+        <div className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="text-center">
+              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+                🎓 Hoodie Academy Courses
+              </h1>
+              <p className="text-gray-300 text-sm sm:text-base">
+                Master Web3, Trading, and Community Strategy
+              </p>
+              <div className="flex items-center justify-center mt-4 text-sm text-gray-400">
+                <Clock className="w-4 h-4 mr-2" />
+                <span>Current Time: {currentTime}</span>
+              </div>
             </div>
-            
-            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent glow-text">
-              The Hoodie Path
-            </h1>
-            <p className="text-xl text-gray-300 mb-2">Your Quest to Hoodie Scholar.</p>
-            <p className="text-cyan-300 text-lg">
-              Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
-            </p>
-
-            {/* Squad Information */}
-            {userSquad && !isAdmin && (
-              <div className="mt-6">
-                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-yellow-500/30 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-center space-x-3">
-                      <span className="text-yellow-400 text-lg">🎯</span>
-                      <div className="text-center">
-                        <p className="text-yellow-400 font-semibold">Your Squad Track</p>
-                        <p className="text-gray-300 text-sm">
-                          {typeof userSquad === 'string' 
-                            ? (squadTracks.find(s => s.id === userSquad)?.name || userSquad)
-                            : 'Unknown Squad'
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Admin Access Notice */}
-            {isAdmin && (
-              <div className="mt-6">
-                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-purple-500/30 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-center space-x-3">
-                      <Shield className="w-5 h-5 text-purple-400" />
-                      <div className="text-center">
-                        <p className="text-purple-400 font-semibold">Admin Access</p>
-                        <p className="text-gray-300 text-sm">Password authenticated - viewing all courses</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* No Squad Notice */}
-            {!userSquad && !isAdmin && (
-              <div className="mt-6">
-                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-orange-500/30 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-center space-x-3">
-                      <span className="text-orange-400 text-lg">⚠️</span>
-                      <div className="text-center">
-                        <p className="text-orange-400 font-semibold">Squad Assignment Required</p>
-                        <p className="text-gray-300 text-sm">Complete onboarding to access squad-specific courses</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </div>
+        </div>
 
-          {/* Filter Controls */}
-          <div className="flex flex-wrap justify-center gap-4 mb-8">
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Home Navigation Button */}
+          <div className="flex justify-start mb-6">
+            <Button
+              asChild
+              variant="outline"
+              className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300"
+            >
+              <Link href="/">
+                <Home className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Link>
+            </Button>
+          </div>
+          
+          {/* Squad Information */}
+          {userSquad && !isAdmin && (
+            <div className="mt-6">
+              <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-yellow-500/30 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-center space-x-3">
+                    <span className="text-yellow-400 text-lg">🎯</span>
+                    <div className="text-center">
+                      <p className="text-yellow-400 font-semibold">Your Squad Track</p>
+                      <p className="text-gray-300 text-sm">
+                        {typeof userSquad === 'string' 
+                          ? (squadTracks.find(s => s.id === userSquad)?.name || userSquad)
+                          : 'Unknown Squad'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Admin Access Notice */}
+          {isAdmin && (
+            <div className="mt-6">
+              <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-purple-500/30 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-center space-x-3">
+                    <Shield className="w-5 h-5 text-purple-400" />
+                    <div className="text-center">
+                      <p className="text-purple-400 font-semibold">Admin Access</p>
+                      <p className="text-gray-300 text-sm">Password authenticated - viewing all courses</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* No Squad Notice */}
+          {!userSquad && !isAdmin && (
+            <div className="mt-6">
+              <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-orange-500/30 backdrop-blur-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-center space-x-3">
+                    <span className="text-orange-400 text-lg">⚠️</span>
+                    <div className="text-center">
+                      <p className="text-orange-400 font-semibold">Squad Assignment Required</p>
+                      <p className="text-gray-300 text-sm">Complete onboarding to access squad-specific courses</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Filter Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center gap-3 mb-8">
             <Button
               onClick={() => setActiveFilter('all')}
               variant={activeFilter === 'all' ? 'default' : 'outline'}
-              className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white"
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white w-full sm:w-auto"
             >
               <Filter className="w-4 h-4 mr-2" />
               All Courses
@@ -435,7 +426,7 @@ export default function CoursesPage() {
             <Button
               onClick={() => setActiveFilter('squads')}
               variant={activeFilter === 'squads' ? 'default' : 'outline'}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white w-full sm:w-auto"
             >
               <HoodieIcon className="w-4 h-4 mr-2" />
               Squad Courses
@@ -443,7 +434,7 @@ export default function CoursesPage() {
             <Button
               onClick={() => setActiveFilter('completed')}
               variant={activeFilter === 'completed' ? 'default' : 'outline'}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white"
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-white w-full sm:w-auto"
             >
               <CheckCircle className="w-4 h-4 mr-2" />
               Completed ({completedCoursesCount})
@@ -451,7 +442,7 @@ export default function CoursesPage() {
           </div>
 
           {/* Squad Filter */}
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-8 px-4">
             <SquadFilter
               onChange={setSelectedSquad}
               selectedSquad={selectedSquad}
@@ -459,7 +450,7 @@ export default function CoursesPage() {
           </div>
 
           {/* Course Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto px-2 sm:px-0">
             {getFilteredCourses().map((course) => (
               shouldShowGatedCourse(course) ? (
                 <GatedCourseCard

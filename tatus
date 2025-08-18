@@ -8,3 +8,13 @@
 [33mdbb60317[m feat(styles): add parchment-only scoped theme
 [33ma2769679[m chore(tailwind): scan v0 folders & add parchment glow
 [33m8970e89b[m[33m ([m[1;32mfeature/dynamic-courses[m[33m)[m Remove dashboard metrics section from main page and dashboard page
+[33mac0a5c79[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Update PfpPicker components, package dependencies, and utility files
+[33m16bd38e3[m Update wallet connection logic and fix ProfileView import issues
+[33m9587b900[m Update handleCopyWallet with robust clipboard fallback and better error handling
+[33mfbdf26b1[m Fix ProfileView import error and update wallet logic
+[33mb16689f1[m Update ProfileView with useWallet hook, add SNS resolver service, fix imports and export pattern
+[33m2d45a931[m Add SNS resolver service and fix ProfileView imports
+[33mcbf15ea4[m Update ProfileView to use useWallet hook, simplify wallet logic
+[33mcc93307d[m Update dependencies and remove old overrides, upgrade Keystone SDK
+[33m59d63f92[m Update PfpPicker with Next.js Image and wallet adapter, fix wallet connection syntax, update Next.js config with NFT image domains
+[33m94035c8c[m Add PfpPicker component with Phantom wallet integration
