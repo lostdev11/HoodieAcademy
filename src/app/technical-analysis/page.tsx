@@ -148,8 +148,6 @@ export default function TechnicalAnalysisPage() {
   const currentLesson = lessonsData[currentLessonIndex];
   const allLessonsCompleted = lessonStatus.every(status => status === 'completed');
   
-  const [currentTime, setCurrentTime] = useState<string>("");
-
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedStatus = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -161,14 +159,6 @@ export default function TechnicalAnalysisPage() {
         setCurrentLessonIndex(newCurrentIndex !== -1 ? newCurrentIndex : (lastCompletedIndex + 1 < lessonsData.length ? lastCompletedIndex + 1 : lastCompletedIndex));
       }
     }
-  }, []);
-
-  useEffect(() => {
-    setCurrentTime(new Date().toLocaleTimeString());
-    const timerId = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
-    }, 1000);
-    return () => clearInterval(timerId);
   }, []);
 
   const saveProgress = (newStatus: Array<'locked' | 'unlocked' | 'completed'>) => {
@@ -379,13 +369,7 @@ export default function TechnicalAnalysisPage() {
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse -z-10"></div>
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000 -z-10"></div>
       
-      {/* Current Time Display */}
-      <div className="text-center mb-6">
-        <p className="text-cyan-300 text-lg">
-          Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
-        </p>
-      </div>
-        {/* Main content: lessons, quizzes, wallet, etc. */}
+      {/* Main content: lessons, quizzes, wallet, etc. */}
         <div className="max-w-3xl mx-auto">
           <Progress value={progressPercentage} className="w-full max-w-3xl mb-8 bg-orange-900/50 [&>div]:bg-orange-500" />
 

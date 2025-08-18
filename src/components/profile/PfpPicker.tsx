@@ -216,7 +216,7 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
           </Button>
         </DialogTrigger>
 
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Select your wifhoodie</DialogTitle>
             <p className="text-sm text-gray-500 mt-2">
@@ -230,31 +230,60 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
           {!loading && connected && (
             <>
               {nfts.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {nfts.map((n) => {
-                    const img = n._normalizedImage as string | null;
-                    const name = n.content?.metadata?.name || 'NFT';
-                    return (
-                      <Card key={n.id} className="cursor-pointer hover:opacity-90" onClick={() => choose(n)}>
-                        <CardContent className="p-2">
-                          <div className="relative w-full h-40 rounded-xl overflow-hidden">
-                            {/* Next Image with fill for responsive cover */}
-                            {img && (
-                              <Image
-                                src={img}
-                                alt={name}
-                                fill
-                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 25vw"
-                                className="object-cover"
-                                onError={(e) => console.error('PfpPicker: Image failed to load:', n.id, e)}
-                              />
+                <div className="max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 pb-2">
+                    {nfts.map((n) => {
+                      const img = n._normalizedImage as string | null;
+                      const name = n.content?.metadata?.name || 'NFT';
+                      const isSelected = selectedPfpUrl === img;
+                      return (
+                        <Card 
+                          key={n.id} 
+                          className={`cursor-pointer hover:opacity-90 transition-all duration-200 ${
+                            isSelected 
+                              ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-slate-900 shadow-lg' 
+                              : 'hover:ring-2 hover:ring-cyan-300 hover:ring-offset-2 hover:ring-offset-slate-900'
+                          }`} 
+                          onClick={() => choose(n)}
+                        >
+                          <CardContent className="p-2">
+                            <div className="relative w-full h-40 rounded-xl overflow-hidden">
+                              {/* Next Image with fill for responsive cover */}
+                              {img && (
+                                <Image
+                                  src={img}
+                                  alt={name}
+                                  fill
+                                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 25vw"
+                                  className="object-cover"
+                                  onError={(e) => console.error('PfpPicker: Image failed to load:', n.id, e)}
+                                />
+                              )}
+                              {/* Selected indicator */}
+                              {isSelected && (
+                                <div className="absolute top-2 right-2 bg-cyan-400 text-slate-900 rounded-full w-6 h-6 flex items-center justify-center">
+                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-2 text-xs truncate text-center">{name}</div>
+                            {isSelected && (
+                              <div className="text-xs text-cyan-400 text-center mt-1 font-medium">
+                                Current PFP
+                              </div>
                             )}
-                          </div>
-                          <div className="mt-2 text-xs truncate">{name}</div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                  {nfts.length > 8 && (
+                    <div className="text-center text-xs text-gray-400 mt-2 pb-2">
+                      Scroll to see more NFTs
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="py-6 text-sm opacity-70">No wifhoodie NFTs found in this wallet.</div>

@@ -277,7 +277,6 @@ export default function GreatHoodieHall() {
   const [isHolder, setIsHolder] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedWallet, setSelectedWallet] = useState("Phantom"); // Default to Phantom
-  const [currentTime, setCurrentTime] = useState<string>("");
   const [isVerified, setIsVerified] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
 
@@ -340,14 +339,6 @@ export default function GreatHoodieHall() {
     }
   }, [walletAddress, checkWifHoodieOwnership]);
 
-  useEffect(() => {
-    setCurrentTime(new Date().toLocaleTimeString());
-    const timerId = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
-    }, 1000);
-    return () => clearInterval(timerId);
-  }, []);
-
   return (
     <PageLayout
       title="🏛️ The Great Hoodie Hall"
@@ -363,13 +354,9 @@ export default function GreatHoodieHall() {
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse -z-10"></div>
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000 -z-10"></div>
       
-      {/* Current Time Display */}
-      <div className="text-center mb-6">
-        <p className="text-cyan-300 text-lg">
-          Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
-        </p>
-      </div>
-        {/* Main content: glossary, resources, wallet, etc. */}
+      {/* Current Time Display - Removed to prevent overlap with mobile header */}
+      
+      {/* Main content: glossary, resources, wallet, etc. */}
         <div className="grid md:grid-cols-2 gap-8 max-w-7xl mx-auto">
           {/* Glossary */}
           <Card className="bg-slate-800/80 border-2 border-cyan-500/40 backdrop-blur-sm shadow-[0_0_30px_rgba(6,182,212,0.3)]">

@@ -142,8 +142,6 @@ const MemeCoinManiaPage = () => {
   const [walletAlertConfig, setWalletAlertConfig] = useState({ title: "", description: "" });
   const [connectedWalletProvider, setConnectedWalletProvider] = useState<WalletProviderOption | null>(null);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
-  
-  const [currentTime, setCurrentTime] = useState<string>("");
 
   const solanaNetwork = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
   const solanaConnection = new Connection(solanaNetwork, "confirmed");
@@ -334,14 +332,6 @@ const MemeCoinManiaPage = () => {
     { name: 'phantom', label: 'Phantom', icon: <Wallet size={20} className="mr-2 text-purple-500" /> },
   ];
 
-  useEffect(() => {
-    setCurrentTime(new Date().toLocaleTimeString());
-    const timerId = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
-    }, 1000);
-    return () => clearInterval(timerId);
-  }, []);
-
   return (
     <TokenGate>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
@@ -356,9 +346,7 @@ const MemeCoinManiaPage = () => {
               Meme Coin Mania
             </h1>
             <p className="text-xl text-gray-300 mb-2">Analyze trends, build a mock portfolio, and learn to navigate hype.</p>
-            <p className="text-cyan-300 text-lg">
-              Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
-            </p>
+            {/* Current Time Display - Removed to prevent overlap with mobile header */}
           </div>
           
           {/* Main content */}

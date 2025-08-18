@@ -3,7 +3,7 @@ export const dynamic = "force-static";
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowDown, ArrowRight, LockKeyhole, CheckCircle, LineChart, Clock, Filter, Shield } from "lucide-react";
+import { ArrowDown, ArrowRight, LockKeyhole, CheckCircle, LineChart, Filter, Shield } from "lucide-react";
 import { MilestoneBadge } from "@/components/course-roadmap/MilestoneBadge";
 import { RiskArt } from "@/components/course-roadmap/RiskArt";
 import { HoodieIcon } from "@/components/icons/HoodieIcon";
@@ -81,21 +81,9 @@ export default function CoursesPage() {
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState<string>("");
   const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [passwordAttempt, setPasswordAttempt] = useState("");
   const [passwordError, setPasswordError] = useState("");
-
-  // Update current time
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString());
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Check admin status and load user data
   useEffect(() => {
@@ -330,15 +318,9 @@ export default function CoursesPage() {
         showBackButton={true}
         backHref="/"
       >
-        {/* Current Time Display */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center text-sm text-gray-400">
-            <Clock className="w-4 h-4 mr-2" />
-            <span>Current Time: {currentTime}</span>
-          </div>
-        </div>
-          
-          {/* Squad Information */}
+        {/* Current Time Display - Removed to prevent overlap with mobile header */}
+        
+        {/* Squad Information */}
           {userSquad && !isAdmin && (
             <div className="mt-6">
               <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-yellow-500/30 backdrop-blur-sm">

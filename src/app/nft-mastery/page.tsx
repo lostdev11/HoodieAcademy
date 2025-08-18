@@ -142,7 +142,6 @@ export default function NftMasteryPage() {
   const [walletAlertConfig, setWalletAlertConfig] = useState({ title: "", description: "" });
   const [connectedWalletProvider, setConnectedWalletProvider] = useState<WalletProviderOption | null>(null);
   const [showWalletSelector, setShowWalletSelector] = useState(false);
-  const [currentTime, setCurrentTime] = useState<string>("");
 
   const solanaNetwork = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com";
   const solanaConnection = new Connection(solanaNetwork, "confirmed");
@@ -161,14 +160,6 @@ export default function NftMasteryPage() {
         setCurrentLessonIndex(newCurrentIndex !== -1 ? newCurrentIndex : (lastCompletedIndex + 1 < lessonsData.length ? lastCompletedIndex + 1 : lastCompletedIndex));
       }
     }
-  }, []);
-
-  useEffect(() => {
-    setCurrentTime(new Date().toLocaleTimeString());
-    const timerId = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
-    }, 1000);
-    return () => clearInterval(timerId);
   }, []);
 
   const saveProgress = (newStatus: Array<'locked' | 'unlocked' | 'completed'>) => {
@@ -379,9 +370,7 @@ export default function NftMasteryPage() {
             NFT Mastery
           </h1>
           <p className="text-xl text-gray-300 mb-2">Learn NFT creation, trading, and scam awareness.</p>
-          <p className="text-cyan-300 text-lg">
-            Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
-          </p>
+          {/* Current Time Display - Removed to prevent overlap with mobile header */}
         </div>
         {/* Main content: lessons, quizzes, wallet, etc. */}
         <div className="max-w-3xl mx-auto">

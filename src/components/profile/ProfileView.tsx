@@ -492,15 +492,35 @@ function ProfileView() {
               </div>
               <div className="flex flex-col items-center gap-4">
                   {/* Profile Picture Section */}
-                  <div className="text-center mb-2">
-                    <h3 className="text-sm font-semibold text-purple-400 mb-1">Profile Picture</h3>
-                    <p className="text-xs text-gray-400">
+                  <div className="text-center mb-4">
+                    <h3 className="text-sm font-semibold text-purple-400 mb-2">Profile Picture</h3>
+                    <p className="text-xs text-gray-400 mb-3">
                       Set your WifHoodie NFT as your profile picture to represent yourself in the community
                     </p>
+                    
+                    {/* Current PFP Display */}
+                    <div className="mb-4">
+                      <ProfileAvatar pfpUrl={profileImage} size={120} />
+                      {profileImage && profileImage !== '🧑‍🎓' && (
+                        <p className="text-xs text-cyan-400 mt-2 font-medium">
+                          ✓ NFT Profile Picture Active
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* PFP Selection Instructions */}
+                    <div className="bg-slate-800/40 rounded-lg p-3 mb-4 border border-cyan-500/20">
+                      <p className="text-xs text-gray-300 mb-2">
+                        <strong>How to change your PFP:</strong>
+                      </p>
+                      <ol className="text-xs text-gray-400 text-left space-y-1">
+                        <li>1. Click "Set wifhoodie PFP" below</li>
+                        <li>2. Browse your NFT collection</li>
+                        <li>3. Click any NFT to select it</li>
+                        <li>4. Your profile will update instantly</li>
+                      </ol>
+                    </div>
                   </div>
-                  
-                  {/* Profile Avatar */}
-                  <ProfileAvatar pfpUrl={profileImage} size={120} />
                   
                   {/* PfpPicker for selecting new profile pictures */}
                   <PfpPicker 

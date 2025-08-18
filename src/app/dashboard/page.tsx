@@ -99,7 +99,6 @@ const getRealUpcomingClasses = (): UpcomingClass[] => {
 };
 
 export default function DashboardPage() {
-  const [currentTime, setCurrentTime] = useState<string>("");
   const [overallProgress, setOverallProgress] = useState(0);
   const [showProfileSuggestion, setShowProfileSuggestion] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
@@ -112,14 +111,6 @@ export default function DashboardPage() {
   const [completedCoursesCount, setCompletedCoursesCount] = useState(0);
   const [totalCoursesCount, setTotalCoursesCount] = useState(6);
   const [userDisplayName, setUserDisplayName] = useState<string>("Hoodie Scholar");
-
-  useEffect(() => {
-    setCurrentTime(new Date().toLocaleTimeString());
-    const timerId = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
-    }, 1000);
-    return () => clearInterval(timerId);
-  }, []);
 
   useEffect(() => {
     // Check for profile suggestions and onboarding status
@@ -267,10 +258,7 @@ export default function DashboardPage() {
         profileImage={profileImage}
       >
         {/* Current Time Display */}
-        <div className="text-center mb-6">
-          <div className="text-sm text-gray-300">Current Time</div>
-          <div className="text-lg text-cyan-400 font-mono drop-shadow">{currentTime}</div>
-        </div>
+        {/* Removed duplicate time display to prevent overlap with mobile header */}
 
         {/* Dashboard Content */}
         <main className="space-y-6">
