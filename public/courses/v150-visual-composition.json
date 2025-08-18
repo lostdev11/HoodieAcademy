@@ -1,0 +1,75 @@
+{
+  "id": "v150-visual-composition",
+  "slug": "v150-visual-composition",
+  "title": "Visual Composition & Meme Flow",
+  "description": "Master the principles of visual composition to create memes that capture attention and guide the viewer's eye through your narrative.",
+  "badge": "Flow Master",
+  "emoji": "🎯",
+  "pathType": "attention",
+  "href": "/courses/v150-visual-composition",
+  "localStorageKey": "v150VisualCompositionProgress",
+  "totalLessons": 6,
+  "squad": "Creators",
+  "category": "attention-mechanics",
+  "level": "intermediate",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Attention Mechanics",
+      "description": "Understand how to capture and hold viewer attention",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "The 3-Second Rule",
+          "content": "You have 3 seconds to capture attention. In the fast-scrolling world of social media, your visual must immediately communicate its value.\n\n**Attention Hooks:**\n• Bright, contrasting colors\n• Unexpected elements\n• Clear focal points\n• Emotional triggers\n• Pattern breaks\n\n**Web3 Attention Patterns:**\n• Chart movements\n• Price changes\n• Community reactions\n• Technical events\n• Market sentiment\n\n**Testing Attention:**\n• A/B test different versions\n• Track engagement metrics\n• Observe scroll behavior\n• Gather community feedback",
+          "video": "/videos/attention-mechanics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Visual Hierarchy",
+          "content": "**Hierarchy Principles:**\n• Size = importance\n• Color = emotion\n• Position = flow\n• Contrast = focus\n• Spacing = breathing room\n\n**Reading Patterns:**\n• F-pattern (left to right, top to bottom)\n• Z-pattern (diagonal scanning)\n• Center focus (radial attention)\n• Edge detection (boundary awareness)\n\n**Web3 Hierarchy:**\n• Price/numbers (most important)\n• Chart patterns (context)\n• Community reactions (social proof)\n• Technical details (expertise)",
+          "video": "/videos/visual-hierarchy.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Composition Techniques",
+      "description": "Master classic and modern composition rules",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Rule of Thirds",
+          "content": "**Grid-Based Composition:**\n• Divide image into 3x3 grid\n• Place key elements at intersections\n• Create dynamic balance\n• Guide eye movement\n\n**Web3 Applications:**\n• Chart placement\n• Text positioning\n• Character placement\n• Logo positioning\n• Call-to-action placement\n\n**Breaking the Rules:**\n• Center composition for emphasis\n• Asymmetrical balance\n• Radial composition\n• Minimalist approaches",
+          "video": "/videos/rule-of-thirds.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Leading Lines & Flow",
+          "content": "**Line Types:**\n• Horizontal (calm, stable)\n• Vertical (strength, growth)\n• Diagonal (energy, movement)\n• Curved (organic, flowing)\n• Zigzag (chaos, excitement)\n\n**Flow Direction:**\n• Left to right (natural reading)\n• Top to bottom (hierarchy)\n• Diagonal (dynamic)\n• Circular (completion)\n\n**Web3 Flow Examples:**\n• Chart trend lines\n• Price movement arrows\n• Community growth curves\n• Timeline progressions",
+          "video": "/videos/leading-lines.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Color Psychology & Contrast",
+      "description": "Use color to evoke emotions and create visual impact",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Color Psychology in Web3",
+          "content": "**Web3 Color Meanings:**\n• Green = profit, growth, bullish\n• Red = loss, danger, bearish\n• Blue = trust, stability, tech\n• Purple = luxury, innovation, royalty\n• Orange = energy, excitement, warning\n• Yellow = optimism, caution, gold\n\n**Emotional Impact:**\n• Warm colors = energy, passion\n• Cool colors = calm, trust\n• Bright colors = attention, urgency\n• Muted colors = sophistication, subtlety\n\n**Cultural Context:**\n• Market sentiment colors\n• Platform-specific palettes\n• Brand consistency\n• Accessibility considerations",
+          "video": "/videos/color-psychology.mp4"
+        },
+        {
+          "id": "lesson-3-2",
+          "title": "Contrast & Readability",
+          "content": "**Contrast Types:**\n• Value contrast (light vs dark)\n• Color contrast (hue differences)\n• Size contrast (scale differences)\n• Texture contrast (smooth vs rough)\n\n**Readability Rules:**\n• Minimum 4.5:1 contrast ratio\n• Test on different screens\n• Consider color blindness\n• Use outlines when needed\n• Avoid similar colors\n\n**Web3 Readability:**\n• Chart data visibility\n• Text legibility\n• Button accessibility\n• Icon clarity\n• Brand recognition",
+          "video": "/videos/contrast-readability.mp4"
+        }
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,69 @@
+{
+  "id": "n300-collector-archetypes",
+  "slug": "n300-collector-archetypes",
+  "title": "Collector Archetypes",
+  "description": "Master the psychology and behavior patterns of different NFT collector types. Learn to understand, engage, and communicate effectively with various collector archetypes in your community.",
+  "badge": "Collector Whisperer",
+  "emoji": "🎭",
+  "pathType": "psychology",
+  "href": "/courses/n300-collector-archetypes",
+  "localStorageKey": "n300CollectorArchetypesProgress",
+  "totalLessons": 4,
+  "squad": "Speakers",
+  "category": "audience-understanding",
+  "level": "advanced",
+  "access": "squad-gated",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Collector Psychology",
+      "description": "Understand the fundamental psychology behind NFT collecting behavior",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Collector Motivation",
+          "content": "NFT collectors are driven by various psychological factors that influence their behavior, decision-making, and community participation. Understanding these motivations is crucial for effective communication.\n\n**Primary Motivations:**\n• Investment potential (financial gain)\n• Community belonging (social connection)\n• Artistic appreciation (aesthetic value)\n• Status seeking (social recognition)\n• Technological interest (innovation)\n\n**Psychological Factors:**\n• FOMO (Fear of Missing Out)\n• Social proof (following others)\n• Scarcity bias (limited availability)\n• Ownership psychology (possessiveness)\n• Identity expression (self-representation)\n\n**Behavioral Patterns:**\n• Research intensity\n• Risk tolerance\n• Community engagement\n• Communication style\n• Investment strategy",
+          "video": "/videos/collector-psychology.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Archetype Framework",
+          "content": "**Archetype Categories:**\n• The Investor (profit-focused)\n• The Collector (completion-focused)\n• The Community Builder (relationship-focused)\n• The Artist (creation-focused)\n• The Technologist (innovation-focused)\n\n**Identification Methods:**\n• Communication patterns\n• Investment behavior\n• Community participation\n• Content consumption\n• Social interactions\n\n**Engagement Strategies:**\n• Tailored messaging\n• Relevant content\n• Appropriate channels\n• Timing optimization\n• Relationship building",
+          "video": "/videos/archetype-framework.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Archetype Deep Dive",
+      "description": "Explore specific collector archetypes and their characteristics",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "The Investor",
+          "content": "**Characteristics:**\n• Profit-focused mindset\n• Data-driven decisions\n• Risk management\n• Market analysis\n• Portfolio optimization\n\n**Communication Style:**\n• Factual and direct\n• Data and metrics\n• Market insights\n• Risk assessment\n• Performance focus\n\n**Engagement Strategies:**\n• Provide market data\n• Share investment insights\n• Discuss risk management\n• Highlight opportunities\n• Focus on returns",
+          "video": "/videos/investor-archetype.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "The Community Builder",
+          "content": "**Characteristics:**\n• Relationship-focused\n• Community-oriented\n• Collaborative mindset\n• Social engagement\n• Network building\n\n**Communication Style:**\n• Warm and inclusive\n• Story-driven\n• Community-focused\n• Collaborative\n• Relationship-building\n\n**Engagement Strategies:**\n• Highlight community\n• Share stories\n• Facilitate connections\n• Create opportunities\n• Build relationships",
+          "video": "/videos/community-builder.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Communication Strategies",
+      "description": "Learn to communicate effectively with different collector archetypes",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Tailored Communication",
+          "content": "**Message Customization:**\n• Archetype-specific language\n• Relevant content focus\n• Appropriate channels\n• Optimal timing\n• Relationship building\n\n**Content Strategy:**\n• Educational content\n• Community stories\n• Market insights\n• Technical information\n• Social engagement\n\n**Relationship Building:**\n• Consistent communication\n• Value delivery\n• Trust building\n• Community integration\n• Long-term engagement",
+          "video": "/videos/tailored-communication.mp4"
+        }
+      ]
+    }
+  ]
+} 

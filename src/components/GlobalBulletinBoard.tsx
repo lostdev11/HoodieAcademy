@@ -21,6 +21,227 @@ interface BulletinData {
   squads: Record<string, Message[]>;
 }
 
+// Local bulletin data
+const localBulletinData: BulletinData = {
+  global: [
+    {
+      id: '1',
+      title: '🚨 Class Is In Session Campaign Launch',
+      body: `# 🎓 Welcome to Hoodie Academy!
+
+**Campaign Overview:**
+- Each squad must drop a demo item by **Friday**
+- Focus on the "Class Is In Session" theme
+- All submissions will be reviewed by the community
+
+**Important Dates:**
+- **Submission Deadline:** Friday, 11:59 PM UTC
+- **Community Review:** Saturday-Sunday
+- **Winners Announced:** Monday
+
+**Rewards:**
+- Top 3 submissions get exclusive hoodie NFTs
+- Featured placement on the main dashboard
+- Recognition in the Great Hoodie Hall
+
+*Good luck to all squads!* 🧢✨`,
+      priority: 'high',
+      createdAt: '2024-01-15T10:00:00Z',
+      author: 'Hoodie Academy Admin'
+    },
+    {
+      id: '2',
+      title: '📢 New Discord Server Structure',
+      body: `We've reorganized our Discord server to better support squad collaboration:
+
+## 🏗️ New Channel Structure
+- **#general** - Global announcements and discussions
+- **#squad-chat** - Cross-squad collaboration
+- **#resources** - Shared learning materials
+- **#showcase** - Member submissions and highlights
+
+## 🎯 Squad-Specific Channels
+Each squad now has their own dedicated space:
+- **#creators-workshop** - Meme and graphic creation
+- **#decoders-library** - Educational content and TLDRs
+- **#speakers-stage** - Community engagement and events
+- **#raiders-hq** - Discord management and onboarding
+- **#rangers-scout** - Partnership and opportunity hunting
+- **#treasury-vault** - Financial strategy and metrics
+
+*Join your squad's channel and start collaborating!* 🚀`,
+      priority: 'medium',
+      createdAt: '2024-01-14T15:30:00Z',
+      author: 'Community Manager'
+    },
+    {
+      id: '3',
+      title: '🎉 Weekly Community Highlights',
+      body: `## 🌟 This Week's Achievements
+
+**Top Contributors:**
+- @hoodie_creator_123 - Amazing meme collection
+- @decoder_master - Comprehensive DeFi guide
+- @speaker_pro - Engaging community discussions
+
+**Squad Milestones:**
+- **Creators:** 50+ memes created this week
+- **Decoders:** 25 educational posts
+- **Speakers:** 3 successful community events
+- **Raiders:** Discord structure 90% complete
+- **Rangers:** 5 new partnerships identified
+- **Treasury:** 15% increase in community engagement
+
+**Upcoming Events:**
+- Friday: Squad submission deadline
+- Saturday: Community voting opens
+- Sunday: Live Q&A with top contributors
+
+*Keep up the amazing work!* 🎊`,
+      priority: 'low',
+      createdAt: '2024-01-13T09:15:00Z',
+      author: 'Community Manager'
+    }
+  ],
+  squads: {
+    creators: [
+      {
+        id: 'c1',
+        title: '🎨 Creators Squad - Meme Assets Due Friday',
+        body: `# 🎨 Creators Squad Update
+
+**Priority Task:** Create meme assets for "Class Is In Session" campaign
+
+## 📋 Requirements:
+- **Format:** PNG/JPG, 1080x1080px minimum
+- **Theme:** "Class Is In Session" - hoodie culture meets education
+- **Style:** Pixel art, memes, or graphic design
+- **Quantity:** 3-5 pieces per creator
+
+## 🎯 Focus Areas:
+- Hoodie + graduation cap combinations
+- "Study hard, hoodie harder" variations
+- Cyberpunk academic aesthetics
+- Meme templates for community use
+
+**Submission:** Post in #creators-workshop with #class-in-session tag`,
+        priority: 'high',
+        createdAt: '2024-01-15T14:00:00Z',
+        author: 'Creators Squad Lead',
+        squad: 'creators'
+      }
+    ],
+    decoders: [
+      {
+        id: 'd1',
+        title: '🧠 Decoders Squad - Market Analysis Due',
+        body: `# 🧠 Decoders Squad Update
+
+**Priority Task:** Complete market analysis for current trends
+
+## 📊 Analysis Requirements:
+- **Scope:** Top 3 trending sectors in Web3
+- **Depth:** Technical analysis + fundamental research
+- **Format:** Thread with charts and explanations
+- **Deadline:** Friday EOD
+
+## 🔍 Focus Areas:
+- NFT market dynamics
+- DeFi protocol analysis
+- Gaming sector trends
+- Cross-chain opportunities
+
+**Submission:** Post in #decoders-library with #market-analysis tag`,
+        priority: 'medium',
+        createdAt: '2024-01-15T12:00:00Z',
+        author: 'Decoders Squad Lead',
+        squad: 'decoders'
+      }
+    ],
+    speakers: [
+      {
+        id: 's1',
+        title: '🎤 Speakers Squad - Community Event Planning',
+        body: `# 🎤 Speakers Squad Update
+
+**Priority Task:** Plan and host community engagement events
+
+## 🎯 Event Requirements:
+- **Type:** 15-minute community check-ins
+- **Frequency:** 2-3 events this week
+- **Focus:** Welcoming new members, sharing insights
+- **Platform:** Discord voice channels
+
+## 📋 Planning Checklist:
+- Event topics and speakers
+- Promotion strategy
+- Engagement metrics tracking
+- Follow-up content creation
+
+**Coordination:** Use #speakers-stage for planning`,
+        priority: 'medium',
+        createdAt: '2024-01-15T11:00:00Z',
+        author: 'Speakers Squad Lead',
+        squad: 'speakers'
+      }
+    ],
+    raiders: [
+      {
+        id: 'r1',
+        title: '⚔️ Raiders Squad - Meta Analysis Due',
+        body: `# ⚔️ Raiders Squad Update
+
+**Priority Task:** Meta trend analysis and strategy development
+
+## 📈 Analysis Requirements:
+- **Scope:** 2 emerging meta trends
+- **Depth:** Entry/exit strategies + risk assessment
+- **Format:** Detailed thread with examples
+- **Deadline:** Friday EOD
+
+## 🎯 Focus Areas:
+- Market psychology patterns
+- Trait analysis methodologies
+- Timing and execution strategies
+- Risk management protocols
+
+**Submission:** Post in #raiders-hq with #meta-analysis tag`,
+        priority: 'high',
+        createdAt: '2024-01-15T13:00:00Z',
+        author: 'Raiders Squad Lead',
+        squad: 'raiders'
+      }
+    ],
+    rangers: [
+      {
+        id: 'rg1',
+        title: '🦅 Rangers Squad - Cross-Squad Collaboration',
+        body: `# 🦅 Rangers Squad Update
+
+**Priority Task:** Facilitate cross-squad collaboration projects
+
+## 🤝 Collaboration Requirements:
+- **Scope:** Work with 2 different squads
+- **Project:** Joint knowledge sharing or content creation
+- **Duration:** This week
+- **Output:** Shared resource or event
+
+## 🎯 Focus Areas:
+- Bridging squad expertise
+- Creating shared resources
+- Organizing cross-squad events
+- Knowledge transfer sessions
+
+**Coordination:** Use #rangers-scout for project planning`,
+        priority: 'medium',
+        createdAt: '2024-01-15T10:00:00Z',
+        author: 'Rangers Squad Lead',
+        squad: 'rangers'
+      }
+    ]
+  }
+};
+
 const getPriorityColor = (priority: string) => {
   switch (priority) {
     case 'high': return 'text-red-400';
@@ -63,39 +284,34 @@ interface GlobalBulletinBoardProps {
 export default function GlobalBulletinBoard({ squadId }: GlobalBulletinBoardProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchBulletins = async () => {
-      try {
-        setIsLoading(true);
-        // For now, use mock data since we removed Netlify functions
-        const mockBulletins: Message[] = [
-          {
-            id: "1",
-            title: "Welcome to Hoodie Academy!",
-            body: "Your journey to Web3 mastery begins here.",
-            createdAt: new Date().toISOString(),
-            priority: "high"
-          },
-          {
-            id: "2",
-            title: "New Course Available",
-            body: "Check out our latest course on NFT trading psychology.",
-            createdAt: new Date().toISOString(),
-            priority: "medium"
-          }
-        ];
+    // Simulate loading delay for better UX
+    const timer = setTimeout(() => {
+      const global = localBulletinData.global || [];
+      const squad = squadId && localBulletinData.squads?.[squadId] ? localBulletinData.squads[squadId] : [];
+      
+      // Combine global and squad-specific messages, with global first
+      const allMessages = [...global, ...squad];
+      
+      // Sort by priority (high first) and then by creation date (newest first)
+      const sortedMessages = allMessages.sort((a, b) => {
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        const aPriority = priorityOrder[a.priority] || 0;
+        const bPriority = priorityOrder[b.priority] || 0;
         
-        setMessages(mockBulletins);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching bulletins:', error);
-        setIsLoading(false);
-      }
-    };
+        if (aPriority !== bPriority) {
+          return bPriority - aPriority;
+        }
+        
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+      
+      setMessages(sortedMessages);
+      setIsLoading(false);
+    }, 500);
 
-    fetchBulletins();
+    return () => clearTimeout(timer);
   }, [squadId]);
 
   if (isLoading) {
@@ -117,24 +333,6 @@ export default function GlobalBulletinBoard({ squadId }: GlobalBulletinBoardProp
           </Card>
         ))}
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="bg-slate-800/50 border border-red-500/30">
-        <CardContent className="p-6 text-center">
-          <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-red-400 mb-2">Error Loading Announcements</h3>
-          <p className="text-gray-300 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors"
-          >
-            Try Again
-          </button>
-        </CardContent>
-      </Card>
     );
   }
 
@@ -179,7 +377,7 @@ export default function GlobalBulletinBoard({ squadId }: GlobalBulletinBoardProp
           <CardContent>
             <div className="prose prose-invert prose-sm max-w-none">
               <div className="text-gray-300 leading-relaxed">
-                                <ReactMarkdown 
+                <ReactMarkdown 
                   components={{
                     h1: ({ children }) => <h1 className="text-xl font-bold text-cyan-400 mb-3">{children}</h1>,
                     h2: ({ children }) => <h2 className="text-lg font-semibold text-cyan-300 mb-2 mt-4">{children}</h2>,

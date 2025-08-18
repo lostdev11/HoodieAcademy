@@ -209,6 +209,18 @@ export interface CourseCompletion {
   final_exam_approved_at?: string;
 }
 
+export interface Assignment {
+  id?: string;
+  course_slug: string;
+  content: string;
+  user_id: string;
+  submitted_at?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewed_by?: string;
+  reviewed_at?: string;
+  feedback?: string;
+}
+
 // Start a course for a user
 export async function startCourse(user_id: string, course_id: string) {
   try {
@@ -491,6 +503,98 @@ export async function getFinalExamApprovalsByAdmin(admin_user_id: string) {
     return data;
   } catch (error) {
     console.error('Error fetching final exam approvals by admin:', error);
+    throw error;
+  }
+}
+
+// Assignment submission functions
+export async function submitAssignment(course_slug: string, content: string, user_id: string): Promise<Assignment> {
+  try {
+    const { data, error } = await supabase
+      .from('assignments')
+      .insert({
+        course_slug,
+        content,
+        user_id,
+        submitted_at: new Date().toISOString(),
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error submitting assignment:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in submitAssignment:', error);
+    throw error;
+  }
+}
+
+export async function getAssignmentsByUser(user_id: string): Promise<Assignment[]> {
+  try {
+    const { data, error } = await supabase
+      .from('assignments')
+      .select('*')
+      .eq('user_id', user_id)
+      .order('submitted_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user assignments:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getAssignmentsByUser:', error);
+    throw error;
+  }
+}
+
+export async function getAllAssignments(): Promise<Assignment[]> {
+  try {
+    const { data, error } = await supabase
+      .from('assignments')
+      .select('*')
+      .order('submitted_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching all assignments:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getAllAssignments:', error);
+    throw error;
+  }
+}
+
+export async function reviewAssignment(assignment_id: string, status: 'approved' | 'rejected', reviewer_id: string, feedback?: string): Promise<Assignment> {
+  try {
+    const { data, error } = await supabase
+      .from('assignments')
+      .update({
+        status,
+        reviewed_by: reviewer_id,
+        reviewed_at: new Date().toISOString(),
+        feedback
+      })
+      .eq('id', assignment_id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error reviewing assignment:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in reviewAssignment:', error);
     throw error;
   }
 } 

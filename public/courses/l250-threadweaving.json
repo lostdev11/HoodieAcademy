@@ -1,0 +1,63 @@
+{
+  "id": "l250-threadweaving",
+  "slug": "l250-threadweaving",
+  "title": "Threadweaving & Meme Lore Fusion",
+  "description": "Master the art of creating viral Twitter threads that weave together memes, lore, and community narratives. Learn to craft compelling stories that spread across platforms.",
+  "badge": "Thread Weaver",
+  "emoji": "🧵",
+  "pathType": "platform",
+  "href": "/courses/l250-threadweaving",
+  "localStorageKey": "l250ThreadweavingProgress",
+  "totalLessons": 4,
+  "squad": "Creators",
+  "category": "platform-strategy",
+  "level": "advanced",
+  "access": "hoodie-gated",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Thread Structure & Flow",
+      "description": "Learn to craft compelling Twitter threads that engage and spread",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "The Art of Threadweaving",
+          "content": "Twitter threads are powerful tools for storytelling in Web3. They combine narrative, visuals, and community engagement in a format designed to spread.\n\n**Thread Elements:**\n• Hook tweet (attention grabber)\n• Story progression (narrative arc)\n• Visual elements (images, GIFs)\n• Community interaction (replies, RTs)\n• Call to action (engagement)\n\n**Web3 Thread Types:**\n• Project announcements\n• Educational content\n• Community stories\n• Market analysis\n• Technical explanations\n• Lore development",
+          "video": "/videos/threadweaving-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Viral Thread Mechanics",
+          "content": "**Viral Elements:**\n• Emotional resonance\n• Surprise and delight\n• Educational value\n• Community relevance\n• Shareable format\n\n**Engagement Strategies:**\n• Ask questions\n• Encourage replies\n• Create anticipation\n• Build suspense\n• Reward participation\n\n**Platform Optimization:**\n• Character limits\n• Image dimensions\n• Hashtag strategy\n• Timing optimization\n• Cross-platform sharing",
+          "video": "/videos/viral-threads.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Meme Integration",
+      "description": "Seamlessly integrate memes into your narrative threads",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Meme-Lore Fusion",
+          "content": "**Meme Integration Techniques:**\n• Contextual placement\n• Cultural references\n• Community in-jokes\n• Visual storytelling\n• Emotional amplification\n\n**Lore-Meme Balance:**\n• Educational value\n• Entertainment factor\n• Community building\n• Brand consistency\n• Accessibility\n\n**Fusion Examples:**\n• Origin story memes\n• Character development\n• Event reactions\n• Future predictions\n• Community milestones",
+          "video": "/videos/meme-lore-fusion.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Platform Strategy",
+      "description": "Optimize your content for different social platforms",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Multi-Platform Content",
+          "content": "**Platform-Specific Strategies:**\n• Twitter: Threads, real-time engagement\n• Discord: Community discussions\n• Reddit: Detailed explanations\n• TikTok: Short-form video\n• Instagram: Visual storytelling\n• YouTube: Long-form content\n\n**Content Adaptation:**\n• Format optimization\n• Length adjustments\n• Visual requirements\n• Engagement patterns\n• Community culture\n\n**Cross-Platform Synergy:**\n• Consistent messaging\n• Platform-specific hooks\n• Community cross-pollination\n• Content repurposing\n• Unified brand voice",
+          "video": "/videos/platform-strategy.mp4"
+        }
+      ]
+    }
+  ]
+} 

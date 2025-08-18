@@ -1,0 +1,69 @@
+{
+  "id": "l220-conflict-portal",
+  "slug": "l220-conflict-portal",
+  "title": "Conflict & Portal Lore Threads",
+  "description": "Master the art of creating compelling narrative tension through conflict and portal lore. Learn to weave stories that create emotional investment, community engagement, and cultural depth.",
+  "badge": "Narrative Weaver",
+  "emoji": "🌌",
+  "pathType": "narrative",
+  "href": "/courses/l220-conflict-portal",
+  "localStorageKey": "l220ConflictPortalProgress",
+  "totalLessons": 4,
+  "squad": "Speakers",
+  "category": "narrative-tension",
+  "level": "advanced",
+  "access": "squad-gated",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Narrative Tension",
+      "description": "Understand how to create compelling conflict and tension in community narratives",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Conflict in Lore",
+          "content": "Conflict is the engine that drives compelling narratives and creates emotional investment in community lore. Understanding how to craft meaningful conflict is essential for engaging storytelling.\n\n**Conflict Types:**\n• Internal conflict (character growth)\n• External conflict (community challenges)\n• Ideological conflict (value clashes)\n• Environmental conflict (world challenges)\n• Relational conflict (character dynamics)\n\n**Conflict Functions:**\n• Drives plot forward\n• Reveals character\n• Creates tension\n• Builds investment\n• Resolves growth\n\n**Community Impact:**\n• Emotional engagement\n• Character development\n• Plot progression\n• Cultural depth\n• Community investment",
+          "video": "/videos/conflict-lore.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Portal Symbolism",
+          "content": "**Portal Meanings:**\n• Transformation and change\n• Gateway to new worlds\n• Transition moments\n• Opportunity and growth\n• Mystery and discovery\n\n**Narrative Functions:**\n• Plot advancement\n• Character development\n• World expansion\n• Mystery creation\n• Resolution facilitation\n\n**Community Application:**\n• Story progression\n• Character evolution\n• World building\n• Mystery engagement\n• Cultural development",
+          "video": "/videos/portal-symbolism.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Thread Crafting",
+      "description": "Learn to craft compelling narrative threads that engage and inspire",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Thread Structure",
+          "content": "**Thread Elements:**\n• Clear beginning\n• Compelling conflict\n• Character development\n• Plot progression\n• Satisfying resolution\n\n**Crafting Techniques:**\n• Hook creation\n• Tension building\n• Character development\n• Plot advancement\n• Resolution delivery\n\n**Engagement Strategies:**\n• Emotional investment\n• Character connection\n• Plot intrigue\n• Community participation\n• Cultural resonance",
+          "video": "/videos/thread-structure.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Community Integration",
+          "content": "**Community Involvement:**\n• Character creation\n• Plot participation\n• Story development\n• Cultural contribution\n• Lore building\n\n**Integration Methods:**\n• Collaborative storytelling\n• Community feedback\n• Character development\n• Plot evolution\n• Cultural resonance\n\n**Impact Measurement:**\n• Community engagement\n• Story retention\n• Character investment\n• Cultural development\n• Narrative evolution",
+          "video": "/videos/community-integration.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Advanced Storytelling",
+      "description": "Master advanced techniques for creating compelling community narratives",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Narrative Mastery",
+          "content": "**Advanced Techniques:**\n• Multi-thread weaving\n• Character complexity\n• Plot intricacy\n• Cultural depth\n• Emotional resonance\n\n**Story Development:**\n• Long-term planning\n• Character arcs\n• Plot progression\n• Cultural evolution\n• Community engagement\n\n**Success Metrics:**\n• Community investment\n• Story retention\n• Character development\n• Cultural impact\n• Narrative evolution",
+          "video": "/videos/narrative-mastery.mp4"
+        }
+      ]
+    }
+  ]
+} 

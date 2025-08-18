@@ -1,0 +1,69 @@
+{
+  "id": "o200-space-hosting",
+  "slug": "o200-space-hosting",
+  "title": "Space Hosting Fundamentals",
+  "description": "Master the art of hosting engaging Twitter Spaces that build community, amplify culture, and drive meaningful conversations. Learn to create memorable experiences that keep people coming back.",
+  "badge": "Space Master",
+  "emoji": "🎤",
+  "pathType": "communication",
+  "href": "/courses/o200-space-hosting",
+  "localStorageKey": "o200SpaceHostingProgress",
+  "totalLessons": 5,
+  "squad": "Speakers",
+  "category": "public-communication",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Space Hosting Basics",
+      "description": "Understand the fundamentals of hosting successful Twitter Spaces",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What Makes a Great Space?",
+          "content": "Twitter Spaces are live audio conversations that can build community, amplify culture, and create lasting connections. Understanding what makes them successful is key to becoming a great host.\n\n**Space Elements:**\n• Clear theme and purpose\n• Engaging conversation flow\n• Active audience participation\n• Technical quality\n• Memorable moments\n\n**Host Responsibilities:**\n• Set the tone and energy\n• Guide conversation flow\n• Manage participants\n• Handle technical issues\n• Create engagement opportunities\n\n**Success Factors:**\n• Authentic energy\n• Clear communication\n• Community focus\n• Technical preparation\n• Follow-up engagement",
+          "video": "/videos/space-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Pre-Space Preparation",
+          "content": "**Theme Development:**\n• Choose compelling topics\n• Research thoroughly\n• Prepare key points\n• Plan conversation flow\n• Identify potential questions\n\n**Technical Setup:**\n• Test audio equipment\n• Check internet connection\n• Prepare backup plans\n• Set up recording\n• Coordinate with co-hosts\n\n**Promotion Strategy:**\n• Create engaging announcements\n• Leverage community networks\n• Use visual assets\n• Set clear expectations\n• Build anticipation",
+          "video": "/videos/pre-space-prep.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Hosting Techniques",
+      "description": "Learn advanced techniques for engaging and managing Space participants",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Conversation Flow",
+          "content": "**Opening Strong:**\n• Welcome everyone warmly\n• Set clear expectations\n• Introduce the theme\n• Create initial engagement\n• Establish energy level\n\n**Maintaining Momentum:**\n• Keep conversation flowing\n• Transition smoothly\n• Include audience voices\n• Handle tangents gracefully\n• Build on previous points\n\n**Closing Effectively:**\n• Summarize key points\n• Thank participants\n• Preview next steps\n• Encourage follow-up\n• End on high note",
+          "video": "/videos/conversation-flow.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Audience Engagement",
+          "content": "**Participation Techniques:**\n• Ask open questions\n• Use polls and reactions\n• Call on specific people\n• Acknowledge contributions\n• Create safe space\n\n**Energy Management:**\n• Match audience energy\n• Boost when needed\n• Calm when necessary\n• Maintain enthusiasm\n• Handle conflicts gracefully\n\n**Technical Management:**\n• Monitor audio quality\n• Handle technical issues\n• Manage speaker queue\n• Control background noise\n• Ensure smooth experience",
+          "video": "/videos/audience-engagement.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Advanced Hosting",
+      "description": "Master advanced hosting skills for memorable experiences",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Specialized Spaces",
+          "content": "**Educational Spaces:**\n• Clear learning objectives\n• Interactive elements\n• Knowledge sharing\n• Q&A sessions\n• Resource sharing\n\n**Community Spaces:**\n• Member spotlights\n• Success stories\n• Group discussions\n• Event planning\n• Relationship building\n\n**Entertainment Spaces:**\n• Fun activities\n• Games and challenges\n• Storytelling\n• Music integration\n• Memorable moments",
+          "video": "/videos/specialized-spaces.mp4"
+        }
+      ]
+    }
+  ]
+} 

@@ -1,0 +1,69 @@
+{
+  "id": "o250-onboarding-wizard",
+  "slug": "o250-onboarding-wizard",
+  "title": "Onboarding Like a Wizard",
+  "description": "Master the art of converting newcomers into active community members. Learn psychological triggers, trust-building techniques, and conversion strategies that turn prospects into raiders.",
+  "badge": "Conversion Wizard",
+  "emoji": "🧙‍♂️",
+  "pathType": "conversion",
+  "href": "/courses/o250-onboarding-wizard",
+  "localStorageKey": "o250OnboardingWizardProgress",
+  "totalLessons": 6,
+  "squad": "Raiders",
+  "category": "conversion-strategy",
+  "level": "intermediate",
+  "access": "hoodie-gated",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Conversion Psychology",
+      "description": "Understand the psychological principles behind successful onboarding",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "The Conversion Funnel",
+          "content": "Onboarding is a psychological journey from awareness to commitment. Understanding this funnel is key to converting prospects into active community members.\n\n**Conversion Stages:**\n• Awareness (discovery)\n• Interest (curiosity)\n• Consideration (evaluation)\n• Intent (decision)\n• Action (commitment)\n• Retention (loyalty)\n\n**Psychological Triggers:**\n• Social proof (others doing it)\n• Authority (expert credibility)\n• Scarcity (limited opportunity)\n• Reciprocity (give to get)\n• Commitment (consistency)\n• Liking (similarity)\n\n**Trust Building:**\n• Transparency (open communication)\n• Consistency (reliable behavior)\n• Competence (demonstrated skill)\n• Benevolence (genuine care)\n• Integrity (moral character)",
+          "video": "/videos/conversion-funnel.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Psychological Triggers",
+          "content": "**Authority Triggers:**\n• Expert credentials\n• Social proof\n• Testimonials\n• Case studies\n• Industry recognition\n\n**Scarcity Triggers:**\n• Limited time offers\n• Exclusive access\n• Unique opportunities\n• Time pressure\n• FOMO creation\n\n**Reciprocity Triggers:**\n• Give value first\n• Help without expectation\n• Share knowledge freely\n• Support others\n• Build relationships\n\n**Social Proof Triggers:**\n• Community testimonials\n• Success stories\n• Member count\n• Activity levels\n• Influencer endorsements",
+          "video": "/videos/psychological-triggers.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Trust Building Strategies",
+      "description": "Learn to build trust quickly and authentically with new community members",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Trust Pillars",
+          "content": "**Transparency:**\n• Open about intentions\n• Clear communication\n• Honest about limitations\n• Share behind-the-scenes\n• Admit mistakes\n\n**Consistency:**\n• Reliable behavior\n• Predictable responses\n• Stable values\n• Regular engagement\n• Follow through\n\n**Competence:**\n• Demonstrate expertise\n• Share valuable insights\n• Solve problems\n• Provide guidance\n• Show results\n\n**Benevolence:**\n• Genuine care for others\n• Selfless actions\n• Community focus\n• Help without expectation\n• Empathetic responses",
+          "video": "/videos/trust-pillars.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Trust Acceleration",
+          "content": "**Quick Trust Building:**\n• Immediate value delivery\n• Personal connection\n• Shared experiences\n• Vulnerability\n• Authentic communication\n\n**Trust Maintenance:**\n• Consistent engagement\n• Regular check-ins\n• Value continuation\n• Relationship deepening\n• Community integration\n\n**Trust Recovery:**\n• Acknowledge mistakes\n• Take responsibility\n• Make amends\n• Learn from errors\n• Rebuild systematically",
+          "video": "/videos/trust-acceleration.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Conversion Tactics",
+      "description": "Master specific tactics for converting prospects into active raiders",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Conversion Strategies",
+          "content": "**Value-First Approach:**\n• Give before asking\n• Provide immediate benefits\n• Solve real problems\n• Share exclusive insights\n• Create memorable experiences\n\n**Social Integration:**\n• Introduce to community\n• Connect with similar members\n• Facilitate relationships\n• Create belonging\n• Build identity\n\n**Commitment Escalation:**\n• Start with small commitments\n• Gradually increase involvement\n• Celebrate progress\n• Provide recognition\n• Create investment\n\n**Retention Tactics:**\n• Ongoing value delivery\n• Community engagement\n• Personal growth\n• Achievement recognition\n• Long-term vision",
+          "video": "/videos/conversion-strategies.mp4"
+        }
+      ]
+    }
+  ]
+} 

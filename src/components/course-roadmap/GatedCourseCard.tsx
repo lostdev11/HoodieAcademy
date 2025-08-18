@@ -19,7 +19,7 @@ export interface GatedCourseCardProps {
 export function GatedCourseCard({ id, title, description, badge, emoji, pathType, squad, level, access }: GatedCourseCardProps) {
   const squadData = getSquadForCourse(id);
   
-  const baseBorderClass = "border-2 rounded-xl p-4 sm:p-5 md:p-6 transition-all duration-300 w-full min-h-[280px] sm:min-h-[300px] md:min-h-[340px] flex flex-col opacity-60"; // Adjusted min-height and padding for mobile
+  const baseBorderClass = "border-2 rounded-xl p-4 sm:p-5 md:p-6 transition-all duration-300 w-full min-h-[280px] sm:min-h-[300px] md:min-h-[340px] flex flex-col opacity-60";
   const techClass = "border-purple-500/30 bg-slate-800/30";
   const socialClass = "border-blue-500/30 bg-slate-800/30";
   const convergedClass = "border-cyan-500/30 bg-slate-800/30";
@@ -77,10 +77,10 @@ export function GatedCourseCard({ id, title, description, badge, emoji, pathType
           <div className="flex items-start gap-2 sm:gap-3 mb-3 md:mb-4">
             <span className="text-2xl sm:text-3xl md:text-4xl mt-1 flex-shrink-0 opacity-50">{emoji}</span>
             <div className="flex-grow">
-              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-400 flex items-center leading-tight">
+              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-400 flex items-center">
                 {title}
               </h3>
-              <p className="text-xs sm:text-sm md:text-md text-gray-500 mt-1 leading-relaxed">{description}</p>
+              <p className="text-xs sm:text-sm md:text-md text-gray-500 mt-1">{description}</p>
             </div>
           </div>
           
@@ -101,14 +101,14 @@ export function GatedCourseCard({ id, title, description, badge, emoji, pathType
             </div>
           </div>
           
-          <div className="mt-4 pt-3 border-t border-gray-600/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+          <div className="mt-4 pt-3 border-t border-gray-600/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <p className="text-xs md:text-sm font-semibold text-gray-500">REWARD: {badge} NFT</p>
             <Button 
               disabled
               size="sm" 
-              className="bg-gray-600 text-gray-400 cursor-not-allowed w-full sm:w-auto text-xs sm:text-sm h-8 sm:h-9"
+              className="bg-gray-600 text-gray-400 cursor-not-allowed w-full sm:w-auto min-h-[44px]"
             >
-              <Lock className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <Lock className="w-4 h-4 mr-1" />
               Locked
             </Button>
           </div>

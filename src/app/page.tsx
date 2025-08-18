@@ -1,14 +1,11 @@
-'use client';
-
-export const dynamic = "force-dynamic";
+"use client"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { 
-  BookOpen, 
   Trophy, 
   Users, 
   Target, 
@@ -30,83 +27,126 @@ import {
   AlertCircle,
   Video,
   Shield,
-  Clock
+  Clock,
+  BookOpen,
+  ScrollText,
+  Camera,
+  Calendar,
+  Crown,
+  Sparkles
 } from 'lucide-react';
 import Link from "next/link"
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
+import { MobileNavigation } from "@/components/dashboard/MobileNavigation"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
-import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event, formatWalletAddress } from '@/lib/utils'
+import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
+import Image from 'next/image'
 
-
-
-interface UpcomingClass {
-  id: string;
-  title: string;
-  course: string;
-  startTime: string;
-  duration: string;
-  instructor: string;
-  type: 'live' | 'recorded';
-}
-
-const mockUpcomingClasses: UpcomingClass[] = [
+// Mock data for the new home page sections
+const academySpotlights = [
   {
-    id: '1',
-    title: 'Live Q&A: Technical Analysis',
-    course: 'Technical Analysis Tactics',
-    startTime: 'Today, 3:00 PM',
-    duration: '45 min',
-    instructor: 'Hoodie Sensei',
-    type: 'live'
+    quote: "The strongest minds don't grind—they decode.",
+    author: "CipherMaster Sage",
+    role: "Decoders Lead",
+    avatar: "/images/hoodie-academy-pixel-art-logo.png"
   },
   {
-    id: '2',
-    title: 'Community Building Workshop',
-    course: 'Community Strategy',
-    startTime: 'Tomorrow, 2:00 PM',
-    duration: '60 min',
-    instructor: 'Hoodie Speaker',
-    type: 'live'
+    quote: "Every meme is a message, every trait a story waiting to be told.",
+    author: "PixelProphet",
+    role: "Creators Lead",
+    avatar: "/images/hoodie-academy-pixel-art-logo.png"
+  },
+  {
+    quote: "In the chaos of the market, find your rhythm.",
+    author: "RangerPrime",
+    role: "Rangers Lead",
+    avatar: "/images/hoodie-academy-pixel-art-logo.png"
   }
 ];
 
-// Real data functions
-const getRealAnnouncements = (): Announcement[] => {
-  return getActiveAnnouncements();
-};
-
-const getRealUpcomingClasses = (): UpcomingClass[] => {
-  try {
-    const events = getUpcomingEvents();
-    return events.map(event => ({
-      id: event.id,
-      title: event.title,
-      course: event.type === 'class' ? 'Academy Session' : event.type,
-      startTime: event.time || 'TBD',
-      duration: '1 hour',
-      instructor: 'Hoodie Academy',
-      type: event.type === 'class' ? 'live' : 'recorded'
-    }));
-  } catch (error) {
-    console.error('Error loading upcoming classes:', error);
-    return [];
+const studentsOfTheWeek = [
+  {
+    name: "@ChainWitch",
+    squad: "Speakers",
+    achievement: "Submitted 3 trait designs + led a meme challenge",
+    avatar: "/images/hoodie-academy-pixel-art-logo.png",
+    badge: "🏅"
+  },
+  {
+    name: "@CryptoVoyager",
+    squad: "Raiders",
+    achievement: "Top 3 leaderboard + completed advanced course",
+    avatar: "/images/hoodie-academy-pixel-art-logo.png",
+    badge: "⚔️"
   }
-};
+];
+
+const loreEntries = [
+  {
+    title: "Entry 0042: The Glitchfire Relic",
+    content: "The first sighting of the glitchfire relic occurred during the Codec Storm of Cycle 7. Rangers reported flickering trait signatures along the WifHoodie borderlands...",
+    date: "2025-01-28"
+  },
+  {
+    title: "Entry 0041: The Great Meme Convergence",
+    content: "When the Creator squads aligned their pixel art with the Speaker's viral strategies, the entire academy witnessed a phenomenon never seen before...",
+    date: "2025-01-25"
+  }
+];
+
+const milestones = [
+  {
+    title: "Phase 3 Rollout",
+    progress: 72,
+    description: "Advanced trading courses and squad challenges",
+    target: "2025-02-15"
+  },
+  {
+    title: "Merch Drop",
+    progress: 45,
+    description: "Limited edition Hoodie Academy gear",
+    target: "2025-02-28"
+  }
+];
+
+const mediaWall = [
+  {
+    type: "meme",
+    title: "Trading Psychology Meme",
+    author: "@MemeLord",
+    image: "/images/video-placeholder.jpg"
+  },
+  {
+    type: "promo",
+    title: "Course Promo Flyer",
+    author: "@DesignWizard",
+    image: "/images/video-placeholder.jpg"
+  },
+  {
+    type: "submission",
+    title: "Student Trait Design",
+    author: "@PixelArtist",
+    image: "/images/video-placeholder.jpg"
+  },
+  {
+    type: "meme",
+    title: "NFT Market Analysis",
+    author: "@CryptoAnalyst",
+    image: "/images/video-placeholder.jpg"
+  }
+];
 
 export default function HoodieAcademy() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
-  const [overallProgress, setOverallProgress] = useState(65);
   const [walletAddress, setWalletAddress] = useState<string>("");
   const [userSquad, setUserSquad] = useState<string | null>(null);
-  const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
-  const [userRank, setUserRank] = useState<number>(-1);
-  const [userScore, setUserScore] = useState<number>(0);
+  const [squadLockExpired, setSquadLockExpired] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isDemoWallet, setIsDemoWallet] = useState(false);
-  const [realAnnouncements, setRealAnnouncements] = useState<Announcement[]>([]);
-  const [realUpcomingClasses, setRealUpcomingClasses] = useState<UpcomingClass[]>([]);
+  const [currentSpotlightIndex, setCurrentSpotlightIndex] = useState(0);
+  const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
 
   useEffect(() => {
     // Get wallet address from localStorage
@@ -115,25 +155,49 @@ export default function HoodieAcademy() {
       setWalletAddress(storedWallet);
     }
 
-    // Check if user is admin (now password-based)
+    // Check if user is admin
     setIsAdmin(isCurrentUserAdmin());
 
     // Get squad placement result
     const squadResult = typeof window !== 'undefined' ? localStorage.getItem('userSquad') : null;
+    console.log('Raw squad result from localStorage:', squadResult);
     if (squadResult) {
       try {
         const result = JSON.parse(squadResult);
-        // Handle both object and string formats
-        if (typeof result === 'object' && result.name) {
-          setUserSquad(result.name);
-        } else if (typeof result === 'string') {
-          setUserSquad(result);
+        console.log('Parsed squad result:', result);
+        
+        // Check if lock period has expired
+        if (result.lockEndDate) {
+          const lockEnd = new Date(result.lockEndDate);
+          const now = new Date();
+          if (now > lockEnd) {
+            setSquadLockExpired(true);
+            localStorage.removeItem('userSquad');
+            console.log('Squad lock period expired');
+          } else {
+            if (typeof result === 'object' && result.name) {
+              console.log('Setting squad to:', result.name);
+              setUserSquad(result.name);
+            } else if (typeof result === 'string') {
+              console.log('Setting squad to string:', result);
+              setUserSquad(result);
+            }
+          }
+        } else {
+          if (typeof result === 'object' && result.name) {
+            console.log('Setting squad to:', result.name);
+            setUserSquad(result.name);
+          } else if (typeof result === 'string') {
+            console.log('Setting squad to string:', result);
+            setUserSquad(result);
+          }
         }
       } catch (error) {
         console.error('Error parsing squad result:', error);
-        // If parsing fails, treat as string
         setUserSquad(squadResult);
       }
+    } else {
+      console.log('No squad result found in localStorage');
     }
 
     // Check if user needs to complete onboarding
@@ -141,35 +205,9 @@ export default function HoodieAcademy() {
     const hasDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
     
     if (storedWallet && (!hasCompletedOnboarding || !hasDisplayName)) {
-      // Redirect to onboarding if wallet is connected but onboarding is not complete
       if (typeof window !== 'undefined') {
         window.location.href = '/onboarding';
       }
-    }
-    
-    // Show welcome message for new users who just completed onboarding
-    const justCompletedOnboarding = typeof window !== 'undefined' ? sessionStorage.getItem('justCompletedOnboarding') : null;
-    if (justCompletedOnboarding === 'true') {
-      setShowWelcomeMessage(true);
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('justCompletedOnboarding');
-      }
-      // Hide welcome message after 5 seconds
-      setTimeout(() => setShowWelcomeMessage(false), 5000);
-    }
-
-    // Load leaderboard data for current user
-    if (storedWallet) {
-      const rank = getUserRank(storedWallet);
-      const score = getUserScore(storedWallet);
-      setUserRank(rank);
-      setUserScore(score);
-      
-
-      
-      // Load real data
-      setRealAnnouncements(getRealAnnouncements());
-      setRealUpcomingClasses(getRealUpcomingClasses());
     }
   }, []);
 
@@ -181,89 +219,71 @@ export default function HoodieAcademy() {
     return () => clearInterval(timerId);
   }, []);
 
-  // Listen for real-time updates
+  // Rotate spotlight and student of the week
   useEffect(() => {
-    const handleAnnouncementsUpdate = () => {
-      console.log('Home page: announcementsUpdated event received');
-      const newAnnouncements = getRealAnnouncements();
-      console.log('Home page: new announcements:', newAnnouncements);
-      setRealAnnouncements(newAnnouncements);
-    };
+    const spotlightInterval = setInterval(() => {
+      setCurrentSpotlightIndex((prev) => (prev + 1) % academySpotlights.length);
+    }, 8000);
 
-    const handleEventsUpdate = () => {
-      console.log('Home page: eventsUpdated event received');
-      const newEvents = getRealUpcomingClasses();
-      console.log('Home page: new events:', newEvents);
-      setRealUpcomingClasses(newEvents);
-    };
+    const studentInterval = setInterval(() => {
+      setCurrentStudentIndex((prev) => (prev + 1) % studentsOfTheWeek.length);
+    }, 12000);
 
-    console.log('Home page: Setting up event listeners');
-    window.addEventListener('announcementsUpdated', handleAnnouncementsUpdate);
-    window.addEventListener('eventsUpdated', handleEventsUpdate);
-    
     return () => {
-      console.log('Home page: Cleaning up event listeners');
-      window.removeEventListener('announcementsUpdated', handleAnnouncementsUpdate);
-      window.removeEventListener('eventsUpdated', handleEventsUpdate);
+      clearInterval(spotlightInterval);
+      clearInterval(studentInterval);
     };
   }, []);
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'low': return 'bg-green-500/20 text-green-400 border-green-500/30';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    }
-  };
-
-  const handleDisconnect = async () => {
-    // Clear wallet data from storage
+  const handleDisconnect = () => {
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('connectedWallet');
     sessionStorage.removeItem('wifhoodie_verification_session');
     
-    // Disconnect from wallet providers safely
-    const sol = typeof window !== 'undefined' ? window.solana : undefined;
-
-    try {
-      if (sol?.disconnect) {
-        await sol.disconnect();
-      }
-    } catch (e) {
-      console.error("disconnect error", e);
+    if (window.solana?.disconnect) {
+      window.solana.disconnect();
     }
     
-    // Clear the wallet address state to trigger re-render
     setWalletAddress("");
-    
-    // Redirect to home page to show connection screen
     window.location.href = '/';
   };
 
-  // Import formatWalletAddress from utils instead of local definition
+  const formatWalletAddress = (address: string) => {
+    if (!address) return '';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
-  // Helper function to normalize squad names for URL generation
   const normalizeSquadNameForUrl = (name: string): string => {
-    // Remove emojis and extra spaces, convert to URL-friendly format
-    return name.replace(/^[🎨🧠🎤⚔️🦅🏦]+\s*/, '').toLowerCase().trim().replace(/\s+/g, '-');
+    return name.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '').toLowerCase().trim().replace(/\s+/g, '-');
   };
 
   return (
     <TokenGate>
-      <div className="flex min-h-screen relative">
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 -z-10 bg-cover bg-center bg-fixed"
-          style={{
-            backgroundImage: "url('/images/library-background.png')",
-          }}
-        />
-        
-        {/* Background Overlay */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-900/80 via-purple-900/70 to-slate-900/80" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_60%_at_50%_20%,rgba(139,92,246,0.15),transparent)]" />
-        
+      {/* Structured Data for Homepage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Hoodie Academy",
+            "description": "Master Web3, NFTs, and crypto trading with gamified learning. Join the Hoodie Academy community and become a Web3 expert.",
+            "url": "https://hoodieacademy.xyz",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://hoodieacademy.xyz/courses?search={search_term_string}",
+              "query-input": "required name=search_term_string"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "Hoodie Academy",
+              "url": "https://hoodieacademy.xyz"
+            }
+          })
+        }}
+      />
+      
+      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         {/* Sidebar */}
         <DashboardSidebar 
           isCollapsed={sidebarCollapsed} 
@@ -273,12 +293,15 @@ export default function HoodieAcademy() {
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="bg-slate-800/40 backdrop-blur-md border-b border-cyan-500/40 p-6 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
+          <header className="bg-slate-800/50 border-b border-cyan-500/30 px-4 py-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-4 sm:space-x-6">
+                {/* Mobile Navigation */}
+                <MobileNavigation userSquad={userSquad} isAdmin={isAdmin} />
+                
                 <div>
-                  <h1 className="text-3xl font-bold text-cyan-400 drop-shadow-lg">Welcome to Hoodie Academy</h1>
-                  <p className="text-gray-200">Your Web3 learning journey starts here!</p>
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-cyan-400">🏛️ Hoodie Academy</h1>
+                  <p className="text-sm sm:text-base text-gray-300">Home of elite Web3 scholars and the future of decentralized learning</p>
                 </div>
                 
                 {/* Squad Badge */}
@@ -288,16 +311,16 @@ export default function HoodieAcademy() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
                 {/* Wallet Info */}
                 {walletAddress && (
-                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/50 backdrop-blur-sm">
+                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30 w-full sm:w-auto">
                     <User className="w-4 h-4 text-cyan-400" />
                     <span className="text-sm text-cyan-400 font-mono">
                       {formatWalletAddress(walletAddress)}
                     </span>
                     {isDemoWallet && (
-                      <Badge variant="outline" className="ml-2 text-yellow-400 border-yellow-500/50 text-xs bg-yellow-500/20">
+                      <Badge variant="outline" className="ml-2 text-yellow-400 border-yellow-500/30 text-xs">
                         DEMO
                       </Badge>
                     )}
@@ -309,372 +332,276 @@ export default function HoodieAcademy() {
                   onClick={handleDisconnect}
                   variant="outline"
                   size="sm"
-                  className="text-red-400 border-red-500/50 hover:bg-red-500/10 hover:text-red-300 backdrop-blur-sm"
+                  className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300 w-full sm:w-auto min-h-[44px]"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Disconnect
                 </Button>
                 
                 {/* Time */}
-                <div className="text-right">
-                  <div className="text-sm text-gray-300">Current Time</div>
-                  <div className="text-lg text-cyan-400 font-mono drop-shadow">{currentTime}</div>
+                <div className="text-right w-full sm:w-auto">
+                  <div className="text-sm text-gray-400">Current Time</div>
+                  <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
                 </div>
               </div>
             </div>
           </header>
 
-          {/* Dashboard Content */}
-          <main className="flex-1 p-6 space-y-6">
-            {/* Demo Wallet Banner */}
-            {isDemoWallet && (
-              <Card className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 border-yellow-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <AlertCircle className="w-6 h-6 text-yellow-400" />
-                      <div>
-                        <h3 className="text-lg font-semibold text-yellow-400">Demo Mode Active</h3>
-                        <p className="text-yellow-200 text-sm">
-                          You are using the demo wallet. Admin access has been disabled to allow live data testing.
-                          All progress and interactions will be saved normally.
-                        </p>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="border-yellow-500 text-yellow-400 bg-yellow-500/20">
-                      Demo Wallet
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+          {/* Home Page Content */}
+          <main className="flex-1 px-4 py-6 space-y-6">
+            {/* Welcome Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-cyan-400 mb-2">🏛️ Welcome to Hoodie Academy</h1>
+              <p className="text-muted-foreground text-lg">Your entry into the elite Web3 scholars campus</p>
+            </div>
 
-            {/* Welcome Message for New Users */}
-            {showWelcomeMessage && (
-              <Card className="bg-gradient-to-r from-green-500/20 to-cyan-500/20 border-green-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className="p-3 bg-green-500/20 rounded-full">
-                      <Trophy className="w-8 h-8 text-green-400" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-green-400 mb-2">
-                        Welcome to Hoodie Academy! 🎉
-                      </h3>
-                      <p className="text-gray-200">
-                        Your profile is set up and you're ready to start your Web3 learning journey. 
-                        Explore the courses below and begin your path to becoming a Hoodie Scholar!
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowWelcomeMessage(false)}
-                      className="text-gray-400 hover:text-white"
-                    >
-                      ×
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-
-            {/* Admin Dashboard Access */}
-            {isAdmin && !isDemoWallet && (
-              <Card className="bg-slate-800/40 border-purple-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 mb-6">
-                <CardHeader>
-                  <CardTitle className="text-purple-400 flex items-center space-x-2">
-                    <Shield className="w-5 h-5" />
-                    <span>Admin Dashboard</span>
-                    <Badge variant="outline" className="ml-auto text-purple-400 border-purple-500/40 bg-purple-500/20">
-                      Admin Access
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
+            {/* Squad Assignment CTA - Only show if user hasn't been assigned a squad */}
+            {!userSquad && (
+              <Card className={`bg-gradient-to-r from-purple-800/50 to-pink-800/50 border-purple-500/30 ${squadLockExpired ? '' : 'animate-pulse'}`}>
+                <CardContent className="p-8 text-center">
+                  <div className="flex items-center justify-center mb-4">
+                    <Trophy className="w-12 h-12 text-purple-400 mr-4" />
                     <div>
-                      <p className="text-gray-200 mb-2">
-                        Manage users, approve exams, and monitor course progress.
+                      <h2 className="text-2xl font-bold text-purple-400 mb-2">
+                        {squadLockExpired ? 'Choose a New Squad' : 'Choose Your Squad'}
+                      </h2>
+                      <p className="text-gray-300">
+                        {squadLockExpired ? 'Your 30-day lock period has expired. Time to explore new paths!' : 'Discover your path in the Hoodie Academy'}
                       </p>
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-purple-400">Password authenticated</span>
-                      </div>
-                    </div>
-                    <Button asChild className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg">
-                      <Link href="/admin">
-                        <Shield className="w-4 h-4 mr-2" />
-                        Access Dashboard
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Demo Wallet Admin Access Disabled */}
-            {isDemoWallet && (
-              <Card className="bg-slate-800/40 border-yellow-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 mb-6">
-                <CardHeader>
-                  <CardTitle className="text-yellow-400 flex items-center space-x-2">
-                    <Shield className="w-5 h-5" />
-                    <span>Admin Access Disabled</span>
-                    <Badge variant="outline" className="ml-auto text-yellow-400 border-yellow-500/40 bg-yellow-500/20">
-                      Demo Mode
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-200 mb-2">
-                        Admin access is disabled for the demo wallet to allow live data testing.
-                        Use a different wallet to access admin features.
-                      </p>
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-yellow-400">Demo wallet detected</span>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      disabled
-                      className="border-yellow-500/40 text-yellow-400 cursor-not-allowed backdrop-blur-sm"
-                    >
-                      <Shield className="w-4 h-4 mr-2" />
-                      Access Disabled
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Squad Placement Test */}
-            <Card className="bg-slate-800/40 border-cyan-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 mb-6">
-              <CardHeader>
-                <CardTitle className="text-cyan-400 flex items-center space-x-2">
-                  <User className="w-5 h-5" />
-                  <span>Find Your Squad</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-200 mb-2">
-                      Take our personality test to discover which Hoodie squad aligns with your skills and interests!
-                    </p>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <Badge variant="outline" className="text-yellow-400 border-yellow-500/40 bg-yellow-500/20">🎨 Creators</Badge>
-                      <Badge variant="outline" className="text-gray-300 border-gray-500/40 bg-gray-500/20">🧠 Decoders</Badge>
-                      <Badge variant="outline" className="text-red-400 border-red-500/40 bg-red-500/20">🎤 Speakers</Badge>
-                      <Badge variant="outline" className="text-blue-400 border-blue-500/40 bg-blue-500/20">⚔️ Raiders</Badge>
-                      <Badge variant="outline" className="text-purple-400 border-purple-500/40 bg-purple-500/20">🦅 Rangers</Badge>
                     </div>
                   </div>
-                  <Button asChild className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 shadow-lg">
-                    <Link href="/placement/squad-test">Take Test</Link>
+                  <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+                    {squadLockExpired 
+                      ? "Your previous squad assignment has expired. You can now choose a new squad and start a fresh 30-day learning journey with different courses and challenges."
+                      : "Before you can access courses and join the community, you need to choose your squad. Each squad has unique specialties and learning paths. Take your time to explore and find your perfect match."
+                    }
+                  </p>
+                  <Button
+                    size="lg"
+                    onClick={() => window.location.href = '/choose-your-squad'}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3"
+                  >
+                    <Target className="w-5 h-5 mr-2" />
+                    {squadLockExpired ? 'Choose New Squad' : 'Explore Squads & Choose Your Path'}
+                    <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Top Council Notice */}
+            <Card className="border-l-4 border-amber-400 bg-slate-800/50">
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-3">
+                  <Shield className="w-6 h-6 text-amber-400 mt-1" />
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-amber-400 mb-2">🛡️ Council Notice</h2>
+                    <p className="text-sm leading-relaxed text-gray-300">
+                      <strong>Hoodie Scholar Council Directive (January 28, 2025):</strong><br />
+                      Phase 3 rollout is live. Squad leaders must submit their launch assignment by Friday. 
+                      Students, complete your weekly missions to earn badge upgrades. New lore entries are being 
+                      added to the Hall of Records daily.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Squad Chat */}
-            {userSquad && (
-              <Card className="bg-slate-800/40 border-green-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 mb-6">
-                <CardHeader>
-                  <CardTitle className="text-green-400 flex items-center space-x-2">
-                    <Users className="w-5 h-5" />
-                    <span>Your Squad Chat</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-gray-200 mb-2">
-                        Connect with your {userSquad} squad members in real-time.
-                      </p>
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        <span className="text-sm text-green-400">Live messaging</span>
-                      </div>
-                    </div>
-                    <Button asChild className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg">
-                      <Link href={`/squads/${normalizeSquadNameForUrl(userSquad)}/chat`}>
-                        <Users className="w-4 h-4 mr-2" />
-                        Join Chat
-                      </Link>
-                    </Button>
+            {/* Academy Spotlight */}
+            <Card className="bg-slate-800/50 border-purple-500/30">
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="p-3 bg-purple-500/20 rounded-full">
+                    <Sparkles className="w-6 h-6 text-purple-400" />
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {/* Leaderboard Preview */}
-              <Card className="bg-slate-800/40 border-yellow-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="text-yellow-400 flex items-center space-x-2">
-                    <Trophy className="w-5 h-5" />
-                    <span>Top Performers</span>
-                    <Button size="sm" variant="outline" asChild className="ml-auto text-yellow-400 border-yellow-500/40 hover:bg-yellow-500/10 backdrop-blur-sm">
-                      <Link href="/leaderboard">View All</Link>
-                    </Button>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {userRank > 0 ? (
-                    <div className="flex items-center justify-between p-2 bg-yellow-500/15 rounded border border-yellow-500/25 backdrop-blur-sm">
-                      <div className="flex items-center space-x-2">
-                        <Trophy className="w-4 h-4 text-yellow-400" />
-                        <span className="text-sm font-medium text-white">Your Rank</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold text-yellow-400">#{userRank}</div>
-                        <div className="text-xs text-gray-300">{userScore.toLocaleString()} pts</div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-purple-400 mb-3">🧿 Academy Spotlight</h2>
+                    <blockquote className="italic text-lg text-gray-300 mb-3 leading-relaxed">
+                      "{academySpotlights[currentSpotlightIndex].quote}"
+                    </blockquote>
+                    <div className="flex items-center space-x-3">
+                      <Image
+                        src={academySpotlights[currentSpotlightIndex].avatar}
+                        alt="Spotlight Avatar"
+                        width={32}
+                        height={32}
+                        className="rounded-full"
+                      />
+                      <div>
+                        <p className="text-sm font-medium text-purple-400">
+                          – {academySpotlights[currentSpotlightIndex].author}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {academySpotlights[currentSpotlightIndex].role}
+                        </p>
                       </div>
                     </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Trophy className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-300 text-sm">Complete courses to join leaderboard</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Upcoming Classes */}
-              <Card className="bg-slate-800/40 border-cyan-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 lg:col-span-1">
-                <CardHeader>
-                  <CardTitle className="text-cyan-400 flex items-center space-x-2">
-                    <Clock className="w-5 h-5" />
-                    <span>Upcoming Classes</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {realUpcomingClasses.length > 0 ? (
-                    realUpcomingClasses.map((classItem) => (
-                      <div key={classItem.id} className="p-3 bg-slate-700/40 rounded-lg border border-slate-600/40 backdrop-blur-sm hover:bg-slate-700/50 transition-all duration-200">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-white">{classItem.title}</h4>
-                            <p className="text-sm text-gray-300">{classItem.course}</p>
-                            <div className="flex items-center space-x-4 mt-2">
-                              <span className="text-xs text-cyan-400 flex items-center">
-                                <Clock className="w-3 h-3 mr-1" />
-                                {classItem.startTime}
-                              </span>
-                              <Badge variant={classItem.type === 'live' ? 'default' : 'secondary'} className="text-xs">
-                                {classItem.type}
-                              </Badge>
-                            </div>
-                          </div>
-                          <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700 shadow-lg">
-                            Join
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Clock className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-300 text-sm">No upcoming classes scheduled</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Announcements */}
-              <Card className="bg-slate-800/40 border-pink-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 lg:col-span-1">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-pink-400 flex items-center space-x-2">
-                      <Bell className="w-5 h-5" />
-                      <span>Announcements</span>
-                    </CardTitle>
-                    <Button
-                      onClick={() => {
-                        console.log('Manual refresh clicked');
-                        const newAnnouncements = getRealAnnouncements();
-                        console.log('Manual refresh - announcements:', newAnnouncements);
-                        setRealAnnouncements(newAnnouncements);
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="border-pink-500/50 text-pink-400 hover:bg-pink-500/10 backdrop-blur-sm"
-                    >
-                      Refresh
-                    </Button>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {realAnnouncements.length > 0 ? (
-                    realAnnouncements.map((announcement) => (
-                      <div key={announcement.id} className="p-3 bg-slate-700/40 rounded-lg border border-slate-600/40 backdrop-blur-sm hover:bg-slate-700/50 transition-all duration-200">
-                        <div className="flex items-start space-x-3">
-                          <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
-                            <AlertCircle className="w-4 h-4" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-white">{announcement.title}</h4>
-                            <p className="text-sm text-gray-200 mt-1">{announcement.content}</p>
-                            <p className="text-xs text-gray-300 mt-2">
-                              Active from {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
-                              {announcement.endDate && ` to ${new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}`}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Bell className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-300 text-sm">No announcements</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Scheduled Announcements */}
-            {getScheduledAnnouncements().length > 0 && (
-              <Card className="bg-slate-800/40 border-cyan-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300 mb-6">
-                <CardHeader>
-                  <CardTitle className="text-cyan-400 flex items-center space-x-2">
-                    <Clock className="w-5 h-5" />
-                    <span>Upcoming Announcements</span>
-                    <Badge variant="outline" className="ml-auto border-cyan-500 text-cyan-400 bg-cyan-500/20">
-                      {getScheduledAnnouncements().length}
+            {/* Student of the Week */}
+            <Card className="bg-slate-800/50 border-yellow-500/30">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <Image
+                      src={studentsOfTheWeek[currentStudentIndex].avatar}
+                      alt="Student PFP"
+                      width={64}
+                      height={64}
+                      className="rounded-full border-2 border-yellow-500/50"
+                    />
+                    <div className="absolute -top-2 -right-2 text-2xl">
+                      {studentsOfTheWeek[currentStudentIndex].badge}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-yellow-400 mb-1">
+                      🏅 Student of the Week: {studentsOfTheWeek[currentStudentIndex].name}
+                    </h3>
+                    <p className="text-sm text-gray-300 mb-2">
+                      {studentsOfTheWeek[currentStudentIndex].achievement}
+                    </p>
+                    <Badge variant="outline" className="text-yellow-400 border-yellow-500/30">
+                      {studentsOfTheWeek[currentStudentIndex].squad} Squad
                     </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {getScheduledAnnouncements().map((announcement) => (
-                      <div key={announcement.id} className="p-3 bg-slate-700/40 rounded-lg border border-cyan-500/40 backdrop-blur-sm hover:bg-slate-700/50 transition-all duration-200">
-                        <div className="flex items-start space-x-3">
-                          <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
-                            <Clock className="w-4 h-4" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-white">{announcement.title}</h4>
-                            <p className="text-sm text-gray-200 mt-1">{announcement.content}</p>
-                            <p className="text-xs text-cyan-400 mt-2">
-                              <Clock className="w-3 h-3 inline mr-1" />
-                              Starts: {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
-                              {announcement.endDate && ` • Ends: ${new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}`}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                </div>
+              </CardContent>
+            </Card>
 
+            {/* Lore Log Preview */}
+            <Card className="bg-slate-800/50 border-green-500/30">
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="p-3 bg-green-500/20 rounded-full">
+                    <ScrollText className="w-6 h-6 text-green-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-green-400 mb-3">📜 Lore Log</h2>
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-white mb-2">
+                        {loreEntries[0].title}
+                      </h4>
+                      <p className="text-sm text-gray-300 leading-relaxed">
+                        {loreEntries[0].content}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        Entry date: {new Date(loreEntries[0].date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-green-400 hover:text-green-300 hover:bg-green-500/10">
+                      Read Full Lore →
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
+            {/* Milestone Tracker */}
+            <Card className="bg-slate-800/50 border-blue-500/30">
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="p-3 bg-blue-500/20 rounded-full">
+                    <Target className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-blue-400 mb-3">🎯 Academy Milestones</h2>
+                    <div className="space-y-4">
+                      {milestones.map((milestone, index) => (
+                        <div key={index} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <h4 className="font-semibold text-white">{milestone.title}</h4>
+                            <span className="text-sm text-blue-400">{milestone.progress}%</span>
+                          </div>
+                          <p className="text-sm text-gray-400">{milestone.description}</p>
+                          <div className="w-full bg-slate-700 rounded-lg overflow-hidden">
+                            <div 
+                              className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 transition-all duration-500" 
+                              style={{ width: `${milestone.progress}%` }} 
+                            />
+                          </div>
+                          <p className="text-xs text-gray-400">
+                            Target: {new Date(milestone.target).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Media Wall */}
+            <Card className="bg-slate-800/50 border-pink-500/30">
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <div className="p-3 bg-pink-500/20 rounded-full">
+                    <Camera className="w-6 h-6 text-pink-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-pink-400 mb-3">📸 Media Wall</h2>
+                    <p className="text-sm text-gray-300 mb-4">
+                      Latest memes, promo flyers, and course visuals submitted by the community.
+                    </p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {mediaWall.map((item, index) => (
+                        <div key={index} className="relative group">
+                          <div className="aspect-square bg-slate-700 rounded-lg overflow-hidden border border-slate-600/30 group-hover:border-pink-500/50 transition-colors">
+                            <Image
+                              src={item.image}
+                              alt={item.title}
+                              width={200}
+                              height={200}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                            <p className="text-xs font-medium text-white truncate">{item.title}</p>
+                            <p className="text-xs text-gray-300">by {item.author}</p>
+                          </div>
+                          <Badge 
+                            variant="outline" 
+                            className="absolute top-2 right-2 text-xs border-pink-500/30 text-pink-400"
+                          >
+                            {item.type}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Call-to-Action Footer */}
+            <Card className="bg-gradient-to-r from-slate-800/50 to-purple-800/50 border-purple-500/30">
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-purple-400 mb-4">🔥 Want to appear on the Home Page?</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-gray-300">Complete 2 assignments this week</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-gray-300">Submit a meme or trait concept</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-gray-300">Score top 3 on leaderboard</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-gray-300">Be helpful in your squad chat</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </main>
         </div>
       </div>

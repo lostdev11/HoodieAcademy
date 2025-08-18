@@ -1,0 +1,69 @@
+{
+  "id": "n200-trait-meta",
+  "slug": "n200-trait-meta",
+  "title": "Trait Meta & Rarity Psychology",
+  "description": "Master the psychology behind NFT trait rarity and market dynamics. Learn to analyze trait meta shifts and predict floor movements based on rarity psychology.",
+  "badge": "Meta Analyst",
+  "emoji": "🧠",
+  "pathType": "nft",
+  "href": "/courses/n200-trait-meta",
+  "localStorageKey": "n200TraitMetaProgress",
+  "totalLessons": 5,
+  "squad": "Decoders",
+  "category": "nft-data-interpretation",
+  "level": "intermediate",
+  "access": "hoodie-gated",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Rarity Psychology",
+      "description": "Understand the psychological drivers behind NFT rarity and value",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "The Psychology of Rarity",
+          "content": "NFT rarity psychology is driven by human desire for uniqueness, status, and exclusivity. Understanding these psychological drivers is key to predicting market movements.\n\n**Rarity Psychology Factors:**\n• Scarcity principle\n• Social status signaling\n• FOMO (Fear of Missing Out)\n• Community validation\n• Future potential speculation\n• Bragging rights\n\n**Rarity Tiers:**\n• Common (60-80%): Basic utility\n• Uncommon (15-25%): Some status\n• Rare (5-10%): Significant status\n• Legendary (1-3%): Elite status\n• Mythic (0.1-0.5%): Ultimate status\n\n**Psychological Triggers:**\n• Limited supply\n• High demand\n• Community hype\n• Celebrity ownership\n• Historical significance\n• Future utility potential",
+          "video": "/videos/rarity-psychology.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Trait Valuation Models",
+          "content": "**Valuation Factors:**\n• Rarity percentage\n• Visual appeal\n• Community preference\n• Historical performance\n• Future utility potential\n• Celebrity ownership\n\n**Pricing Models:**\n• Floor price + rarity premium\n• Historical sales analysis\n• Community sentiment\n• Market cap distribution\n• Supply/demand curves\n• Utility value assessment\n\n**Market Dynamics:**\n• Trait rotation cycles\n• Meta shifts\n• Community trends\n• External influences\n• Seasonal patterns",
+          "video": "/videos/trait-valuation.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Meta Analysis",
+      "description": "Learn to analyze and predict trait meta shifts",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Meta Shift Detection",
+          "content": "**Meta Shift Indicators:**\n• Volume spikes on specific traits\n• Social media mentions\n• Community discussions\n• Price movements\n• Trading volume patterns\n• Floor price changes\n\n**Early Detection Methods:**\n• Social sentiment analysis\n• Volume pattern recognition\n• Community monitoring\n• Influencer tracking\n• News correlation\n• Technical analysis\n\n**Meta Cycle Stages:**\n• Accumulation (quiet period)\n• Awareness (first mentions)\n• Hype (rapid adoption)\n• Peak (maximum FOMO)\n• Distribution (smart money exits)\n• Decline (meta shift)",
+          "video": "/videos/meta-shifts.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Trait Rotation Strategies",
+          "content": "**Rotation Timing:**\n• Buy before meta shift\n• Sell during peak hype\n• Avoid buying at peak\n• Monitor for new trends\n• Position for next meta\n\n**Risk Management:**\n• Diversify across traits\n• Don't chase FOMO\n• Set profit targets\n• Use stop losses\n• Monitor market conditions\n\n**Advanced Strategies:**\n• Meta arbitrage\n• Trait flipping\n• Long-term holding\n• Community building\n• Influencer partnerships",
+          "video": "/videos/trait-rotation.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Data-Driven Analysis",
+      "description": "Use data to predict trait performance and market movements",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Analytics Tools",
+          "content": "**Data Sources:**\n• NFT marketplace APIs\n• Social media sentiment\n• Trading volume data\n• Price history\n• Community metrics\n• On-chain data\n\n**Key Metrics:**\n• Floor price changes\n• Sales volume\n• Unique traders\n• Average sale price\n• Time on market\n• Price volatility\n\n**Analysis Methods:**\n• Trend analysis\n• Correlation studies\n• Predictive modeling\n• Sentiment analysis\n• Network analysis\n• Machine learning",
+          "video": "/videos/analytics-tools.mp4"
+        }
+      ]
+    }
+  ]
+} 

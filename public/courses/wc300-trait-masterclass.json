@@ -1,0 +1,63 @@
+{
+  "id": "wc300-trait-masterclass",
+  "slug": "wc300-trait-masterclass",
+  "title": "Trait Creation Masterclass",
+  "description": "Advanced course for DAO members to master trait creation for official Hoodie Academy collections. Learn professional techniques for creating high-value, community-driven traits.",
+  "badge": "Master Trait Smith",
+  "emoji": "⚒️",
+  "pathType": "dao",
+  "href": "/courses/wc300-trait-masterclass",
+  "localStorageKey": "wc300TraitMasterclassProgress",
+  "totalLessons": 8,
+  "squad": "Creators",
+  "category": "dao-mastery",
+  "level": "advanced",
+  "access": "dao-only",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Professional Trait Design",
+      "description": "Master advanced techniques for creating professional-grade traits",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Advanced Design Principles",
+          "content": "Professional trait design requires mastery of both artistic and technical skills. This course covers advanced techniques for creating traits that enhance collection value.\n\n**Advanced Techniques:**\n• Complex layering systems\n• Dynamic rarity algorithms\n• Community-driven design\n• Technical optimization\n• Brand consistency\n\n**Professional Standards:**\n• Consistent quality\n• Scalable systems\n• Community feedback\n• Technical feasibility\n• Market appeal\n\n**DAO Integration:**\n• Governance participation\n• Community voting\n• Quality assurance\n• Value creation\n• Long-term sustainability",
+          "video": "/videos/advanced-trait-design.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Technical Implementation",
+          "content": "**Technical Requirements:**\n• File format standards\n• Size optimization\n• Metadata structure\n• Compatibility testing\n• Quality assurance\n\n**Implementation Process:**\n• Design approval workflow\n• Community feedback loops\n• Technical validation\n• Integration testing\n• Deployment strategy\n\n**Quality Control:**\n• Visual consistency\n• Technical compatibility\n• Community appeal\n• Market viability\n• Long-term value",
+          "video": "/videos/technical-implementation.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "DAO Governance & Trait Creation",
+      "description": "Understand how DAO governance affects trait creation and community value",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Governance Integration",
+          "content": "**DAO Decision Making:**\n• Community voting\n• Proposal creation\n• Discussion forums\n• Consensus building\n• Implementation tracking\n\n**Trait Governance:**\n• Design proposals\n• Community feedback\n• Voting mechanisms\n• Quality standards\n• Value assessment\n\n**Community Value:**\n• Utility creation\n• Rarity distribution\n• Market dynamics\n• Long-term sustainability\n• Community engagement",
+          "video": "/videos/dao-governance.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Graduation Project",
+      "description": "Complete your final project: design and submit an official wardrobe trait",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Final Project Requirements",
+          "content": "**Graduation Challenge:**\n• Design official wardrobe trait\n• Create 2-panel comic\n• Use squad-approved formatting\n• Submit for evaluation\n• Community voting process\n\n**Submission Guidelines:**\n• Technical specifications\n• Design requirements\n• Documentation standards\n• Community presentation\n• Evaluation criteria\n\n**Success Metrics:**\n• Community approval\n• Technical quality\n• Market appeal\n• Brand consistency\n• Long-term value",
+          "video": "/videos/graduation-project.mp4"
+        }
+      ]
+    }
+  ]
+} 

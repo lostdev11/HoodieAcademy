@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  hoodie-academy-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: hoodie-academy-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    # Development volumes for hot reloading
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    # Security hardening (less strict for development)
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    # Resource limits (more generous for development)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # Network
+    networks:
+      - hoodie-network
+
+networks:
+  hoodie-network:
+    driver: bridge 

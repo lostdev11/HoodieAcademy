@@ -2,6 +2,7 @@
   "id": "n100-nft-marketplaces",
   "title": "N100 – NFT Marketplaces 101: Where the Magic Happens",
   "description": "Master Solana's top NFT marketplaces: Magic Eden and Tensor. Learn to navigate interfaces, understand liquidity, and place your first bids.",
+  "summary": "A beginner course explaining NFT marketplaces like Magic Eden and Tensor. Includes walkthroughs, bid tutorials, and first assignments. Perfect for new Web3 users interested in NFT trading on Solana.",
   "badge": "Marketplace Navigator",
   "emoji": "🏪",
   "pathType": "tech",
@@ -12,6 +13,8 @@
   "category": "marketplaces",
   "level": "beginner",
   "access": "free",
+  "keywords": ["NFT marketplaces", "Magic Eden", "Tensor", "Solana", "bidding", "trading", "liquidity", "floor price", "Web3 education"],
+  "aiDescription": "This course teaches beginners how to navigate and trade on Solana's top NFT marketplaces. Students learn to place bids, understand market dynamics, and execute their first NFT trades. The course includes hands-on demos and practical assignments.",
   "modules": [
     {
       "id": "module-1",

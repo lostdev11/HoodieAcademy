@@ -1,0 +1,50 @@
+{
+  "id": "l100-lore-identity",
+  "slug": "l100-lore-identity",
+  "title": "Lore as Identity Fuel",
+  "description": "Learn to use lore and storytelling to build powerful personal identity and community influence. Master the art of crafting narratives that drive action and create cultural impact.",
+  "badge": "Lore Warrior",
+  "emoji": "📖",
+  "pathType": "identity",
+  "href": "/courses/l100-lore-identity",
+  "localStorageKey": "l100LoreIdentityProgress",
+  "totalLessons": 3,
+  "squad": "Raiders",
+  "category": "personal-myth-power",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Lore Fundamentals",
+      "description": "Understand the power of lore and storytelling in building identity",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What is Lore?",
+          "content": "Lore is the collective mythology, stories, and cultural narratives that define a community. It's the fuel that powers identity, drives action, and creates cultural impact.\n\n**Lore Definition:**\n• Collective mythology\n• Cultural narratives\n• Community stories\n• Identity foundation\n• Action driver\n\n**Lore Types:**\n• Origin stories (how we began)\n• Hero narratives (success stories)\n• Conflict tales (challenges overcome)\n• Future visions (where we're going)\n• Cultural codes (how we behave)\n\n**Why Lore Matters:**\n• Identity formation\n• Community cohesion\n• Action motivation\n• Cultural direction\n• Legacy creation",
+          "video": "/videos/lore-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Identity Power",
+          "content": "**Identity Elements:**\n• Personal story\n• Community role\n• Cultural values\n• Future vision\n• Legacy goals\n\n**Identity Fuel:**\n• Lore connection\n• Story integration\n• Cultural alignment\n• Community belonging\n• Purpose clarity\n\n**Power Sources:**\n• Authentic expression\n• Cultural resonance\n• Community support\n• Consistent action\n• Legacy building",
+          "video": "/videos/identity-power.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Story Crafting",
+      "description": "Learn to craft compelling stories that drive action and create impact",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Story Structure",
+          "content": "**Hero's Journey:**\n• Call to adventure\n• Crossing threshold\n• Trials and tests\n• Transformation\n• Return with power\n\n**Story Elements:**\n• Compelling character\n• Clear conflict\n• Emotional arc\n• Cultural relevance\n• Action catalyst\n\n**Narrative Techniques:**\n• Emotional hooks\n• Cultural references\n• Community integration\n• Future vision\n• Legacy connection",
+          "video": "/videos/story-structure.mp4"
+        }
+      ]
+    }
+  ]
+} 

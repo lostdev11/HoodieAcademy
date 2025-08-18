@@ -1,0 +1,69 @@
+{
+  "id": "v220-comics-sequential",
+  "slug": "v220-comics-sequential",
+  "title": "Comics & Sequential Storytelling",
+  "description": "Master the art of sequential storytelling through comics and visual narratives. Learn to create compelling stories that engage and build community lore.",
+  "badge": "Story Weaver",
+  "emoji": "📖",
+  "pathType": "narrative",
+  "href": "/courses/v220-comics-sequential",
+  "localStorageKey": "v220ComicsSequentialProgress",
+  "totalLessons": 4,
+  "squad": "Creators",
+  "category": "narrative-design",
+  "level": "intermediate",
+  "access": "hoodie-gated",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Sequential Art Fundamentals",
+      "description": "Learn the basics of comic storytelling and visual narrative",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "The Language of Comics",
+          "content": "Comics are a unique medium that combines visual art with storytelling. In Web3, they're powerful tools for building lore and community.\n\n**Comic Elements:**\n• Panels (individual frames)\n• Gutters (spaces between panels)\n• Speech bubbles (dialogue)\n• Thought bubbles (internal thoughts)\n• Sound effects (onomatopoeia)\n• Motion lines (movement)\n\n**Web3 Applications:**\n• Project origin stories\n• Character development\n• Community events\n• Governance explanations\n• Technical tutorials\n• Market commentary",
+          "video": "/videos/comic-language.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Panel Layout & Flow",
+          "content": "**Panel Types:**\n• Establishing shot (setting)\n• Close-up (emotion)\n• Medium shot (action)\n• Wide shot (context)\n• Splash page (impact)\n\n**Reading Flow:**\n• Left to right, top to bottom\n• Z-pattern for complex layouts\n• Circular flow for emphasis\n• Diagonal for dynamic movement\n\n**Web3 Layout Examples:**\n• Timeline progression\n• Character interactions\n• Event sequences\n• Tutorial steps\n• Story arcs",
+          "video": "/videos/panel-layout.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Character Development",
+      "description": "Create compelling characters for your visual stories",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Character Design Principles",
+          "content": "**Visual Character Design:**\n• Distinctive silhouette\n• Consistent proportions\n• Expressive features\n• Memorable traits\n• Scalable design\n\n**Personality Traits:**\n• Motivations and goals\n• Strengths and weaknesses\n• Speech patterns\n• Behavioral quirks\n• Growth arcs\n\n**Web3 Character Types:**\n• Project mascots\n• Community leaders\n• Technical experts\n• Market personalities\n• Governance representatives",
+          "video": "/videos/character-design.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Character Interactions",
+          "content": "**Dialogue Writing:**\n• Natural speech patterns\n• Character-specific voices\n• Emotional subtext\n• Pacing and rhythm\n• Cultural references\n\n**Visual Interactions:**\n• Body language\n• Facial expressions\n• Proximity and space\n• Power dynamics\n• Emotional states\n\n**Web3 Interaction Examples:**\n• Community discussions\n• Governance debates\n• Technical explanations\n• Market reactions\n• Event participation",
+          "video": "/videos/character-interactions.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Storytelling for Web3",
+      "description": "Adapt traditional storytelling for blockchain communities",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Web3 Story Structures",
+          "content": "**Community Story Types:**\n• Origin stories (project beginnings)\n• Growth narratives (community expansion)\n• Challenge arcs (overcoming obstacles)\n• Triumph stories (success celebrations)\n• Future visions (roadmap stories)\n\n**Narrative Techniques:**\n• Flashbacks (historical context)\n• Foreshadowing (future hints)\n• Parallel plots (multiple storylines)\n• Cliffhangers (suspense)\n• Callbacks (continuity)\n\n**Engagement Strategies:**\n• Community participation\n• Interactive elements\n• User-generated content\n• Real-time updates\n• Collaborative storytelling",
+          "video": "/videos/web3-storytelling.mp4"
+        }
+      ]
+    }
+  ]
+} 
