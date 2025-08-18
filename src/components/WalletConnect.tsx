@@ -47,8 +47,9 @@ export default function WalletConnect() {
         if (sol?.disconnect) await sol.disconnect();
       },
       isConnected: () => {
-        const sol = window.solana;
-        return !!sol?.isConnected;
+        // Be defensive across wallet providers and typings
+        const sol = (typeof window !== 'undefined' ? (window as any).solana : null);
+        return Boolean(sol?.isConnected ?? sol?.publicKey);
       },
       getPublicKey: () => {
         const sol = window.solana;
@@ -74,8 +75,9 @@ export default function WalletConnect() {
         if (solflare?.disconnect) await solflare.disconnect();
       },
       isConnected: () => {
-        const solflare = window.solflare;
-        return !!solflare?.isConnected;
+        // Be defensive across wallet providers and typings
+        const solflare = (typeof window !== 'undefined' ? (window as any).solflare : null);
+        return Boolean(solflare?.isConnected ?? solflare?.publicKey);
       },
       getPublicKey: () => {
         const solflare = window.solflare;
