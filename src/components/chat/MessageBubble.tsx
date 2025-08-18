@@ -31,7 +31,7 @@ export default function MessageBubble({ message, isOwnMessage }: MessageBubblePr
           }`}
         >
           <div className="text-sm font-medium mb-1">
-            {formatWalletAddress(message.sender) || 'Unknown'}
+            {message.sender_display_name || formatWalletAddress(message.sender) || 'Unknown'}
           </div>
           <div className="text-sm leading-relaxed break-words">
             {message.text}

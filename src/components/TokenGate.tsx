@@ -4,9 +4,15 @@ import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Wallet } from 'lucide-react';
+import { Wallet, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { logUserActivity, logWalletConnection, logNftVerification } from '@/lib/activity-logger';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Constants
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
@@ -18,7 +24,7 @@ interface TokenGateProps {
 
 
 
-type WalletProvider = 'phantom';
+type WalletProvider = 'phantom' | 'solflare';
 
 const VERIFICATION_SESSION_KEY = 'wifhoodie_verification';
 
@@ -313,6 +319,17 @@ export default function TokenGate({ children }: TokenGateProps) {
         setIsConnecting(false);
         return;
       }
+    } else if (providerName === 'solflare') {
+      if (window.solflare) {
+        provider = window.solflare;
+        console.log("✅ Debug: Solflare wallet found and available");
+      } else {
+        const errorMsg = "Solflare wallet is not installed. Please install Solflare wallet extension first.";
+        console.error("❌ Debug:", errorMsg);
+        setError(errorMsg);
+        setIsConnecting(false);
+        return;
+      }
     }
     
     if (!provider) {
@@ -438,17 +455,41 @@ export default function TokenGate({ children }: TokenGateProps) {
         {error && <p className="text-red-400 mb-4">{error}</p>}
         
         <div className="flex justify-center">
-          <Button
-            onClick={() => connectWallet('phantom')}
-            disabled={isConnecting}
-            className="group relative overflow-hidden px-8 py-3 w-64 font-semibold text-white rounded-xl shadow-lg ring-1 ring-white/20 bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-400 hover:via-rose-400 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-white/30 to-transparent opacity-70 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-            <Wallet className="mr-2 relative z-10" size={20} />
-            <span className="relative z-10">
-              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-            </span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                disabled={isConnecting}
+                className="group relative overflow-hidden px-8 py-3 w-64 font-semibold text-white rounded-xl shadow-lg ring-1 ring-white/20 bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-400 hover:via-rose-400 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-white/30 to-transparent opacity-70 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                <Wallet className="mr-2 relative z-10" size={20} />
+                <span className="relative z-10">
+                  {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                </span>
+                <ChevronDown className="ml-2 relative z-10" size={16} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-gray-800 border-gray-700 min-w-[200px]">
+              <DropdownMenuItem
+                onClick={() => connectWallet('phantom')}
+                className="text-gray-200 hover:bg-gradient-to-r hover:from-amber-500/20 hover:via-rose-500/20 hover:to-violet-600/20 cursor-pointer py-3 transition-all duration-200"
+              >
+                <span>Phantom</span>
+                {!isPhantomInstalled && (
+                  <span className="ml-2 text-xs text-gray-400">(Not installed)</span>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => connectWallet('solflare')}
+                className="text-gray-200 hover:bg-gradient-to-r hover:from-amber-500/20 hover:via-rose-500/20 hover:to-violet-600/20 cursor-pointer py-3 transition-all duration-200"
+              >
+                <span>Solflare</span>
+                {typeof window !== 'undefined' && !window.solflare && (
+                  <span className="ml-2 text-xs text-gray-400">(Not installed)</span>
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         
         {/* Show error if connection failed */}

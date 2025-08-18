@@ -18,3 +18,6 @@
 [33mcc93307d[m Update dependencies and remove old overrides, upgrade Keystone SDK
 [33m59d63f92[m Update PfpPicker with Next.js Image and wallet adapter, fix wallet connection syntax, update Next.js config with NFT image domains
 [33m94035c8c[m Add PfpPicker component with Phantom wallet integration
+src/app/courses/page.tsx
+src/app/layout.tsx
+src/services/sns-resolver.ts

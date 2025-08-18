@@ -21,6 +21,7 @@ export interface Message {
   id: string
   text: string
   sender: string
+  sender_display_name?: string
   squad: string
   timestamp: string
   created_at: string
@@ -29,6 +30,7 @@ export interface Message {
 export interface NewMessage {
   text: string
   sender: string
+  sender_display_name?: string
   squad: string
 } 
 

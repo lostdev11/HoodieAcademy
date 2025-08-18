@@ -17,13 +17,20 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [currentUser, setCurrentUser] = useState<string>('');
+  const [currentUserDisplayName, setCurrentUserDisplayName] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get current user's wallet address
+  // Get current user's wallet address and display name
   useEffect(() => {
     const walletAddress = localStorage.getItem('walletAddress');
+    const displayName = localStorage.getItem('userDisplayName');
+    
     if (walletAddress) {
       setCurrentUser(walletAddress);
+    }
+    
+    if (displayName) {
+      setCurrentUserDisplayName(displayName);
     }
   }, []);
 
@@ -116,6 +123,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
       const messageData: NewMessage = {
         text: newMessage.trim(),
         sender: currentUser,
+        sender_display_name: currentUserDisplayName || 'Anonymous',
         squad: squad,
       };
 
@@ -149,6 +157,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
             id: Date.now().toString(),
             text: messageData.text,
             sender: messageData.sender,
+            sender_display_name: messageData.sender_display_name,
             squad: messageData.squad,
             timestamp: new Date().toISOString(),
             created_at: new Date().toISOString()
@@ -247,6 +256,11 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         {!currentUser && (
           <p className="text-xs text-red-400 mt-2">
             Please connect your wallet to send messages
+          </p>
+        )}
+        {currentUser && !currentUserDisplayName && (
+          <p className="text-xs text-yellow-400 mt-2">
+            Set a display name in your profile for better chat experience
           </p>
         )}
       </div>
