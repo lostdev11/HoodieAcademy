@@ -432,3 +432,63 @@ export const getCompletedCoursesCount = (): number => {
 export const getTotalCoursesCount = (): number => {
   return 6; // Total number of courses
 };
+
+export function getUserSquad(): { squad: string | null; lockExpired: boolean; lockEndDate?: string } {
+  if (typeof window === 'undefined') {
+    return { squad: null, lockExpired: false };
+  }
+
+  const squadResult = localStorage.getItem('userSquad');
+  if (!squadResult) {
+    return { squad: null, lockExpired: false };
+  }
+
+  try {
+    const result = JSON.parse(squadResult);
+    const squad = typeof result === 'object' && result.name ? result.name : result;
+    const lockEndDate = result.lockEndDate || null;
+
+    if (lockEndDate) {
+      const lockEnd = new Date(lockEndDate);
+      const now = new Date();
+      if (now > lockEnd) {
+        // Lock period expired, remove squad assignment
+        localStorage.removeItem('userSquad');
+        return { squad: null, lockExpired: true };
+      }
+    }
+
+    return { 
+      squad, 
+      lockExpired: false, 
+      lockEndDate: lockEndDate 
+    };
+  } catch (error) {
+    console.error('Error parsing squad result:', error);
+    return { squad: squadResult, lockExpired: false };
+  }
+}
+
+export function isSquadAssignmentRequired(): boolean {
+  const { squad } = getUserSquad();
+  return !squad;
+}
+
+export function getSquadLockStatus(): { isLocked: boolean; daysRemaining: number; lockEndDate?: string } {
+  const { squad, lockEndDate } = getUserSquad();
+  
+  if (!squad || !lockEndDate) {
+    return { isLocked: false, daysRemaining: 0 };
+  }
+
+  const lockEnd = new Date(lockEndDate);
+  const now = new Date();
+  const timeDiff = lockEnd.getTime() - now.getTime();
+  const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+  return {
+    isLocked: daysRemaining > 0,
+    daysRemaining: Math.max(0, daysRemaining),
+    lockEndDate
+  };
+}

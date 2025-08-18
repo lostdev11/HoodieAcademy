@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, User, Trophy, CheckCircle, Users } from 'lucide-react';
+import { ArrowRight, User, Trophy, CheckCircle, Users, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { initializeUserInLeaderboard } from '@/lib/utils';
@@ -20,7 +20,6 @@ interface OnboardingStep {
 }
 
 export default function OnboardingPage() {
-  const [currentStep, setCurrentStep] = useState(0);
   const [displayName, setDisplayName] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
   const router = useRouter();
@@ -28,52 +27,31 @@ export default function OnboardingPage() {
   // Check if user has already completed onboarding
   useEffect(() => {
     const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-    const hasSquad = localStorage.getItem('userSquad');
     const hasDisplayName = localStorage.getItem('userDisplayName');
     
-    if (hasCompletedOnboarding && hasSquad && hasDisplayName) {
+    if (hasCompletedOnboarding && hasDisplayName) {
       setIsCompleted(true);
-    }
-    
-    // If user has completed squad test but not onboarding, move to completion
-    if (hasSquad && hasDisplayName && !hasCompletedOnboarding) {
-      handleCompleteSquadTest();
     }
   }, []);
 
   const handleCompleteProfile = () => {
     if (displayName.trim()) {
       localStorage.setItem('userDisplayName', displayName.trim());
-      setCurrentStep(1);
+      localStorage.setItem('onboardingCompleted', 'true');
+      sessionStorage.setItem('justCompletedOnboarding', 'true');
+      
+      // Initialize user in leaderboard system
+      const walletAddress = localStorage.getItem('walletAddress') || 'demo-wallet';
+      const displayNameValue = displayName.trim();
+      
+      initializeUserInLeaderboard(walletAddress, displayNameValue, undefined);
+      
+      setIsCompleted(true);
+      // Redirect to dashboard after a short delay
+      setTimeout(() => {
+        router.push('/');
+      }, 2000);
     }
-  };
-
-  const handleCompleteSquadTest = () => {
-    localStorage.setItem('onboardingCompleted', 'true');
-    sessionStorage.setItem('justCompletedOnboarding', 'true');
-    
-    // Initialize user in leaderboard system
-    const walletAddress = localStorage.getItem('walletAddress') || 'demo-wallet';
-    const displayName = localStorage.getItem('userDisplayName') || 'Anonymous';
-    const squadResult = localStorage.getItem('userSquad');
-    let squad: string | undefined;
-    
-    if (squadResult) {
-      try {
-        const result = JSON.parse(squadResult);
-        squad = result.name;
-      } catch (error) {
-        console.error('Error parsing squad result:', error);
-      }
-    }
-    
-    initializeUserInLeaderboard(walletAddress, displayName, squad);
-    
-    setIsCompleted(true);
-    // Redirect to dashboard after a short delay
-    setTimeout(() => {
-      router.push('/');
-    }, 2000);
   };
 
   const steps: OnboardingStep[] = [
@@ -107,57 +85,27 @@ export default function OnboardingPage() {
               disabled={!displayName.trim()}
               className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
             >
-              Continue to Squad Placement
+              Complete Setup
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
-        </div>
-      )
-    },
-    {
-      id: 'squad',
-      title: 'Find Your Squad',
-      description: 'Take our personality test to discover your perfect squad',
-      component: (
-        <div className="space-y-6">
-          <div className="text-center mb-6">
-            <Users className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-purple-400 mb-2">Discover Your Squad</h2>
-            <p className="text-gray-300">Take our personality test to find the squad that matches your skills and interests.</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 p-3 text-center">
-              🎨 Hoodie Creators
-            </Badge>
-            <Badge variant="outline" className="text-gray-300 border-gray-500/30 p-3 text-center">
-              🧠 Hoodie Decoders
-            </Badge>
-            <Badge variant="outline" className="text-red-400 border-red-500/30 p-3 text-center">
-              🎤 Hoodie Speakers
-            </Badge>
-            <Badge variant="outline" className="text-blue-400 border-blue-500/30 p-3 text-center">
-              ⚔️ Hoodie Raiders
-            </Badge>
-            <Badge variant="outline" className="text-purple-400 border-purple-500/30 p-3 text-center md:col-span-2">
-              🦅 Hoodie Rangers
-            </Badge>
-          </div>
-          
-          <Button
-            asChild
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-          >
-            <Link href="/placement/squad-test">
-              Take Squad Placement Test
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
-          </Button>
-          
-          <div className="text-center">
-            <p className="text-sm text-gray-400">
-              After completing the test, you'll be redirected back here to finish setup.
+
+          {/* Squad Information */}
+          <div className="mt-8 p-4 bg-slate-700/30 rounded-lg border border-cyan-500/20">
+            <div className="flex items-center gap-3 mb-3">
+              <Users className="w-5 h-5 text-cyan-400" />
+              <h3 className="text-lg font-semibold text-cyan-400">Explore Your Squad</h3>
+            </div>
+            <p className="text-gray-300 text-sm mb-4">
+              After setup, you can explore different squad tracks and take an optional personality test to find your perfect match.
             </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+              <Badge variant="outline" className="text-yellow-400 border-yellow-500/30">🎨 Hoodie Creators</Badge>
+              <Badge variant="outline" className="text-gray-300 border-gray-500/30">🧠 Hoodie Decoders</Badge>
+              <Badge variant="outline" className="text-red-400 border-red-500/30">🎤 Hoodie Speakers</Badge>
+              <Badge variant="outline" className="text-blue-400 border-blue-500/30">⚔️ Hoodie Raiders</Badge>
+              <Badge variant="outline" className="text-purple-400 border-purple-500/30 md:col-span-2">🦅 Hoodie Rangers</Badge>
+            </div>
           </div>
         </div>
       )
@@ -184,7 +132,7 @@ export default function OnboardingPage() {
     );
   }
 
-  const progress = ((currentStep + 1) / steps.length) * 100;
+  const progress = ((1) / steps.length) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
@@ -199,14 +147,14 @@ export default function OnboardingPage() {
           {/* Progress Bar */}
           <div className="mb-8">
             <div className="flex justify-between text-sm text-gray-400 mb-2">
-              <span>Step {currentStep + 1} of {steps.length}</span>
+              <span>Step 1 of 1</span>
               <span>{Math.round(progress)}%</span>
             </div>
             <Progress value={progress} className="h-2" />
           </div>
 
           {/* Current Step */}
-          {steps[currentStep].component}
+          {steps[0].component}
         </CardContent>
       </Card>
     </div>

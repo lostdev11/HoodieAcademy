@@ -1,0 +1,63 @@
+{
+  "id": "v250-micro-animation",
+  "slug": "v250-micro-animation",
+  "title": "Micro-Animation & Emote Delivery",
+  "description": "Master the art of creating micro-animations and emotes that enhance communication, express emotion, and amplify your digital presence. Learn to deliver visual impact in small, powerful packages.",
+  "badge": "Emote Master",
+  "emoji": "✨",
+  "pathType": "visual",
+  "href": "/courses/v250-micro-animation",
+  "localStorageKey": "v250MicroAnimationProgress",
+  "totalLessons": 3,
+  "squad": "Speakers",
+  "category": "visual-delivery",
+  "level": "intermediate",
+  "access": "optional",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Micro-Animation Basics",
+      "description": "Understand the fundamentals of creating effective micro-animations",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What are Micro-Animations?",
+          "content": "Micro-animations are small, purposeful animations that enhance user experience, convey emotion, and add personality to digital communication. They're powerful tools for speakers and community builders.\n\n**Micro-Animation Definition:**\n• Small, purposeful movements\n• Enhanced user experience\n• Emotional expression\n• Brand personality\n• Communication enhancement\n\n**Animation Types:**\n• Loading animations\n• Hover effects\n• Transition animations\n• Feedback animations\n• Celebration animations\n\n**Benefits for Speakers:**\n• Enhanced engagement\n• Emotional connection\n• Brand differentiation\n• Communication clarity\n• Memorable experiences",
+          "video": "/videos/micro-animation-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Animation Principles",
+          "content": "**Core Principles:**\n• Purposeful movement\n• Smooth transitions\n• Appropriate timing\n• Consistent style\n• Emotional resonance\n\n**Design Elements:**\n• Color psychology\n• Motion curves\n• Timing functions\n• Spatial relationships\n• Visual hierarchy\n\n**Technical Considerations:**\n• Performance optimization\n• Cross-platform compatibility\n• Accessibility compliance\n• File size management\n• Quality standards",
+          "video": "/videos/animation-principles.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Emote Creation",
+      "description": "Learn to create emotes that enhance communication and express emotion",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Emote Design",
+          "content": "**Emote Elements:**\n• Clear expression\n• Recognizable emotion\n• Appropriate style\n• Scalable design\n• Brand alignment\n\n**Design Process:**\n• Emotion identification\n• Style development\n• Iterative refinement\n• Community testing\n• Final optimization\n\n**Implementation:**\n• Platform integration\n• Community adoption\n• Usage guidelines\n• Quality maintenance\n• Evolution planning",
+          "video": "/videos/emote-design.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Delivery Techniques",
+      "description": "Master techniques for delivering visual impact effectively",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Visual Delivery",
+          "content": "**Delivery Strategies:**\n• Contextual placement\n• Timing optimization\n• Audience engagement\n• Brand consistency\n• Impact maximization\n\n**Integration Methods:**\n• Platform-specific usage\n• Community guidelines\n• Quality standards\n• Performance monitoring\n• Feedback incorporation\n\n**Success Metrics:**\n• Engagement rates\n• Community adoption\n• Brand recognition\n• Emotional impact\n• Communication enhancement",
+          "video": "/videos/visual-delivery.mp4"
+        }
+      ]
+    }
+  ]
+} 

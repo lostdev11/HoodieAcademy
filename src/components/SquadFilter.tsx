@@ -13,7 +13,7 @@ export default function SquadFilter({ onChange, selectedSquad }: { onChange: (sq
   }, [selectedSquad, active]);
 
   return (
-    <div className="flex gap-2 p-4 flex-wrap">
+    <div className="flex gap-2 p-2 sm:p-4 flex-wrap justify-center">
       {squads.map((squad) => (
         <button
           key={squad}
@@ -21,7 +21,7 @@ export default function SquadFilter({ onChange, selectedSquad }: { onChange: (sq
             setActive(squad);
             onChange(squad);
           }}
-          className={`px-4 py-1 rounded-full text-sm font-semibold transition border ${
+          className={`px-3 sm:px-4 py-2 sm:py-1 rounded-full text-sm font-semibold transition border min-h-[44px] ${
             active === squad
               ? 'bg-black text-white border-black'
               : 'bg-white text-black border-gray-300'

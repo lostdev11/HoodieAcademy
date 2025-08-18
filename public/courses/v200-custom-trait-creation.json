@@ -1,0 +1,69 @@
+{
+  "id": "v200-custom-trait-creation",
+  "slug": "v200-custom-trait-creation",
+  "title": "Custom Trait Creation",
+  "description": "Learn to design and create custom traits for NFT collections. Master the art of trait design that enhances rarity, aesthetics, and community value.",
+  "badge": "Trait Architect",
+  "emoji": "⚡",
+  "pathType": "artistic",
+  "href": "/courses/v200-custom-trait-creation",
+  "localStorageKey": "v200CustomTraitCreationProgress",
+  "totalLessons": 5,
+  "squad": "Creators",
+  "category": "artistic-strategy",
+  "level": "intermediate",
+  "access": "hoodie-gated",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Trait Design Fundamentals",
+      "description": "Understand the principles of effective trait design",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What Makes a Good Trait?",
+          "content": "Traits are the building blocks of NFT collections. They define rarity, aesthetics, and community identity.\n\n**Trait Categories:**\n• Background (environment, mood)\n• Body (base character)\n• Clothing (style, rarity)\n• Accessories (items, props)\n• Facial features (expression, uniqueness)\n• Special effects (glows, animations)\n\n**Design Principles:**\n• Consistency across variations\n• Clear visual hierarchy\n• Scalable design system\n• Community appeal\n• Technical feasibility\n\n**Rarity Considerations:**\n• Common (60-80%)\n• Uncommon (15-25%)\n• Rare (5-10%)\n• Legendary (1-3%)\n• Mythic (0.1-0.5%)",
+          "video": "/videos/trait-design-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Trait Layering & Compatibility",
+          "content": "**Layer Organization:**\n• Background (bottom layer)\n• Body/base character\n• Clothing/outfits\n• Accessories/props\n• Facial features\n• Effects/overlays\n\n**Compatibility Rules:**\n• Traits must work together\n• Avoid clipping issues\n• Maintain visual balance\n• Consider color harmony\n• Test all combinations\n\n**Technical Requirements:**\n• Consistent dimensions\n• Transparent backgrounds\n• Proper file formats\n• Optimized file sizes\n• Metadata standards",
+          "video": "/videos/trait-layering.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Rarity Strategy",
+      "description": "Design rarity systems that create value and excitement",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Rarity Distribution",
+          "content": "**Rarity Tiers:**\n• Common: 60-80% (base traits)\n• Uncommon: 15-25% (variations)\n• Rare: 5-10% (desirable traits)\n• Legendary: 1-3% (highly sought)\n• Mythic: 0.1-0.5% (ultra rare)\n\n**Distribution Strategies:**\n• Bell curve (most in middle)\n• Exponential (fewer rare items)\n• Custom curves (project-specific)\n• Dynamic rarity (community voting)\n\n**Value Creation:**\n• Scarcity drives demand\n• Utility enhances value\n• Community recognition\n• Historical significance\n• Future potential",
+          "video": "/videos/rarity-strategy.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Trait Combinations",
+          "content": "**Synergy Traits:**\n• Complementary designs\n• Thematic connections\n• Visual harmony\n• Story elements\n• Community references\n\n**Exclusive Combinations:**\n• Rare trait + rare trait = ultra rare\n• Seasonal combinations\n• Event-specific traits\n• Community milestone rewards\n• Governance participation perks\n\n**Avoiding Conflicts:**\n• Clashing color schemes\n• Incompatible styles\n• Overlapping elements\n• Confusing combinations",
+          "video": "/videos/trait-combinations.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Community Integration",
+      "description": "Design traits that strengthen community bonds",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Community-Driven Traits",
+          "content": "**Community Input:**\n• Poll-based trait selection\n• Community contests\n• Member suggestions\n• Event participation rewards\n• Governance voting results\n\n**Lore Integration:**\n• Story-driven traits\n• Character development\n• Historical references\n• Future prophecies\n• Community milestones\n\n**Utility Traits:**\n• Governance voting power\n• Access to exclusive content\n• Event participation\n• Community roles\n• Future airdrops",
+          "video": "/videos/community-traits.mp4"
+        }
+      ]
+    }
+  ]
+} 

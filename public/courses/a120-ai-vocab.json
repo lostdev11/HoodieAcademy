@@ -1,0 +1,63 @@
+{
+  "id": "a120-ai-vocab",
+  "slug": "a120-ai-vocab",
+  "title": "AI Vocab (RAG, Few-Shot, Prompt Types)",
+  "description": "Master the essential AI vocabulary and concepts needed to interpret and work with large language models. Learn RAG, few-shot learning, and prompt engineering techniques.",
+  "badge": "AI Interpreter",
+  "emoji": "🤖",
+  "pathType": "ai",
+  "href": "/courses/a120-ai-vocab",
+  "localStorageKey": "a120AiVocabProgress",
+  "totalLessons": 4,
+  "squad": "Decoders",
+  "category": "llm-interpretation",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "AI Fundamentals",
+      "description": "Understand the basics of AI and large language models",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "LLM Basics",
+          "content": "Large Language Models (LLMs) are AI systems trained on vast amounts of text data. Understanding their capabilities and limitations is crucial for effective interaction.\n\n**What are LLMs?**\n• Neural networks trained on text\n• Predict next word in sequence\n• Understand context and patterns\n• Generate human-like text\n• Learn from examples\n\n**Key Concepts:**\n• Tokenization (text to numbers)\n• Attention mechanisms\n• Training data quality\n• Model parameters\n• Inference vs training\n\n**Common LLMs:**\n• GPT-4 (OpenAI)\n• Claude (Anthropic)\n• Gemini (Google)\n• Llama (Meta)\n• Mistral (Mistral AI)",
+          "video": "/videos/llm-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "AI Vocabulary",
+          "content": "**Essential Terms:**\n• RAG (Retrieval-Augmented Generation)\n• Few-shot learning\n• Zero-shot learning\n• Prompt engineering\n• Token limits\n• Context windows\n\n**Model Types:**\n• Base models (raw training)\n• Fine-tuned models (specialized)\n• Instruction-tuned models\n• RLHF models (human feedback)\n• Multimodal models\n\n**Capabilities:**\n• Text generation\n• Code writing\n• Analysis and reasoning\n• Translation\n• Summarization\n• Question answering",
+          "video": "/videos/ai-vocabulary.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "RAG Systems",
+      "description": "Learn about Retrieval-Augmented Generation and its applications",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "RAG Fundamentals",
+          "content": "**What is RAG?**\n• Retrieval + Generation\n• Combines knowledge base with LLM\n• Reduces hallucinations\n• Improves accuracy\n• Enables real-time updates\n\n**RAG Components:**\n• Knowledge base (documents)\n• Retrieval system (search)\n• LLM (generation)\n• Query processing\n• Response synthesis\n\n**RAG Applications:**\n• Customer support\n• Research assistance\n• Document analysis\n• Code documentation\n• Knowledge management\n\n**RAG Benefits:**\n• Up-to-date information\n• Source citations\n• Reduced hallucinations\n• Domain expertise\n• Scalable knowledge",
+          "video": "/videos/rag-fundamentals.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Prompt Engineering",
+      "description": "Master the art of writing effective prompts for AI models",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Prompt Types",
+          "content": "**Zero-Shot Prompts:**\n• No examples provided\n• Model uses general knowledge\n• Good for simple tasks\n• May lack specificity\n• Quick to write\n\n**Few-Shot Prompts:**\n• Include examples\n• Show desired format\n• Improve accuracy\n• Reduce errors\n• More effective\n\n**Chain-of-Thought:**\n• Step-by-step reasoning\n• Show thinking process\n• Better for complex tasks\n• Reduces errors\n• More reliable\n\n**Role-Based Prompts:**\n• Define AI's role\n• Set expectations\n• Improve consistency\n• Better results\n• Clear boundaries",
+          "video": "/videos/prompt-types.mp4"
+        }
+      ]
+    }
+  ]
+} 

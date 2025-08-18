@@ -1,0 +1,63 @@
+{
+  "id": "hl140-randomizer-power",
+  "slug": "hl140-randomizer-power",
+  "title": "Introduction to Randomizer Power",
+  "description": "Master the fundamentals of randomizer mechanics and their influence on NFT markets. Learn to understand, predict, and leverage randomizer behavior for strategic advantage.",
+  "badge": "Randomizer Sage",
+  "emoji": "🎲",
+  "pathType": "meta",
+  "href": "/courses/hl140-randomizer-power",
+  "localStorageKey": "hl140RandomizerPowerProgress",
+  "totalLessons": 4,
+  "squad": "Raiders",
+  "category": "meta-influence",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Randomizer Basics",
+      "description": "Understand the fundamentals of randomizer mechanics and their impact",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What is a Randomizer?",
+          "content": "Randomizers are algorithms that determine NFT traits and rarity. Understanding their mechanics is crucial for predicting market behavior and identifying opportunities.\n\n**Randomizer Definition:**\n• Algorithm for trait generation\n• Rarity distribution system\n• Market influence mechanism\n• Community psychology driver\n• Meta direction controller\n\n**Randomizer Types:**\n• True random (unpredictable)\n• Pseudo-random (deterministic)\n• Weighted random (biased)\n• Time-based random\n• Community-influenced random\n\n**Why Randomizers Matter:**\n• Rarity determination\n• Market psychology\n• Community behavior\n• Meta direction\n• Investment decisions",
+          "video": "/videos/randomizer-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Randomizer Psychology",
+          "content": "**Psychological Impact:**\n• Gambling psychology\n• FOMO creation\n• Rarity obsession\n• Community speculation\n• Market manipulation\n\n**Behavioral Patterns:**\n• Rarity chasing\n• Floor monitoring\n• Trait speculation\n• Community coordination\n• Market timing\n\n**Influence Mechanisms:**\n• Rarity perception\n• Value assignment\n• Community sentiment\n• Market direction\n• Meta evolution",
+          "video": "/videos/randomizer-psychology.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Meta Influence",
+      "description": "Learn how randomizers influence market meta and community behavior",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Meta Mechanics",
+          "content": "**Meta Definition:**\n• Current market trends\n• Community preferences\n• Trait popularity\n• Price movements\n• Cultural direction\n\n**Randomizer-Meta Relationship:**\n• Rarity drives value\n• Traits influence meta\n• Community shapes direction\n• Market follows patterns\n• Meta evolves continuously\n\n**Influence Strategies:**\n• Meta prediction\n• Trend identification\n• Community coordination\n• Timing optimization\n• Risk management",
+          "video": "/videos/meta-mechanics.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Strategic Applications",
+      "description": "Apply randomizer knowledge for strategic advantage",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Strategic Positioning",
+          "content": "**Positioning Strategies:**\n• Meta prediction\n• Rarity anticipation\n• Community coordination\n• Timing optimization\n• Risk management\n\n**Opportunity Identification:**\n• Undervalued traits\n• Meta shifts\n• Community sentiment\n• Market inefficiencies\n• Timing advantages\n\n**Risk Management:**\n• Diversification\n• Position sizing\n• Exit strategies\n• Community monitoring\n• Meta tracking",
+          "video": "/videos/strategic-positioning.mp4"
+        }
+      ]
+    }
+  ]
+} 

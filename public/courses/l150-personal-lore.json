@@ -1,0 +1,50 @@
+{
+  "id": "l150-personal-lore",
+  "slug": "l150-personal-lore",
+  "title": "Personal Lore & Character Sheets",
+  "description": "Develop your personal brand and character within the Hoodie Academy universe. Create compelling backstories and character sheets that enhance your community presence.",
+  "badge": "Lore Keeper",
+  "emoji": "📜",
+  "pathType": "identity",
+  "href": "/courses/l150-personal-lore",
+  "localStorageKey": "l150PersonalLoreProgress",
+  "totalLessons": 3,
+  "squad": "Creators",
+  "category": "identity-writing",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Character Development",
+      "description": "Learn to create compelling personal characters for Web3 communities",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Building Your Web3 Persona",
+          "content": "Your Web3 persona is more than just a username. It's a character that represents you in digital communities and contributes to the collective lore.\n\n**Character Elements:**\n• Origin story (how you discovered Web3)\n• Motivations (why you're here)\n• Strengths (what you bring)\n• Growth arc (how you evolve)\n• Relationships (community connections)\n\n**Persona Types:**\n• The Scholar (knowledge seeker)\n• The Builder (creator/developer)\n• The Trader (market participant)\n• The Community Leader (organizer)\n• The Artist (creative contributor)\n• The Meme Lord (culture creator)",
+          "video": "/videos/web3-persona.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Character Sheet Design",
+          "content": "**Character Sheet Elements:**\n• Visual representation (avatar/art)\n• Backstory summary\n• Key traits and abilities\n• Community roles\n• Achievements and milestones\n• Future goals\n\n**Design Principles:**\n• Consistent visual style\n• Clear information hierarchy\n• Engaging storytelling\n• Community integration\n• Scalable format\n\n**Web3 Integration:**\n• NFT profile pictures\n• On-chain achievements\n• Community badges\n• Governance participation\n• Project contributions",
+          "video": "/videos/character-sheet.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Lore Integration",
+      "description": "Connect your personal story to the broader community narrative",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Community Lore Integration",
+          "content": "**Lore Connection Points:**\n• Project origin stories\n• Community milestones\n• Historical events\n• Future prophecies\n• Character interactions\n\n**Integration Strategies:**\n• Reference community events\n• Connect to project timeline\n• Participate in lore creation\n• Contribute to collective story\n• Build relationships with other characters\n\n**Lore Types:**\n• Origin stories (how things began)\n• Growth narratives (community evolution)\n• Challenge stories (overcoming obstacles)\n• Triumph tales (success celebrations)\n• Future visions (roadmap stories)",
+          "video": "/videos/lore-integration.mp4"
+        }
+      ]
+    }
+  ]
+} 

@@ -1,139 +1,145 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Connection } from '@solana/web3.js';
-import { getSNSResolver, isValidSolanaAddress } from '@/services/sns-resolver';
-import { formatWalletAddress } from '@/lib/utils';
+import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink, Target, Upload, Image as ImageIcon } from 'lucide-react';
 import { squadTracks } from '@/lib/squadData';
-import PfpPicker from './PfpPicker';
-import { useToast } from '@/hooks/use-toast';
-import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
-import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { getSNSResolver, formatWalletAddress, isValidSolanaAddress, isSolDomain } from '@/services/sns-resolver';
+import { Connection } from '@solana/web3.js';
 import SquadBadge from '@/components/SquadBadge';
-import PageLayout from "@/components/layouts/PageLayout";
+import { NFTProfileSelector } from '@/components/profile/NFTProfileSelector';
+import { NFT } from '@/services/nft-service';
+import { fetchUserByWallet } from '@/lib/supabase';
+import { BountySubmissionForm, BountySubmissionData } from '@/components/bounty';
+import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 
-function ProfileView() {
-  const [wallet, setWallet] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [solDomain, setSolDomain] = useState<string | null>(null);
-  const [isLoadingDomain, setIsLoadingDomain] = useState(false);
+// Real data functions
+const getRealUserData = (walletAddress: string) => {
+  if (!walletAddress) return null;
+  
+  const userProgress = localStorage.getItem('userProgress');
+  const userProfiles = localStorage.getItem('userProfiles');
+  
+  if (userProgress) {
+    try {
+      const progress = JSON.parse(userProgress);
+      const profiles = userProfiles ? JSON.parse(userProfiles) : {};
+      const userData = progress[walletAddress];
+      const profile = profiles[walletAddress] || {};
+      
+      if (userData) {
+        return {
+          displayName: profile.displayName || `User ${walletAddress.slice(0, 6)}...`,
+          squad: profile.squad || 'Unassigned',
+          joined: profile.createdAt || new Date().toISOString(),
+          rank: profile.rank || 'Scholar',
+          completedCourses: Object.entries(userData.courses || {}).map(([courseId, courseData]: [string, any]) => ({
+            id: courseId,
+            title: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            progress: courseData.progress ? (courseData.progress.filter((p: string) => p === 'completed').length / courseData.progress.length) * 100 : 0,
+            score: courseData.finalExam?.score || 0
+          })),
+          badges: [] // Badges would be calculated based on achievements
+        };
+      }
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+    }
+  }
+  
+  return null;
+};
+
+export function ProfileView() {
   const [editMode, setEditMode] = useState(false);
   const [displayName, setDisplayName] = useState(() => {
+    // Get display name from localStorage
     return localStorage.getItem('userDisplayName') || 'Hoodie Scholar';
   });
   const [originalDisplayName, setOriginalDisplayName] = useState(() => {
+    // Store original value for cancel functionality
     return localStorage.getItem('userDisplayName') || 'Hoodie Scholar';
   });
   const [squad, setSquad] = useState('Unassigned');
+  const [wallet, setWallet] = useState<string>('');
+  const [copied, setCopied] = useState(false);
+  const [solDomain, setSolDomain] = useState<string | null>(null);
+  const [isLoadingDomain, setIsLoadingDomain] = useState(false);
   const [userSquad, setUserSquad] = useState<any>(null);
   const [placementTestCompleted, setPlacementTestCompleted] = useState(false);
-  const [profileImage, setProfileImage] = useState<string>('🧑‍🎓');
   const [userData, setUserData] = useState<any>(null);
+  const [profileImage, setProfileImage] = useState<string>('🧑‍🎓');
+  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+
+  // Wallet connection
+  const { connectWallet, disconnectWallet: disconnectWalletHook } = useWalletSupabase();
 
   const snsResolver = getSNSResolver();
   const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
 
-  // Real data functions
-  const getRealUserData = (walletAddress: string) => {
-    if (!walletAddress) return null;
-    
-    const userProgress = localStorage.getItem('userProgress');
-    const userProfiles = localStorage.getItem('userProfiles');
-    
-    if (userProgress) {
-      try {
-        const progress = JSON.parse(userProgress);
-        const profiles = userProfiles ? JSON.parse(userProfiles) : {};
-        const userData = progress[walletAddress];
-        const profile = profiles[walletAddress] || {};
-        
-        if (userData) {
-          return {
-            displayName: profile.displayName || `User ${walletAddress.slice(0, 6)}...`,
-            squad: profile.squad || 'Unassigned',
-            joined: profile.createdAt || new Date().toISOString(),
-            rank: profile.rank || 'Scholar',
-            completedCourses: Object.entries(userData.courses || {}).map(([courseId, courseData]: [string, any]) => ({
-              id: courseId,
-              title: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-              progress: courseData.progress ? (courseData.progress.filter((p: string) => p === 'completed').length / courseData.progress.length) * 100 : 0,
-              score: courseData.finalExam?.score || 0
-            })),
-            badges: [] // Badges would be calculated based on achievements
-          };
-        }
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-      }
-    }
-    
-    return null;
-  };
-
-  // Wallet state management using the same method as TokenGate
+  // Auto-detect connected wallet from localStorage or session
   useEffect(() => {
-    const checkWalletConnection = () => {
-      const savedWalletAddress = localStorage.getItem('walletAddress');
-      const sessionData = sessionStorage.getItem('wifhoodie_verification');
+    const detectConnectedWallet = async () => {
+      // Check localStorage for connected wallet (from TokenGate)
+      const connectedWallet = localStorage.getItem('connectedWallet');
+      const walletAddress = localStorage.getItem('walletAddress');
       
-      if (savedWalletAddress && sessionData) {
+      let currentWallet = '';
+      if (walletAddress) {
+        currentWallet = walletAddress;
+      } else if (connectedWallet) {
+        currentWallet = connectedWallet;
+      } else {
+        // For demo purposes, use a test wallet that has a .sol domain
+        currentWallet = 'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU';
+      }
+      
+      setWallet(currentWallet);
+
+      // Try to fetch user data from Supabase first
+      if (currentWallet) {
         try {
-          const session = JSON.parse(sessionData);
-          const now = Date.now();
-          const sessionAge = now - session.timestamp;
-          const sessionValid = sessionAge < 24 * 60 * 60 * 1000; // 24 hours
-          
-          if (sessionValid && session.walletAddress === savedWalletAddress && session.isHolder) {
-            console.log("🔄 Debug: Restoring wallet connection for profile:", savedWalletAddress);
-            setWallet(savedWalletAddress);
-          } else {
-            console.log("⏰ Debug: Session expired or invalid, clearing wallet");
-            setWallet(null);
+          const userData = await fetchUserByWallet(currentWallet);
+          if (userData) {
+            // Update localStorage with Supabase data
+            if (userData.display_name) {
+              localStorage.setItem('userDisplayName', userData.display_name);
+              setDisplayName(userData.display_name);
+              setOriginalDisplayName(userData.display_name);
+            }
+            if (userData.squad) {
+              // Only set squad from Supabase if no local squad test result exists
+              const existingSquadResult = localStorage.getItem('userSquad');
+              if (!existingSquadResult) {
+                localStorage.setItem('userSquad', JSON.stringify({
+                  name: userData.squad,
+                  assignedAt: userData.created_at,
+                  testVersion: '1.0'
+                }));
+                setSquad(userData.squad);
+                setUserSquad({ name: userData.squad });
+              } else {
+                console.log('Keeping existing squad test result, not overwriting with Supabase data');
+              }
+            }
+            if (userData.squad_test_completed) {
+              localStorage.setItem('placementTestCompleted', 'true');
+              setPlacementTestCompleted(true);
+            }
           }
         } catch (error) {
-          console.error("❌ Debug: Error parsing session data:", error);
-          setWallet(null);
+          console.error('Error fetching user data from Supabase:', error);
         }
-      } else {
-        setWallet(null);
       }
     };
 
-    // Check wallet connection on mount
-    checkWalletConnection();
-
-    // Listen for storage changes (when wallet connects/disconnects)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'walletAddress' || e.key === 'wifhoodie_verification') {
-        checkWalletConnection();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also check periodically for changes
-    const interval = setInterval(checkWalletConnection, 1000);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, []);
-
-  // Load squad placement and profile data on mount
-  useEffect(() => {
-    // Check for squad placement result
+    // Check for squad placement result from localStorage as fallback
     const squadResult = localStorage.getItem('userSquad');
     const testCompleted = localStorage.getItem('placementTestCompleted');
     
@@ -152,12 +158,33 @@ function ProfileView() {
       setPlacementTestCompleted(true);
     }
 
-    // Load saved profile image
+    // Load saved profile image and NFT data
     const savedProfileImage = localStorage.getItem('userProfileImage');
+    const savedNFT = localStorage.getItem('userSelectedNFT');
+    
     if (savedProfileImage) {
       setProfileImage(savedProfileImage);
     }
+    
+    if (savedNFT) {
+      try {
+        const nftData = JSON.parse(savedNFT);
+        setSelectedNFT(nftData);
+      } catch (error) {
+        console.error('Error parsing saved NFT data:', error);
+      }
+    }
+
+    detectConnectedWallet();
   }, []);
+
+  // Load real user data when wallet changes
+  useEffect(() => {
+    if (wallet) {
+      const realData = getRealUserData(wallet);
+      setUserData(realData);
+    }
+  }, [wallet]);
 
   // Resolve .sol domain when wallet changes
   useEffect(() => {
@@ -183,21 +210,38 @@ function ProfileView() {
     }
   }, [wallet, snsResolver, connection]);
 
-  // Load real user data when wallet changes
-  useEffect(() => {
-    if (wallet) {
-      const realData = getRealUserData(wallet);
-      setUserData(realData);
-    }
-  }, [wallet]);
-
-  const handleSave = () => {
+  const handleSave = async () => {
     if (displayName.trim()) {
       const trimmedName = displayName.trim();
       localStorage.setItem('userDisplayName', trimmedName);
       setOriginalDisplayName(trimmedName);
       setEditMode(false);
-      // Optional: Add a success message or toast notification here
+      
+      // Sync with Supabase
+      if (wallet) {
+        try {
+          const { supabase } = await import('@/lib/supabase');
+          const { data, error } = await supabase
+            .from('users')
+            .upsert([
+              {
+                wallet_address: wallet,
+                display_name: trimmedName,
+                last_active: new Date().toISOString(),
+              }
+            ], {
+              onConflict: 'wallet_address'
+            });
+          
+          if (error) {
+            console.error('Error updating display name in Supabase:', error);
+          } else {
+            console.log('Successfully updated display name in Supabase');
+          }
+        } catch (error) {
+          console.error('Error syncing display name with Supabase:', error);
+        }
+      }
     } else {
       // Don't save if display name is empty
       alert('Display name cannot be empty');
@@ -249,50 +293,48 @@ function ProfileView() {
 
   const handleCopyWallet = async () => {
     try {
-      if (!wallet) return; // nothing to copy
-
-      // Clipboard API may be unavailable (or blocked) in some browsers/contexts.
-      if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
-        // Fallback: temporary textarea + execCommand
-        const el = document.createElement('textarea');
-        el.value = wallet;
-        el.style.position = 'fixed';
-        el.style.opacity = '0';
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-      } else {
-        await navigator.clipboard.writeText(wallet); // wallet is now narrowed to string
-      }
-
+      await navigator.clipboard.writeText(wallet);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Copy failed:', err);
+      console.error('Failed to copy wallet address:', err);
     }
   };
 
-  const handleDisconnectWallet = async () => {
-    console.log("🔌 Debug: Disconnecting wallet from profile:", wallet);
-    
+  const handleWalletConnect = async () => {
+    const connectedWallet = await connectWallet();
+    if (connectedWallet) {
+      setWallet(connectedWallet);
+      localStorage.setItem('walletAddress', connectedWallet);
+    }
+  };
+
+  const handleDisconnectWallet = () => {
     setWallet('');
     setSolDomain(null);
     
     // Clear wallet data from storage
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('connectedWallet');
-    sessionStorage.removeItem('wifhoodie_verification');
+    sessionStorage.removeItem('wifhoodie_verification_session');
     
-    // Disconnect from wallet providers safely
-    const sol = typeof window !== 'undefined' ? window.solana : undefined;
+    // Disconnect from wallet providers
+    if (window.solana?.disconnect) {
+      window.solana.disconnect();
+    }
+    disconnectWalletHook();
+  };
 
-    try {
-      if (sol?.disconnect) {
-        await sol.disconnect();
-      }
-    } catch (e) {
-      console.error("disconnect error", e);
+  const handleProfileImageChange = (imageUrl: string, nftData?: NFT) => {
+    setProfileImage(imageUrl);
+    setSelectedNFT(nftData || null);
+    
+    // Save to localStorage
+    localStorage.setItem('userProfileImage', imageUrl);
+    if (nftData) {
+      localStorage.setItem('userSelectedNFT', JSON.stringify(nftData));
+    } else {
+      localStorage.removeItem('userSelectedNFT');
     }
   };
 
@@ -357,16 +399,21 @@ function ProfileView() {
   }
 
   return (
-    <PageLayout
-      title="👤 Profile"
-      subtitle="Manage your Hoodie Academy profile and progress"
-      showHomeButton={true}
-      showBackButton={true}
-      backHref="/"
-      backgroundImage=""
-      backgroundOverlay={false}
-    >
-      <div className="flex flex-col items-center py-12 px-4">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="flex-1 flex flex-col items-center py-12 px-4">
+        {/* Back to Dashboard Button */}
+        <div className="w-full max-w-2xl mb-6">
+          <Button
+            asChild
+            variant="outline"
+            className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300"
+          >
+            <Link href="/">
+              <Home className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Link>
+          </Button>
+        </div>
 
         <Card className="w-full max-w-2xl bg-slate-800/60 border-cyan-500/30 mb-8">
           <CardHeader>
@@ -410,7 +457,16 @@ function ProfileView() {
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400">Wallet:</span>
                   {editMode ? (
-                    <Input value={wallet} onChange={e => setWallet(e.target.value)} className="w-40 bg-slate-700/50 border-cyan-500/30 text-white" />
+                    <div className="flex items-center gap-2">
+                      <Input value={wallet} onChange={e => setWallet(e.target.value)} className="w-40 bg-slate-700/50 border-cyan-500/30 text-white" />
+                      <Button
+                        size="sm"
+                        onClick={handleWalletConnect}
+                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        Connect Wallet
+                      </Button>
+                    </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       {getWalletDisplay()}
@@ -493,50 +549,10 @@ function ProfileView() {
                 </div>
               </div>
               <div className="flex flex-col items-center gap-4">
-                  {/* Profile Picture Section */}
-                  <div className="text-center mb-4">
-                    <h3 className="text-sm font-semibold text-purple-400 mb-2">Profile Picture</h3>
-                    <p className="text-xs text-gray-400 mb-3">
-                      Set your WifHoodie NFT as your profile picture to represent yourself in the community
-                    </p>
-                    
-                    {/* Current PFP Display */}
-                    <div className="mb-4">
-                      <ProfileAvatar pfpUrl={profileImage} size={120} />
-                      {profileImage && profileImage !== '🧑‍🎓' && (
-                        <p className="text-xs text-cyan-400 mt-2 font-medium">
-                          ✓ NFT Profile Picture Active
-                        </p>
-                      )}
-                    </div>
-                    
-                    {/* PFP Selection Instructions */}
-                    <div className="bg-slate-800/40 rounded-lg p-3 mb-4 border border-cyan-500/20">
-                      <p className="text-xs text-gray-300 mb-2">
-                        <strong>How to change your PFP:</strong>
-                      </p>
-                      <ol className="text-xs text-gray-400 text-left space-y-1">
-                        <li>1. Click "Set wifhoodie PFP" below</li>
-                        <li>2. Browse your NFT collection</li>
-                        <li>3. Click any NFT to select it</li>
-                        <li>4. Your profile will update instantly</li>
-                      </ol>
-                    </div>
-                  </div>
-                  
-                  {/* PfpPicker for selecting new profile pictures */}
-                  <PfpPicker 
-                    selectedPfpUrl={profileImage}
-                    onChange={(url) => {
-                      setProfileImage(url || '🧑‍🎓');
-                      // Save to localStorage
-                      if (url) {
-                        localStorage.setItem('userProfileImage', url);
-                      } else {
-                        localStorage.removeItem('userProfileImage');
-                      }
-                    }}
-                    userId={wallet} // Using wallet address as user ID for now
+                  <NFTProfileSelector 
+                    walletAddress={wallet} 
+                    currentProfileImage={profileImage}
+                    onProfileImageChange={handleProfileImageChange} 
                   />
                 
                 {/* Squad Badge */}
@@ -557,6 +573,31 @@ function ProfileView() {
                     <p className="text-gray-400 text-sm">No badges earned yet</p>
                   )}
                 </div>
+
+                {/* NFT Profile Information */}
+                {selectedNFT && (
+                  <div className="text-center space-y-2 p-3 bg-slate-700/30 rounded-lg border border-purple-500/30">
+                    <h4 className="font-semibold text-purple-400 text-sm">Profile NFT</h4>
+                    <p className="text-white text-sm">{selectedNFT.name}</p>
+                    {selectedNFT.collection && (
+                      <p className="text-gray-400 text-xs">{selectedNFT.collection}</p>
+                    )}
+                    {selectedNFT.attributes && selectedNFT.attributes.length > 0 && (
+                      <div className="flex flex-wrap gap-1 justify-center">
+                        {selectedNFT.attributes.slice(0, 3).map((attr, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs bg-slate-600/50 border-purple-500/30 text-purple-300">
+                            {attr.trait_type}: {attr.value}
+                          </Badge>
+                        ))}
+                        {selectedNFT.attributes.length > 3 && (
+                          <Badge variant="outline" className="text-xs bg-slate-600/50 border-gray-500/30 text-gray-300">
+                            +{selectedNFT.attributes.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
@@ -716,10 +757,93 @@ function ProfileView() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </PageLayout>
-  );
-}
 
-export default ProfileView;
-export { ProfileView }; 
+        {/* Bounty Submissions Section */}
+        <Card className="w-full max-w-2xl bg-slate-800/60 border-orange-500/30 mb-8">
+          <CardHeader>
+            <CardTitle className="text-orange-400 flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Your Bounty Submissions
+              {/* Contribution Badge */}
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 ml-auto">
+                🏆 Contributor
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Submission History */}
+              <div className="mb-6">
+                <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  Recent Submissions
+                </h4>
+                <div className="space-y-3">
+                  {/* Sample submissions - in real app this would come from API/database */}
+                  <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-orange-500/20 rounded-lg">
+                          <ImageIcon className="w-4 h-4 text-orange-400" />
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-white">Hoodie Academy Visual</h5>
+                          <p className="text-sm text-gray-400">Submitted 2 days ago</p>
+                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                            Creators
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-orange-400">Pending Review</p>
+                        <p className="text-xs text-gray-400">Sit tight, the Council is watching...</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-500/20 rounded-lg">
+                          <Award className="w-4 h-4 text-green-400" />
+                        </div>
+                        <div>
+                          <h5 className="font-semibold text-white">Trading Psychology Meme</h5>
+                          <p className="text-sm text-gray-400">Submitted 1 week ago</p>
+                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                            Creators
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-green-400">Approved</p>
+                        <p className="text-xs text-gray-400">🧱 Added to the Academy Wall</p>
+                        <p className="text-xs text-yellow-400">💰 Payout: 1.8 SOL</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit New Bounty */}
+              <div className="border-t border-slate-600/30 pt-4">
+                <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Submit New Bounty Entry
+                </h4>
+                <BountySubmissionForm 
+                  onSubmit={(data: BountySubmissionData) => {
+                    console.log('Submitting bounty from profile:', data);
+                    // Handle submission logic here
+                    // In real app, this would save to database and update UI
+                  }} 
+                  className="max-w-none"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+} 

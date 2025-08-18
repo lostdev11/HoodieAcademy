@@ -1,0 +1,69 @@
+{
+  "id": "c150-scam-detection",
+  "slug": "c150-scam-detection",
+  "title": "Scam Detection",
+  "description": "Develop your digital defense skills to identify and avoid scams in the Web3 space. Learn to spot red flags, protect your assets, and help others stay safe.",
+  "badge": "Scam Hunter",
+  "emoji": "🛡️",
+  "pathType": "defense",
+  "href": "/courses/c150-scam-detection",
+  "localStorageKey": "c150ScamDetectionProgress",
+  "totalLessons": 4,
+  "squad": "Raiders",
+  "category": "digital-defense",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Scam Fundamentals",
+      "description": "Understand the basics of scam detection and digital security",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What is a Scam?",
+          "content": "Scams in Web3 are sophisticated attempts to steal assets, personal information, or access to accounts. Understanding their patterns is crucial for protection.\n\n**Scam Definition:**\n• Deceptive practices\n• Asset theft attempts\n• Information harvesting\n• Access compromise\n• Social engineering\n\n**Common Scam Types:**\n• Phishing (fake websites)\n• Social engineering (manipulation)\n• Pump and dump (market manipulation)\n• Rug pulls (project abandonment)\n• Impersonation (fake identities)\n\n**Why Scams Work:**\n• Human psychology\n• FOMO (Fear of Missing Out)\n• Greed and opportunity\n• Trust exploitation\n• Technical ignorance",
+          "video": "/videos/scam-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Red Flag Recognition",
+          "content": "**Urgency Red Flags:**\n• Limited time offers\n• Pressure to act quickly\n• Threats of missing out\n• Artificial scarcity\n• Time pressure tactics\n\n**Authority Red Flags:**\n• Impersonating officials\n• Fake credentials\n• Unverifiable claims\n• Suspicious authority\n• Inconsistent information\n\n**Financial Red Flags:**\n• Guaranteed returns\n• Unrealistic promises\n• Hidden fees\n• Complex fee structures\n• Pressure to invest\n\n**Technical Red Flags:**\n• Suspicious links\n• Unusual requests\n• Data harvesting\n• Malware indicators\n• Security warnings",
+          "video": "/videos/red-flags.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Web3 Scam Types",
+      "description": "Learn to identify specific scams in the Web3 ecosystem",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "NFT Scams",
+          "content": "**Fake NFT Projects:**\n• Copied artwork\n• False promises\n• No utility\n• Abandoned projects\n• Fake rarity claims\n\n**Minting Scams:**\n• High gas fees\n• Hidden costs\n• Fake minting sites\n• Impersonation\n• Technical issues\n\n**Marketplace Scams:**\n• Fake listings\n• Price manipulation\n• Wash trading\n• Bidding scams\n• Counterfeit NFTs\n\n**Protection Strategies:**\n• Verify project authenticity\n• Check contract addresses\n• Research team background\n• Use trusted marketplaces\n• Enable security features",
+          "video": "/videos/nft-scams.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "DeFi Scams",
+          "content": "**Rug Pulls:**\n• Abandoned projects\n• Stolen funds\n• No liquidity\n• Fake teams\n• Suspicious contracts\n\n**Yield Farming Scams:**\n• Unrealistic APY\n• Complex tokenomics\n• Hidden risks\n• Ponzi schemes\n• Exit scams\n\n**Token Scams:**\n• Fake tokens\n• Honeypot contracts\n• Pump and dump\n• Wash trading\n• Insider trading\n\n**Protection Methods:**\n• Audit smart contracts\n• Check liquidity\n• Verify team\n• Use trusted protocols\n• Diversify investments",
+          "video": "/videos/defi-scams.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Defense Strategies",
+      "description": "Develop comprehensive defense strategies to protect yourself and others",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Personal Security",
+          "content": "**Wallet Security:**\n• Use hardware wallets\n• Enable 2FA\n• Secure seed phrases\n• Regular backups\n• Cold storage\n\n**Account Security:**\n• Strong passwords\n• Unique credentials\n• Regular updates\n• Security monitoring\n• Incident response\n\n**Social Security:**\n• Verify identities\n• Check sources\n• Question authority\n• Trust but verify\n• Report suspicious activity\n\n**Education:**\n• Stay informed\n• Share knowledge\n• Help others\n• Community vigilance\n• Continuous learning",
+          "video": "/videos/personal-security.mp4"
+        }
+      ]
+    }
+  ]
+} 

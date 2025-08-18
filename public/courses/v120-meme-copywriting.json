@@ -1,0 +1,56 @@
+{
+  "id": "v120-meme-copywriting",
+  "slug": "v120-meme-copywriting",
+  "title": "Meme Creation + Copywriting Hacks",
+  "description": "Master the art of creating viral memes and compelling copy that drives timeline manipulation. Learn to craft payloads that spread and influence cultural narratives.",
+  "badge": "Timeline Warrior",
+  "emoji": "💥",
+  "pathType": "payload",
+  "href": "/courses/v120-meme-copywriting",
+  "localStorageKey": "v120MemeCopywritingProgress",
+  "totalLessons": 4,
+  "squad": "Raiders",
+  "category": "timeline-payloads",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Viral Meme Creation",
+      "description": "Learn to create memes that spread and influence cultural narratives",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "Meme Psychology",
+          "content": "Memes are cultural units that spread through imitation. Understanding their psychology is key to creating viral content that drives timeline manipulation.\n\n**Meme Elements:**\n• Visual impact (attention-grabbing)\n• Emotional resonance (feeling)\n• Cultural relevance (context)\n• Shareability (spread factor)\n• Simplicity (easy to understand)\n\n**Viral Mechanics:**\n• Hook (attention capture)\n• Story (narrative arc)\n• Emotion (feeling)\n• Call to action (sharing)\n• Network effects (spread)\n\n**Timeline Manipulation:**\n• Attention disruption\n• Narrative shifting\n• Cultural impact\n• Community influence\n• Meta direction",
+          "video": "/videos/meme-psychology.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Meme Creation Process",
+          "content": "**Creation Steps:**\n• Identify cultural moment\n• Find emotional hook\n• Create visual impact\n• Test with community\n• Optimize for spread\n\n**Visual Elements:**\n• High contrast\n• Clear messaging\n• Cultural references\n• Emotional triggers\n• Shareable format\n\n**Distribution Strategy:**\n• Platform optimization\n• Timing coordination\n• Community seeding\n• Influencer amplification\n• Cross-platform spread",
+          "video": "/videos/meme-creation.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Copywriting Hacks",
+      "description": "Master copywriting techniques for maximum impact and engagement",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Copywriting Fundamentals",
+          "content": "**Copy Elements:**\n• Headline (attention)\n• Hook (interest)\n• Body (engagement)\n• Call to action (conversion)\n• Urgency (motivation)\n\n**Psychological Triggers:**\n• FOMO (Fear of Missing Out)\n• Social proof\n• Authority\n• Scarcity\n• Reciprocity\n\n**Writing Techniques:**\n• Power words\n• Emotional language\n• Storytelling\n• Benefits focus\n• Problem-solution",
+          "video": "/videos/copywriting-basics.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Timeline Payloads",
+          "content": "**Payload Types:**\n• Narrative bombs (story disruption)\n• Attention grenades (visibility)\n• Influence missiles (persuasion)\n• Culture rockets (impact)\n• Meta torpedoes (direction)\n\n**Deployment Strategy:**\n• Target identification\n• Timing optimization\n• Platform selection\n• Community coordination\n• Impact measurement\n\n**Success Metrics:**\n• Engagement rates\n• Share velocity\n• Cultural impact\n• Narrative shift\n• Community response",
+          "video": "/videos/timeline-payloads.mp4"
+        }
+      ]
+    }
+  ]
+} 

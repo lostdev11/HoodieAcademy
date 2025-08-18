@@ -1,0 +1,69 @@
+{
+  "id": "v100-pixel-art-basics",
+  "slug": "v100-pixel-art-basics",
+  "title": "Pixel Art Basics",
+  "description": "Master the fundamentals of pixel art creation for Web3 projects. Learn color theory, composition, and the technical skills needed to create compelling visual assets.",
+  "badge": "Pixel Pioneer",
+  "emoji": "🎨",
+  "pathType": "visual",
+  "href": "/courses/v100-pixel-art-basics",
+  "localStorageKey": "v100PixelArtBasicsProgress",
+  "totalLessons": 5,
+  "squad": "Creators",
+  "category": "visual-foundation",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Pixel Art Fundamentals",
+      "description": "Learn the core principles of pixel art creation",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What is Pixel Art?",
+          "content": "Pixel art is a digital art form where images are created pixel by pixel. It's perfect for Web3 projects because it's lightweight, scalable, and has a distinctive retro aesthetic.\n\n**Key Characteristics:**\n• Limited color palette\n• Deliberate pixel placement\n• Clear, readable designs\n• Scalable without quality loss\n\n**Why Pixel Art for Web3:**\n• Small file sizes\n• Fast loading times\n• Distinctive brand identity\n• Easy to animate\n• Perfect for NFTs",
+          "video": "/videos/pixel-art-intro.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Color Theory for Pixels",
+          "content": "**Limited Palette Strategy:**\n• Choose 8-16 colors maximum\n• Use color ramps for shading\n• Consider contrast and readability\n• Plan your palette before starting\n\n**Color Psychology:**\n• Warm colors = energy, passion\n• Cool colors = calm, trust\n• Bright colors = attention-grabbing\n• Muted colors = sophistication\n\n**Web3 Color Trends:**\n• Neon cyberpunk aesthetics\n• Retro gaming vibes\n• High contrast for visibility\n• Brand-consistent palettes",
+          "video": "/videos/color-theory-pixels.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Basic Tools & Techniques",
+      "description": "Master essential pixel art tools and workflows",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Pixel Art Software",
+          "content": "**Recommended Tools:**\n• Aseprite (professional)\n• Piskel (free, web-based)\n• GraphicsGale (Windows)\n• PyxelEdit (affordable)\n\n**Key Features to Look For:**\n• Pixel-perfect drawing\n• Layer support\n• Animation tools\n• Export options\n• Color palette management\n\n**Getting Started:**\n• Set canvas size (32x32 to 256x256)\n• Choose your color palette\n• Start with simple shapes\n• Practice pixel-perfect lines",
+          "video": "/videos/pixel-art-tools.mp4"
+        },
+        {
+          "id": "lesson-2-2",
+          "title": "Basic Shapes & Lines",
+          "content": "**Pixel-Perfect Lines:**\n• Use Bresenham's algorithm\n• Avoid anti-aliasing\n• Keep lines consistent\n• Plan your line direction\n\n**Basic Shapes:**\n• Squares and rectangles\n• Circles and ovals\n• Triangles and polygons\n• Organic curves\n\n**Practice Exercises:**\n• Draw simple geometric shapes\n• Create pixel-perfect lines\n• Practice shading with limited colors\n• Build basic characters",
+          "video": "/videos/basic-shapes-lines.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Shading & Depth",
+      "description": "Learn to create depth and dimension in pixel art",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Lighting Fundamentals",
+          "content": "**Light Source Basics:**\n• Determine light direction\n• Create consistent shadows\n• Use color ramps for depth\n• Consider ambient lighting\n\n**Shading Techniques:**\n• Cel shading (flat colors)\n• Gradient shading\n• Dithering for texture\n• Anti-aliasing for smoothness\n\n**Depth Indicators:**\n• Size differences\n• Overlapping elements\n• Atmospheric perspective\n• Shadow placement",
+          "video": "/videos/lighting-fundamentals.mp4"
+        }
+      ]
+    }
+  ]
+} 

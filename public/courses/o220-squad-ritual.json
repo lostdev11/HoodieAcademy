@@ -1,0 +1,63 @@
+{
+  "id": "o220-squad-ritual",
+  "slug": "o220-squad-ritual",
+  "title": "Squad Ritual Design",
+  "description": "Learn to design and facilitate meaningful rituals that activate lore, build community bonds, and create lasting cultural impact. Master the art of turning moments into memories.",
+  "badge": "Ritual Weaver",
+  "emoji": "🕯️",
+  "pathType": "activation",
+  "href": "/courses/o220-squad-ritual",
+  "localStorageKey": "o220SquadRitualProgress",
+  "totalLessons": 4,
+  "squad": "Speakers",
+  "category": "lore-activation",
+  "level": "beginner",
+  "access": "free",
+  "modules": [
+    {
+      "id": "module-1",
+      "title": "Ritual Fundamentals",
+      "description": "Understand the power and purpose of rituals in community building",
+      "lessons": [
+        {
+          "id": "lesson-1-1",
+          "title": "What are Rituals?",
+          "content": "Rituals are intentional, repeated actions that create meaning, build community, and activate cultural lore. They transform ordinary moments into extraordinary experiences.\n\n**Ritual Definition:**\n• Intentional actions\n• Repeated patterns\n• Meaning creation\n• Community bonding\n• Cultural activation\n\n**Ritual Types:**\n• Initiation rituals (welcoming)\n• Celebration rituals (achievements)\n• Transition rituals (changes)\n• Healing rituals (support)\n• Bonding rituals (connection)\n\n**Why Rituals Matter:**\n• Create belonging\n• Build identity\n• Strengthen bonds\n• Activate lore\n• Create memories",
+          "video": "/videos/ritual-basics.mp4"
+        },
+        {
+          "id": "lesson-1-2",
+          "title": "Lore Activation",
+          "content": "**Lore Integration:**\n• Connect to community stories\n• Reference shared mythology\n• Honor cultural values\n• Celebrate achievements\n• Mark important moments\n\n**Activation Techniques:**\n• Symbolic actions\n• Meaningful language\n• Shared experiences\n• Emotional connection\n• Cultural resonance\n\n**Impact Measurement:**\n• Community engagement\n• Emotional response\n• Cultural retention\n• Memory creation\n• Bond strengthening",
+          "video": "/videos/lore-activation.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Ritual Design",
+      "description": "Learn to design effective rituals that resonate with your community",
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "Design Principles",
+          "content": "**Core Elements:**\n• Clear purpose\n• Meaningful symbolism\n• Community participation\n• Emotional impact\n• Cultural relevance\n\n**Design Process:**\n• Identify need\n• Research context\n• Create structure\n• Test with community\n• Refine based on feedback\n\n**Implementation:**\n• Clear communication\n• Community buy-in\n• Consistent execution\n• Feedback collection\n• Continuous improvement",
+          "video": "/videos/ritual-design.mp4"
+        }
+      ]
+    },
+    {
+      "id": "module-3",
+      "title": "Facilitation Skills",
+      "description": "Master the art of facilitating rituals that create lasting impact",
+      "lessons": [
+        {
+          "id": "lesson-3-1",
+          "title": "Facilitation Techniques",
+          "content": "**Energy Management:**\n• Set the right tone\n• Guide participation\n• Handle emotions\n• Maintain focus\n• Create safety\n\n**Communication Skills:**\n• Clear instructions\n• Active listening\n• Empathetic responses\n• Conflict resolution\n• Encouragement\n\n**Adaptation:**\n• Read the room\n• Adjust as needed\n• Handle unexpected\n• Stay authentic\n• Learn from experience",
+          "video": "/videos/facilitation-techniques.mp4"
+        }
+      ]
+    }
+  ]
+} 
