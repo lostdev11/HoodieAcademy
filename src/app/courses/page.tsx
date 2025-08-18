@@ -70,6 +70,21 @@ const allCourses: Array<{
     level: "beginner",
     access: "free",
   },
+  {
+    id: 'sns-primary',
+    title: "SNS: Primary Domain & Community Setup",
+    description: "Set your primary .sol, confirm on Solscan, add a PFP, and verify in Discord. Master your Solana identity.",
+    badge: "SNS Master",
+    emoji: "✨",
+    pathType: "social",
+    href: "/sns-primary",
+    localStorageKey: "snsPrimaryProgress",
+    totalLessons: 5,
+    squad: "Speakers",
+    category: "identity",
+    level: "beginner",
+    access: "free",
+  },
 ];
 
 type FilterType = 'all' | 'squads' | 'completed' | 'collab';

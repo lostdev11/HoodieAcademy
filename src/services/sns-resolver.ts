@@ -102,3 +102,5 @@ export function isSolDomain(domain: string): boolean {
 export function isValidSolanaAddress(address: string): boolean {
   return /^[1-9A-HJ-NP-Za-km-z]{44}$/.test(address);
 } 
+
+export { formatWalletAddress } from '@/lib/utils'; 
