@@ -82,7 +82,6 @@ export const courseSquadMapping: CourseSquadMapping[] = [
   { courseId: 'l250-threadweaving', squadId: 'creators' },
   { courseId: 'wc300-trait-masterclass', squadId: 'creators' },
   { courseId: 'meme-coin-mania', squadId: 'decoders' },
-  { courseId: 't100-line-candle-transition', squadId: 'decoders' },
   { courseId: 't120-support-resistance', squadId: 'decoders' },
   { courseId: 't150-indicator-basics', squadId: 'decoders' },
   { courseId: 't200-confluence-strategy', squadId: 'decoders' },
