@@ -7,7 +7,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { useWallet } from '@solana/wallet-adapter-react';
 
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
 const WIFHOODIE_COLLECTION_ID = 'H3mnaqNFFNwqRfEiWFsRTgprCvG4tYFfmNezGEVnaMuQ';
@@ -29,14 +28,66 @@ function normalizeNftImageUrl(raw?: string | null): string | null {
 
 export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
   const { toast } = useToast();
-  const { publicKey, connected, connect, connecting } = useWallet();
+  const [owner, setOwner] = useState<string | null>(null);
+  const [connected, setConnected] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [nfts, setNfts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const owner = useMemo(() => (publicKey ? publicKey.toString() : null), [publicKey]);
   const showImage = isHttpUrl(selectedPfpUrl);
+
+  // Wallet state management using the same method as TokenGate
+  useEffect(() => {
+    const checkWalletConnection = () => {
+      const savedWalletAddress = localStorage.getItem('walletAddress');
+      const sessionData = sessionStorage.getItem('wifhoodie_verification');
+      
+      if (savedWalletAddress && sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          const now = Date.now();
+          const sessionAge = now - session.timestamp;
+          const sessionValid = sessionAge < 24 * 60 * 60 * 1000; // 24 hours
+          
+          if (sessionValid && session.walletAddress === savedWalletAddress && session.isHolder) {
+            setOwner(savedWalletAddress);
+            setConnected(true);
+          } else {
+            setOwner(null);
+            setConnected(false);
+          }
+        } catch (error) {
+          console.error("❌ Debug: Error parsing session data:", error);
+          setOwner(null);
+          setConnected(false);
+        }
+      } else {
+        setOwner(null);
+        setConnected(false);
+      }
+    };
+
+    // Check wallet connection on mount
+    checkWalletConnection();
+
+    // Listen for storage changes (when wallet connects/disconnects)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'walletAddress' || e.key === 'wifhoodie_verification') {
+        checkWalletConnection();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically for changes
+    const interval = setInterval(checkWalletConnection, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Fetch NFTs when dialog opens and wallet is connected
   useEffect(() => {
@@ -154,11 +205,10 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
         <DialogTrigger asChild>
           <Button
             variant="secondary"
-            onClick={async () => {
-              if (!connected && !connecting) {
-                try {
-                  await connect(); // user may cancel
-                } catch {}
+            onClick={() => {
+              if (!connected) {
+                // Redirect to dashboard to connect wallet
+                window.location.href = '/';
               }
             }}
           >

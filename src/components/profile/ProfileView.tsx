@@ -1,6 +1,5 @@
 'use client';
 
-import { useWallet } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +23,6 @@ import Link from 'next/link';
 import SquadBadge from '@/components/SquadBadge';
 
 function ProfileView() {
-  const { publicKey, connected } = useWallet();
   const [wallet, setWallet] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [solDomain, setSolDomain] = useState<string | null>(null);
@@ -82,10 +80,55 @@ function ProfileView() {
     return null;
   };
 
-  // Simplified wallet state management using useWallet hook
+  // Wallet state management using the same method as TokenGate
   useEffect(() => {
-    setWallet(connected && publicKey ? publicKey.toString() : null);
-  }, [connected, publicKey]);
+    const checkWalletConnection = () => {
+      const savedWalletAddress = localStorage.getItem('walletAddress');
+      const sessionData = sessionStorage.getItem('wifhoodie_verification');
+      
+      if (savedWalletAddress && sessionData) {
+        try {
+          const session = JSON.parse(sessionData);
+          const now = Date.now();
+          const sessionAge = now - session.timestamp;
+          const sessionValid = sessionAge < 24 * 60 * 60 * 1000; // 24 hours
+          
+          if (sessionValid && session.walletAddress === savedWalletAddress && session.isHolder) {
+            console.log("🔄 Debug: Restoring wallet connection for profile:", savedWalletAddress);
+            setWallet(savedWalletAddress);
+          } else {
+            console.log("⏰ Debug: Session expired or invalid, clearing wallet");
+            setWallet(null);
+          }
+        } catch (error) {
+          console.error("❌ Debug: Error parsing session data:", error);
+          setWallet(null);
+        }
+      } else {
+        setWallet(null);
+      }
+    };
+
+    // Check wallet connection on mount
+    checkWalletConnection();
+
+    // Listen for storage changes (when wallet connects/disconnects)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'walletAddress' || e.key === 'wifhoodie_verification') {
+        checkWalletConnection();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically for changes
+    const interval = setInterval(checkWalletConnection, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   // Load squad placement and profile data on mount
   useEffect(() => {
@@ -230,13 +273,15 @@ function ProfileView() {
   };
 
   const handleDisconnectWallet = async () => {
+    console.log("🔌 Debug: Disconnecting wallet from profile:", wallet);
+    
     setWallet('');
     setSolDomain(null);
     
     // Clear wallet data from storage
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('connectedWallet');
-    sessionStorage.removeItem('wifhoodie_verification_session');
+    sessionStorage.removeItem('wifhoodie_verification');
     
     // Disconnect from wallet providers safely
     const sol = typeof window !== 'undefined' ? window.solana : undefined;

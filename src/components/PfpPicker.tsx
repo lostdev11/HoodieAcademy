@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function PfpPicker() {
-  const { connect, connected, connecting, publicKey } = useWallet();
   const [selectedPfp, setSelectedPfp] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [pfpOptions] = useState([
@@ -21,30 +19,60 @@ export function PfpPicker() {
   useEffect(() => {
     let cancelled = false;
 
-    (async () => {
-      // avoid SSR issues
-      if (typeof window === "undefined") return;
-
-      // if not connected, try to connect via the hook's connect()
-      if (!connected && !connecting) {
+    const checkWalletConnection = () => {
+      const savedWalletAddress = localStorage.getItem('walletAddress');
+      const sessionData = sessionStorage.getItem('wifhoodie_verification');
+      
+      if (savedWalletAddress && sessionData) {
         try {
-          await connect();
-        } catch (e) {
-          // swallow or log; user may cancel
-          console.warn("Wallet connect failed:", e);
+          const session = JSON.parse(sessionData);
+          const now = Date.now();
+          const sessionAge = now - session.timestamp;
+          const sessionValid = sessionAge < 24 * 60 * 60 * 1000; // 24 hours
+          
+          if (sessionValid && session.walletAddress === savedWalletAddress && session.isHolder) {
+            if (!cancelled) {
+              setWalletAddress(savedWalletAddress);
+            }
+          } else {
+            if (!cancelled) {
+              setWalletAddress(null);
+            }
+          }
+        } catch (error) {
+          console.error("❌ Debug: Error parsing session data:", error);
+          if (!cancelled) {
+            setWalletAddress(null);
+          }
+        }
+      } else {
+        if (!cancelled) {
+          setWalletAddress(null);
         }
       }
+    };
 
-      if (!cancelled) {
-        const addr = publicKey ? publicKey.toString() : null;
-        setWalletAddress(addr);
+    // Check wallet connection on mount
+    checkWalletConnection();
+
+    // Listen for storage changes (when wallet connects/disconnects)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'walletAddress' || e.key === 'wifhoodie_verification') {
+        checkWalletConnection();
       }
-    })();
+    };
 
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically for changes
+    const interval = setInterval(checkWalletConnection, 1000);
+    
     return () => {
       cancelled = true;
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
     };
-  }, [connect, connected, connecting, publicKey]);
+  }, []);
 
   const handlePfpSelect = async (pfpPath: string) => {
     if (walletAddress) {
@@ -55,13 +83,8 @@ export function PfpPicker() {
   };
 
   const handleConnectWallet = async () => {
-    try {
-      if (typeof connect === 'function') {
-        await connect();
-      }
-    } catch (err) {
-      console.error('Wallet connect failed:', err);
-    }
+    // Redirect to dashboard to connect wallet
+    window.location.href = '/';
   };
 
   return (
