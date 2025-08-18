@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Home, ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import { MobileHeader } from "@/components/dashboard/MobileHeader";
+import { MobileSidebar } from "@/components/dashboard/MobileSidebar";
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -14,6 +17,7 @@ interface PageLayoutProps {
   backHref?: string;
   backgroundImage?: string;
   backgroundOverlay?: boolean;
+  profileImage?: string;
 }
 
 export default function PageLayout({ 
@@ -24,8 +28,14 @@ export default function PageLayout({
   showBackButton = false,
   backHref = "/dashboard",
   backgroundImage = "/images/hoodie-dashboard.png",
-  backgroundOverlay = true
+  backgroundOverlay = true,
+  profileImage = "🧑‍🎓"
 }: PageLayoutProps) {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  const openMobileSidebar = () => setIsMobileSidebarOpen(true);
+  const closeMobileSidebar = () => setIsMobileSidebarOpen(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
       {/* Background image */}
@@ -47,9 +57,17 @@ export default function PageLayout({
         </div>
       )}
 
-      {/* Header */}
+      {/* Mobile Header */}
+      <MobileHeader 
+        onOpenSidebar={openMobileSidebar}
+        title={title}
+        showHomeButton={showHomeButton}
+        profileImage={profileImage}
+      />
+
+      {/* Desktop Header */}
       {(title || subtitle) && (
-        <div className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50">
+        <div className="hidden lg:block bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="text-center">
               {title && (
@@ -67,8 +85,8 @@ export default function PageLayout({
         </div>
       )}
 
-      {/* Navigation Buttons */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Desktop Navigation Buttons */}
+      <div className="hidden lg:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex justify-start gap-3 mb-6">
           {showHomeButton && (
             <Button
@@ -102,6 +120,13 @@ export default function PageLayout({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {children}
       </div>
+
+      {/* Mobile Sidebar */}
+      <MobileSidebar 
+        isOpen={isMobileSidebarOpen}
+        onClose={closeMobileSidebar}
+        profileImage={profileImage}
+      />
     </div>
   );
 }

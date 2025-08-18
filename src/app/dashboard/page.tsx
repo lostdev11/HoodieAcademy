@@ -260,10 +260,11 @@ export default function DashboardPage() {
       <PageLayout
         title="📊 Dashboard"
         subtitle={`Welcome back, ${userDisplayName}!`}
-        showHomeButton={false}
+        showHomeButton={true}
         showBackButton={false}
         backgroundImage="/images/Hoodie Dashbaord.png"
         backgroundOverlay={true}
+        profileImage={profileImage}
       >
         {/* Current Time Display */}
         <div className="text-center mb-6">
