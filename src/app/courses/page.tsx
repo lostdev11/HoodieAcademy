@@ -317,6 +317,8 @@ export default function CoursesPage() {
         showHomeButton={true}
         showBackButton={true}
         backHref="/"
+        backgroundImage=""
+        backgroundOverlay={false}
       >
         {/* Current Time Display - Removed to prevent overlap with mobile header */}
         

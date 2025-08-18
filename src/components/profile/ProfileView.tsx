@@ -363,6 +363,8 @@ function ProfileView() {
       showHomeButton={true}
       showBackButton={true}
       backHref="/"
+      backgroundImage=""
+      backgroundOverlay={false}
     >
       <div className="flex flex-col items-center py-12 px-4">
 

@@ -253,8 +253,8 @@ export default function DashboardPage() {
         subtitle={`Welcome back, ${userDisplayName}!`}
         showHomeButton={true}
         showBackButton={false}
-        backgroundImage="/images/Hoodie Dashbaord.png"
-        backgroundOverlay={true}
+        backgroundImage=""
+        backgroundOverlay={false}
         profileImage={profileImage}
       >
         {/* Current Time Display */}
