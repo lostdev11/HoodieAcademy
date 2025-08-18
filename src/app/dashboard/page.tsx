@@ -3,7 +3,6 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from 'react';
-import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +22,7 @@ import TokenGate from '@/components/TokenGate';
 import Link from 'next/link';
 import { getActiveAnnouncements, Announcement, getScheduledAnnouncements, getCompletedCoursesCount, getTotalCoursesCount } from '@/lib/utils';
 import GlobalBulletinBoard from '@/components/GlobalBulletinBoard';
+import PageLayout from "@/components/layouts/PageLayout";
 
 interface TodoItem {
   id: string;
@@ -99,7 +99,6 @@ const getRealUpcomingClasses = (): UpcomingClass[] => {
 };
 
 export default function DashboardPage() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState<string>("");
   const [overallProgress, setOverallProgress] = useState(0);
   const [showProfileSuggestion, setShowProfileSuggestion] = useState(false);
@@ -258,74 +257,22 @@ export default function DashboardPage() {
 
   return (
     <TokenGate>
-      <div className="flex min-h-screen relative">
-        {/* Background Image */}
-        <div 
-          className="absolute inset-0 -z-10 bg-cover bg-center bg-fixed"
-          style={{
-            backgroundImage: "url('/images/Hoodie Dashbaord.png')",
-          }}
-        />
-        
-        {/* Background Overlay - Enhanced for Hoodie dashboard theme */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-slate-900/75 via-purple-900/65 to-slate-900/75" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_60%_at_50%_20%,rgba(139,92,246,0.18),transparent)]" />
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(80%_80%_at_20%_80%,rgba(6,182,212,0.12),transparent)]" />
-        
-        {/* Sidebar */}
-        <DashboardSidebar 
-          isCollapsed={sidebarCollapsed} 
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
-        />
+      <PageLayout
+        title="📊 Dashboard"
+        subtitle={`Welcome back, ${userDisplayName}!`}
+        showHomeButton={false}
+        showBackButton={false}
+        backgroundImage="/images/Hoodie Dashbaord.png"
+        backgroundOverlay={true}
+      >
+        {/* Current Time Display */}
+        <div className="text-center mb-6">
+          <div className="text-sm text-gray-300">Current Time</div>
+          <div className="text-lg text-cyan-400 font-mono drop-shadow">{currentTime}</div>
+        </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="bg-slate-800/40 backdrop-blur-md border-b border-cyan-500/40 p-6 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {/* Profile Picture */}
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-500/50 shadow-lg backdrop-blur-sm">
-                    {profileImage && profileImage !== '🧑‍🎓' ? (
-                      <img 
-                        src={profileImage} 
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
-                    <div className={`w-full h-full bg-gradient-to-br from-cyan-400 to-pink-400 flex items-center justify-center text-xl ${profileImage && profileImage !== '🧑‍🎓' ? 'hidden' : ''}`}>
-                      🧑‍🎓
-                    </div>
-                  </div>
-                  {profileImage && profileImage !== '🧑‍🎓' && (
-                    <div className="absolute -top-1 -right-1">
-                      <div className="w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs">✨</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <h1 className="text-3xl font-bold text-cyan-400 drop-shadow-lg">Dashboard</h1>
-                  <p className="text-gray-200">Welcome back, {userDisplayName}!</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-gray-300">Current Time</div>
-                <div className="text-lg text-cyan-400 font-mono drop-shadow">{currentTime}</div>
-              </div>
-            </div>
-          </header>
-
-          {/* Dashboard Content */}
-          <main className="flex-1 p-6 space-y-6">
+        {/* Dashboard Content */}
+        <main className="space-y-6">
             {/* Profile Suggestions */}
             {showProfileSuggestion && (
               <Card className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500/40 backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300">
@@ -475,8 +422,7 @@ export default function DashboardPage() {
             )}
 
           </main>
-        </div>
-      </div>
-    </TokenGate>
-  );
-} 
+        </PageLayout>
+      </TokenGate>
+    );
+  } 

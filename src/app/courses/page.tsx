@@ -3,7 +3,7 @@ export const dynamic = "force-static";
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Home, ArrowDown, ArrowRight, LockKeyhole, CheckCircle, LineChart, Clock, Filter, Shield } from "lucide-react";
+import { ArrowDown, ArrowRight, LockKeyhole, CheckCircle, LineChart, Clock, Filter, Shield } from "lucide-react";
 import { MilestoneBadge } from "@/components/course-roadmap/MilestoneBadge";
 import { RiskArt } from "@/components/course-roadmap/RiskArt";
 import { HoodieIcon } from "@/components/icons/HoodieIcon";
@@ -22,6 +22,7 @@ import { isCurrentUserAdmin, getConnectedWallet, getCompletedCoursesCount } from
 import { fetchUserByWallet } from "@/lib/supabase";
 import SquadFilter from '@/components/SquadFilter';
 import { logUserActivity } from '@/lib/activity-logger';
+import PageLayout from "@/components/layouts/PageLayout";
 
 // Only showing the two completed courses for now
 const allCourses: Array<{
@@ -322,40 +323,20 @@ export default function CoursesPage() {
 
   return (
     <TokenGate>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
-        {/* Header */}
-        <div className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="text-center">
-              <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                🎓 Hoodie Academy Courses
-              </h1>
-              <p className="text-gray-300 text-sm sm:text-base">
-                Master Web3, Trading, and Community Strategy
-              </p>
-              <div className="flex items-center justify-center mt-4 text-sm text-gray-400">
-                <Clock className="w-4 h-4 mr-2" />
-                <span>Current Time: {currentTime}</span>
-              </div>
-            </div>
+      <PageLayout
+        title="🎓 Hoodie Academy Courses"
+        subtitle="Master Web3, Trading, and Community Strategy"
+        showHomeButton={true}
+        showBackButton={true}
+        backHref="/"
+      >
+        {/* Current Time Display */}
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center text-sm text-gray-400">
+            <Clock className="w-4 h-4 mr-2" />
+            <span>Current Time: {currentTime}</span>
           </div>
         </div>
-
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Home Navigation Button */}
-          <div className="flex justify-start mb-6">
-            <Button
-              asChild
-              variant="outline"
-              className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300"
-            >
-              <Link href="/">
-                <Home className="w-4 h-4 mr-2" />
-                Back to Dashboard
-              </Link>
-            </Button>
-          </div>
           
           {/* Squad Information */}
           {userSquad && !isAdmin && (
@@ -513,8 +494,7 @@ export default function CoursesPage() {
               🎓 Hoodie Academy - Building the Future of Web3 Education
             </p>
           </div>
-        </div>
-      </div>
-    </TokenGate>
-  );
-}
+        </PageLayout>
+      </TokenGate>
+    );
+  }

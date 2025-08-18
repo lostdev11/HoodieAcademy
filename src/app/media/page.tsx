@@ -19,28 +19,20 @@ import {
 } from 'lucide-react';
 import TokenGate from '@/components/TokenGate';
 import Link from 'next/link';
+import PageLayout from "@/components/layouts/PageLayout";
 
 export default function MediaPage() {
   return (
     <TokenGate>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        {/* Header */}
-        <header className="bg-slate-800/50 border-b border-purple-500/30 p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-500/20 rounded-lg">
-                <Video className="w-8 h-8 text-purple-400" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-purple-400">My Media</h1>
-                <p className="text-gray-300">Upload, manage, and share your content</p>
-              </div>
-            </div>
-          </div>
-        </header>
-
+      <PageLayout
+        title="🎬 My Media"
+        subtitle="Upload, manage, and share your content"
+        showHomeButton={true}
+        showBackButton={true}
+        backHref="/dashboard"
+      >
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto p-6">
+        <main className="max-w-7xl mx-auto">
           {/* Coming Soon Banner */}
           <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30 mb-8">
             <CardContent className="p-8 text-center">
@@ -273,7 +265,7 @@ export default function MediaPage() {
             </CardContent>
           </Card>
         </main>
-      </div>
+      </PageLayout>
     </TokenGate>
   );
 } 

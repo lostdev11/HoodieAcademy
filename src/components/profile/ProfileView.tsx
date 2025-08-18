@@ -21,6 +21,7 @@ import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import SquadBadge from '@/components/SquadBadge';
+import PageLayout from "@/components/layouts/PageLayout";
 
 function ProfileView() {
   const [wallet, setWallet] = useState<string | null>(null);
@@ -356,21 +357,14 @@ function ProfileView() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="flex-1 flex flex-col items-center py-12 px-4">
-        {/* Back to Dashboard Button */}
-        <div className="w-full max-w-2xl mb-6">
-          <Button
-            asChild
-            variant="outline"
-            className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300"
-          >
-            <Link href="/">
-              <Home className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Link>
-          </Button>
-        </div>
+    <PageLayout
+      title="👤 Profile"
+      subtitle="Manage your Hoodie Academy profile and progress"
+      showHomeButton={true}
+      showBackButton={true}
+      backHref="/"
+    >
+      <div className="flex flex-col items-center py-12 px-4">
 
         <Card className="w-full max-w-2xl bg-slate-800/60 border-cyan-500/30 mb-8">
           <CardHeader>
@@ -701,7 +695,7 @@ function ProfileView() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageLayout>
   );
 }
 

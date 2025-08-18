@@ -22,6 +22,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import PageLayout from "@/components/layouts/PageLayout";
 
 type WalletProviderOption = 'metamask' | 'phantom' | 'jup' | 'magic-eden';
 
@@ -364,36 +365,26 @@ export default function TechnicalAnalysisPage() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+    <PageLayout
+      title="📊 Technical Analysis Tactics"
+      subtitle="Master chart patterns, indicators, and leverage trading"
+      showHomeButton={true}
+      showBackButton={true}
+      backHref="/courses"
+      backgroundImage={undefined}
+      backgroundOverlay={false}
+    >
       {/* Animated background effects */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900 to-slate-900"></div>
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      <div className="relative z-10 p-8">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Button
-            asChild
-            variant="outline"
-            className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300"
-          >
-            <Link href="/courses">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Courses
-            </Link>
-          </Button>
-        </div>
-
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent glow-text">
-            Technical Analysis Tactics
-          </h1>
-          <p className="text-xl text-gray-300 mb-2">Master chart patterns, indicators, and leverage trading.</p>
-          <p className="text-cyan-300 text-lg">
-            Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
-          </p>
-        </div>
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900 to-slate-900 -z-10"></div>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse -z-10"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000 -z-10"></div>
+      
+      {/* Current Time Display */}
+      <div className="text-center mb-6">
+        <p className="text-cyan-300 text-lg">
+          Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
+        </p>
+      </div>
         {/* Main content: lessons, quizzes, wallet, etc. */}
         <div className="max-w-3xl mx-auto">
           <Progress value={progressPercentage} className="w-full max-w-3xl mb-8 bg-orange-900/50 [&>div]:bg-orange-500" />
@@ -606,13 +597,7 @@ export default function TechnicalAnalysisPage() {
         </div>
         {/* Footer hashtags */}
         <div className="mt-12 text-cyan-400/70 text-sm text-center">#StayBuilding #StayHODLing</div>
-      </div>
-      <style jsx global>{`
-        .glow-text {
-          text-shadow: 0 0 10px currentColor;
-        }
-      `}</style>
-    </div>
+      </PageLayout>
   );
 }
 

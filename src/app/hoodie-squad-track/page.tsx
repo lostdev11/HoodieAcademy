@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import type { SolanaWallet } from "@/types/wallet";
+import PageLayout from "@/components/layouts/PageLayout";
 
 interface Squad {
   id: string;
@@ -186,23 +187,16 @@ export default function HoodieSquadTrackPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 text-white">
+    <PageLayout
+      title="👥 Hoodie Squad Track"
+      subtitle="Choose your squad and track your progress"
+      showHomeButton={true}
+      showBackButton={true}
+      backHref="/courses"
+      backgroundImage={undefined}
+      backgroundOverlay={false}
+    >
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <Link href="/courses">
-              <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Courses
-              </Button>
-            </Link>
-            <div className="flex items-center space-x-2">
-              <Users className="w-8 h-8 text-blue-400" />
-              <h1 className="text-3xl font-bold">Hoodie Squad Track</h1>
-            </div>
-          </div>
-        </div>
 
         {/* Wallet Connection */}
         {!walletConnected && (
@@ -394,7 +388,7 @@ export default function HoodieSquadTrackPage() {
           </Card>
         )}
       </div>
-    </div>
+    </PageLayout>
   );
 }
 

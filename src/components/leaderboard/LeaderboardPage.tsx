@@ -21,44 +21,28 @@ import {
 } from 'lucide-react';
 import TokenGate from '@/components/TokenGate';
 import Link from 'next/link';
-import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
-import { useState } from 'react';
+import PageLayout from "@/components/layouts/PageLayout";
 
 export default function LeaderboardPage() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
   return (
     <TokenGate>
-      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        {/* Sidebar */}
-        <DashboardSidebar 
-          isCollapsed={sidebarCollapsed} 
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
-        />
+      <PageLayout
+        title="🏆 Hoodie Academy Leaderboard"
+        subtitle="Track your progress and compete with fellow scholars"
+        showHomeButton={true}
+        showBackButton={true}
+        backHref="/dashboard"
+      >
+        {/* Status Display */}
+        <div className="text-center mb-6">
+          <div className="text-sm text-gray-400">Status</div>
+          <div className="text-lg text-yellow-400 font-mono">
+            Coming Soon
+          </div>
+        </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="bg-slate-800/50 border-b border-yellow-500/30 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-yellow-400 flex items-center gap-2">
-                  <Trophy className="w-8 h-8" />
-                  Hoodie Academy Leaderboard
-                </h1>
-                <p className="text-gray-300">Track your progress and compete with fellow scholars</p>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-gray-400">Status</div>
-                <div className="text-lg text-yellow-400 font-mono">
-                  Coming Soon
-                </div>
-              </div>
-            </div>
-          </header>
-
-          {/* Main Content */}
-          <main className="flex-1 p-6 space-y-6">
+        <main className="space-y-6">
             {/* Coming Soon Banner */}
             <Card className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30">
               <CardContent className="p-8 text-center">
@@ -291,8 +275,7 @@ export default function LeaderboardPage() {
               </CardContent>
             </Card>
           </main>
-        </div>
-      </div>
-    </TokenGate>
-  );
-} 
+        </PageLayout>
+      </TokenGate>
+    );
+  } 

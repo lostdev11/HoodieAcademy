@@ -19,28 +19,20 @@ import {
 } from 'lucide-react';
 import TokenGate from '@/components/TokenGate';
 import Link from 'next/link';
+import PageLayout from "@/components/layouts/PageLayout";
 
 export default function AchievementsPage() {
   return (
     <TokenGate>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        {/* Header */}
-        <header className="bg-slate-800/50 border-b border-yellow-500/30 p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-yellow-500/20 rounded-lg">
-                <Trophy className="w-8 h-8 text-yellow-400" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-yellow-400">Achievements</h1>
-                <p className="text-gray-300">Unlock badges and rewards for your accomplishments</p>
-              </div>
-            </div>
-          </div>
-        </header>
-
+      <PageLayout
+        title="🏆 Achievements"
+        subtitle="Unlock badges and rewards for your accomplishments"
+        showHomeButton={true}
+        showBackButton={true}
+        backHref="/dashboard"
+      >
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto p-6">
+        <main className="max-w-7xl mx-auto">
           {/* Coming Soon Banner */}
           <Card className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30 mb-8">
             <CardContent className="p-8 text-center">
@@ -245,7 +237,7 @@ export default function AchievementsPage() {
             </CardContent>
           </Card>
         </main>
-      </div>
+      </PageLayout>
     </TokenGate>
   );
 } 
