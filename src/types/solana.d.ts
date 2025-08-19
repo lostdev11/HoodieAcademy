@@ -21,4 +21,7 @@ declare global {
   }
 }
 
+// Re-export the canonical type so all existing imports keep working
+export type { SolanaWallet } from "@solana/wallet-adapter-base";
+
 export {};
