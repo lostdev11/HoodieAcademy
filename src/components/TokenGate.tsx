@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Wallet, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { logUserActivity, logWalletConnection, logNftVerification } from '@/lib/activity-logger';
+import { hasSolflare } from '@/lib/walletChecks';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -320,20 +321,17 @@ export default function TokenGate({ children }: TokenGateProps) {
         return;
       }
     } else if (providerName === 'solflare') {
-      if (typeof window !== 'undefined') {
-        const solflare = (window as any).solflare;
-        const solana = (window as any).solana; // may be Phantom OR Solflare
-        if (solflare || solana?.isSolflare) {
-          provider = solflare ?? solana;
-          console.log("✅ Debug: Solflare wallet found and available");
-        } else {
-          const errorMsg = "Solflare wallet is not installed. Please install Solflare wallet extension first.";
-          console.warn("⚠️ Solflare not found");
-          console.error("❌ Debug:", errorMsg);
-          setError(errorMsg);
-          setIsConnecting(false);
-          return;
-        }
+      const solflareProvider = getSolflareProvider();
+      if (solflareProvider) {
+        provider = solflareProvider;
+        console.log("✅ Debug: Solflare wallet found and available");
+      } else {
+        const errorMsg = "Solflare wallet is not installed. Please install Solflare wallet extension first.";
+        console.warn("⚠️ Solflare not found");
+        console.error("❌ Debug:", errorMsg);
+        setError(errorMsg);
+        setIsConnecting(false);
+        return;
       }
     }
     
@@ -489,7 +487,8 @@ export default function TokenGate({ children }: TokenGateProps) {
                 className="text-gray-200 hover:bg-gradient-to-r hover:from-amber-500/20 hover:via-rose-500/20 hover:to-violet-600/20 cursor-pointer py-3 transition-all duration-200"
               >
                 <span>Solflare</span>
-                {typeof window !== 'undefined' && !window.solflare && (
+                {typeof window !== 'undefined'
+                  && !((window as any).solflare || (window as any).solana?.isSolflare) && (
                   <span className="ml-2 text-xs text-gray-400">(Not installed)</span>
                 )}
               </DropdownMenuItem>

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { getSolana, getSolflareProvider, hasSolflare } from '@/utils/wallet-utils';
 import { Button } from "@/components/ui/button";
 import { Wallet, ChevronDown } from 'lucide-react';
 import {
