@@ -6,6 +6,7 @@ import MessageBubble from './MessageBubble';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Loader2 } from 'lucide-react';
+import { useSNSResolution } from '@/hooks/use-sns-resolution';
 
 interface ChatRoomProps {
   squad: string;
@@ -18,6 +19,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
   const [isSending, setIsSending] = useState(false);
   const [currentUser, setCurrentUser] = useState<string>('');
   const [currentUserDisplayName, setCurrentUserDisplayName] = useState<string>('');
+  const { resolvedNames, resolveName, resolveMultipleNames } = useSNSResolution();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get current user's wallet address and display name
@@ -72,6 +74,15 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
           alert(`Error loading messages: ${error.message}`);
         } else {
           setMessages(data || []);
+          
+          // Resolve names for all message senders
+          if (data) {
+            const uniqueSenders = Array.from(new Set(data.map(msg => msg.sender)));
+            const nonCurrentSenders = uniqueSenders.filter(sender => sender !== currentUser);
+            if (nonCurrentSenders.length > 0) {
+              resolveMultipleNames(nonCurrentSenders);
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading messages:', error);
@@ -82,7 +93,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
     };
 
     loadMessages();
-  }, [squad]);
+  }, [squad, currentUser, resolveMultipleNames]);
 
   // Subscribe to real-time messages
   useEffect(() => {
@@ -99,6 +110,11 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         (payload) => {
           const newMessage = payload.new as Message;
           setMessages((prev) => [...prev, newMessage]);
+          
+          // Resolve name for new message sender
+          if (newMessage.sender !== currentUser) {
+            resolveName(newMessage.sender);
+          }
         }
       )
       .subscribe((status) => {
@@ -112,7 +128,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [squad]);
+  }, [squad, currentUser, resolveName]);
 
   // Send message
   const sendMessage = async () => {
@@ -222,7 +238,10 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
           messages.map((message) => (
             <MessageBubble
               key={message.id}
-              message={message}
+              message={{
+                ...message,
+                sender_display_name: resolvedNames[message.sender] || message.sender_display_name
+              }}
               isOwnMessage={message.sender === currentUser}
             />
           ))
