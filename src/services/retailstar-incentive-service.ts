@@ -300,32 +300,36 @@ export class RetailstarIncentiveService {
       // Award each reward in the tier
       const awardedRewards: string[] = [];
       
-      for (const reward of tierRewards) {
-        try {
-          const response = await fetch('/api/retailstar-rewards/claim', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              walletAddress: userId,
-              rewardId: reward.id,
-              metadata: {
-                taskId,
-                squad,
-                tier,
-                awardedAt: new Date().toISOString()
-              }
-            })
-          });
+      // Temporarily disabled - retailstar rewards not ready yet
+      console.log('Retailstar rewards temporarily disabled');
+      return { success: false, error: 'Retailstar rewards temporarily disabled' };
+      
+      // for (const reward of tierRewards) {
+      //   try {
+      //     const response = await fetch('/api/retailstar-rewards/claim', {
+      //       method: 'POST',
+      //       headers: {
+      //         'Content-Type': 'application/json',
+      //       },
+      //       body: JSON.stringify({
+      //         walletAddress: userId,
+      //         rewardId: reward.id,
+      //         metadata: {
+      //           taskId,
+      //           squad,
+      //           tier,
+      //           awardedAt: new Date().toISOString()
+      //         }
+      //       })
+      //     });
 
-          if (response.ok) {
-            awardedRewards.push(reward.id);
-          }
-        } catch (error) {
-          console.error(`Failed to award reward ${reward.id}:`, error);
-        }
-      }
+      //     if (response.ok) {
+      //       awardedRewards.push(reward.id);
+      //     }
+      //   } catch (error) {
+      //     console.error(`Failed to award reward ${reward.id}:`, error);
+      //   }
+      // }
 
       return {
         success: awardedRewards.length > 0,
@@ -341,19 +345,23 @@ export class RetailstarIncentiveService {
    * Fetch claimed rewards for a user (for dashboard display)
    */
   public async fetchClaimedRewards(walletAddress: string): Promise<UserRetailstarReward[]> {
-    try {
-      const response = await fetch(`/api/retailstar-rewards/claim?walletAddress=${walletAddress}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.rewards || [];
-      }
-      
-      return [];
-    } catch (error) {
-      console.error('Error fetching claimed rewards:', error);
-      return [];
-    }
+    // Temporarily disabled - retailstar rewards not ready yet
+    console.log('Retailstar rewards temporarily disabled');
+    return [];
+    
+    // try {
+    //   const response = await fetch(`/api/retailstar-rewards/claimed?walletAddress=${walletAddress}`);
+    //   
+    //   if (response.ok) {
+    //     const data = await response.json();
+    //     return data.rewards || [];
+    //   }
+    //   
+    //   return [];
+    // } catch (error) {
+    //   console.error('Error fetching claimed rewards:', error);
+    //   return [];
+    // }
   }
 
   /**

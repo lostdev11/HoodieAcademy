@@ -44,10 +44,10 @@ export default function RetailstarIncentivesPage() {
         const squadRewards = retailstarIncentiveService.getSquadRewards(squadId);
         setAvailableRewards(squadRewards);
 
-        // Load user's claimed rewards if wallet is available
-        if (wallet) {
-          retailstarIncentiveService.fetchClaimedRewards(wallet).then(setUserRewards);
-        }
+        // Load user's claimed rewards if wallet is available - temporarily disabled
+        // if (wallet) {
+        //   retailstarIncentiveService.fetchClaimedRewards(wallet).then(setUserRewards);
+        // }
       } catch (error) {
         console.error('Error parsing squad result:', error);
       }
@@ -56,41 +56,45 @@ export default function RetailstarIncentivesPage() {
   }, []);
 
   const handleClaimReward = async (rewardId: string) => {
-    if (!walletAddress) {
-      alert('Please connect your wallet to claim rewards');
-      return;
-    }
+    // Temporarily disabled - retailstar rewards not ready yet
+    alert('Retailstar rewards are temporarily disabled. Coming soon!');
+    return;
+    
+    // if (!walletAddress) {
+    //   alert('Please connect your wallet to claim rewards');
+    //   return;
+    // }
 
-    try {
-      const response = await fetch('/api/retailstar-rewards/claim', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          walletAddress,
-          rewardId,
-          metadata: {
-            claimedAt: new Date().toISOString()
-          }
-        })
-      });
+    // try {
+    //   const response = await fetch('/api/retailstar-rewards/claim', {
+    //     method: 'POST',
+    //     headers: {
+    //       'Content-Type': 'application/json',
+    //     },
+    //     body: JSON.stringify({
+    //       walletAddress,
+    //       rewardId,
+    //       metadata: {
+    //         claimedAt: new Date().toISOString()
+    //       }
+    //     })
+    //   });
 
-      if (response.ok) {
-        const data = await response.json();
-        alert(`Reward claimed successfully! ${data.message}`);
+    //   if (response.ok) {
+    //     const data = await response.json();
+    //     alert(`Reward claimed successfully! ${data.message}`);
         
-        // Refresh user rewards
-        const updatedRewards = await retailstarIncentiveService.fetchClaimedRewards(walletAddress);
-        setUserRewards(updatedRewards);
-      } else {
-        const error = await response.json();
-        alert(`Failed to claim reward: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Error claiming reward:', error);
-      alert('Failed to claim reward. Please try again.');
-    }
+    //     // Refresh user rewards
+    //     const updatedRewards = await retailstarIncentiveService.fetchClaimedRewards(walletAddress);
+    //     setUserRewards(updatedRewards);
+    //   } else {
+    //     const error = await response.json();
+    //     alert(`Failed to claim reward: ${error.error}`);
+    //   }
+    // } catch (error) {
+    //   console.error('Error claiming reward:', error);
+    //   alert('Failed to claim reward. Please try again.');
+    // }
   };
 
   const filteredRewards = availableRewards.filter(reward => {

@@ -68,12 +68,12 @@ export const RetailstarBountyIntegration = ({
       const result = await response.json();
 
       if (result.success) {
-        // Refresh claimed rewards
-        const rewardsResponse = await fetch(`/api/retailstar-rewards/claim?walletAddress=${walletAddress}`);
-        const rewardsResult = await rewardsResponse.json();
-        if (rewardsResult.success) {
-          setClaimedRewards(rewardsResult.rewards);
-        }
+        // Refresh claimed rewards - temporarily disabled
+        // const rewardsResponse = await fetch(`/api/retailstar-rewards/claimed?walletAddress=${walletAddress}`);
+        // const rewardsResult = await rewardsResponse.json();
+        // if (rewardsResult.success) {
+        //   setClaimedRewards(rewardsResult.rewards);
+        // }
         
         // Remove from available rewards
         setAvailableRewards(prev => prev.filter(r => r.id !== rewardId));

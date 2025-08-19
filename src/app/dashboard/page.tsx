@@ -34,7 +34,7 @@ import GlobalBulletinBoard from '@/components/GlobalBulletinBoard';
 import { squadTracks, SquadTrack } from '@/lib/squadData';
 import { useUserXP } from '@/hooks/useUserXP';
 import { retailstarIncentiveService } from '@/services/retailstar-incentive-service';
-import { RetailstarRewardCard } from '@/components/retailstar/RetailstarRewardCard';
+// import { RetailstarRewardCard } from '@/components/retailstar/RetailstarRewardCard';
 
 interface TodoItem {
   id: string;
@@ -448,7 +448,7 @@ export default function DashboardPage() {
 
         // Load claimed retailstar rewards
         if (storedWallet) {
-          retailstarIncentiveService.fetchClaimedRewards(storedWallet).then(setClaimedRewards);
+          // retailstarIncentiveService.fetchClaimedRewards(storedWallet).then(setClaimedRewards);
         }
       }, []);
 
@@ -857,8 +857,8 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Retailstar Rewards */}
-            <Card className="bg-slate-800/50 border-indigo-500/30">
+            {/* Retailstar Rewards - Temporarily Disabled */}
+            {/* <Card className="bg-slate-800/50 border-indigo-500/30">
               <CardHeader>
                 <CardTitle className="text-indigo-400 flex items-center space-x-2">
                   <Trophy className="w-5 h-5" />
@@ -907,7 +907,7 @@ export default function DashboardPage() {
                   </div>
                 )}
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Squad Activity Summary */}
             <Card className="bg-slate-800/50 border-purple-500/30">

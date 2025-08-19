@@ -1,20 +1,33 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import CoursePageClient from './CoursePageClient';
+import fs from 'fs';
+import path from 'path';
+
+// Function to get course data
+async function getCourseData(slug: string) {
+  try {
+    // Try to read the course file directly
+    const coursePath = path.join(process.cwd(), 'public', 'courses', `${slug}.json`);
+    const courseData = fs.readFileSync(coursePath, 'utf8');
+    return JSON.parse(courseData);
+  } catch (error) {
+    console.error(`Error loading course ${slug}:`, error);
+    return null;
+  }
+}
 
 // Generate metadata for dynamic course pages
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/courses/${params.slug}.json?v=${Date.now()}`);
+    const course = await getCourseData(params.slug);
     
-    if (!response.ok) {
+    if (!course) {
       return {
         title: 'Course Not Found - Hoodie Academy',
         description: 'The requested course could not be found.',
       };
     }
-
-    const course = await response.json();
     
     return {
       title: `${course.title} - Hoodie Academy`,
@@ -111,13 +124,11 @@ function generateStructuredData(course: any) {
 
 export default async function CoursePage({ params }: { params: { slug: string } }) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/courses/${params.slug}.json?v=${Date.now()}`);
+    const course = await getCourseData(params.slug);
     
-    if (!response.ok) {
+    if (!course) {
       notFound();
     }
-
-    const course = await response.json();
     
     return (
       <>
@@ -161,6 +172,7 @@ export default async function CoursePage({ params }: { params: { slug: string } 
       </>
     );
   } catch (error) {
+    console.error('Error in course page:', error);
     notFound();
   }
 } 

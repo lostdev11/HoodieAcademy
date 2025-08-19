@@ -101,30 +101,33 @@ export async function POST(request: Request) {
         // For now, award basic tier for any submission
         const performance = 'basic'; // Could be enhanced with quality assessment
         
-        const rewardResult = await retailstarIncentiveService.awardRetailstarReward({
-          userId: walletAddress,
-          taskId: bountyId,
-          squad: squad || 'creators', // Default to creators if no squad specified
-          tier: performance
-        });
+        // Temporarily disabled - retailstar rewards not ready yet
+        console.log('[RETAILSTAR REWARDS DISABLED]', { walletAddress, bountyId });
+        
+        // const rewardResult = await retailstarIncentiveService.awardRetailstarReward({
+        //   userId: walletAddress,
+        //   taskId: bountyId,
+        //   squad: squad || 'creators', // Default to creators if no squad specified
+        //   tier: performance
+        // });
 
-        if (rewardResult.success) {
-          console.log('[RETAILSTAR REWARDS AWARDED]', { 
-            walletAddress, 
-            bountyId, 
-            rewards: rewardResult.rewards 
-          });
-        } else {
-          console.log('[RETAILSTAR REWARDS SKIPPED]', { 
-            walletAddress, 
-            bountyId, 
-            error: rewardResult.error 
-          });
-        }
-      } catch (rewardError) {
-        console.error('[RETAILSTAR REWARDS ERROR]', rewardError);
-        // Don't fail the submission if reward award fails
-      }
+        // if (rewardResult.success) {
+        //   console.log('[RETAILSTAR REWARDS AWARDED]', { 
+        //     walletAddress, 
+        //     bountyId, 
+        //     rewards: rewardResult.rewards 
+        //   });
+        // } else {
+        //   console.log('[RETAILSTAR REWARDS SKIPPED]', { 
+        //     walletAddress, 
+        //     bountyId, 
+        //     error: rewardResult.error 
+        //   });
+        // }
+        // } catch (rewardError) {
+        //   console.error('[RETAILSTAR REWARDS ERROR]', rewardError);
+        //   // Don't fail the submission if reward award fails
+        // }
     }
 
     return NextResponse.json({

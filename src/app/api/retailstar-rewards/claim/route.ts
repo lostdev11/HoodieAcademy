@@ -15,9 +15,13 @@ const createSupabaseClient = () => {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Claim reward API called');
+    
     const { walletAddress, rewardId, metadata } = await request.json();
+    console.log('Request body:', { walletAddress, rewardId, metadata });
 
     if (!walletAddress || !rewardId) {
+      console.error('Missing required fields:', { walletAddress, rewardId });
       return NextResponse.json(
         { error: 'Missing required fields: walletAddress, rewardId' },
         { status: 400 }
@@ -25,10 +29,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Supabase client
-    const supabase = createSupabaseClient();
+    let supabase;
+    try {
+      supabase = createSupabaseClient();
+      console.log('Supabase client created successfully');
+    } catch (error) {
+      console.error('Error creating Supabase client:', error);
+      return NextResponse.json(
+        { error: 'Database connection failed', details: error },
+        { status: 500 }
+      );
+    }
 
     // Check if user already has this reward
-    const { data: existingReward } = await supabase
+    console.log('Checking for existing reward...');
+    const { data: existingReward, error: existingError } = await supabase
       .from('user_retailstar_rewards')
       .select('*')
       .eq('wallet_address', walletAddress)
@@ -36,7 +51,16 @@ export async function POST(request: NextRequest) {
       .eq('status', 'active')
       .single();
 
+    if (existingError && existingError.code !== 'PGRST116') {
+      console.error('Error checking existing reward:', existingError);
+      return NextResponse.json(
+        { error: 'Failed to check existing reward' },
+        { status: 500 }
+      );
+    }
+
     if (existingReward) {
+      console.log('User already has this reward');
       return NextResponse.json(
         { error: 'User already has this reward' },
         { status: 409 }
@@ -44,6 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Award the reward using the database function
+    console.log('Awarding reward using database function...');
     const { data: result, error } = await supabase.rpc('award_retailstar_reward', {
       p_wallet_address: walletAddress,
       p_reward_id: rewardId,
@@ -54,13 +79,15 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Error awarding reward:', error);
       return NextResponse.json(
-        { error: 'Failed to award reward' },
+        { error: 'Failed to award reward', details: error },
         { status: 500 }
       );
     }
 
+    console.log('Reward awarded successfully, result:', result);
+
     // Get the awarded reward details
-    const { data: rewardDetails } = await supabase
+    const { data: rewardDetails, error: detailsError } = await supabase
       .from('user_retailstar_rewards')
       .select(`
         *,
@@ -74,6 +101,16 @@ export async function POST(request: NextRequest) {
       .eq('id', result)
       .single();
 
+    if (detailsError) {
+      console.error('Error getting reward details:', detailsError);
+      // Still return success since the reward was awarded
+      return NextResponse.json({
+        success: true,
+        rewardId: result,
+        message: 'Reward claimed successfully!'
+      });
+    }
+
     return NextResponse.json({
       success: true,
       reward: rewardDetails,
@@ -83,61 +120,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error in claim reward API:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error },
       { status: 500 }
     );
   }
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const walletAddress = searchParams.get('walletAddress');
-
-    if (!walletAddress) {
-      return NextResponse.json(
-        { error: 'Missing walletAddress parameter' },
-        { status: 400 }
-      );
-    }
-
-    // Create Supabase client
-    const supabase = createSupabaseClient();
-
-    // Get user's claimed rewards
-    const { data: userRewards, error } = await supabase
-      .from('user_retailstar_rewards')
-      .select(`
-        *,
-        retailstar_rewards (
-          name,
-          description,
-          type,
-          rarity
-        )
-      `)
-      .eq('wallet_address', walletAddress)
-      .eq('status', 'active')
-      .order('claimed_at', { ascending: false });
-
-    if (error) {
-      console.error('Error getting user rewards:', error);
-      return NextResponse.json(
-        { error: 'Failed to get user rewards' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      rewards: userRewards || []
-    });
-
-  } catch (error) {
-    console.error('Error in get user rewards API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-} 
+ 
