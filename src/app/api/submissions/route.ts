@@ -104,30 +104,17 @@ export async function POST(request: Request) {
         // Temporarily disabled - retailstar rewards not ready yet
         console.log('[RETAILSTAR REWARDS DISABLED]', { walletAddress, bountyId });
         
+        // TODO: Implement retailstar rewards when ready
         // const rewardResult = await retailstarIncentiveService.awardRetailstarReward({
         //   userId: walletAddress,
         //   taskId: bountyId,
         //   squad: squad || 'creators', // Default to creators if no squad specified
         //   tier: performance
         // });
-
-        // if (rewardResult.success) {
-        //   console.log('[RETAILSTAR REWARDS AWARDED]', { 
-        //     walletAddress, 
-        //     bountyId, 
-        //     rewards: rewardResult.rewards 
-        //   });
-        // } else {
-        //   console.log('[RETAILSTAR REWARDS SKIPPED]', { 
-        //     walletAddress, 
-        //     bountyId, 
-        //     error: rewardResult.error 
-        //   });
-        // }
-        // } catch (rewardError) {
-        //   console.error('[RETAILSTAR REWARDS ERROR]', rewardError);
-        //   // Don't fail the submission if reward award fails
-        // }
+      } catch (rewardError) {
+        console.error('[RETAILSTAR REWARDS ERROR]', rewardError);
+        // Don't fail the submission if reward award fails
+      }
     }
 
     return NextResponse.json({
