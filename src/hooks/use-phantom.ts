@@ -1,24 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-// This type matches window.solana from wallet-adapter; its `disconnect` is optional.
-import type { SolanaWallet } from "@solana/wallet-adapter-base";
+import type { PhantomProvider } from "@/types/phantom";
 
 declare global {
   interface Window {
-    solana?: SolanaWallet & { isPhantom?: boolean };
+    solana?: PhantomProvider;
   }
 }
 
 export function usePhantom() {
-  const providerRef = useRef<(SolanaWallet & { isPhantom?: boolean }) | null>(null);
+  const providerRef = useRef<PhantomProvider | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [publicKey, setPublicKey] = useState<string | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = window.solana;
     if (p?.isPhantom) providerRef.current = p;
+    setIsReady(Boolean(providerRef.current));
 
     // Silent reconnect if already trusted
     (async () => {
@@ -26,15 +28,13 @@ export function usePhantom() {
         const prov = providerRef.current;
         if (!prov) return;
         const res = await prov.connect?.({ onlyIfTrusted: true });
-        // Some providers return void when onlyIfTrusted is false; guard it
-        // If `connect` returned nothing, try reading publicKey directly
         const key = res?.publicKey?.toString?.() ?? prov.publicKey?.toString?.();
         if (key) {
           setConnected(true);
-          setPublicKey(key);
+          setAddress(key);
         }
       } catch {
-        // ignore: not yet trusted / user cancelled
+        // not trusted or user declined; ignore
       }
     })();
   }, []);
@@ -42,11 +42,16 @@ export function usePhantom() {
   const connect = useCallback(async () => {
     const prov = providerRef.current;
     if (!prov) throw new Error("Phantom not found");
-    const res = await prov.connect?.();
-    const key = res?.publicKey?.toString?.() ?? prov.publicKey?.toString?.();
-    if (!key) throw new Error("Failed to retrieve public key");
-    setConnected(true);
-    setPublicKey(key);
+    setConnecting(true);
+    try {
+      const res = await prov.connect?.();
+      const key = res?.publicKey?.toString?.() ?? prov.publicKey?.toString?.();
+      if (!key) throw new Error("Failed to retrieve public key");
+      setConnected(true);
+      setAddress(key);
+    } finally {
+      setConnecting(false);
+    }
   }, []);
 
   const disconnect = useCallback(async () => {
@@ -55,13 +60,20 @@ export function usePhantom() {
       await prov.disconnect();
     }
     setConnected(false);
-    setPublicKey(null);
+    setAddress(null);
   }, []);
 
   return {
+    // keep old fields if others use them
     provider: providerRef.current,
     connected,
-    publicKey,
+
+    // fields SmartConnect expects
+    address,
+    connecting,
+    isReady,
+
+    // actions
     connect,
     disconnect,
   };
