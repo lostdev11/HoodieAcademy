@@ -1,10 +1,5 @@
-export type SolanaWallet = {
-  publicKey?: { toString(): string } | null;
-  connect?: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString(): string } }>;
-  disconnect?: () => Promise<void>;
-  request?: (args: { method: string; params?: any }) => Promise<any>;
-  on?: (event: 'connect' | 'disconnect' | 'accountChanged', handler: (...args: any[]) => void) => void;
-};
+// Use canonical wallet types from src/types/solana.d.ts
+export type SolanaWallet = NonNullable<typeof window.solana>;
 
 export const getWallet = (): SolanaWallet | null => {
   if (typeof window === 'undefined') return null;

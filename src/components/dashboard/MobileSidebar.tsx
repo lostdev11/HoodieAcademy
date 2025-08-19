@@ -19,7 +19,7 @@ import {
   Menu
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
-import type { SolanaWallet } from '@/types/wallet';
+// Use canonical wallet types
 
 interface SidebarItem {
   id: string;

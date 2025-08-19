@@ -1,4 +1,4 @@
-import type { PhantomProvider } from '@/types/phantom';
+// Use canonical wallet types
 
 export interface PfpAsset {
   id: string;
@@ -27,7 +27,7 @@ export async function setPfp(
   options: {
     address?: string | null;
     connect?: () => Promise<string | undefined>;
-    provider?: PhantomProvider | null;
+    provider?: NonNullable<typeof window.solana> | null;
     userId: string;
   }
 ): Promise<string> {
@@ -116,7 +116,7 @@ export async function setPfpWithPhantom(
   phantom: {
     address: string | null;
     connect: () => Promise<string | undefined>;
-    provider: PhantomProvider | null;
+    provider: NonNullable<typeof window.solana> | null;
   },
   userId: string
 ): Promise<string> {

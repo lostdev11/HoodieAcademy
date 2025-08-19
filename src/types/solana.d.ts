@@ -1,24 +1,24 @@
-import type { PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js';
-
-export interface PhantomProvider {
-  isPhantom?: boolean;
-  publicKey?: PublicKey | null;
-  connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: PublicKey }>;
-  disconnect: () => Promise<void>;
-  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
-  signTransaction?: (tx: Transaction | VersionedTransaction) => Promise<Transaction | VersionedTransaction>;
-  signAllTransactions?: (txs: (Transaction | VersionedTransaction)[]) => Promise<(Transaction | VersionedTransaction)[]>;
-  signAndSendTransaction?: (
-    tx: Transaction | VersionedTransaction,
-    opts?: { preflightCommitment?: string }
-  ) => Promise<{ signature: string }>;
-  on?: (event: string, handler: (...args: any[]) => void) => void;
-  off?: (event: string, handler: (...args: any[]) => void) => void;
-}
+// src/types/solana.d.ts
+// Canonical global type definitions for Solana wallets
+// This file should be the ONLY place that declares window.solana
 
 declare global {
   interface Window {
-    solana?: PhantomProvider;
+    /** Canonical type for window.solana used across the app */
+    solana?: {
+      isPhantom?: boolean;
+      isSolflare?: boolean;
+      isConnected?: boolean;
+      publicKey?: { toString(): string } | null;
+      connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString(): string } }>;
+      disconnect?: () => Promise<void>;
+      signTransaction?: (transaction: any) => Promise<any>;
+      signAllTransactions?: (transactions: any[]) => Promise<any[]>;
+      on?: (event: string, handler: (...args: any[]) => void) => void;
+      off?: (event: string, handler: (...args: any[]) => void) => void;
+      [k: string]: any;
+    };
   }
 }
-export type SolanaWallet = PhantomProvider; // optional alias
+
+export {};

@@ -1,24 +1,24 @@
+// src/hooks/use-phantom.ts
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PhantomProvider } from "@/types/phantom";
+// Use the canonical window.solana types from src/types/solana.d.ts
+type Phantomish = NonNullable<typeof window.solana> & { isPhantom?: boolean };
 
-declare global {
-  interface Window {
-    solana?: PhantomProvider;
-  }
+function getSolana(): Phantomish | null {
+  if (typeof window === "undefined") return null;
+  return (window.solana as Phantomish) ?? null;
 }
 
 export function usePhantom() {
-  const providerRef = useRef<PhantomProvider | null>(null);
+  const providerRef = useRef<Phantomish | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const p = window.solana;
+    const p = getSolana();
     if (p?.isPhantom) providerRef.current = p;
     setIsReady(Boolean(providerRef.current));
 
@@ -27,25 +27,35 @@ export function usePhantom() {
       try {
         const prov = providerRef.current;
         if (!prov) return;
+
+        // Some providers return void from connect({ onlyIfTrusted })
         const res = await prov.connect?.({ onlyIfTrusted: true });
-        const key = res?.publicKey?.toString?.() ?? prov.publicKey?.toString?.();
+        const key =
+          (res as any)?.publicKey?.toString?.() ??
+          (prov as any)?.publicKey?.toString?.();
+
         if (key) {
           setConnected(true);
           setAddress(key);
         }
       } catch {
-        // not trusted or user declined; ignore
+        /* not yet trusted / user declined */
       }
     })();
   }, []);
 
   const connect = useCallback(async () => {
-    const prov = providerRef.current;
+    const prov = providerRef.current ?? getSolana();
     if (!prov) throw new Error("Phantom not found");
+    providerRef.current = prov;
+
     setConnecting(true);
     try {
       const res = await prov.connect?.();
-      const key = res?.publicKey?.toString?.() ?? prov.publicKey?.toString?.();
+      const key =
+        (res as any)?.publicKey?.toString?.() ??
+        (prov as any)?.publicKey?.toString?.();
+
       if (!key) throw new Error("Failed to retrieve public key");
       setConnected(true);
       setAddress(key);
@@ -55,7 +65,7 @@ export function usePhantom() {
   }, []);
 
   const disconnect = useCallback(async () => {
-    const prov = providerRef.current;
+    const prov = providerRef.current ?? getSolana();
     if (prov?.disconnect) {
       await prov.disconnect();
     }
@@ -64,16 +74,11 @@ export function usePhantom() {
   }, []);
 
   return {
-    // keep old fields if others use them
     provider: providerRef.current,
     connected,
-
-    // fields SmartConnect expects
     address,
     connecting,
     isReady,
-
-    // actions
     connect,
     disconnect,
   };
