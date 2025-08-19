@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { Wallet, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { logUserActivity, logWalletConnection, logNftVerification } from '@/lib/activity-logger';
-import { hasSolflare } from '@/lib/walletChecks';
+import { hasSolflare, getSolflareProvider } from '@/lib/walletChecks';
 import {
   DropdownMenu,
   DropdownMenuContent,
