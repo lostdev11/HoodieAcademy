@@ -12,7 +12,18 @@ async function getCourseData(slug: string) {
     const courseData = fs.readFileSync(coursePath, 'utf8');
     return JSON.parse(courseData);
   } catch (error) {
-    console.error(`Error loading course ${slug}:`, error);
+    console.error(`Error loading course ${slug} from filesystem:`, error);
+    
+    // Fallback: try to fetch from API route
+    try {
+      const response = await fetch(`/api/courses/${slug}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (apiError) {
+      console.error(`Error loading course ${slug} from API:`, apiError);
+    }
+    
     return null;
   }
 }
