@@ -1,80 +1,68 @@
-'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { PhantomProvider } from '@/types/phantom';
-import { PublicKey } from '@solana/web3.js';
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+// This type matches window.solana from wallet-adapter; its `disconnect` is optional.
+import type { SolanaWallet } from "@solana/wallet-adapter-base";
+
+declare global {
+  interface Window {
+    solana?: SolanaWallet & { isPhantom?: boolean };
+  }
+}
 
 export function usePhantom() {
-  const [address, setAddress] = useState<string | null>(null);
-  const [connecting, setConnecting] = useState(false);
-  const providerRef = useRef<PhantomProvider | null>(null);
+  const providerRef = useRef<(SolanaWallet & { isPhantom?: boolean }) | null>(null);
+  const [connected, setConnected] = useState(false);
+  const [publicKey, setPublicKey] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     const p = window.solana;
     if (p?.isPhantom) providerRef.current = p;
 
-    // silent reconnect if already trusted (works nicely in Phantom mobile)
+    // Silent reconnect if already trusted
     (async () => {
       try {
-        if (providerRef.current) {
-          const res = await providerRef.current.connect({ onlyIfTrusted: true });
-          const pk = res?.publicKey ?? providerRef.current.publicKey;
-          if (pk instanceof PublicKey) setAddress(pk.toString());
+        const prov = providerRef.current;
+        if (!prov) return;
+        const res = await prov.connect?.({ onlyIfTrusted: true });
+        // Some providers return void when onlyIfTrusted is false; guard it
+        // If `connect` returned nothing, try reading publicKey directly
+        const key = res?.publicKey?.toString?.() ?? prov.publicKey?.toString?.();
+        if (key) {
+          setConnected(true);
+          setPublicKey(key);
         }
-      } catch {}
-    })();
-
-    const onConnect = ({ publicKey }: { publicKey: PublicKey }) =>
-      setAddress(publicKey.toString());
-    const onDisconnect = () => setAddress(null);
-    const onAccountChanged = (pk?: PublicKey | null) => {
-      if (!pk) setAddress(null);
-      else setAddress(pk.toString());
-    };
-
-    const provider = providerRef.current;
-    if (provider && provider.on) {
-      provider.on('connect', onConnect);
-      provider.on('disconnect', onDisconnect);
-      provider.on('accountChanged', onAccountChanged);
-    }
-
-    return () => {
-      const provider = providerRef.current;
-      if (provider && provider.on) {
-        // Note: Phantom doesn't have removeListener, events are cleaned up automatically
-        // when the provider is disconnected or the component unmounts
+      } catch {
+        // ignore: not yet trusted / user cancelled
       }
-    };
+    })();
   }, []);
 
   const connect = useCallback(async () => {
-    if (connecting) return;
-    const p = providerRef.current;
-    if (!p?.isPhantom) throw new Error('Phantom not detected');
-    try {
-      setConnecting(true);
-      // NOTE: On mobile, first-time connect should be called with NO args
-      const { publicKey } = await p.connect();
-      setAddress(publicKey.toString());
-      return publicKey.toString();
-    } finally {
-      setConnecting(false);
-    }
-  }, [connecting]);
+    const prov = providerRef.current;
+    if (!prov) throw new Error("Phantom not found");
+    const res = await prov.connect?.();
+    const key = res?.publicKey?.toString?.() ?? prov.publicKey?.toString?.();
+    if (!key) throw new Error("Failed to retrieve public key");
+    setConnected(true);
+    setPublicKey(key);
+  }, []);
 
   const disconnect = useCallback(async () => {
-    const p = providerRef.current;
-    if (!p) return;
-    try { await p.disconnect(); } finally { setAddress(null); }
+    const prov = providerRef.current;
+    if (prov?.disconnect) {
+      await prov.disconnect();
+    }
+    setConnected(false);
+    setPublicKey(null);
   }, []);
 
   return {
-    address,
-    connecting,
+    provider: providerRef.current,
+    connected,
+    publicKey,
     connect,
     disconnect,
-    provider: providerRef.current,
-    isReady: !!providerRef.current
   };
 }
