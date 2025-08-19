@@ -1,16 +1,17 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { formatWalletAddress } from '@/lib/utils';
 
-// Mock implementation for now - in production, you'd use the actual SNS SDK
+// Enhanced SNS resolver interface
 export interface SNSResolver {
   resolve: (connection: Connection, domain: string) => Promise<PublicKey | null>;
   reverseResolve: (connection: Connection, walletAddress: string) => Promise<string | null>;
+  resolveProfile: (connection: Connection, walletAddress: string) => Promise<{ domain: string | null; displayName: string }>;
 }
 
-// Mock SNS resolver for development
+// Enhanced mock SNS resolver for development
 export class MockSNSResolver implements SNSResolver {
   private mockDomains: Record<string, string> = {
-    'hoodie.sol': '7x...abc',
+    'hoodie.sol': 'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU',
     'scholar.sol': '9y...def', 
     'web3.sol': '5z...ghi',
     'hodler.sol': '3a...jkl',
@@ -18,8 +19,7 @@ export class MockSNSResolver implements SNSResolver {
     'crypto.sol': '2c...pqr',
     'nft.sol': '4d...stu',
     'dao.sol': '6e...vwx',
-    // Real wallet addresses and their .sol domains
-    'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU': 'lostdev.sol'
+    'lostdev.sol': 'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU'
   };
 
   private reverseLookup: Record<string, string> = {};
@@ -35,7 +35,6 @@ export class MockSNSResolver implements SNSResolver {
     try {
       const address = this.mockDomains[domain];
       if (address) {
-        // Convert mock address to PublicKey (this is simplified)
         return new PublicKey(address);
       }
       return null;
@@ -53,17 +52,31 @@ export class MockSNSResolver implements SNSResolver {
       return null;
     }
   }
+
+  async resolveProfile(connection: Connection, walletAddress: string): Promise<{ domain: string | null; displayName: string }> {
+    try {
+      const domain = this.reverseLookup[walletAddress] || null;
+      const displayName = domain || formatWalletAddress(walletAddress);
+      return { domain, displayName };
+    } catch (error) {
+      console.error('Error in mock SNS profile resolve:', error);
+      return { domain: null, displayName: formatWalletAddress(walletAddress) };
+    }
+  }
 }
 
-// Real SNS resolver implementation (placeholder for production)
+// Real SNS resolver implementation using SNS API
 export class RealSNSResolver implements SNSResolver {
+  private snsApiUrl = 'https://api.sns.guide';
+
   async resolve(connection: Connection, domain: string): Promise<PublicKey | null> {
     try {
-      // This would use the actual SNS SDK
-      // const result = await resolve(connection, domain);
-      // return result;
-      
-      // For now, return null to indicate no real implementation
+      // Use SNS API to resolve domain to wallet address
+      const response = await fetch(`${this.snsApiUrl}/resolve/${domain}`);
+      if (response.ok) {
+        const data = await response.json();
+        return new PublicKey(data.owner);
+      }
       return null;
     } catch (error) {
       console.error('Error resolving SNS domain:', error);
@@ -73,12 +86,27 @@ export class RealSNSResolver implements SNSResolver {
 
   async reverseResolve(connection: Connection, walletAddress: string): Promise<string | null> {
     try {
-      // This would use the actual SNS SDK for reverse resolution
-      // For now, return null
+      // Use SNS API to reverse resolve wallet address to domain
+      const response = await fetch(`${this.snsApiUrl}/reverse/${walletAddress}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.domain || null;
+      }
       return null;
     } catch (error) {
       console.error('Error reverse resolving wallet address:', error);
       return null;
+    }
+  }
+
+  async resolveProfile(connection: Connection, walletAddress: string): Promise<{ domain: string | null; displayName: string }> {
+    try {
+      const domain = await this.reverseResolve(connection, walletAddress);
+      const displayName = domain || formatWalletAddress(walletAddress);
+      return { domain, displayName };
+    } catch (error) {
+      console.error('Error in real SNS profile resolve:', error);
+      return { domain: null, displayName: formatWalletAddress(walletAddress) };
     }
   }
 }
@@ -96,12 +124,23 @@ export function isSolDomain(domain: string): boolean {
   return domain.endsWith('.sol') && domain.length > 4;
 }
 
-
-
 // Utility function to validate Solana address
 export function isValidSolanaAddress(address: string): boolean {
   return /^[1-9A-HJ-NP-Za-km-z]{44}$/.test(address);
-} 
+}
+
+// Enhanced utility function to get display name with SNS resolution
+export async function getDisplayNameWithSNS(walletAddress: string): Promise<string> {
+  try {
+    const resolver = getSNSResolver();
+    const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
+    const profile = await resolver.resolveProfile(connection, walletAddress);
+    return profile.displayName;
+  } catch (error) {
+    console.error('Error getting display name with SNS:', error);
+    return formatWalletAddress(walletAddress);
+  }
+}
 
 // Re-export utility for consumers expecting it from this module
 export { formatWalletAddress };

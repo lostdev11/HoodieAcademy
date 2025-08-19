@@ -326,6 +326,7 @@ export default function DashboardPage() {
   const [showProfileSuggestion, setShowProfileSuggestion] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string>("");
+  const [userDisplayName, setUserDisplayName] = useState<string>("");
   const [realTodos, setRealTodos] = useState<TodoItem[]>([]);
   const [realAnnouncements, setRealAnnouncements] = useState<Announcement[]>([]);
   const [realUpcomingClasses, setRealUpcomingClasses] = useState<UpcomingClass[]>([]);
@@ -378,6 +379,19 @@ export default function DashboardPage() {
       setRealAnnouncements(announcements);
       
       setRealUpcomingClasses(getRealUpcomingClasses());
+
+      // Load user display name and SNS domain
+      const displayName = localStorage.getItem('userDisplayName');
+      if (displayName) {
+        setUserDisplayName(displayName);
+      } else {
+        // Try to resolve SNS domain if no display name is set
+        import('@/services/sns-resolver').then(({ getDisplayNameWithSNS }) => {
+          getDisplayNameWithSNS(storedWallet).then((resolvedName) => {
+            setUserDisplayName(resolvedName);
+          });
+        });
+      }
     }
 
     // Get squad ID for bulletin board and assignments
@@ -537,7 +551,9 @@ export default function DashboardPage() {
                 
                 <div>
                   <h1 className="text-3xl font-bold text-cyan-400">Dashboard</h1>
-                  <p className="text-gray-300">Welcome back, Hoodie Scholar!</p>
+                  <p className="text-gray-300">
+                    Welcome back, {userDisplayName || 'Hoodie Scholar'}!
+                  </p>
                 </div>
               </div>
               <div className="text-right">
