@@ -60,6 +60,7 @@ export default function SquadTestPage() {
   const [error, setError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingSquad, setPendingSquad] = useState<SquadInfo | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
 
   useEffect(() => {
     // Check if user has already taken the test
@@ -67,10 +68,19 @@ export default function SquadTestPage() {
     if (existingResult) {
       try {
         const result = JSON.parse(existingResult);
-        setAssignedSquad(result);
-        setShowResults(true);
-        setIsLoading(false);
-        return;
+        // Check if it's the old format (just a string) or new format (object)
+        if (typeof result === 'string') {
+          // Old format - try to find squad info from quiz data
+          console.log('Found old format squad result:', result);
+          // We'll need to load quiz data first to get squad info
+        } else if (result.name) {
+          // New format - we have the full squad object
+          console.log('Found squad result:', result);
+          setAssignedSquad(result);
+          setShowResults(true);
+          setIsLoading(false);
+          return;
+        }
       } catch (error) {
         console.error('Error parsing existing squad result:', error);
         localStorage.removeItem('userSquad');
@@ -86,6 +96,23 @@ export default function SquadTestPage() {
         }
         const data = await response.json();
         setQuizData(data);
+        
+        // If we have an old format result, try to convert it now
+        const existingResult = localStorage.getItem('userSquad');
+        if (existingResult && typeof JSON.parse(existingResult) === 'string') {
+          try {
+            const squadName = JSON.parse(existingResult);
+            const squadInfo = data.squads[squadName];
+            if (squadInfo) {
+              console.log('Converted old format to new format:', squadInfo);
+              setAssignedSquad(squadInfo);
+              setShowResults(true);
+            }
+          } catch (error) {
+            console.error('Error converting old format result:', error);
+          }
+        }
+        
         setIsLoading(false);
       } catch (error) {
         console.error('Error loading quiz data:', error);
@@ -122,31 +149,68 @@ export default function SquadTestPage() {
   const calculateSquad = async () => {
     if (!quizData) return;
 
-    const squadScores: Record<string, number> = {};
-    
-    // Count votes for each squad
-    Object.values(answers).forEach(optionId => {
-      const question = quizData.questions.find(q => 
-        q.options.some(opt => opt.id === optionId)
-      );
-      const option = question?.options.find(opt => opt.id === optionId);
-      if (option) {
-        squadScores[option.squad] = (squadScores[option.squad] || 0) + 1;
+    setIsCalculating(true);
+    console.log('Starting squad calculation...');
+
+    try {
+      const squadScores: Record<string, number> = {};
+      
+      // Count votes for each squad
+      Object.values(answers).forEach(optionId => {
+        const question = quizData.questions.find(q => 
+          q.options.some(opt => opt.id === optionId)
+        );
+        const option = question?.options.find(opt => opt.id === optionId);
+        if (option) {
+          squadScores[option.squad] = (squadScores[option.squad] || 0) + 1;
+        }
+      });
+
+      console.log('Squad scores:', squadScores);
+
+      // Find the squad with the most votes
+      const topSquad = Object.entries(squadScores).reduce((a, b) => 
+        squadScores[a[0]] > squadScores[b[0]] ? a : b
+      )[0];
+
+      console.log('Top squad key:', topSquad);
+      console.log('Available squads:', Object.keys(quizData.squads));
+
+      let squadInfo = quizData.squads[topSquad];
+      
+      // Fallback: if squad lookup fails, use the first available squad
+      if (!squadInfo) {
+        console.error('No squad info found for:', topSquad);
+        console.error('Available squad keys:', Object.keys(quizData.squads));
+        
+        // Use the first available squad as fallback
+        const fallbackSquadKey = Object.keys(quizData.squads)[0];
+        if (fallbackSquadKey) {
+          squadInfo = quizData.squads[fallbackSquadKey];
+          console.log('Using fallback squad:', fallbackSquadKey, squadInfo);
+        } else {
+          console.error('No squads available at all');
+          setIsCalculating(false);
+          return;
+        }
       }
-    });
-
-    // Find the squad with the most votes
-    const topSquad = Object.entries(squadScores).reduce((a, b) => 
-      squadScores[a[0]] > squadScores[b[0]] ? a : b
-    )[0];
-
-    const squadInfo = quizData.squads[topSquad];
-    setPendingSquad(squadInfo);
-    setShowConfirmation(true);
+      
+      console.log('Final squad info:', squadInfo);
+      setPendingSquad(squadInfo);
+      setShowConfirmation(true);
+    } catch (error) {
+      console.error('Error calculating squad:', error);
+      // Show error to user
+      alert('There was an error calculating your squad. Please try again.');
+    } finally {
+      setIsCalculating(false);
+    }
   };
 
   const handleConfirmSquadAssignment = async () => {
     if (!pendingSquad) return;
+    
+    console.log('Confirming squad assignment for:', pendingSquad);
     
     // Calculate lock end date (30 days from now)
     const lockEndDate = new Date();
@@ -160,9 +224,10 @@ export default function SquadTestPage() {
       testVersion: '1.0'
     };
     console.log('Saving squad result to localStorage:', squadResult);
-    // Only store the squad name, not the full object
-    localStorage.setItem('userSquad', pendingSquad.name);
-    console.log('Squad name saved to localStorage:', pendingSquad.name);
+    
+    // Store the full squad object for better functionality
+    localStorage.setItem('userSquad', JSON.stringify(squadResult));
+    console.log('Squad result saved to localStorage');
     
     // Mark placement test as completed
     localStorage.setItem('placementTestCompleted', 'true');
@@ -191,6 +256,8 @@ export default function SquadTestPage() {
     setShowConfirmation(false);
     setPendingSquad(null);
     setShowResults(true);
+    
+    console.log('Squad assignment completed, showing results');
   };
 
   const resetTest = () => {
@@ -384,7 +451,7 @@ export default function SquadTestPage() {
                 {pendingSquad && (
                   <div className="p-4 bg-slate-700/30 border border-slate-600/30 rounded-lg">
                     <h4 className="font-semibold text-cyan-400 mb-2">Your Assigned Squad:</h4>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 mb-4">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
                         pendingSquad.name.includes('Creators') ? 'bg-yellow-500/20' :
                         pendingSquad.name.includes('Decoders') ? 'bg-gray-500/20' :
@@ -401,6 +468,25 @@ export default function SquadTestPage() {
                       <div>
                         <p className="font-semibold text-white">{pendingSquad.name}</p>
                         <p className="text-sm text-gray-300">{pendingSquad.description}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Answer Summary */}
+                    <div className="mt-4">
+                      <h5 className="font-semibold text-cyan-400 mb-2">Your Answers Summary:</h5>
+                      <div className="space-y-2 text-sm">
+                        {quizData?.questions.map((question, index) => {
+                          const answerId = answers[question.id];
+                          const selectedOption = question.options.find(opt => opt.id === answerId);
+                          return (
+                            <div key={question.id} className="flex justify-between items-center p-2 bg-slate-600/30 rounded">
+                              <span className="text-gray-300">Q{index + 1}: {question.text.substring(0, 50)}...</span>
+                              <span className="text-cyan-400 font-medium">
+                                {selectedOption ? selectedOption.text.substring(0, 30) + '...' : 'Not answered'}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -443,6 +529,10 @@ export default function SquadTestPage() {
   const currentQuestionData = quizData.questions[currentQuestion];
   const progress = ((currentQuestion + 1) / quizData.questions.length) * 100;
   const canProceed = answers[currentQuestionData.id];
+  
+  // Check if all questions are answered for the final question
+  const allQuestionsAnswered = quizData.questions.every(q => answers[q.id]);
+  const canSeeResults = currentQuestion === quizData.questions.length - 1 && allQuestionsAnswered;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -475,6 +565,31 @@ export default function SquadTestPage() {
               <span>{Math.round(progress)}%</span>
             </div>
             <Progress value={progress} className="h-2" />
+            
+            {/* Question completion indicator */}
+            <div className="flex justify-center gap-1 mt-2">
+              {quizData.questions.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-2 h-2 rounded-full ${
+                    answers[quizData.questions[index].id] 
+                      ? 'bg-green-400' 
+                      : 'bg-gray-400'
+                  }`}
+                />
+              ))}
+            </div>
+            
+            {/* Completion status */}
+            {currentQuestion === quizData.questions.length - 1 && (
+              <div className="text-center mt-2">
+                {allQuestionsAnswered ? (
+                  <span className="text-green-400 text-sm">✓ All questions answered</span>
+                ) : (
+                  <span className="text-yellow-400 text-sm">⚠ Please answer all questions to see results</span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -517,11 +632,27 @@ export default function SquadTestPage() {
           </Button>
 
           <Button
-            onClick={handleNext}
-            disabled={!canProceed}
-            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:opacity-50"
+            onClick={() => {
+              console.log('See Results button clicked');
+              console.log('Current answers:', answers);
+              console.log('Quiz data:', quizData);
+              handleNext();
+            }}
+            disabled={!canProceed || isCalculating}
+            className={`${
+              canSeeResults 
+                ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' 
+                : 'bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700'
+            } disabled:opacity-50`}
           >
-            {currentQuestion === quizData.questions.length - 1 ? 'See Results' : 'Next'}
+            {isCalculating ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Calculating...
+              </>
+            ) : (
+              currentQuestion === quizData.questions.length - 1 ? 'See Results' : 'Next'
+            )}
           </Button>
         </div>
       </div>

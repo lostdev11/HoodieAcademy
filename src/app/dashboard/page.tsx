@@ -25,7 +25,8 @@ import {
   Trophy,
   Calendar,
   FileText,
-  Sparkles
+  Sparkles,
+  Home
 } from 'lucide-react';
 import TokenGate from '@/components/TokenGate';
 import Link from 'next/link';
@@ -521,6 +522,21 @@ export default function DashboardPage() {
           <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
+                {/* Home Button - Mobile Only */}
+                <div className="block lg:hidden">
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="bg-slate-700/50 hover:bg-slate-600/50 border-cyan-500/30 text-cyan-400 hover:text-cyan-300"
+                  >
+                    <Link href="/">
+                      <Home className="w-4 h-4 mr-2" />
+                      Home
+                    </Link>
+                  </Button>
+                </div>
+                
                 {/* Profile Picture */}
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-lg">

@@ -55,6 +55,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("users");
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     activeUsers: 0,
@@ -403,25 +404,25 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-slate-900 text-white">
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
             <Link href="/">
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="w-full lg:w-auto">
                 <Home className="w-4 h-4 mr-2" />
                 Home
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-              <p className="text-slate-400">Live user tracking and management</p>
+              <h1 className="text-2xl lg:text-3xl font-bold">Admin Dashboard</h1>
+              <p className="text-slate-400 text-sm lg:text-base">Live user tracking and management</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="border-green-500 text-green-400">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 lg:gap-4">
+            <Badge variant="outline" className="border-green-500 text-green-400 w-fit">
               <Shield className="w-4 h-4 mr-2" />
               Admin Access
             </Badge>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="w-full sm:w-auto">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
@@ -429,58 +430,58 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
           <Card className="bg-slate-800/50 border-blue-500/30">
-            <CardContent className="p-4">
+            <CardContent className="p-3 lg:p-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-400" />
+                  <Users className="w-5 h-5 lg:w-6 lg:h-6 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Total Users</p>
-                  <p className="text-2xl font-bold text-blue-400">{stats.totalUsers}</p>
+                  <p className="text-xs lg:text-sm text-gray-400">Total Users</p>
+                  <p className="text-xl lg:text-2xl font-bold text-blue-400">{stats.totalUsers}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800/50 border-green-500/30">
-            <CardContent className="p-4">
+            <CardContent className="p-3 lg:p-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-green-500/20 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-green-400" />
+                  <TrendingUp className="w-5 h-5 lg:w-6 lg:h-6 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Active Users</p>
-                  <p className="text-2xl font-bold text-green-400">{stats.activeUsers}</p>
+                  <p className="text-xs lg:text-sm text-gray-400">Active Users</p>
+                  <p className="text-xl lg:text-2xl font-bold text-green-400">{stats.activeUsers}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800/50 border-purple-500/30">
-            <CardContent className="p-4">
+            <CardContent className="p-3 lg:p-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-purple-500/20 rounded-lg">
-                  <BookOpen className="w-6 h-6 text-purple-400" />
+                  <BookOpen className="w-5 h-5 lg:w-6 lg:h-6 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Courses Completed</p>
-                  <p className="text-2xl font-bold text-purple-400">{stats.completedCourses}</p>
+                  <p className="text-xs lg:text-sm text-gray-400">Courses Completed</p>
+                  <p className="text-xl lg:text-2xl font-bold text-purple-400">{stats.completedCourses}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card className="bg-slate-800/50 border-yellow-500/30">
-            <CardContent className="p-4">
+            <CardContent className="p-3 lg:p-4">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-yellow-500/20 rounded-lg">
-                  <Clock className="w-6 h-6 text-yellow-400" />
+                  <Clock className="w-5 h-5 lg:w-6 lg:h-6 text-yellow-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-400">Pending Approvals</p>
-                  <p className="text-2xl font-bold text-yellow-400">{stats.pendingApprovals}</p>
+                  <p className="text-xs lg:text-sm text-gray-400">Pending Approvals</p>
+                  <p className="text-xl lg:text-2xl font-bold text-yellow-400">{stats.pendingApprovals}</p>
                 </div>
               </div>
             </CardContent>
@@ -488,8 +489,62 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 bg-slate-800">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          {/* Mobile-friendly tabs with dropdown */}
+          <div className="block lg:hidden">
+            <Select value={activeTab} onValueChange={(value) => setActiveTab(value)}>
+              <SelectTrigger className="w-full bg-slate-800 border-cyan-500/30 text-white">
+                <SelectValue placeholder="Select tab" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-cyan-500/30">
+                <SelectItem value="users" className="text-white hover:bg-slate-700">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Users
+                  </div>
+                </SelectItem>
+                <SelectItem value="courses" className="text-white hover:bg-slate-700">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    Completions
+                  </div>
+                </SelectItem>
+                <SelectItem value="course-management" className="text-white hover:bg-slate-700">
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    Course Mgmt
+                  </div>
+                </SelectItem>
+                <SelectItem value="assignments" className="text-white hover:bg-slate-700">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Assignments
+                  </div>
+                </SelectItem>
+                <SelectItem value="finalexams" className="text-white hover:bg-slate-700">
+                  <div className="flex items-center gap-2">
+                    <CheckSquare className="w-4 h-4" />
+                    Final Exams
+                  </div>
+                </SelectItem>
+                <SelectItem value="announcements" className="text-white hover:bg-slate-700">
+                  <div className="flex items-center gap-2">
+                    <Megaphone className="w-4 h-4" />
+                    Announcements
+                  </div>
+                </SelectItem>
+                <SelectItem value="events" className="text-white hover:bg-slate-700">
+                  <div className="flex items-center gap-2">
+                    <CalendarDays className="w-4 h-4" />
+                    Events
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Desktop tabs - hidden on mobile */}
+          <TabsList className="hidden lg:grid w-full grid-cols-7 bg-slate-800">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -524,11 +579,11 @@ export default function AdminDashboard() {
           <TabsContent value="users" className="space-y-6">
             <Card className="bg-slate-800/50">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
+                <CardTitle className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                   <span>User Management</span>
-                  <div className="flex items-center gap-2">
-                    <Input placeholder="Search users..." className="w-64" />
-                    <Button size="sm">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                    <Input placeholder="Search users..." className="w-full sm:w-64 text-sm" />
+                    <Button size="sm" className="w-full sm:w-auto">
                       <Search className="w-4 h-4" />
                     </Button>
                   </div>
@@ -551,44 +606,46 @@ export default function AdminDashboard() {
                     return (
                       <div
                         key={user.wallet_address}
-                        className="bg-slate-700/50 p-4 rounded-lg border border-slate-600"
+                        className="bg-slate-700/50 p-3 lg:p-4 rounded-lg border border-slate-600"
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold">{user.display_name || 'Unnamed'}</h3>
-                              <Badge variant="outline" className={`border-${active ? 'green' : 'red'}-500 text-${active ? 'green' : 'red'}-400`}>
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-sm lg:text-base">{user.display_name || 'Unnamed'}</h3>
+                              <Badge variant="outline" className={`border-${active ? 'green' : 'red'}-500 text-${active ? 'green' : 'red'}-400 text-xs`}>
                                 {active ? 'Active' : 'Inactive'}
                               </Badge>
                               {user.squad && (
-                                <Badge variant="outline" className="border-cyan-500 text-cyan-400">
+                                <Badge variant="outline" className="border-cyan-500 text-cyan-400 text-xs">
                                   {user.squad}
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-400 mb-2">
+                            <p className="text-xs lg:text-sm text-gray-400 mb-2 break-all">
                               {user.wallet_address}
                             </p>
-                            <div className="flex gap-4 text-sm text-gray-300">
+                            <div className="flex flex-col sm:flex-row gap-2 lg:gap-4 text-xs lg:text-sm text-gray-300">
                               <span>Courses: {coursesStarted} started, {coursesCompleted} completed</span>
                               <span>Approved: {approvedCompletions}</span>
                               <span>Last Active: {lastActive}</span>
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 self-end lg:self-auto">
                             <Button 
                               size="sm" 
                               variant="outline"
                               onClick={() => handleViewUser(user)}
+                              className="text-xs"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-3 h-3 lg:w-4 lg:h-4" />
                             </Button>
                             <Button 
                               size="sm" 
                               variant="outline"
                               onClick={() => handleEditUser(user)}
+                              className="text-xs"
                             >
-                              <Edit className="w-4 h-4" />
+                              <Edit className="w-3 h-3 lg:w-4 lg:h-4" />
                             </Button>
                           </div>
                         </div>
@@ -613,30 +670,30 @@ export default function AdminDashboard() {
                     return (
                       <div
                         key={`${completion.wallet_address}-${completion.course_id}`}
-                        className="bg-slate-700/50 p-4 rounded-lg border border-slate-600"
+                        className="bg-slate-700/50 p-3 lg:p-4 rounded-lg border border-slate-600"
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="font-semibold">{user?.display_name || 'Unknown User'}</h3>
-                              <Badge variant="outline" className="border-blue-500 text-blue-400">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-sm lg:text-base">{user?.display_name || 'Unknown User'}</h3>
+                              <Badge variant="outline" className="border-blue-500 text-blue-400 text-xs">
                                 {completion.course_id}
                               </Badge>
                               {completion.completed_at && (
-                                <Badge variant="outline" className="border-green-500 text-green-400">
+                                <Badge variant="outline" className="border-green-500 text-green-400 text-xs">
                                   Completed
                                 </Badge>
                               )}
                               {completion.approved && (
-                                <Badge variant="outline" className="border-purple-500 text-purple-400">
+                                <Badge variant="outline" className="border-purple-500 text-purple-400 text-xs">
                                   Approved
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-400 mb-2">
+                            <p className="text-xs lg:text-sm text-gray-400 mb-2 break-all">
                               {completion.wallet_address}
                             </p>
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 text-xs lg:text-sm">
                               {completion.completed_at && (
                                 <span className="text-green-400">
                                   Completed: {new Date(completion.completed_at).toLocaleDateString()}
@@ -649,12 +706,12 @@ export default function AdminDashboard() {
                               )}
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 self-end lg:self-auto">
                             {!completion.approved && completion.completed_at && (
                               <Button
                                 size="sm"
                                 onClick={() => handleApproveBadge(completion.wallet_address, completion.course_id)}
-                                className="bg-green-600 hover:bg-green-700"
+                                className="bg-green-600 hover:bg-green-700 text-xs"
                               >
                                 Approve Badge
                               </Button>
@@ -664,7 +721,7 @@ export default function AdminDashboard() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleUnapproveBadge(completion.wallet_address, completion.course_id)}
-                                className="border-red-500 text-red-400 hover:bg-red-500/10"
+                                className="border-red-500 text-red-400 hover:bg-red-500/10 text-xs"
                               >
                                 Unapprove
                               </Button>

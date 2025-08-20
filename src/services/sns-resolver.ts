@@ -68,16 +68,27 @@ export class MockSNSResolver implements SNSResolver {
 // Real SNS resolver implementation using SNS API
 export class RealSNSResolver implements SNSResolver {
   private snsApiUrl = 'https://api.sns.guide';
-  private timeoutMs = 5000; // 5 second timeout
+  private timeoutMs = 10000; // Increased timeout for mobile devices
+  private fallbackApiUrl = 'https://sns.guide'; // Fallback API endpoint
 
   private async fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
     
     try {
+      // Add mobile-friendly headers
+      const mobileHeaders = {
+        'User-Agent': 'Mozilla/5.0 (compatible; HoodieAcademy/1.0)',
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache',
+        ...options.headers
+      };
+
       const response = await fetch(url, {
         ...options,
-        signal: controller.signal
+        headers: mobileHeaders,
+        signal: controller.signal,
+        mode: 'cors'
       });
       clearTimeout(timeoutId);
       return response;
@@ -90,6 +101,17 @@ export class RealSNSResolver implements SNSResolver {
     }
   }
 
+  private async tryFallbackApi(url: string, options: RequestInit = {}): Promise<Response> {
+    try {
+      // Try fallback API if main API fails
+      const fallbackUrl = url.replace(this.snsApiUrl, this.fallbackApiUrl);
+      return await this.fetchWithTimeout(fallbackUrl, options);
+    } catch (error) {
+      console.error('Fallback API also failed:', error);
+      throw error;
+    }
+  }
+
   async resolve(connection: Connection, domain: string): Promise<PublicKey | null> {
     try {
       // Use SNS API to resolve domain to wallet address
@@ -98,6 +120,18 @@ export class RealSNSResolver implements SNSResolver {
         const data = await response.json();
         return new PublicKey(data.owner);
       }
+      
+      // Try fallback API
+      try {
+        const fallbackResponse = await this.tryFallbackApi(`${this.snsApiUrl}/resolve/${domain}`);
+        if (fallbackResponse.ok) {
+          const data = await fallbackResponse.json();
+          return new PublicKey(data.owner);
+        }
+      } catch (fallbackError) {
+        console.warn('Fallback API failed, continuing with error handling');
+      }
+      
       return null;
     } catch (error) {
       console.error('Error resolving SNS domain:', error);
@@ -113,6 +147,18 @@ export class RealSNSResolver implements SNSResolver {
         const data = await response.json();
         return data.domain || null;
       }
+      
+      // Try fallback API
+      try {
+        const fallbackResponse = await this.tryFallbackApi(`${this.snsApiUrl}/reverse/${walletAddress}`);
+        if (fallbackResponse.ok) {
+          const data = await fallbackResponse.json();
+          return data.domain || null;
+        }
+      } catch (fallbackError) {
+        console.warn('Fallback API failed, continuing with error handling');
+      }
+      
       return null;
     } catch (error) {
       console.error('Error reverse resolving wallet address:', error);
@@ -127,6 +173,7 @@ export class RealSNSResolver implements SNSResolver {
       return { domain, displayName };
     } catch (error) {
       console.error('Error in real SNS profile resolve:', error);
+      // Fallback to formatted wallet address
       return { domain: null, displayName: formatWalletAddress(walletAddress) };
     }
   }
@@ -134,13 +181,15 @@ export class RealSNSResolver implements SNSResolver {
 
 // Factory function to get the appropriate resolver
 export function getSNSResolver(): SNSResolver {
-  // In production, you'd check environment variables or config
-  const useRealSNS = process.env.NODE_ENV === 'production' && process.env.USE_REAL_SNS === 'true';
+  // Check if we're in a browser environment and if the user agent suggests mobile
+  const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
-  // For now, always use mock resolver to prevent loading issues
-  // TODO: Re-enable real SNS resolver when API is more reliable
-  return new MockSNSResolver();
+  // Use real SNS resolver for better mobile compatibility
+  // The mock resolver was causing issues on mobile devices
+  return new RealSNSResolver();
   
+  // TODO: Re-enable mock resolver option when needed for development
+  // const useRealSNS = process.env.NODE_ENV === 'production' || process.env.USE_REAL_SNS === 'true';
   // return useRealSNS ? new RealSNSResolver() : new MockSNSResolver();
 }
 
