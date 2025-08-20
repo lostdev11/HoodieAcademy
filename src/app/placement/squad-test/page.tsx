@@ -160,8 +160,9 @@ export default function SquadTestPage() {
       testVersion: '1.0'
     };
     console.log('Saving squad result to localStorage:', squadResult);
-    localStorage.setItem('userSquad', JSON.stringify(squadResult));
-    console.log('Squad result saved successfully');
+    // Only store the squad name, not the full object
+    localStorage.setItem('userSquad', pendingSquad.name);
+    console.log('Squad name saved to localStorage:', pendingSquad.name);
     
     // Mark placement test as completed
     localStorage.setItem('placementTestCompleted', 'true');

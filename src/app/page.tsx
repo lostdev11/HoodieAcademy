@@ -42,6 +42,8 @@ import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
 import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
 import Image from 'next/image'
+import { getSNSResolver, formatWalletAddress } from '@/services/sns-resolver';
+import { Connection } from '@solana/web3.js';
 
 // Mock data for the new home page sections
 const academySpotlights = [
@@ -147,12 +149,33 @@ export default function HoodieAcademy() {
   const [isDemoWallet, setIsDemoWallet] = useState(false);
   const [currentSpotlightIndex, setCurrentSpotlightIndex] = useState(0);
   const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
+  const [snsDomain, setSnsDomain] = useState<string | null>(null);
+  const [isLoadingSns, setIsLoadingSns] = useState(false);
 
   useEffect(() => {
     // Get wallet address from localStorage
     const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
     if (storedWallet) {
       setWalletAddress(storedWallet);
+      
+      // Resolve SNS domain for the wallet
+      const resolveSnsDomain = async () => {
+        try {
+          setIsLoadingSns(true);
+          const snsResolver = getSNSResolver();
+          const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
+          
+          const domain = await snsResolver.reverseResolve(connection, storedWallet);
+          setSnsDomain(domain);
+        } catch (error) {
+          console.error('Error resolving SNS domain:', error);
+          setSnsDomain(null);
+        } finally {
+          setIsLoadingSns(false);
+        }
+      };
+      
+      resolveSnsDomain();
     }
 
     // Check if user is admin
@@ -245,6 +268,7 @@ export default function HoodieAcademy() {
     }
     
     setWalletAddress("");
+    setSnsDomain(null);
     window.location.href = '/';
   };
 
@@ -317,7 +341,53 @@ export default function HoodieAcademy() {
                   <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30 w-full sm:w-auto">
                     <User className="w-4 h-4 text-cyan-400" />
                     <span className="text-sm text-cyan-400 font-mono">
-                      {formatWalletAddress(walletAddress)}
+                      {isLoadingSns ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                          <span>Resolving...</span>
+                        </div>
+                      ) : snsDomain ? (
+                        <div className="flex items-center gap-2">
+                          <span 
+                            className="font-semibold cursor-help" 
+                            title={`Wallet: ${walletAddress}`}
+                          >
+                            {snsDomain}
+                          </span>
+                          <Badge variant="outline" className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
+                            .sol
+                          </Badge>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span title={`Full wallet: ${walletAddress}`} className="font-mono">
+                            {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
+                          </span>
+                          <Badge variant="outline" className="text-xs bg-gray-500/20 text-gray-400 border-gray-500/30">
+                            No .sol
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setSnsDomain(null);
+                              setIsLoadingSns(true);
+                              const snsResolver = getSNSResolver();
+                              const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
+                              snsResolver.reverseResolve(connection, walletAddress).then(domain => {
+                                setSnsDomain(domain);
+                                setIsLoadingSns(false);
+                              }).catch(() => {
+                                setIsLoadingSns(false);
+                              });
+                            }}
+                            className="h-4 w-4 p-0 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10"
+                            title="Refresh SNS resolution"
+                          >
+                            🔄
+                          </Button>
+                        </div>
+                      )}
                     </span>
                     {isDemoWallet && (
                       <Badge variant="outline" className="ml-2 text-yellow-400 border-yellow-500/30 text-xs">

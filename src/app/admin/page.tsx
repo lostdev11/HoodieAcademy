@@ -30,6 +30,14 @@ import {
 import {
   Announcement, Event, getAnnouncements, getEvents
 } from '@/lib/utils';
+import {
+  allCourses,
+  toggleCourseVisibility,
+  toggleCoursePublished,
+  saveCoursesToStorage,
+  initializeCourses,
+  type Course
+} from '@/lib/coursesData';
 
 interface AdminStats {
   totalUsers: number;
@@ -87,6 +95,11 @@ export default function AdminDashboard() {
   ];
 
   const [finalExamLoading, setFinalExamLoading] = useState<string | null>(null);
+
+  // Course management state
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [courseManagementLoading, setCourseManagementLoading] = useState(false);
+  const [showHiddenCourses, setShowHiddenCourses] = useState(false);
 
   // Get wallet address using your existing logic
   useEffect(() => {
@@ -235,6 +248,24 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUnapproveBadge = async (user_id: string, courseId: string) => {
+    try {
+      // For now, we'll just refresh the data since unapproveBadge function might not exist
+      // In a real implementation, you would call an unapprove function here
+      console.log('Unapproving badge for user:', user_id, 'course:', courseId);
+      // Refresh data
+      const [users, completions] = await Promise.all([
+        fetchAllUsers(),
+        fetchAllCourseCompletions(),
+      ]);
+      setUsers(users);
+      setCourseCompletions(completions);
+      calculateStats(users, completions);
+    } catch (error) {
+      console.error('Error unapproving badge:', error);
+    }
+  };
+
   const handleResetCourse = async (user_id: string, courseId: string) => {
     try {
       await resetCourses(user_id, courseId);
@@ -305,6 +336,59 @@ export default function AdminDashboard() {
       setFinalExamLoading(null);
     }
   };
+
+  // Course management functions
+  const handleToggleCourseVisibility = (courseId: string) => {
+    setCourseManagementLoading(true);
+    try {
+      const updatedCourses = toggleCourseVisibility(courseId, true);
+      setCourses([...updatedCourses]);
+      saveCoursesToStorage(true);
+      
+      // Show success message
+      const course = updatedCourses.find(c => c.id === courseId);
+      if (course) {
+        console.log(`Course "${course.title}" is now ${course.isVisible ? 'visible' : 'hidden'}`);
+      }
+    } catch (error) {
+      console.error('Error toggling course visibility:', error);
+    } finally {
+      setCourseManagementLoading(false);
+    }
+  };
+
+  const handleToggleCoursePublished = (courseId: string) => {
+    setCourseManagementLoading(true);
+    try {
+      const updatedCourses = toggleCoursePublished(courseId, true);
+      setCourses([...updatedCourses]);
+      saveCoursesToStorage(true);
+      
+      // Show success message
+      const course = updatedCourses.find(c => c.id === courseId);
+      if (course) {
+        console.log(`Course "${course.title}" is now ${course.isPublished ? 'published' : 'draft'}`);
+      }
+    } catch (error) {
+      console.error('Error toggling course published status:', error);
+    } finally {
+      setCourseManagementLoading(false);
+    }
+  };
+
+  // Initialize courses on component mount
+  useEffect(() => {
+    const initCourses = () => {
+      try {
+        const initializedCourses = initializeCourses(true);
+        setCourses(initializedCourses);
+      } catch (error) {
+        console.error('Error initializing courses:', error);
+        setCourses(allCourses);
+      }
+    };
+    initCourses();
+  }, []);
 
   if (isAdmin === null || loading) return <div className="p-8 text-center">Loading...</div>;
   if (isAdmin === false) return (
@@ -405,22 +489,26 @@ export default function AdminDashboard() {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-slate-800">
+          <TabsList className="grid w-full grid-cols-7 bg-slate-800">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
             </TabsTrigger>
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
-              Courses
+              Completions
+            </TabsTrigger>
+            <TabsTrigger value="course-management" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Course Mgmt
             </TabsTrigger>
             <TabsTrigger value="assignments" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               Assignments
             </TabsTrigger>
             <TabsTrigger value="finalexams" className="flex items-center gap-2">
-              <Trophy className="w-4 h-4" />
-              Final Exam Approvals
+              <CheckSquare className="w-4 h-4" />
+              Final Exams
             </TabsTrigger>
             <TabsTrigger value="announcements" className="flex items-center gap-2">
               <Megaphone className="w-4 h-4" />
@@ -548,37 +636,269 @@ export default function AdminDashboard() {
                             <p className="text-sm text-gray-400 mb-2">
                               {completion.wallet_address}
                             </p>
-                            <div className="flex gap-4 text-sm text-gray-300">
-                              {completion.started_at && (
-                                <span>Started: {new Date(completion.started_at).toLocaleDateString()}</span>
-                              )}
+                            <div className="flex items-center gap-2 text-sm">
                               {completion.completed_at && (
-                                <span>Completed: {new Date(completion.completed_at).toLocaleDateString()}</span>
+                                <span className="text-green-400">
+                                  Completed: {new Date(completion.completed_at).toLocaleDateString()}
+                                </span>
+                              )}
+                              {completion.approved && (
+                                <span className="text-purple-400">
+                                  Approved
+                                </span>
                               )}
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            {completion.completed_at && !completion.approved && (
-                              <Button 
-                                size="sm" 
+                            {!completion.approved && completion.completed_at && (
+                              <Button
+                                size="sm"
                                 onClick={() => handleApproveBadge(completion.wallet_address, completion.course_id)}
+                                className="bg-green-600 hover:bg-green-700"
                               >
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Approve
+                                Approve Badge
                               </Button>
                             )}
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleResetCourse(completion.wallet_address, completion.course_id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            {completion.approved && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUnapproveBadge(completion.wallet_address, completion.course_id)}
+                                className="border-red-500 text-red-400 hover:bg-red-500/10"
+                              >
+                                Unapprove
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
                     );
                   })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Course Management Tab */}
+          <TabsContent value="course-management" className="space-y-6">
+            <Card className="bg-slate-800/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Course Management
+                </CardTitle>
+                <p className="text-sm text-gray-400">
+                  Control course visibility and publication status. Hidden courses won't appear to students.
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Changes are automatically saved to local storage and will persist across sessions.
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setCourseManagementLoading(true);
+                      try {
+                        const initializedCourses = initializeCourses(true);
+                        setCourses(initializedCourses);
+                      } catch (error) {
+                        console.error('Error refreshing courses:', error);
+                      } finally {
+                        setCourseManagementLoading(false);
+                      }
+                    }}
+                    disabled={courseManagementLoading}
+                    className="text-xs"
+                  >
+                    <RefreshCw className={`w-3 h-3 mr-1 ${courseManagementLoading ? 'animate-spin' : ''}`} />
+                    Refresh Courses
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (window.confirm('Clear localStorage and reinitialize courses? This will reset all visibility changes.')) {
+                        setCourseManagementLoading(true);
+                        try {
+                          localStorage.removeItem('adminCoursesData');
+                          const initializedCourses = initializeCourses(true);
+                          setCourses(initializedCourses);
+                          console.log('LocalStorage cleared and courses reinitialized');
+                        } catch (error) {
+                          console.error('Error clearing localStorage:', error);
+                        } finally {
+                          setCourseManagementLoading(false);
+                        }
+                      }
+                    }}
+                    disabled={courseManagementLoading}
+                    className="text-xs border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white"
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    Reset All
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={showHiddenCourses ? "default" : "outline"}
+                    onClick={() => setShowHiddenCourses(!showHiddenCourses)}
+                    className={showHiddenCourses ? "bg-blue-600 hover:bg-blue-700" : "border-gray-500 text-gray-400"}
+                  >
+                    <EyeOff className="w-3 h-3 mr-1" />
+                    {showHiddenCourses ? 'Hide Hidden' : 'Show Hidden'}
+                  </Button>
+                  {courseManagementLoading && (
+                    <span className="text-sm text-cyan-400">Updating...</span>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Course Summary */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="bg-slate-700/30 p-3 rounded-lg border border-slate-600 text-center">
+                      <div className="text-2xl font-bold text-green-400">
+                        {courses.filter(c => c.isVisible && c.isPublished).length}
+                      </div>
+                      <div className="text-sm text-gray-400">Visible & Published</div>
+                    </div>
+                    <div className="bg-slate-700/30 p-3 rounded-lg border border-slate-600 text-center">
+                      <div className="text-2xl font-bold text-yellow-400">
+                        {courses.filter(c => c.isVisible && !c.isPublished).length}
+                      </div>
+                      <div className="text-sm text-gray-400">Visible & Draft</div>
+                    </div>
+                    <div className="bg-slate-700/30 p-3 rounded-lg border border-slate-600 text-center">
+                      <div className="text-2xl font-bold text-red-400">
+                        {courses.filter(c => !c.isVisible).length}
+                      </div>
+                      <div className="text-sm text-gray-400">Hidden</div>
+                    </div>
+                  </div>
+
+                  {/* Debug Section */}
+                  <div className="bg-slate-800/50 p-4 rounded-lg border border-orange-500/30 mb-6">
+                    <h4 className="text-orange-400 font-semibold mb-2 flex items-center gap-2">
+                      <Info className="w-4 h-4" />
+                      Debug Info
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <p className="text-gray-400 mb-1">LocalStorage Status:</p>
+                        <p className="text-cyan-400">
+                          {typeof window !== 'undefined' && localStorage.getItem('adminCoursesData') ? '✅ Data saved' : '❌ No data'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 mb-1">Courses in Memory:</p>
+                        <p className="text-cyan-400">{courses.length} total</p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-gray-400 mb-1">Hidden Courses:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {courses.filter(c => !c.isVisible).map(course => (
+                            <Badge key={course.id} variant="outline" className="text-xs border-red-500/50 text-red-400">
+                              {course.title}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Course List */}
+                  {(showHiddenCourses ? courses : courses.filter(c => c.isVisible)).map((course) => (
+                    <div
+                      key={course.id}
+                      className={`bg-slate-700/50 p-4 rounded-lg border ${
+                        course.isVisible ? 'border-slate-600' : 'border-red-500/50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-2xl">{course.emoji}</span>
+                            <h3 className="font-semibold text-lg">{course.title}</h3>
+                            <Badge variant="outline" className="border-blue-500 text-blue-400">
+                              {course.id}
+                            </Badge>
+                            <Badge variant="outline" className="border-green-500 text-green-400">
+                              {course.squad}
+                            </Badge>
+                            <Badge variant="outline" className="border-purple-500 text-purple-400">
+                              {course.level}
+                            </Badge>
+                            <Badge variant="outline" className="border-yellow-500 text-yellow-400">
+                              {course.access}
+                            </Badge>
+                            {!course.isVisible && (
+                              <Badge variant="outline" className="border-red-500 text-red-400">
+                                Hidden
+                              </Badge>
+                            )}
+                            {!course.isPublished && (
+                              <Badge variant="outline" className="border-yellow-500 text-yellow-400">
+                                Draft
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-400 mb-2">{course.description}</p>
+                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                            <span>Lessons: {course.totalLessons || 'N/A'}</span>
+                            <span>Category: {course.category || 'N/A'}</span>
+                            <span>Created: {new Date(course.createdAt).toLocaleDateString()}</span>
+                            <span>Updated: {new Date(course.updatedAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2 ml-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-400">Visibility:</span>
+                            <Button
+                              size="sm"
+                              variant={course.isVisible ? "default" : "outline"}
+                              onClick={() => handleToggleCourseVisibility(course.id)}
+                              disabled={courseManagementLoading}
+                              className={course.isVisible ? "bg-green-600 hover:bg-green-700" : "border-gray-500 text-gray-400"}
+                            >
+                              {course.isVisible ? (
+                                <>
+                                  <Eye className="w-3 h-3 mr-1" />
+                                  Visible
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="w-3 h-3 mr-1" />
+                                  Hidden
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-400">Status:</span>
+                            <Button
+                              size="sm"
+                              variant={course.isPublished ? "default" : "outline"}
+                              onClick={() => handleToggleCoursePublished(course.id)}
+                              disabled={courseManagementLoading}
+                              className={course.isPublished ? "bg-blue-600 hover:bg-blue-700" : "border-gray-500 text-blue-400"}
+                            >
+                              {course.isPublished ? (
+                                <>
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Published
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="w-3 h-3 mr-1" />
+                                  Draft
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

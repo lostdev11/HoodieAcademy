@@ -10,12 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink, Target, Upload, Image as ImageIcon } from 'lucide-react';
 import { squadTracks } from '@/lib/squadData';
 import Link from 'next/link';
-import { getSNSResolver, formatWalletAddress, isValidSolanaAddress, isSolDomain } from '@/services/sns-resolver';
-import { Connection } from '@solana/web3.js';
+import { formatWalletAddress, isValidSolanaAddress } from '@/services/sns-resolver';
 import SquadBadge from '@/components/SquadBadge';
 import PfpPicker from '@/components/profile/PfpPicker';
 import { NFT } from '@/services/nft-service';
-import { fetchUserByWallet } from '@/lib/supabase';
+import { fetchUserByWallet, isSupabaseConfigured } from '@/lib/supabase';
 import { BountySubmissionForm, BountySubmissionData } from '@/components/bounty';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 
@@ -69,19 +68,17 @@ export function ProfileView() {
   const [squad, setSquad] = useState('Unassigned');
   const [wallet, setWallet] = useState<string>('');
   const [copied, setCopied] = useState(false);
-  const [solDomain, setSolDomain] = useState<string | null>(null);
-  const [isLoadingDomain, setIsLoadingDomain] = useState(false);
   const [userSquad, setUserSquad] = useState<any>(null);
   const [placementTestCompleted, setPlacementTestCompleted] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [profileImage, setProfileImage] = useState<string>('🧑‍🎓');
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState<string>('');
 
   // Wallet connection
   const { connectWallet, disconnectWallet: disconnectWalletHook } = useWalletSupabase();
-
-  const snsResolver = getSNSResolver();
-  const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
 
   // Auto-detect connected wallet from localStorage or session
   useEffect(() => {
@@ -105,36 +102,49 @@ export function ProfileView() {
       // Try to fetch user data from Supabase first
       if (currentWallet) {
         try {
-          const userData = await fetchUserByWallet(currentWallet);
-          if (userData) {
-            // Update localStorage with Supabase data
-            if (userData.display_name) {
-              localStorage.setItem('userDisplayName', userData.display_name);
-              setDisplayName(userData.display_name);
-              setOriginalDisplayName(userData.display_name);
-            }
-            if (userData.squad) {
-              // Only set squad from Supabase if no local squad test result exists
-              const existingSquadResult = localStorage.getItem('userSquad');
-              if (!existingSquadResult) {
-                localStorage.setItem('userSquad', JSON.stringify({
-                  name: userData.squad,
-                  assignedAt: userData.created_at,
-                  testVersion: '1.0'
-                }));
-                setSquad(userData.squad);
-                setUserSquad({ name: userData.squad });
-              } else {
-                console.log('Keeping existing squad test result, not overwriting with Supabase data');
+          // Check if Supabase is properly configured
+          if (isSupabaseConfigured) {
+            const userData = await fetchUserByWallet(currentWallet);
+            if (userData) {
+              // Update localStorage with Supabase data
+              if (userData.display_name) {
+                localStorage.setItem('userDisplayName', userData.display_name);
+                setDisplayName(userData.display_name);
+                setOriginalDisplayName(userData.display_name);
+              }
+              if (userData.squad) {
+                // Only set squad from Supabase if no local squad test result exists
+                const existingSquadResult = localStorage.getItem('userSquad');
+                if (!existingSquadResult) {
+                  localStorage.setItem('userSquad', userData.squad);
+                  setSquad(userData.squad);
+                  setUserSquad({ name: userData.squad });
+                } else {
+                  console.log('Keeping existing squad test result, not overwriting with Supabase data');
+                }
+              }
+              if (userData.squad_test_completed) {
+                localStorage.setItem('placementTestCompleted', 'true');
+                setPlacementTestCompleted(true);
               }
             }
-            if (userData.squad_test_completed) {
-              localStorage.setItem('placementTestCompleted', 'true');
-              setPlacementTestCompleted(true);
+          } else {
+            console.warn('Supabase not configured - using local storage fallback');
+            // Fallback to local storage data
+            const localDisplayName = localStorage.getItem('userDisplayName');
+            if (localDisplayName) {
+              setDisplayName(localDisplayName);
+              setOriginalDisplayName(localDisplayName);
             }
           }
         } catch (error) {
           console.error('Error fetching user data from Supabase:', error);
+          // Fallback to local storage data on error
+          const localDisplayName = localStorage.getItem('userDisplayName');
+          if (localDisplayName) {
+            setDisplayName(localDisplayName);
+            setOriginalDisplayName(localDisplayName);
+          }
         }
       }
     };
@@ -145,12 +155,22 @@ export function ProfileView() {
     
     if (squadResult) {
       try {
+        // Try to parse as JSON first
         const result = JSON.parse(squadResult);
-        setUserSquad(result);
+        if (result && typeof result === 'object') {
+          // If it's an object, extract the name
+          setUserSquad(result);
+          setSquad(result.name || result.id || squadResult);
+        } else {
+          // If parsing fails or it's not an object, treat as string
+          setUserSquad({ name: squadResult });
+          setSquad(squadResult);
+        }
       } catch (error) {
         console.error('Error parsing squad result:', error);
         // If parsing fails, treat it as a string
-        setUserSquad(squadResult);
+        setUserSquad({ name: squadResult });
+        setSquad(squadResult);
       }
     }
     
@@ -183,64 +203,140 @@ export function ProfileView() {
     if (wallet) {
       const realData = getRealUserData(wallet);
       setUserData(realData);
+      setIsInitializing(false);
     }
   }, [wallet]);
 
-  // Resolve .sol domain when wallet changes
+  // Add timeout fallback to prevent infinite loading
   useEffect(() => {
-    const resolveSolDomain = async () => {
-      if (wallet && isValidSolanaAddress(wallet)) {
-        setIsLoadingDomain(true);
-        try {
-          const domain = await snsResolver.reverseResolve(connection, wallet);
-          setSolDomain(domain);
-        } catch (error) {
-          console.error('Error resolving .sol domain:', error);
-          setSolDomain(null);
-        } finally {
-          setIsLoadingDomain(false);
-        }
-      } else {
-        setSolDomain(null);
+    const timeout = setTimeout(() => {
+      if (isInitializing) {
+        console.warn('Profile initialization timeout - forcing completion');
+        setIsInitializing(false);
       }
-    };
+    }, 5000); // 5 second timeout
 
-    if (wallet) {
-      resolveSolDomain();
-    }
-  }, [wallet, snsResolver, connection]);
+    return () => clearTimeout(timeout);
+  }, [isInitializing]);
 
   const handleSave = async () => {
     if (displayName.trim()) {
       const trimmedName = displayName.trim();
-      localStorage.setItem('userDisplayName', trimmedName);
-      setOriginalDisplayName(trimmedName);
-      setEditMode(false);
       
-      // Sync with Supabase
-      if (wallet) {
-        try {
-          const { supabase } = await import('@/lib/supabase');
-          const { data, error } = await supabase
-            .from('users')
-            .upsert([
-              {
-                wallet_address: wallet,
-                display_name: trimmedName,
-                last_active: new Date().toISOString(),
+      // Set loading state
+      setIsSaving(true);
+      
+      // Global timeout protection for the entire save operation
+      const saveTimeout = setTimeout(() => {
+        console.warn('Save operation timed out, forcing completion');
+        setSaveProgress('Operation timed out after 15 seconds - local changes saved');
+        alert('Save operation took longer than expected (15+ seconds). Your changes have been saved locally. This might be due to a slow internet connection or server issues. Please check your connection and try again later if you need to sync with the server.');
+        setIsSaving(false);
+        setEditMode(false);
+      }, 15000); // 15 second global timeout
+      
+      try {
+        // Save to localStorage immediately for better UX
+        setSaveProgress('Saving to local storage...');
+        localStorage.setItem('userDisplayName', trimmedName);
+        setOriginalDisplayName(trimmedName);
+        setSaveProgress('Local storage saved successfully!');
+        
+        // Sync with Supabase if configured
+        if (wallet) {
+          try {
+            // Check if Supabase is properly configured
+            if (isSupabaseConfigured) {
+              setSaveProgress('Connecting to server...');
+              // Add timeout protection for the Supabase operation
+              let supabase;
+              try {
+                const supabaseModule = await import('@/lib/supabase');
+                supabase = supabaseModule.supabase;
+                setSaveProgress('Server connected successfully!');
+              } catch (importError) {
+                console.error('Failed to import Supabase module:', importError);
+                setSaveProgress('Server connection failed, local changes saved');
+                throw new Error('Failed to connect to server');
               }
-            ], {
-              onConflict: 'wallet_address'
-            });
-          
-          if (error) {
-            console.error('Error updating display name in Supabase:', error);
-          } else {
-            console.log('Successfully updated display name in Supabase');
+              
+              setSaveProgress('Syncing with server... (1/3)');
+              // Try the operation with a retry mechanism
+              let retries = 2;
+              let lastError;
+              
+              while (retries > 0) {
+                try {
+                  setSaveProgress(`Syncing with server... (${3 - retries}/3)`);
+                  const { data, error } = await supabase
+                    .from('users')
+                    .upsert([
+                      {
+                        wallet_address: wallet,
+                        display_name: trimmedName,
+                        last_active: new Date().toISOString(),
+                      }
+                    ], {
+                      onConflict: 'wallet_address'
+                    });
+                  
+                  if (error) {
+                    throw error;
+                  } else {
+                    console.log('Successfully updated display name in Supabase');
+                    setSaveProgress('Server sync completed successfully!');
+                    break; // Success, exit retry loop
+                  }
+                } catch (error) {
+                  lastError = error;
+                  retries--;
+                  if (retries > 0) {
+                    setSaveProgress(`Sync failed, retrying in 1 second... (${retries} attempts left)`);
+                    console.log(`Supabase operation failed, retrying... (${retries} attempts left)`);
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+                  }
+                }
+              }
+              
+              if (retries === 0 && lastError) {
+                console.error('Error updating display name in Supabase after retries:', lastError);
+                setSaveProgress('Server sync failed after retries, but local changes saved');
+              }
+            } else {
+              console.log('Supabase not configured - changes saved to local storage only');
+              setSaveProgress('Local storage only - server not configured');
+            }
+          } catch (error) {
+            console.error('Error syncing display name with Supabase:', error);
+            console.log('Changes saved to local storage only');
+            setSaveProgress('Server sync failed, but local changes saved');
           }
-        } catch (error) {
-          console.error('Error syncing display name with Supabase:', error);
+        } else {
+          setSaveProgress('Local storage only - no wallet connected for server sync');
         }
+        
+        // Exit edit mode
+        setEditMode(false);
+        
+        // Show success message
+        console.log('Profile updated successfully!');
+        setSaveProgress('Profile updated successfully! All changes saved.');
+        
+        // Clear success message after a short delay
+        setTimeout(() => {
+          setSaveProgress('');
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Error during save operation:', error);
+        // Keep user in edit mode if there was an error
+        setSaveProgress(`Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
+        alert('There was an error saving your changes. Please try again. If the problem persists, check your internet connection.');
+      } finally {
+        // Clear timeout and loading state
+        clearTimeout(saveTimeout);
+        setIsSaving(false);
+        setSaveProgress('');
       }
     } else {
       // Don't save if display name is empty
@@ -279,7 +375,7 @@ export function ProfileView() {
       return userSquad.description;
     } else {
       const squadData = squadTracks.find(s => s.id === squad);
-      return squadData ? squadData.description : 'No description available';
+      return squadData ? squadData.description : '';
     }
   };
 
@@ -311,7 +407,6 @@ export function ProfileView() {
 
   const handleDisconnectWallet = () => {
     setWallet('');
-    setSolDomain(null);
     
     // Clear wallet data from storage
     localStorage.removeItem('walletAddress');
@@ -340,31 +435,18 @@ export function ProfileView() {
 
   const getWalletDisplay = () => {
     if (!wallet) {
-      return <span className="text-gray-500">No wallet connected</span>;
-    }
-
-    if (isLoadingDomain) {
       return (
-        <div className="flex items-center gap-2">
-          <span className="text-green-400 font-mono">{formatWalletAddress(wallet)}</span>
-          <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+        <span className="text-gray-400 text-sm">No wallet connected</span>
       );
     }
 
-    if (solDomain) {
-      return (
-        <div className="flex items-center gap-2">
-          <span className="text-green-400 font-semibold">{solDomain}</span>
-          <Badge variant="outline" className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
-            .sol
-          </Badge>
-          <span className="text-gray-500 text-sm">({formatWalletAddress(wallet)})</span>
-        </div>
-      );
-    }
-
-    return <span className="text-green-400 font-mono">{formatWalletAddress(wallet)}</span>;
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-green-400 font-mono">
+          {formatWalletAddress(wallet)}
+        </span>
+      </div>
+    );
   };
 
   const overallProgress = userData?.completedCourses?.length > 0 
@@ -398,6 +480,32 @@ export function ProfileView() {
     );
   }
 
+  // Show loading state while initializing
+  if (isInitializing) {
+    return (
+      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="flex-1 flex flex-col items-center justify-center py-12 px-4">
+          <Card className="w-full max-w-2xl bg-slate-800/60 border-cyan-500/30">
+            <CardContent className="p-6 text-center">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <h2 className="text-xl font-bold text-cyan-400 mb-4">Loading Profile...</h2>
+              <p className="text-gray-300 mb-4">
+                Please wait while we load your profile data.
+              </p>
+              {!isSupabaseConfigured && (
+                <p className="text-amber-400 text-sm">
+                  ⚠️ Using local storage mode - Supabase not configured
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="flex-1 flex flex-col items-center py-12 px-4">
@@ -415,6 +523,23 @@ export function ProfileView() {
           </Button>
         </div>
 
+        {/* Supabase Configuration Warning */}
+        {!isSupabaseConfigured && (
+          <Card className="w-full max-w-2xl bg-amber-900/60 border-amber-500/30 mb-6">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-amber-500 rounded-full animate-pulse"></div>
+                <div className="flex-1">
+                  <p className="text-amber-200 text-sm font-medium">Local Storage Mode</p>
+                  <p className="text-amber-300 text-xs">
+                    Supabase not configured. Your profile data is saved locally and will not sync across devices.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="w-full max-w-2xl bg-slate-800/60 border-cyan-500/30 mb-8">
           <CardHeader>
             <CardTitle className="text-cyan-400 flex items-center gap-2">
@@ -428,7 +553,19 @@ export function ProfileView() {
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400">Display Name:</span>
                   {editMode ? (
-                    <Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="w-40 bg-slate-700/50 border-cyan-500/30 text-white" />
+                    <div className="relative">
+                      <Input 
+                        value={displayName} 
+                        onChange={e => setDisplayName(e.target.value)} 
+                        className="w-40 bg-slate-700/50 border-cyan-500/30 text-white pr-8" 
+                        disabled={isSaving}
+                      />
+                      {isSaving && (
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-cyan-300 font-semibold">{displayName}</span>
                   )}
@@ -436,7 +573,7 @@ export function ProfileView() {
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400">Squad:</span>
                   {editMode ? (
-                    <Select value={squad} onValueChange={setSquad}>
+                    <Select value={squad} onValueChange={setSquad} disabled={isSaving}>
                       <SelectTrigger className="w-40 bg-slate-700/50 border-cyan-500/30 text-white">
                         <SelectValue placeholder="Select a squad" />
                       </SelectTrigger>
@@ -458,52 +595,60 @@ export function ProfileView() {
                   <span className="text-gray-400">Wallet:</span>
                   {editMode ? (
                     <div className="flex items-center gap-2">
-                      <Input value={wallet} onChange={e => setWallet(e.target.value)} className="w-40 bg-slate-700/50 border-cyan-500/30 text-white" />
+                      <Input 
+                        value={wallet} 
+                        onChange={e => setWallet(e.target.value)} 
+                        className="w-40 bg-slate-700/50 border-cyan-500/30 text-white" 
+                        disabled={isSaving}
+                      />
                       <Button
                         size="sm"
                         onClick={handleWalletConnect}
                         className="bg-purple-600 hover:bg-purple-700 text-white"
+                        disabled={isSaving}
                       >
                         Connect Wallet
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      {getWalletDisplay()}
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={handleCopyWallet}
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-green-400 hover:bg-green-500/10"
-                          title="Copy wallet address"
-                        >
-                          {copied ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          asChild
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10"
-                          title="View on Solscan"
-                        >
-                          <a 
-                            href={`https://solscan.io/account/${wallet}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        {getWalletDisplay()}
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleCopyWallet}
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-green-400 hover:bg-green-500/10"
+                            title="Copy wallet address"
                           >
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={handleDisconnectWallet}
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-400 hover:bg-red-500/10"
-                          title="Disconnect wallet"
-                        >
-                          <Wallet className="w-3 h-3" />
-                        </Button>
+                            {copied ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            asChild
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10"
+                            title="View on Solscan"
+                          >
+                            <a 
+                              href={`https://solscan.io/account/${wallet}`} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleDisconnectWallet}
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-400 hover:bg-red-500/10"
+                            title="Disconnect wallet"
+                          >
+                            <Wallet className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -518,30 +663,48 @@ export function ProfileView() {
                 </div>
                 <div className="mt-4">
                   {editMode ? (
-                    <div className="flex gap-2">
-                      <Button onClick={handleSave} className="bg-cyan-600 hover:bg-cyan-700 text-white">
-                        <Save className="w-4 h-4 mr-1" /> Save
-                      </Button>
-                      <Button 
-                        onClick={() => {
-                          setEditMode(false);
-                          // Reset display name to original value
-                          setDisplayName(originalDisplayName);
-                        }} 
-                        variant="outline" 
-                        className="border-gray-500/30 text-gray-400 hover:text-gray-300 hover:bg-gray-500/10"
-                      >
-                        Cancel
-                      </Button>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <Button onClick={handleSave} className="bg-cyan-600 hover:bg-cyan-700 text-white" disabled={isSaving}>
+                          {isSaving ? (
+                            <div className="w-4 h-4 mr-1 animate-spin">
+                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20Z" fill="currentColor"/>
+                              </svg>
+                            </div>
+                          ) : (
+                            <Save className="w-4 h-4 mr-1" />
+                          )} Save
+                        </Button>
+                        <Button 
+                          onClick={() => {
+                            setEditMode(false);
+                            // Reset display name to original value
+                            setDisplayName(originalDisplayName);
+                          }} 
+                          variant="outline" 
+                          className="border-gray-500/30 text-gray-400 hover:text-gray-300 hover:bg-gray-500/10"
+                          disabled={isSaving}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                      {isSaving && saveProgress && (
+                        <div className="text-sm text-cyan-400 bg-slate-700/30 p-2 rounded border border-cyan-500/30">
+                          {saveProgress}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <Button 
                       onClick={() => {
+                        if (isSaving) return; // Prevent editing while saving
                         setOriginalDisplayName(displayName);
                         setEditMode(true);
                       }} 
                       variant="outline" 
                       className="text-cyan-400 border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10"
+                      disabled={isSaving}
                     >
                       <Pencil className="w-4 h-4 mr-1" /> Edit
                     </Button>

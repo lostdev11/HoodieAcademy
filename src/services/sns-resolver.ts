@@ -68,11 +68,32 @@ export class MockSNSResolver implements SNSResolver {
 // Real SNS resolver implementation using SNS API
 export class RealSNSResolver implements SNSResolver {
   private snsApiUrl = 'https://api.sns.guide';
+  private timeoutMs = 5000; // 5 second timeout
+
+  private async fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeoutMs);
+    
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('SNS API request timed out');
+      }
+      throw error;
+    }
+  }
 
   async resolve(connection: Connection, domain: string): Promise<PublicKey | null> {
     try {
       // Use SNS API to resolve domain to wallet address
-      const response = await fetch(`${this.snsApiUrl}/resolve/${domain}`);
+      const response = await this.fetchWithTimeout(`${this.snsApiUrl}/resolve/${domain}`);
       if (response.ok) {
         const data = await response.json();
         return new PublicKey(data.owner);
@@ -87,7 +108,7 @@ export class RealSNSResolver implements SNSResolver {
   async reverseResolve(connection: Connection, walletAddress: string): Promise<string | null> {
     try {
       // Use SNS API to reverse resolve wallet address to domain
-      const response = await fetch(`${this.snsApiUrl}/reverse/${walletAddress}`);
+      const response = await this.fetchWithTimeout(`${this.snsApiUrl}/reverse/${walletAddress}`);
       if (response.ok) {
         const data = await response.json();
         return data.domain || null;
@@ -116,7 +137,11 @@ export function getSNSResolver(): SNSResolver {
   // In production, you'd check environment variables or config
   const useRealSNS = process.env.NODE_ENV === 'production' && process.env.USE_REAL_SNS === 'true';
   
-  return useRealSNS ? new RealSNSResolver() : new MockSNSResolver();
+  // For now, always use mock resolver to prevent loading issues
+  // TODO: Re-enable real SNS resolver when API is more reliable
+  return new MockSNSResolver();
+  
+  // return useRealSNS ? new RealSNSResolver() : new MockSNSResolver();
 }
 
 // Utility function to check if a string is a .sol domain

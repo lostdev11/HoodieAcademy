@@ -12,9 +12,22 @@ const isValidSupabaseUrl = supabaseUrl &&
   supabaseUrl !== 'your_supabase_url_here' && 
   supabaseUrl.startsWith('https://');
 
-export const supabase = isValidSupabaseUrl && supabaseKey && supabaseKey !== 'your_supabase_anon_key_here'
+const isValidSupabaseKey = supabaseKey && 
+  supabaseKey !== 'your_supabase_anon_key_here' && 
+  supabaseKey.length > 0;
+
+export const supabase = isValidSupabaseUrl && isValidSupabaseKey
   ? createClient(supabaseUrl, supabaseKey)
   : createClient('https://mock.supabase.co', 'mock-key');
+
+// Add a flag to check if Supabase is properly configured
+export const isSupabaseConfigured = isValidSupabaseUrl && isValidSupabaseKey;
+
+console.log("✅ Supabase Configuration Status:", {
+  url: isValidSupabaseUrl ? "Valid" : "Invalid/Missing",
+  key: isValidSupabaseKey ? "Valid" : "Invalid/Missing",
+  configured: isSupabaseConfigured
+});
 
 // Database types
 export interface Message {
@@ -381,18 +394,30 @@ export async function unapproveUser(wallet_address: string) {
 
 // Fetch a user by wallet address
 export async function fetchUserByWallet(wallet_address: string): Promise<User & { is_admin?: boolean } | null> {
-  console.log("🔍 Admin: Checking admin status for wallet:", wallet_address);
-  const { data: userData, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('wallet_address', wallet_address)
-    .single();
+  try {
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database query timeout')), 10000); // 10 second timeout
+    });
 
-  console.log("🔍 Admin: User data from Supabase:", userData);
-  console.log("🔍 Admin: Is admin?", userData?.is_admin);
-  
-  if (error) return null;
-  return userData;
+    const queryPromise = supabase
+      .from('users')
+      .select('*')
+      .eq('wallet_address', wallet_address)
+      .single();
+
+    const result = await Promise.race([queryPromise, timeoutPromise]) as any;
+    
+    if (result.error) {
+      console.error('Supabase query error:', result.error);
+      return null;
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('Error fetching user by wallet:', error);
+    return null;
+  }
 } 
 
 // Log user activity

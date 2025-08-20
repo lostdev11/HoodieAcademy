@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Home, ArrowDown, ArrowRight, LockKeyhole, CheckCircle, LineChart, Clock, Filter, Shield } from "lucide-react";
+import { Home, ArrowDown, ArrowRight, LockKeyhole, CheckCircle, LineChart, Clock, Filter, Shield, RefreshCw, Info } from "lucide-react";
 import { MilestoneBadge } from "@/components/course-roadmap/MilestoneBadge";
 import { RiskArt } from "@/components/course-roadmap/RiskArt";
 import { HoodieIcon } from "@/components/icons/HoodieIcon";
@@ -16,60 +16,20 @@ import { Input } from "@/components/ui/input";
 import { GlowingCoinIcon } from "@/components/icons/GlowingCoinIcon";
 import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
-import { squadTracks, getSquadForCourse, getCoursesForSquad } from "@/lib/squadData";
-import { isCurrentUserAdmin, getConnectedWallet, getCompletedCoursesCount } from "@/lib/utils";
-import { fetchUserByWallet } from "@/lib/supabase";
+import { squadTracks, getSquadForCourse, getCoursesForSquad } from '@/lib/squadData';
+import { isCurrentUserAdmin, getConnectedWallet, getCompletedCoursesCount } from '@/lib/utils';
+import { fetchUserByWallet } from '@/lib/supabase';
 import SquadFilter from '@/components/SquadFilter';
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation';
 import { SyllabusPanel } from '@/components/SyllabusPanel';
+import { getVisibleCourses, type Course, initializeCourses } from '@/lib/coursesData';
 
-// Simple course data - Only showing completed courses for now
-const allCourses: Array<{
-  id: string;
-  title: string;
-  description: string;
-  badge: string;
-  emoji: string;
-  pathType: "tech" | "social" | "converged";
-  href: string;
-  localStorageKey?: string;
-  totalLessons?: number;
-  category?: string;
-  level?: string;
-  access?: string;
-  squad?: string;
-}> = [
-  {
-    id: 'wallet-wizardry',
-    title: "Wallet Wizardry",
-    description: "Master wallet setup with interactive quizzes and MetaMask integration.",
-    badge: "Vault Keeper",
-    emoji: "🔒",
-    pathType: "tech",
-    href: "/courses/wallet-wizardry",
-    localStorageKey: "walletWizardryProgress",
-    totalLessons: 4,
-    squad: "Decoders",
-    category: "wallet",
-    level: "beginner",
-    access: "free",
-  },
-  {
-    id: 't100-chart-literacy',
-    title: "T100 🎯 Intro to Indicators: RSI, BBands, Fibs + Candle Basics",
-    description: "Learn the core tools of technical analysis: RSI, Bollinger Bands, Fibonacci levels, and candlestick theory. Understand how they work, when they lie, and how to combine them for real confluence.",
-    badge: "Chart Reader",
-    emoji: "📊",
-    pathType: "tech",
-    href: "/courses/t100-chart-literacy",
-    localStorageKey: "t100ChartLiteracyProgress",
-    totalLessons: 4,
-    squad: "Raiders",
-    category: "technical-analysis",
-    level: "beginner",
-    access: "free",
-  },
-];
+// Get visible courses dynamically instead of at import time
+const getCourses = (isAdmin: boolean = false) => {
+  // Always initialize courses from storage to get latest admin changes
+  initializeCourses(isAdmin);
+  return getVisibleCourses(isAdmin);
+};
 
 type FilterType = 'all' | 'squads' | 'completed' | 'collab';
 
@@ -93,6 +53,52 @@ export default function CoursesPageClient() {
     data: null,
     courseTitle: null
   });
+
+  // Add state to force re-renders when courses change
+  const [coursesVersion, setCoursesVersion] = useState(0);
+
+  // Initialize courses from localStorage on mount
+  useEffect(() => {
+    // Force initialization of courses from localStorage
+    initializeCourses(isAdmin);
+    if (isAdmin) {
+      console.log('Courses initialized from localStorage');
+    }
+    
+    // Clean up any corrupted squad data in localStorage
+    const savedSquad = localStorage.getItem('userSquad');
+    if (savedSquad) {
+      try {
+        const parsedSquad = JSON.parse(savedSquad);
+        if (parsedSquad && typeof parsedSquad === 'object' && parsedSquad.name) {
+          // If it's a full squad object, clean it up
+          if (isAdmin) {
+            console.log('Found corrupted squad data:', parsedSquad);
+          }
+          const squadId = parsedSquad.name || parsedSquad.id || savedSquad;
+          setUserSquad(squadId);
+          // Clean up localStorage to only store the squad ID/name
+          localStorage.setItem('userSquad', squadId);
+          if (isAdmin) {
+            console.log('Cleaned up squad data in localStorage:', squadId);
+          }
+        } else {
+          if (isAdmin) {
+            console.log('Squad data is already in correct format:', savedSquad);
+          }
+        }
+      } catch (e) {
+        // If parsing fails, it's already a string, which is fine
+        if (isAdmin) {
+          console.log('Squad data is already in correct format (string):', savedSquad);
+        }
+      }
+    } else {
+      if (isAdmin) {
+        console.log('No squad data found in localStorage');
+      }
+    }
+  }, [isAdmin]);
 
   // Update current time
   useEffect(() => {
@@ -124,38 +130,113 @@ export default function CoursesPageClient() {
         // Load user squad from localStorage
         const savedSquad = localStorage.getItem('userSquad');
         if (savedSquad) {
-          setUserSquad(savedSquad);
+          try {
+            // Try to parse as JSON first (in case it's stored as a full squad object)
+            const parsedSquad = JSON.parse(savedSquad);
+            if (parsedSquad && typeof parsedSquad === 'object') {
+              // If it's a full squad object, extract the squad ID and clean up localStorage
+              const squadId = parsedSquad.name || parsedSquad.id || savedSquad;
+              setUserSquad(squadId);
+              // Clean up localStorage to only store the squad ID/name
+              localStorage.setItem('userSquad', squadId);
+              console.log('Cleaned up squad data in localStorage:', squadId);
+            } else {
+              // If parsing fails or it's just a string, use as is
+              setUserSquad(savedSquad);
+            }
+          } catch (e) {
+            // If JSON parsing fails, treat as plain string
+            setUserSquad(savedSquad);
+          }
         }
 
         // Load course completion status
         const status: Record<string, { completed: boolean, progress: number }> = {};
-        allCourses.forEach(course => {
+        getCourses(isAdmin).forEach(course => {
           if (course.localStorageKey) {
             const saved = localStorage.getItem(course.localStorageKey);
             if (saved) {
               try {
-                const data = JSON.parse(saved);
-                status[course.localStorageKey] = {
-                  completed: data.completed || false,
-                  progress: data.progress || 0
+                const progress = JSON.parse(saved);
+                status[course.id] = {
+                  completed: progress.completed || false,
+                  progress: progress.progress || 0
                 };
               } catch (e) {
-                console.error('Error parsing course data for', course.localStorageKey, e);
+                console.error('Error parsing course progress:', e);
               }
             }
           }
         });
         setCourseCompletionStatus(status);
-        setIsLoading(false);
       } catch (error) {
         console.error('Error loading user data:', error);
+      } finally {
         setIsLoading(false);
       }
     };
 
     checkAdminStatus();
     loadUserData();
-  }, [userSquad, isAdmin]);
+  }, [coursesVersion, isAdmin]); // Add coursesVersion and isAdmin dependency
+
+  // Listen for localStorage changes to refresh courses when admin makes changes
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'adminCoursesData') {
+        if (isAdmin) {
+          console.log('Admin courses data changed, refreshing courses...');
+        }
+        setCoursesVersion(prev => prev + 1);
+      }
+    };
+
+    // Listen for custom event when courses are updated in the same tab
+    const handleCoursesUpdated = (e: CustomEvent) => {
+      if (isAdmin) {
+        console.log('Courses updated event received, refreshing courses...');
+      }
+      setCoursesVersion(prev => prev + 1);
+    };
+
+    // Listen for storage events from other tabs/windows
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Listen for custom event from same tab
+    window.addEventListener('coursesUpdated', handleCoursesUpdated as EventListener);
+
+    // Also check for changes periodically (every 5 seconds)
+    const interval = setInterval(() => {
+      const stored = localStorage.getItem('adminCoursesData');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          // Get current courses without calling getCourses() to avoid infinite loops
+          const currentCourses = getVisibleCourses(isAdmin);
+          // Check if any course visibility has changed
+          const hasChanges = parsed.some((storedCourse: any) => {
+            const currentCourse = currentCourses.find(c => c.id === storedCourse.id);
+            return currentCourse && (storedCourse.isVisible !== currentCourse.isVisible || storedCourse.isPublished !== currentCourse.isPublished);
+          });
+          
+          if (hasChanges) {
+            if (isAdmin) {
+              console.log('Course visibility changes detected, refreshing...');
+            }
+            setCoursesVersion(prev => prev + 1);
+          }
+        } catch (error) {
+          console.error('Error checking for course changes:', error);
+        }
+      }
+    }, 5000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('coursesUpdated', handleCoursesUpdated as EventListener);
+      clearInterval(interval);
+    };
+  }, [isAdmin]);
 
   const getCompletionInfo = (key: string): { completed: boolean, progress: number } => {
     return courseCompletionStatus[key] || { completed: false, progress: 0 };
@@ -170,7 +251,7 @@ export default function CoursesPageClient() {
   const resetAllCourses = () => {
     if (window.confirm('Are you sure you want to reset all course progress? This action cannot be undone.')) {
       // Clear all course progress from localStorage
-      allCourses.forEach(course => {
+      getCourses(isAdmin).forEach(course => {
         if (course.localStorageKey) {
           localStorage.removeItem(course.localStorageKey);
         }
@@ -180,7 +261,9 @@ export default function CoursesPageClient() {
       localStorage.removeItem('walletWizardryFinalExamPassed');
       
       // Clear placement test results
-      console.log('Clearing userSquad from localStorage in resetAllCourses');
+      if (isAdmin) {
+        console.log('Clearing userSquad from localStorage in resetAllCourses');
+      }
       localStorage.removeItem('userSquad');
       
       // Clear onboarding completion
@@ -192,7 +275,7 @@ export default function CoursesPageClient() {
   };
 
   const resetIndividualCourse = (courseId: string) => {
-    const course = allCourses.find(c => c.id === courseId);
+    const course = getCourses(isAdmin).find(c => c.id === courseId);
     if (!course || !course.localStorageKey) return;
     
     if (window.confirm(`Are you sure you want to reset progress for "${course.title}"? This action cannot be undone.`)) {
@@ -231,50 +314,42 @@ export default function CoursesPageClient() {
 
   // Filter courses based on active filter, selected squad, and user's squad
   const getFilteredCourses = () => {
-    let filteredCourses = allCourses;
+    let filteredCourses = getCourses(isAdmin); // Get fresh data each time
 
-    console.log('Filtering courses:', {
-      activeFilter,
-      selectedSquad,
-      userSquad,
-      isAdmin,
-      totalCourses: allCourses.length
-    });
+    if (isAdmin) {
+      console.log('Filtering courses:', {
+        activeFilter,
+        selectedSquad,
+        userSquad,
+        isAdmin,
+        totalCourses: filteredCourses.length,
+        visibleCourses: filteredCourses.map(c => ({ id: c.id, title: c.title, visible: c.isVisible, published: c.isPublished }))
+      });
 
-    // Apply squad filter first
-    if (selectedSquad && selectedSquad !== 'All') {
-      filteredCourses = filteredCourses.filter(course => course.squad === selectedSquad);
+      // Debug: Log all courses and their visibility status
+      console.log('All courses from getCourses():', filteredCourses.map(c => ({
+        id: c.id,
+        title: c.title,
+        isVisible: c.isVisible,
+        isPublished: c.isPublished,
+        access: c.access,
+        level: c.level
+      })));
     }
 
-    // Apply filters based on active filter
     switch (activeFilter) {
-      case 'completed':
-        const completedCourses = filteredCourses.filter(course => 
-          course.localStorageKey && courseCompletionStatus[course.localStorageKey]?.completed
-        );
-        console.log('Completed courses filter:', {
-          totalFiltered: filteredCourses.length,
-          completedCount: completedCourses.length,
-          completedCourses: completedCourses.map(c => ({ id: c.id, title: c.title })),
-          courseStatus: courseCompletionStatus
-        });
-        return completedCourses;
       case 'squads':
-        if (selectedSquad) {
-          // Show courses for selected squad
-          const squadCourseIds = getCoursesForSquad(selectedSquad);
-          const squadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
-          console.log('Selected squad courses:', squadCourses.length);
-          return squadCourses;
-        } else if (!isAdmin && userSquad) {
-          // Show courses for user's squad when no specific squad is selected
-          const squadCourseIds = getCoursesForSquad(userSquad);
-          const userSquadCourses = filteredCourses.filter(course => squadCourseIds.includes(course.id));
-          console.log('User squad courses:', userSquadCourses.length);
-          return userSquadCourses;
+        if (selectedSquad !== 'All') {
+          filteredCourses = filteredCourses.filter(course => course.squad === selectedSquad);
         }
-        console.log('All courses (squads filter):', filteredCourses.length);
         return filteredCourses;
+      case 'completed':
+        return filteredCourses.filter(course => {
+          const status = courseCompletionStatus[course.id];
+          return status && status.completed;
+        });
+      case 'collab':
+        return filteredCourses.filter(course => course.pathType === 'social');
       default:
         // For 'all' filter, apply gating logic
         // Only show 100-level free courses to non-admin users
@@ -284,9 +359,13 @@ export default function CoursesPageClient() {
             const is100Level = course.level === 'beginner' || course.level === '100' || course.level === '100-level';
             return isFree && is100Level;
           });
-          console.log('Filtered to 100-level free courses:', filteredCourses.length);
+          if (isAdmin) {
+            console.log('Filtered to 100-level free courses:', filteredCourses.length);
+          }
         }
-        console.log('All courses (all filter):', filteredCourses.length);
+        if (isAdmin) {
+          console.log('All courses (all filter):', filteredCourses.length);
+        }
         return filteredCourses;
     }
   };
@@ -338,50 +417,83 @@ export default function CoursesPageClient() {
               </div>
             </div>
             
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-cyan-400 to-pink-400 bg-clip-text text-transparent glow-text">
-              The Hoodie Path
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-300 mb-2">Your Quest to Hoodie Scholar.</p>
-            <p className="text-cyan-300 text-base sm:text-lg">
-              Current Time: <span className="text-green-400 font-mono">{currentTime}</span>
-            </p>
-
-            {/* Squad Information */}
-            {userSquad && !isAdmin && (
-              <div className="mt-6">
-                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-yellow-500/30 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-center space-x-3">
-                      <span className="text-yellow-400 text-lg">🎯</span>
-                      <div className="text-center">
-                        <p className="text-yellow-400 font-semibold">Your Squad Track</p>
-                        <p className="text-gray-300 text-sm">
-                          {typeof userSquad === 'string' 
-                            ? (squadTracks.find(s => s.id === userSquad)?.name || userSquad)
-                            : 'Unknown Squad'
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <h1 className="text-3xl font-bold text-white">Courses</h1>
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <Clock className="w-4 h-4" />
+                  {currentTime}
+                </div>
+                <div className="text-sm text-cyan-400">
+                  {getFilteredCourses().length} courses available
+                </div>
               </div>
-            )}
+              
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCoursesVersion(prev => prev + 1)}
+                  className="text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                >
+                  <RefreshCw className={`w-3 h-3 mr-1 ${coursesVersion > 0 ? 'animate-spin' : ''}`} />
+                  Refresh Courses
+                </Button>
+              )}
+            </div>
 
-            {/* Admin Access Notice */}
-            {isAdmin && (
-              <div className="mt-6">
-                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-purple-500/30 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-center space-x-3">
-                      <Shield className="w-5 h-5 text-purple-400" />
-                      <div className="text-center">
-                        <p className="text-purple-400 font-semibold">Admin Access</p>
-                        <p className="text-gray-300 text-sm">Password authenticated - viewing all courses</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            {/* Squad Assignment Notice */}
+            {userSquad && (
+              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-600 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="text-2xl">
+                    {(() => {
+                      // Try to find squad by name first, then by ID
+                      const squadData = squadTracks.find(s => 
+                        s.name === userSquad || s.id === userSquad
+                      );
+                      return squadData?.icon || '🎯';
+                    })()}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-white">
+                      Your Squad: {(() => {
+                        const squadData = squadTracks.find(s => 
+                          s.name === userSquad || s.id === userSquad
+                        );
+                        return squadData?.name || userSquad;
+                      })()}
+                    </h2>
+                    <p className="text-gray-400">
+                      {(() => {
+                        const squadData = squadTracks.find(s => 
+                          s.name === userSquad || s.id === userSquad
+                        );
+                        return squadData?.description || '';
+                      })()}
+                    </p>
+                  </div>
+                </div>
+                {/* Debug info for admins */}
+                {isAdmin && (
+                  <div className="mt-2 text-xs text-gray-500">
+                    Debug: userSquad = "{userSquad}" (type: {typeof userSquad})
+                    <Button
+                      onClick={() => {
+                        if (window.confirm('Clear and fix squad data in localStorage?')) {
+                          localStorage.removeItem('userSquad');
+                          setUserSquad(null);
+                          console.log('Squad data cleared from localStorage');
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="ml-2 border-red-500 text-red-400 hover:bg-red-500 hover:text-white"
+                    >
+                      Clear Squad Data
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -429,6 +541,19 @@ export default function CoursesPageClient() {
               <CheckCircle className="w-4 h-4 mr-2" />
               Completed ({completedCoursesCount})
             </Button>
+            <Button
+              onClick={() => {
+                if (isAdmin) {
+                  console.log('Manual refresh triggered');
+                }
+                setCoursesVersion(prev => prev + 1);
+              }}
+              variant="outline"
+              className="border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white w-full sm:w-auto min-h-[44px]"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
           </div>
 
           {/* Squad Filter */}
@@ -441,6 +566,23 @@ export default function CoursesPageClient() {
 
           {/* Course Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
+            {/* Debug: Show what courses are being displayed */}
+            {isAdmin && (
+              <div className="md:col-span-2 lg:col-span-3 mb-4 p-3 bg-slate-800/30 rounded-lg border border-cyan-500/30">
+                <p className="text-cyan-400 text-sm font-semibold mb-2">Debug: Courses being displayed:</p>
+                <div className="text-xs text-gray-400">
+                  {getFilteredCourses().map(course => (
+                    <div key={course.id} className="flex items-center gap-2 mb-1">
+                      <span className={`w-2 h-2 rounded-full ${course.isVisible ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <span className={`w-2 h-2 rounded-full ${course.isPublished ? 'bg-blue-500' : 'bg-yellow-500'}`}></span>
+                      <span>{course.title}</span>
+                      <span className="text-gray-500">({course.id})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             {getFilteredCourses().map((course) => (
               shouldShowGatedCourse(course) ? (
                 <GatedCourseCard
@@ -492,6 +634,67 @@ export default function CoursesPageClient() {
                     <p className="text-xs text-gray-400">
                       This will clear all user progress and force re-onboarding
                     </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Debug Section for Admin */}
+          {isAdmin && (
+            <div className="mt-8 sm:mt-12">
+              <Card className="max-w-4xl mx-auto bg-slate-800/50 border-2 border-orange-500/30 backdrop-blur-sm">
+                <CardContent className="p-4 sm:p-6">
+                  <h3 className="text-orange-400 font-semibold mb-4 flex items-center gap-2">
+                    <Info className="w-5 h-5" />
+                    Course Visibility Debug Info
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-400 mb-2">LocalStorage Status:</p>
+                      <p className="text-cyan-400">
+                        {typeof window !== 'undefined' && localStorage.getItem('adminCoursesData') ? '✅ Data saved' : '❌ No data'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 mb-2">Courses in Memory:</p>
+                      <p className="text-cyan-400">{getCourses(isAdmin).length} total</p>
+                    </div>
+                    <div className="md:col-span-2 flex justify-center">
+                      <Button
+                        onClick={() => {
+                          if (isAdmin) {
+                            console.log('Manual refresh triggered from courses page');
+                          }
+                          setCoursesVersion(prev => prev + 1);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white"
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Refresh Courses
+                      </Button>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-gray-400 mb-2">All Courses Status:</p>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {getCourses(isAdmin).map(course => (
+                          <div key={course.id} className="flex items-center gap-2 text-xs">
+                            <span className={`w-3 h-3 rounded-full ${course.isVisible ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                            <span className={`w-3 h-3 rounded-full ${course.isPublished ? 'bg-blue-500' : 'bg-yellow-500'}`}></span>
+                            <span className="text-gray-300">{course.title}</span>
+                            <span className="text-gray-500">({course.id})</span>
+                            <span className={`text-xs ${course.isVisible ? 'text-green-400' : 'text-red-400'}`}>
+                              {course.isVisible ? 'Visible' : 'Hidden'}
+                            </span>
+                            <span className={`text-xs ${course.isPublished ? 'text-blue-400' : 'text-yellow-400'}`}>
+                              {course.isPublished ? 'Published' : 'Draft'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

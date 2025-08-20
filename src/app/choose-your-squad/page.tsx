@@ -135,15 +135,7 @@ export default function ChooseYourSquadPage() {
     lockEndDate.setDate(lockEndDate.getDate() + 30);
     
     // Save squad assignment with lock info
-    const squadResult = {
-      name: selectedSquad.name,
-      id: selectedSquad.id,
-      assignedAt: new Date().toISOString(),
-      lockEndDate: lockEndDate.toISOString(),
-      testVersion: '1.0'
-    };
-    
-    localStorage.setItem('userSquad', JSON.stringify(squadResult));
+    localStorage.setItem('userSquad', selectedSquad.name);
     localStorage.setItem('placementTestCompleted', 'true');
     
     // Redirect to home page

@@ -128,6 +128,10 @@ export async function POST(request: Request) {
         //   console.error('[RETAILSTAR REWARDS ERROR]', rewardError);
         //   // Don't fail the submission if reward award fails
         // }
+      } catch (rewardError) {
+        console.error('[RETAILSTAR REWARDS ERROR]', rewardError);
+        // Don't fail the submission if reward award fails
+      }
     }
 
     return NextResponse.json({
