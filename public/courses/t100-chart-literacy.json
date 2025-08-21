@@ -7,7 +7,7 @@
   "pathType": "tech",
   "href": "/courses/t100-chart-literacy",
   "localStorageKey": "t100ChartLiteracyProgress",
-  "totalLessons": 1,
+  "totalLessons": 2,
   "squad": "All Squads",
   "category": "technical-analysis",
   "level": "beginner",
@@ -15,7 +15,7 @@
   "track": "All Tracks",
   "level_num": 100,
   "type": "Technical Foundations",
-  "time_estimate": "15–20 min",
+  "time_estimate": "30–40 min",
   "total_xp": 125,
   "modules": [
     {
@@ -29,6 +29,20 @@
           "title": "Candlestick Fundamentals",
           "content": "# 🕯 Candlestick Basics\n\n## 🎯 Goal\nLearn what candlesticks are, how OHLC works, bullish vs bearish candles, wicks, dojis, and trend/consolidation concepts.\n\n## 📊 What You'll Learn\n\n• **OHLC Data** — Open, High, Low, Close\n• **Bullish vs Bearish** candles and what they mean\n• **Wicks and Shadows** — volatility indicators\n• **Doji Patterns** — market indecision signals\n• **Trend vs Consolidation** identification\n\n## 🕯 Candlestick Anatomy\n\n**Body (Open to Close):**\n• Green body = bullish (close > open)\n• Red body = bearish (close < open)\n• Large body = strong momentum\n• Small body = indecision\n\n**Wicks/Shadows (High/Low):**\n• Long upper wick = rejection of highs\n• Long lower wick = rejection of lows\n• No wicks = strong directional move\n• Long wicks = volatility and indecision\n\n## 🔍 Key Patterns\n\n**Doji:**\n• Small body, long wicks\n• Market indecision\n• Potential reversal signal\n• Volume confirms direction\n\n**Hammer/Hanging Man:**\n• Long lower wick, small body\n• Hammer = bullish reversal\n• Hanging man = bearish reversal\n• Context matters\n\n**Shooting Star/Inverted Hammer:**\n• Long upper wick, small body\n• Shooting star = bearish\n• Inverted hammer = bullish\n• Location is key\n\n## 📈 Trend vs Consolidation\n\n**Trending Candles:**\n• Consistent body direction\n• Small wicks\n• Higher highs, higher lows (uptrend)\n• Lower highs, lower lows (downtrend)\n\n**Consolidation Candles:**\n• Mixed body directions\n• Long wicks\n• Sideways price action\n• Breakout potential\n\n## 💡 Why No XP Yet\nThis is foundation knowledge — reward comes when you can apply it in a full chart analysis.\n\n## 📝 Mini-Task (Optional)\nIdentify a recent candlestick on a chart and label its open, high, low, and close. Note whether it's bullish or bearish and what the wicks tell you about market sentiment.",
           "video": "https://youtu.be/-SNEXz2t5k4"
+        }
+      ]
+    },
+    {
+      "id": "module-2",
+      "title": "Module 2 – RSI & Momentum Indicators",
+      "description": "Master the Relative Strength Index (RSI) and understand momentum indicators for identifying overbought/oversold conditions and potential reversals.",
+      "xp": 0,
+      "lessons": [
+        {
+          "id": "lesson-2-1",
+          "title": "RSI Fundamentals",
+          "content": "# 📈 RSI & Momentum Indicators\n\n## 🎯 Goal\nMaster the Relative Strength Index (RSI) and understand momentum indicators for identifying overbought/oversold conditions and potential reversals.\n\n## 📊 What You'll Learn\n\n• **RSI Basics** — What it measures and how it works\n• **Overbought/Oversold** — Key levels and their significance\n• **Divergence** — When price and RSI disagree\n• **Momentum Shifts** — Identifying trend changes\n• **False Signals** — When RSI lies and how to spot it\n\n## 📈 RSI Anatomy\n\n**The Formula:**\n• RSI = 100 - (100 / (1 + RS))\n• RS = Average Gain / Average Loss\n• Default period = 14 (adjustable)\n\n**Key Levels:**\n• **70+** = Overbought (potential reversal down)\n• **30-** = Oversold (potential reversal up)\n• **50** = Neutral (trend continuation)\n• **20/80** = Extreme levels (strong signals)\n\n## 🔍 RSI Patterns\n\n**Overbought Conditions:**\n• RSI above 70\n• Price making higher highs\n• Potential bearish reversal\n• Look for divergence\n\n**Oversold Conditions:**\n• RSI below 30\n• Price making lower lows\n• Potential bullish reversal\n• Volume confirmation helps\n\n**Divergence Types:**\n• **Bullish Divergence** — Price lower lows, RSI higher lows\n• **Bearish Divergence** — Price higher highs, RSI lower highs\n• **Hidden Divergence** — Trend continuation signals\n\n## ⚠️ When RSI Lies\n\n**False Signals:**\n• Strong trends can stay overbought/oversold\n• RSI can diverge for extended periods\n• News events can override technical signals\n• Multiple timeframe analysis needed\n\n**Better Context:**\n• Use with trend analysis\n• Confirm with volume\n• Check multiple timeframes\n• Combine with other indicators\n\n## 💡 Why No XP Yet\nRSI mastery comes from understanding its limitations and combining it with other tools for confirmation.\n\n## 📝 Mini-Task (Optional)\nFind a chart with RSI and identify: 1) Current RSI level, 2) Any divergence patterns, 3) Whether it's giving a buy/sell signal, and 4) What other indicators might confirm this signal.",
+          "video": "https://youtu.be/1-6gzuiRgQg"
         }
       ]
     }
