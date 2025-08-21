@@ -209,6 +209,18 @@ export default function AdminDashboard() {
   const [bountyManagementLoading, setBountyManagementLoading] = useState(false);
   const [showHiddenCourses, setShowHiddenCourses] = useState(false);
 
+  // Bounty editing state
+  const [editingBounty, setEditingBounty] = useState<Bounty | null>(null);
+  const [showBountyEditForm, setShowBountyEditForm] = useState(false);
+  const [bountyEditFormData, setBountyEditFormData] = useState({
+    title: '',
+    shortDesc: '',
+    reward: '',
+    deadline: '',
+    squadTag: '',
+    status: 'active' as 'active' | 'completed' | 'expired'
+  });
+
   // Bounty management functions
   const toggleBountyVisibility = (bountyId: string) => {
     setBounties(prev => prev.map(bounty => 
@@ -228,6 +240,62 @@ export default function AdminDashboard() {
 
   const deleteBounty = (bountyId: string) => {
     setBounties(prev => prev.filter(bounty => bounty.id !== bountyId));
+  };
+
+  // Bounty editing functions
+  const handleEditBounty = (bounty: Bounty) => {
+    setEditingBounty(bounty);
+    setBountyEditFormData({
+      title: bounty.title,
+      shortDesc: bounty.shortDesc,
+      reward: bounty.reward,
+      deadline: bounty.deadline || '',
+      squadTag: bounty.squadTag || '',
+      status: bounty.status
+    });
+    setShowBountyEditForm(true);
+  };
+
+  const handleSaveBounty = () => {
+    if (!editingBounty) return;
+    
+    setBounties(prev => prev.map(bounty => 
+      bounty.id === editingBounty.id 
+        ? {
+            ...bounty,
+            title: bountyEditFormData.title,
+            shortDesc: bountyEditFormData.shortDesc,
+            reward: bountyEditFormData.reward,
+            deadline: bountyEditFormData.deadline || undefined,
+            squadTag: bountyEditFormData.squadTag || undefined,
+            status: bountyEditFormData.status
+          }
+        : bounty
+    ));
+    
+    setShowBountyEditForm(false);
+    setEditingBounty(null);
+    setBountyEditFormData({
+      title: '',
+      shortDesc: '',
+      reward: '',
+      deadline: '',
+      squadTag: '',
+      status: 'active'
+    });
+  };
+
+  const handleCancelBountyEdit = () => {
+    setShowBountyEditForm(false);
+    setEditingBounty(null);
+    setBountyEditFormData({
+      title: '',
+      shortDesc: '',
+      reward: '',
+      deadline: '',
+      squadTag: '',
+      status: 'active'
+    });
   };
 
   // Get wallet address using your existing logic
@@ -1281,33 +1349,65 @@ export default function AdminDashboard() {
 
           {/* Bounties Tab */}
           <TabsContent value="bounties" className="space-y-6">
+            {/* Bounty Management Controls */}
             <Card className="bg-slate-800/50">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Bounty Management</span>
-                  <div className="flex items-center gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setBounties(prev => prev.map(b => ({ ...b, hidden: !b.hidden })))}
-                    >
-                      {bounties.some(b => b.hidden) ? (
-                        <>
-                          <Eye className="w-4 h-4 mr-2" />
-                          Show All
-                        </>
-                      ) : (
-                        <>
-                          <EyeOff className="w-4 h-4 mr-2" />
-                          Hide All
-                        </>
-                      )}
-                    </Button>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      New Bounty
-                    </Button>
+                <CardTitle>Bounty Management Controls</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setBounties(prev => prev.map(b => ({ ...b, hidden: !b.hidden })))}
+                    className="w-full sm:w-auto"
+                  >
+                    {bounties.some(b => b.hidden) ? (
+                      <>
+                        <Eye className="w-4 h-4 mr-2" />
+                        Show All Bounties
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff className="w-4 h-4 mr-2" />
+                        Hide All Bounties
+                      </>
+                    )}
+                  </Button>
+                  <Button className="w-full sm:w-auto">
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Bounty
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Bounty Statistics */}
+            <Card className="bg-slate-800/50">
+              <CardHeader>
+                <CardTitle>Bounty Statistics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
+                    <p className="text-sm text-gray-400">Total Bounties</p>
+                    <p className="text-2xl font-bold text-blue-400">{stats.totalBounties}</p>
                   </div>
-                </CardTitle>
+                  <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
+                    <p className="text-sm text-gray-400">Active Bounties</p>
+                    <p className="text-2xl font-bold text-green-400">{stats.activeBounties}</p>
+                  </div>
+                  <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
+                    <p className="text-sm text-gray-400">Hidden Bounties</p>
+                    <p className="text-2xl font-bold text-red-400">{stats.hiddenBounties}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Bounty List */}
+            <Card className="bg-slate-800/50">
+              <CardHeader>
+                <CardTitle>Bounty List</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -1315,13 +1415,13 @@ export default function AdminDashboard() {
                     <div
                       key={bounty.id}
                       className={`bg-slate-700/50 p-4 rounded-lg border ${
-                        bounty.hidden ? 'border-red-500/30 opacity-60' : 'border-slate-600'
+                        bounty.hidden ? 'border-red-500/30' : 'border-slate-600'
                       }`}
                     >
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-semibold">{bounty.title}</h3>
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
+                            <h3 className="font-semibold text-white">{bounty.title}</h3>
                             <Badge variant="outline" className={`border-${
                               bounty.status === 'active' ? 'green' : 
                               bounty.status === 'completed' ? 'blue' : 'red'
@@ -1342,28 +1442,39 @@ export default function AdminDashboard() {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-gray-400 mb-2">{bounty.shortDesc}</p>
-                          <div className="flex gap-4 text-sm text-gray-300">
-                            <span>Reward: {bounty.reward}</span>
+                          <p className="text-sm text-gray-400 mb-3">{bounty.shortDesc}</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-300">
+                            <span><strong>Reward:</strong> {bounty.reward}</span>
                             {bounty.deadline && (
-                              <span>Deadline: {new Date(bounty.deadline).toLocaleDateString()}</span>
+                              <span><strong>Deadline:</strong> {new Date(bounty.deadline).toLocaleDateString()}</span>
                             )}
-                            <span>Submissions: {bounty.submissions}</span>
+                            <span><strong>Submissions:</strong> {bounty.submissions}</span>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2 lg:flex-col">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditBounty(bounty)}
+                            className="w-full sm:w-auto"
+                          >
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
                             onClick={() => toggleBountyVisibility(bounty.id)}
+                            className="w-full sm:w-auto"
                           >
-                            {bounty.hidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                            {bounty.hidden ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+                            {bounty.hidden ? 'Show' : 'Hide'}
                           </Button>
                           <Select 
                             value={bounty.status} 
                             onValueChange={(value: 'active' | 'completed' | 'expired') => updateBountyStatus(bounty.id, value)}
                           >
-                            <SelectTrigger className="w-20">
+                            <SelectTrigger className="w-full sm:w-auto">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -1376,9 +1487,10 @@ export default function AdminDashboard() {
                             size="sm" 
                             variant="outline"
                             onClick={() => deleteBounty(bounty.id)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/20 w-full sm:w-auto"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
                           </Button>
                         </div>
                       </div>
@@ -1390,6 +1502,108 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Bounty Edit Modal */}
+      {showBountyEditForm && editingBounty && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4">Edit Bounty</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-300">Title</label>
+                <Input 
+                  value={bountyEditFormData.title}
+                  onChange={(e) => setBountyEditFormData(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter bounty title"
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-300">Description</label>
+                <textarea 
+                  value={bountyEditFormData.shortDesc}
+                  onChange={(e) => setBountyEditFormData(prev => ({ ...prev, shortDesc: e.target.value }))}
+                  placeholder="Enter bounty description"
+                  className="w-full p-3 rounded-md border border-slate-600 bg-slate-700 text-white resize-none"
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-300">Reward</label>
+                  <Input 
+                    value={bountyEditFormData.reward}
+                    onChange={(e) => setBountyEditFormData(prev => ({ ...prev, reward: e.target.value }))}
+                    placeholder="e.g., 2.5 SOL"
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-300">Deadline</label>
+                  <Input 
+                    type="date"
+                    value={bountyEditFormData.deadline}
+                    onChange={(e) => setBountyEditFormData(prev => ({ ...prev, deadline: e.target.value }))}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-300">Squad Tag</label>
+                  <Select 
+                    value={bountyEditFormData.squadTag} 
+                    onValueChange={(value) => setBountyEditFormData(prev => ({ ...prev, squadTag: value }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a squad or leave empty" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">No Squad</SelectItem>
+                      <SelectItem value="Creators">Creators</SelectItem>
+                      <SelectItem value="Decoders">Decoders</SelectItem>
+                      <SelectItem value="Speakers">Speakers</SelectItem>
+                      <SelectItem value="Raiders">Raiders</SelectItem>
+                      <SelectItem value="Rangers">Rangers</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-300">Status</label>
+                  <Select 
+                    value={bountyEditFormData.status} 
+                    onValueChange={(value: 'active' | 'completed' | 'expired') => setBountyEditFormData(prev => ({ ...prev, status: value }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="expired">Expired</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  onClick={handleSaveBounty}
+                  className="flex-1"
+                >
+                  Save Changes
+                </Button>
+                <Button 
+                  onClick={handleCancelBountyEdit}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* User Edit Modal */}
       {showUserEditForm && editingUser && (
