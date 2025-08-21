@@ -64,8 +64,22 @@ export default function CoursesPageClient() {
     if (isAdmin) {
       console.log('Courses initialized from localStorage');
     }
+
+    // Listen for course visibility changes from admin
+    const handleCoursesVisibilityChanged = () => {
+      console.log('Courses visibility changed, refreshing courses...');
+      setCoursesVersion(prev => prev + 1);
+    };
+
+    window.addEventListener('coursesVisibilityChanged', handleCoursesVisibilityChanged);
     
-    // Clean up any corrupted squad data in localStorage
+    return () => {
+      window.removeEventListener('coursesVisibilityChanged', handleCoursesVisibilityChanged);
+    };
+  }, [isAdmin]);
+
+  // Clean up corrupted squad data in localStorage
+  useEffect(() => {
     const savedSquad = localStorage.getItem('userSquad');
     if (savedSquad) {
       try {

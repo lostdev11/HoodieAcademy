@@ -398,6 +398,20 @@ export default function AdminDashboard() {
     load();
   }, [isAdmin]);
 
+  // Initialize courses when admin status is confirmed
+  useEffect(() => {
+    if (isAdmin === true) {
+      console.log('🔍 Admin: Initializing courses for admin...');
+      try {
+        const initializedCourses = initializeCourses(true);
+        setCourses(initializedCourses);
+        console.log('✅ Admin: Courses initialized:', initializedCourses.length);
+      } catch (error) {
+        console.error('❌ Admin: Error initializing courses:', error);
+      }
+    }
+  }, [isAdmin]);
+
   const calculateStats = (userList: SupabaseUser[], completions: CourseCompletion[]) => {
     const totalUsers = userList.length;
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);

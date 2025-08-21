@@ -204,11 +204,16 @@ export const allCourses: Course[] = [
 
 // Course management functions
 export function getVisibleCourses(isAdmin: boolean = false): Course[] {
-  // Ensure we have the latest data from localStorage
+  // For non-admin users, always filter by visibility
+  if (!isAdmin) {
+    return allCourses.filter(course => course.isVisible && course.isPublished);
+  }
+  
+  // For admin users, show all courses but respect visibility settings
   if (typeof window !== 'undefined' && localStorage.getItem('adminCoursesData')) {
     initializeCourses(isAdmin);
   }
-  return allCourses.filter(course => course.isVisible && course.isPublished);
+  return allCourses;
 }
 
 export function getHiddenCourses(): Course[] {
@@ -236,6 +241,19 @@ export function toggleCourseVisibility(courseId: string, isAdmin: boolean = fals
     const oldVisibility = allCourses[courseIndex].isVisible;
     allCourses[courseIndex].isVisible = !allCourses[courseIndex].isVisible;
     allCourses[courseIndex].updatedAt = new Date().toISOString();
+    
+    // Save to localStorage immediately
+    if (typeof window !== 'undefined') {
+      saveCoursesToStorage(isAdmin);
+    }
+    
+    // Dispatch custom event to notify other components
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('coursesVisibilityChanged', {
+        detail: { courseId, isVisible: allCourses[courseIndex].isVisible }
+      }));
+    }
+    
     if (isAdmin) {
       console.log(`Course "${allCourses[courseIndex].title}" visibility changed from ${oldVisibility} to ${allCourses[courseIndex].isVisible}`);
     }

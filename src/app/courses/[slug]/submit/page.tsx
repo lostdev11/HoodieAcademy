@@ -15,10 +15,17 @@ export default function SubmitAssignment({ params }: { params: { slug: string } 
     if (!submission) return;
     setLoading(true);
     try {
+      // Get wallet address from localStorage or use a placeholder
+      const walletAddress = localStorage.getItem('walletAddress') || 'unknown';
+      
       await fetch('/api/submit-assignment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: params.slug, content: submission })
+        body: JSON.stringify({ 
+          slug: params.slug, 
+          content: submission,
+          walletAddress 
+        })
       });
       setSuccess(true);
       completeCourse(params.slug);

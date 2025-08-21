@@ -1,23 +1,50 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: Request) {
   try {
     const { 
-      title, 
-      squad, 
-      description, 
-      courseRef, 
-      bountyId, 
-      author,
-      file 
+      slug, 
+      content,
+      walletAddress 
     } = await req.json();
     
-    if (!title || !description) {
-      return NextResponse.json({ error: 'Missing title or description' }, { status: 400 });
+    if (!slug || !content) {
+      return NextResponse.json({ error: 'Missing course slug or content' }, { status: 400 });
     }
 
+    // Initialize Supabase client
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Record course completion in Supabase
+    if (walletAddress) {
+      try {
+        const { error: completionError } = await supabase
+          .from('course_completions')
+          .upsert({
+            wallet_address: walletAddress,
+            course_id: slug,
+            completed_at: new Date().toISOString(),
+            approved: false // Default to pending approval
+          }, {
+            onConflict: 'wallet_address,course_id'
+          });
+
+        if (completionError) {
+          console.error('Error recording course completion:', completionError);
+        } else {
+          console.log(`Course completion recorded for ${walletAddress} - ${slug}`);
+        }
+      } catch (error) {
+        console.error('Error recording course completion:', error);
+      }
+    }
+
+    // Save submission to local file (keeping existing functionality)
     const filePath = path.join(process.cwd(), 'public', 'submissions.json');
     const existing = fs.existsSync(filePath)
       ? JSON.parse(fs.readFileSync(filePath, 'utf-8'))
@@ -25,17 +52,17 @@ export async function POST(req: Request) {
 
     const submission = {
       id: `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      title,
-      squad: squad || 'Unknown',
-      description,
-      courseRef: courseRef || '',
-      bountyId: bountyId || '',
-      author: author || 'Anonymous',
+      title: `Assignment for ${slug}`,
+      squad: 'Unknown',
+      description: content,
+      courseRef: slug,
+      bountyId: '',
+      author: walletAddress || 'Anonymous',
       timestamp: new Date().toISOString(),
       status: 'pending',
       upvotes: {},
       totalUpvotes: 0,
-      imageUrl: file ? `/uploads/${file.name}` : undefined
+            imageUrl: undefined
     };
 
     existing.push(submission);
