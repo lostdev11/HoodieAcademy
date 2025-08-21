@@ -221,6 +221,8 @@ export default function AdminDashboard() {
     status: 'active' as 'active' | 'completed' | 'expired'
   });
 
+
+
   // Bounty management functions
   const toggleBountyVisibility = (bountyId: string) => {
     setBounties(prev => prev.map(bounty => 
@@ -1401,7 +1403,7 @@ export default function AdminDashboard() {
                 <CardTitle>Bounty Statistics</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
                     <p className="text-sm text-gray-400">Total Bounties</p>
                     <p className="text-2xl font-bold text-blue-400">{stats.totalBounties}</p>
@@ -1457,7 +1459,7 @@ export default function AdminDashboard() {
                             )}
                           </div>
                           <p className="text-sm text-gray-400 mb-3">{bounty.shortDesc}</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-gray-300">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-gray-300">
                             <span><strong>Reward:</strong> {bounty.reward}</span>
                             {bounty.deadline && (
                               <span><strong>Deadline:</strong> {new Date(bounty.deadline).toLocaleDateString()}</span>
@@ -1519,9 +1521,9 @@ export default function AdminDashboard() {
 
       {/* Bounty Edit Modal */}
       {showBountyEditForm && editingBounty && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">Edit Bounty</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 p-4 sm:p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg sm:text-xl font-bold mb-4">Edit Bounty</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-300">Title</label>
@@ -1542,7 +1544,7 @@ export default function AdminDashboard() {
                   rows={3}
                 />
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-300">Reward</label>
                   <Input 
@@ -1562,7 +1564,7 @@ export default function AdminDashboard() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-300">Squad Tag</label>
                   <Select 
@@ -1599,7 +1601,7 @@ export default function AdminDashboard() {
                   </Select>
                 </div>
               </div>
-              <div className="flex gap-2 pt-4">
+              <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <Button 
                   onClick={handleSaveBounty}
                   className="flex-1"
@@ -1621,9 +1623,9 @@ export default function AdminDashboard() {
 
       {/* User Edit Modal */}
       {showUserEditForm && editingUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-6 rounded-lg w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Edit User</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 p-4 sm:p-6 rounded-lg w-full max-w-md">
+            <h3 className="text-lg sm:text-xl font-bold mb-4">Edit User</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">Display Name</label>
@@ -1660,7 +1662,7 @@ export default function AdminDashboard() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex gap-2 pt-4">
+              <div className="flex flex-col sm:flex-row gap-2 pt-4">
                 <Button 
                   onClick={() => {
                     setShowUserEditForm(false);
@@ -1686,8 +1688,8 @@ export default function AdminDashboard() {
 
       {/* User View Modal */}
       {showUserViewModal && viewingUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-6 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 p-4 sm:p-6 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold">User Details</h3>
               <Button 
@@ -1702,7 +1704,7 @@ export default function AdminDashboard() {
               </Button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               {/* Basic Info */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-blue-400">Basic Information</h4>
@@ -1767,7 +1769,7 @@ export default function AdminDashboard() {
                   const approvedCompletions = userCompletions.filter(c => c.approved).length;
                   
                   return (
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div className="bg-slate-700/50 p-3 rounded-lg">
                         <p className="text-sm text-gray-400">Courses Started</p>
                         <p className="text-2xl font-bold text-blue-400">{coursesStarted}</p>

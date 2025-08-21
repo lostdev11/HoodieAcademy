@@ -1,0 +1,36 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00d4aa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="512" cy="512" r="450" fill="#1a1a2e"/>
+  
+  <!-- Hoodie figure -->
+  <path d="M 312 380 Q 312 320 380 320 L 644 320 Q 692 320 692 380 L 692 580 Q 692 620 652 620 L 372 620 Q 312 620 312 580 Z" fill="url(#gradient1)" opacity="0.9"/>
+  
+  <!-- Hood -->
+  <path d="M 380 320 Q 512 280 644 320 Q 612 350 512 360 Q 412 350 380 320 Z" fill="url(#gradient1)"/>
+  
+  <!-- Face shadow -->
+  <ellipse cx="512" cy="420" rx="80" ry="60" fill="#0f0f23"/>
+  
+  <!-- Text: HOODIE (top arc) -->
+  <path id="topArc" d="M 200 300 A 312 312 0 0 1 824 300" fill="none"/>
+  <text font-family="Arial Black, sans-serif" font-size="80" font-weight="900" fill="url(#gradient1)">
+    <textPath href="#topArc" startOffset="50%" text-anchor="middle">HOODIE</textPath>
+  </text>
+  
+  <!-- Text: ACADEMY (bottom arc) -->
+  <path id="bottomArc" d="M 824 724 A 312 312 0 0 1 200 724" fill="none"/>
+  <text font-family="Arial Black, sans-serif" font-size="80" font-weight="900" fill="url(#gradient1)">
+    <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">ACADEMY</textPath>
+  </text>
+  
+  <!-- Stars -->
+  <polygon points="180,480 190,450 200,480 230,480 208,502 218,532 190,510 162,532 172,502 150,480" fill="url(#gradient1)"/>
+  <polygon points="824,480 834,450 844,480 874,480 852,502 862,532 834,510 806,532 816,502 794,480" fill="url(#gradient1)"/>
+</svg>

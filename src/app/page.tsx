@@ -151,6 +151,7 @@ export default function HoodieAcademy() {
   const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
   const [snsDomain, setSnsDomain] = useState<string | null>(null);
   const [isLoadingSns, setIsLoadingSns] = useState(false);
+  const [userDisplayName, setUserDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
     // Get wallet address from localStorage
@@ -162,13 +163,18 @@ export default function HoodieAcademy() {
       const resolveSnsDomain = async () => {
         try {
           setIsLoadingSns(true);
-          const snsResolver = getSNSResolver();
-          const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
+          const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
+          const resolvedName = await getDisplayNameWithSNS(storedWallet);
+          console.log('Main page: Resolved SNS name:', resolvedName);
+          setSnsDomain(resolvedName);
           
-          const domain = await snsResolver.reverseResolve(connection, storedWallet);
-          setSnsDomain(domain);
+          // Also set user display name if not already set
+          const customDisplayName = localStorage.getItem('userDisplayName');
+          if (!customDisplayName && resolvedName) {
+            setUserDisplayName(resolvedName);
+          }
         } catch (error) {
-          console.error('Error resolving SNS domain:', error);
+          console.error('Main page: Error resolving SNS domain:', error);
           setSnsDomain(null);
         } finally {
           setIsLoadingSns(false);
@@ -187,49 +193,30 @@ export default function HoodieAcademy() {
     if (squadResult) {
       try {
         const result = JSON.parse(squadResult);
-        console.log('Parsed squad result:', result);
+        let userSquadName: string;
         
-        // Check if lock period has expired
-        if (result.lockEndDate) {
-          const lockEnd = new Date(result.lockEndDate);
-          const now = new Date();
-          if (now > lockEnd) {
-            setSquadLockExpired(true);
-            localStorage.removeItem('userSquad');
-            console.log('Squad lock period expired');
-          } else {
-            if (typeof result === 'object' && result.name) {
-              console.log('Setting squad to:', result.name);
-              setUserSquad(result.name);
-            } else if (typeof result === 'string') {
-              console.log('Setting squad to string:', result);
-              setUserSquad(result);
-            }
-          }
+        // Handle both object and string formats
+        if (typeof result === 'object' && result.name) {
+          userSquadName = result.name;
+        } else if (typeof result === 'string') {
+          userSquadName = result;
         } else {
-          if (typeof result === 'object' && result.name) {
-            console.log('Setting squad to:', result.name);
-            setUserSquad(result.name);
-          } else if (typeof result === 'string') {
-            console.log('Setting squad to string:', result);
-            setUserSquad(result);
-          }
+          throw new Error('Invalid squad result format');
+        }
+        
+        setUserSquad(userSquadName);
+        
+        // Check if squad lock has expired
+        const squadLockTime = localStorage.getItem('squadLockTime');
+        if (squadLockTime) {
+          const lockTime = parseInt(squadLockTime);
+          const now = Date.now();
+          const lockExpired = now - lockTime > 24 * 60 * 60 * 1000; // 24 hours
+          setSquadLockExpired(lockExpired);
         }
       } catch (error) {
         console.error('Error parsing squad result:', error);
-        setUserSquad(squadResult);
-      }
-    } else {
-      console.log('No squad result found in localStorage');
-    }
-
-    // Check if user needs to complete onboarding
-    const hasCompletedOnboarding = typeof window !== 'undefined' ? localStorage.getItem('onboardingCompleted') : null;
-    const hasDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
-    
-    if (storedWallet && (!hasCompletedOnboarding || !hasDisplayName)) {
-      if (typeof window !== 'undefined') {
-        window.location.href = '/onboarding';
+        setUserSquad(null);
       }
     }
   }, []);

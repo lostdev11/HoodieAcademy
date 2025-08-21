@@ -141,34 +141,19 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
   }, []);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const provider = typeof window !== 'undefined' ? window.solana : undefined;
-      if (!provider) return; // Phantom not found
-      
+    // Simple admin check - can be enhanced later
+    const checkAdmin = () => {
       try {
-        // Connect only if not already connected
-        if (!provider.publicKey) {
-          try {
-            await provider.connect({ onlyIfTrusted: true } as any);
-          } catch {
-            await provider.connect();
-          }
-        }
-        
-        const walletAddress = provider.publicKey!.toString();
-        if (!walletAddress) return;
-        console.log('👤 Checking admin for wallet:', walletAddress);
-        const user = await fetchUserByWallet(walletAddress);
-        if (user && user.is_admin) {
-          setIsAdmin(true);
-          console.log('✅ Admin status: true');
+        const adminStatus = typeof window !== 'undefined' && localStorage.getItem('isAdmin') === 'true';
+        setIsAdmin(adminStatus);
+        if (adminStatus) {
+          console.log('✅ DashboardSidebar: Admin status: true');
         } else {
-          setIsAdmin(false);
-          console.log('✅ Admin status: false');
+          console.log('✅ DashboardSidebar: Admin status: false');
         }
       } catch (err) {
         setIsAdmin(false);
-        console.error('💥 Failed to check admin:', err);
+        console.error('💥 DashboardSidebar: Failed to check admin:', err);
       }
     };
     checkAdmin();

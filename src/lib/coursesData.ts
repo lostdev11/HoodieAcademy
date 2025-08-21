@@ -14,6 +14,7 @@ export interface Course {
   squad?: string;
   isVisible: boolean;
   isPublished: boolean;
+  isGated?: boolean;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
@@ -36,6 +37,7 @@ export const allCourses: Course[] = [
     access: "free",
     isVisible: true,
     isPublished: true,
+    isGated: false,
     createdAt: "2024-01-01T00:00:00Z",
     updatedAt: "2024-01-01T00:00:00Z",
     createdBy: "admin"
@@ -56,6 +58,7 @@ export const allCourses: Course[] = [
     access: "free",
     isVisible: true,
     isPublished: true,
+    isGated: false,
     createdAt: "2024-01-01T00:00:00Z",
     updatedAt: "2024-01-01T00:00:00Z",
     createdBy: "admin"
@@ -76,6 +79,7 @@ export const allCourses: Course[] = [
     access: "hoodie",
     isVisible: true,
     isPublished: true,
+    isGated: true,
     createdAt: "2024-01-01T00:00:00Z",
     updatedAt: "2024-01-01T00:00:00Z",
     createdBy: "admin"

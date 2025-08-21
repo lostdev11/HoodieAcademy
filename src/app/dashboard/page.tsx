@@ -29,14 +29,18 @@ import {
   MessageSquare,
   Heart,
   Sparkles,
+  Palette,
+  Mic,
+  FileText,
+  AlertCircle,
   Crown,
   Medal,
   Gem,
-  Fire,
-  Lightning,
+
   Shield,
+  Flame,
   Sword,
-  Bow,
+  ArrowRight,
   Wand,
   Hammer,
   Anvil,
@@ -47,7 +51,7 @@ import {
   Eye,
   Ear,
   Hand,
-  Foot,
+  Move,
   Heart as HeartIcon,
   Star as StarIcon,
   Zap as ZapIcon,
@@ -71,11 +75,11 @@ import {
   Crown as CrownIcon,
   Medal as MedalIcon,
   Gem as GemIcon,
-  Fire as FireIcon,
-  Lightning as LightningIcon,
+
+
   Shield as ShieldIcon,
   Sword as SwordIcon,
-  Bow as BowIcon,
+  ArrowRight as BowIcon,
   Wand as WandIcon,
   Hammer as HammerIcon,
   Anvil as AnvilIcon,
@@ -86,11 +90,11 @@ import {
   Eye as EyeIcon,
   Ear as EarIcon,
   Hand as HandIcon,
-  Foot as FootIcon
+  Move as FootIcon
 } from "lucide-react";
 import TokenGate from "@/components/TokenGate";
-import { useUserXP } from "@/components/xp";
-import { squadTracks } from "@/lib/squadData";
+
+import { squadTracks, type SquadTrack } from "@/lib/squadData";
 
 import { getDisplayNameWithSNS } from "@/services/sns-resolver";
 import PageLayout from "@/components/layouts/PageLayout";
@@ -438,8 +442,12 @@ export default function DashboardPage() {
   const [userSquadInfo, setUserSquadInfo] = useState<SquadTrack | null>(null);
   const [claimedRewards, setClaimedRewards] = useState<any[]>([]);
   
-  // XP System
-  const { totalXP, completedCourses, streak, completeCourse, badges } = useUserXP();
+  // XP System - placeholder values for now
+  const totalXP = 0;
+  const completedCourses = 0;
+  const streak = 0;
+  const completeCourse = () => {};
+  const badges = [];
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -705,7 +713,7 @@ export default function DashboardPage() {
 
             <InfoCard
               title="Learning Streak"
-              icon={<Fire className="w-5 h-5" />}
+                              icon={<Flame className="w-5 h-5" />}
               variant="warning"
             >
               <div className="text-center">
@@ -793,7 +801,7 @@ export default function DashboardPage() {
                 {realAnnouncements.slice(0, 3).map((announcement, index) => (
                   <div key={index} className="p-2 bg-slate-700/30 rounded text-sm">
                     <div className="font-semibold text-white">{announcement.title}</div>
-                    <div className="text-gray-400 text-xs">{announcement.content}</div>
+                    <div className="text-gray-400 text-xs">{announcement.message}</div>
                   </div>
                 ))}
               </div>
@@ -831,8 +839,10 @@ export default function DashboardPage() {
                 <div className="space-y-2">
                   {squadActivity.slice(0, 3).map((activity, index) => (
                     <div key={index} className="p-2 bg-slate-700/30 rounded text-sm">
-                      <div className="font-semibold text-white">{activity.user}</div>
-                      <div className="text-gray-400 text-xs">{activity.action}</div>
+                      <div className="font-semibold text-white">{activity.squad}</div>
+                      <div className="text-gray-400 text-xs">
+                        {activity.activities.slice(0, 2).join(', ')}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -860,7 +870,7 @@ export default function DashboardPage() {
                       {classItem.title}
                     </div>
                     <div className="text-sm text-gray-400">
-                      {classItem.date} at {classItem.time}
+                      {classItem.startTime}
                     </div>
                     <div className="text-xs text-cyan-400 mt-2">
                       {classItem.instructor}

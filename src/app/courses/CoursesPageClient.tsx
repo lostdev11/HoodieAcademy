@@ -23,6 +23,9 @@ import SquadFilter from '@/components/SquadFilter';
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation';
 import { SyllabusPanel } from '@/components/SyllabusPanel';
 import { getVisibleCourses, type Course, initializeCourses } from '@/lib/coursesData';
+import PageLayout from "@/components/layouts/PageLayout";
+import { CardFeedLayout, CardFeedItem, CardFeedSection, CardFeedGrid, InfoCard, ActionCard } from "@/components/layouts/CardFeedLayout";
+import { coursePageNavigation } from "@/components/layouts/NavigationDrawer";
 
 // Get visible courses dynamically instead of at import time
 const getCourses = (isAdmin: boolean = false) => {
@@ -56,6 +59,7 @@ export default function CoursesPageClient() {
 
   // Add state to force re-renders when courses change
   const [coursesVersion, setCoursesVersion] = useState(0);
+  const [userDisplayName, setUserDisplayName] = useState<string>("");
 
   // Initialize courses from localStorage on mount
   useEffect(() => {
@@ -98,305 +102,107 @@ export default function CoursesPageClient() {
           }
         } else {
           if (isAdmin) {
-            console.log('Squad data is already in correct format:', savedSquad);
+            console.log('Found valid squad data:', savedSquad);
           }
+          setUserSquad(savedSquad);
         }
-      } catch (e) {
-        // If parsing fails, it's already a string, which is fine
+      } catch (error) {
         if (isAdmin) {
-          console.log('Squad data is already in correct format (string):', savedSquad);
+          console.log('Error parsing squad data, using as-is:', savedSquad);
         }
-      }
-    } else {
-      if (isAdmin) {
-        console.log('No squad data found in localStorage');
+        setUserSquad(savedSquad);
       }
     }
   }, [isAdmin]);
 
-  // Update current time
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString());
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Check admin status and load user data
+  // Check admin status
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        const walletAddress = getConnectedWallet();
-        if (walletAddress) {
-          const user = await fetchUserByWallet(walletAddress);
-          setIsAdmin(user?.is_admin || false);
+        const adminStatus = await isCurrentUserAdmin();
+        setIsAdmin(adminStatus);
+        if (adminStatus) {
+          console.log('✅ User is admin');
         }
       } catch (error) {
         console.error('Error checking admin status:', error);
-      }
-    };
-
-    const loadUserData = async () => {
-      try {
-        // Load user squad from localStorage
-        const savedSquad = localStorage.getItem('userSquad');
-        if (savedSquad) {
-          try {
-            // Try to parse as JSON first (in case it's stored as a full squad object)
-            const parsedSquad = JSON.parse(savedSquad);
-            if (parsedSquad && typeof parsedSquad === 'object') {
-              // If it's a full squad object, extract the squad ID and clean up localStorage
-              const squadId = parsedSquad.name || parsedSquad.id || savedSquad;
-              setUserSquad(squadId);
-              // Clean up localStorage to only store the squad ID/name
-              localStorage.setItem('userSquad', squadId);
-              console.log('Cleaned up squad data in localStorage:', squadId);
-            } else {
-              // If parsing fails or it's just a string, use as is
-              setUserSquad(savedSquad);
-            }
-          } catch (e) {
-            // If JSON parsing fails, treat as plain string
-            setUserSquad(savedSquad);
-          }
-        }
-
-        // Load course completion status
-        const status: Record<string, { completed: boolean, progress: number }> = {};
-        getCourses(isAdmin).forEach(course => {
-          if (course.localStorageKey) {
-            const saved = localStorage.getItem(course.localStorageKey);
-            if (saved) {
-              try {
-                const progress = JSON.parse(saved);
-                status[course.id] = {
-                  completed: progress.completed || false,
-                  progress: progress.progress || 0
-                };
-              } catch (e) {
-                console.error('Error parsing course progress:', e);
-              }
-            }
-          }
-        });
-        setCourseCompletionStatus(status);
-      } catch (error) {
-        console.error('Error loading user data:', error);
-      } finally {
-        setIsLoading(false);
+        setIsAdmin(false);
       }
     };
 
     checkAdminStatus();
-    loadUserData();
-  }, [coursesVersion, isAdmin]); // Add coursesVersion and isAdmin dependency
+  }, []);
 
-  // Listen for localStorage changes to refresh courses when admin makes changes
+  // Load user display name and SNS domain
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'adminCoursesData') {
-        if (isAdmin) {
-          console.log('Admin courses data changed, refreshing courses...');
+    const loadUserDisplayName = async () => {
+      try {
+        // Check if user has a custom display name set
+        const customDisplayName = localStorage.getItem('userDisplayName');
+        if (customDisplayName) {
+          setUserDisplayName(customDisplayName);
+          return;
         }
-        setCoursesVersion(prev => prev + 1);
+
+        // Try to resolve SNS domain for the wallet
+        const storedWallet = localStorage.getItem('walletAddress');
+        if (storedWallet) {
+          const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
+          const resolvedName = await getDisplayNameWithSNS(storedWallet);
+          console.log('Courses: Resolved SNS name:', resolvedName);
+          setUserDisplayName(resolvedName);
+        }
+      } catch (error) {
+        console.error('Courses: Error resolving SNS domain:', error);
+        // Fallback to default name
+        setUserDisplayName('Hoodie Scholar');
       }
     };
 
-    // Listen for custom event when courses are updated in the same tab
-    const handleCoursesUpdated = (e: CustomEvent) => {
-      if (isAdmin) {
-        console.log('Courses updated event received, refreshing courses...');
-      }
-      setCoursesVersion(prev => prev + 1);
-    };
+    loadUserDisplayName();
+  }, []);
 
-    // Listen for storage events from other tabs/windows
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Listen for custom event from same tab
-    window.addEventListener('coursesUpdated', handleCoursesUpdated as EventListener);
+  // Update current time
+  useEffect(() => {
+    setCurrentTime(new Date().toLocaleTimeString());
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-    // Also check for changes periodically (every 5 seconds)
-    const interval = setInterval(() => {
-      const stored = localStorage.getItem('adminCoursesData');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          // Get current courses without calling getCourses() to avoid infinite loops
-          const currentCourses = getVisibleCourses(isAdmin);
-          // Check if any course visibility has changed
-          const hasChanges = parsed.some((storedCourse: any) => {
-            const currentCourse = currentCourses.find(c => c.id === storedCourse.id);
-            return currentCourse && (storedCourse.isVisible !== currentCourse.isVisible || storedCourse.isPublished !== currentCourse.isPublished);
-          });
-          
-          if (hasChanges) {
-            if (isAdmin) {
-              console.log('Course visibility changes detected, refreshing...');
-            }
-            setCoursesVersion(prev => prev + 1);
-          }
-        } catch (error) {
-          console.error('Error checking for course changes:', error);
-        }
-      }
-    }, 5000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('coursesUpdated', handleCoursesUpdated as EventListener);
-      clearInterval(interval);
-    };
-  }, [isAdmin]);
-
-  const getCompletionInfo = (key: string): { completed: boolean, progress: number } => {
-    return courseCompletionStatus[key] || { completed: false, progress: 0 };
-  };
-
-  const handlePasswordSubmit = () => {
-    // Admin bypass removed - proper authentication required
-    setPasswordError("");
-    setShowPasswordInput(false);
-  };
-
-  const resetAllCourses = () => {
-    if (window.confirm('Are you sure you want to reset all course progress? This action cannot be undone.')) {
-      // Clear all course progress from localStorage
-      getCourses(isAdmin).forEach(course => {
-        if (course.localStorageKey) {
-          localStorage.removeItem(course.localStorageKey);
-        }
-      });
-      
-      // Clear final exam results
-      localStorage.removeItem('walletWizardryFinalExamPassed');
-      
-      // Clear placement test results
-      if (isAdmin) {
-        console.log('Clearing userSquad from localStorage in resetAllCourses');
-      }
-      localStorage.removeItem('userSquad');
-      
-      // Clear onboarding completion
-      localStorage.removeItem('onboardingCompleted');
-      
-      // Refresh the page to update the UI
-      window.location.reload();
-    }
-  };
-
-  const resetIndividualCourse = (courseId: string) => {
-    const course = getCourses(isAdmin).find(c => c.id === courseId);
-    if (!course || !course.localStorageKey) return;
-    
-    if (window.confirm(`Are you sure you want to reset progress for "${course.title}"? This action cannot be undone.`)) {
-      localStorage.removeItem(course.localStorageKey);
-      
-      // If it's wallet wizardry, also clear the final exam
-      if (courseId === 'wallet-wizardry') {
-        localStorage.removeItem('walletWizardryFinalExamPassed');
-      }
-      
-      // Refresh the page to update the UI
-      window.location.reload();
-    }
-  };
-
-  const openSyllabusPanel = (courseId: string, courseTitle: string) => {
-    const syllabusData = require('@/lib/syllabusData').syllabusData;
-    const data = syllabusData[courseId];
-    
-    if (data) {
-      setSyllabusPanel({
-        isOpen: true,
-        data,
-        courseTitle
-      });
-    }
-  };
-
-  const closeSyllabusPanel = () => {
-    setSyllabusPanel({
-      isOpen: false,
-      data: null,
-      courseTitle: null
-    });
-  };
-
-  // Filter courses based on active filter, selected squad, and user's squad
+  // Get filtered courses based on current filter and squad selection
   const getFilteredCourses = () => {
-    let filteredCourses = getCourses(isAdmin); // Get fresh data each time
-
-    if (isAdmin) {
-      console.log('Filtering courses:', {
-        activeFilter,
-        selectedSquad,
-        userSquad,
-        isAdmin,
-        totalCourses: filteredCourses.length,
-        visibleCourses: filteredCourses.map(c => ({ id: c.id, title: c.title, visible: c.isVisible, published: c.isPublished }))
-      });
-
-      // Debug: Log all courses and their visibility status
-      console.log('All courses from getCourses():', filteredCourses.map(c => ({
-        id: c.id,
-        title: c.title,
-        isVisible: c.isVisible,
-        isPublished: c.isPublished,
-        access: c.access,
-        level: c.level
-      })));
+    const courses = getCourses(isAdmin);
+    
+    if (activeFilter === 'squads') {
+      if (selectedSquad === 'All') {
+        return courses.filter(course => course.squad);
+      } else {
+        return courses.filter(course => 
+          course.squad && course.squad.toLowerCase().includes(selectedSquad.toLowerCase())
+        );
+      }
+    } else if (activeFilter === 'completed') {
+      return courses.filter(course => courseCompletionStatus[course.id]?.completed);
+    } else if (activeFilter === 'collab') {
+      // Filter for courses that might be collaborative based on squad or category
+      return courses.filter(course => 
+        course.squad === 'Rangers' || 
+        course.category === 'collaborative' ||
+        course.pathType === 'converged'
+      );
     }
-
-    switch (activeFilter) {
-      case 'squads':
-        if (selectedSquad !== 'All') {
-          filteredCourses = filteredCourses.filter(course => course.squad === selectedSquad);
-        }
-        return filteredCourses;
-      case 'completed':
-        return filteredCourses.filter(course => {
-          const status = courseCompletionStatus[course.id];
-          return status && status.completed;
-        });
-      case 'collab':
-        return filteredCourses.filter(course => course.pathType === 'social');
-      default:
-        // For 'all' filter, apply gating logic
-        // Only show 100-level free courses to non-admin users
-        if (!isAdmin) {
-          filteredCourses = filteredCourses.filter(course => {
-            const isFree = course.access === 'free' || course.access === 'Free';
-            const is100Level = course.level === 'beginner' || course.level === '100' || course.level === '100-level';
-            return isFree && is100Level;
-          });
-          if (isAdmin) {
-            console.log('Filtered to 100-level free courses:', filteredCourses.length);
-          }
-        }
-        if (isAdmin) {
-          console.log('All courses (all filter):', filteredCourses.length);
-        }
-        return filteredCourses;
-    }
+    
+    return courses;
   };
 
-  const completedCoursesCount = getCompletedCoursesCount();
-
-  // Helper function to determine if a course should be gated
-  const shouldShowGatedCourse = (course: any) => {
-    if (isAdmin) return false; // Admins see all courses normally
-    const isFree = course.access === 'free' || course.access === 'Free';
-    const is100Level = course.level === 'beginner' || course.level === '100' || course.level === '100-level';
-    return !isFree || !is100Level;
-  };
+  // Get completed courses count
+  const completedCoursesCount = Object.values(courseCompletionStatus).filter(status => status.completed).length;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <div className="flex items-center justify-center min-h-screen">
         <span className="text-cyan-400 text-2xl animate-pulse">Loading courses...</span>
       </div>
     );
@@ -404,133 +210,127 @@ export default function CoursesPageClient() {
 
   return (
     <TokenGate>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-        {/* Animated background effects */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900 to-slate-900"></div>
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="relative z-10 px-4 py-6 sm:p-8">
-          {/* Header */}
-          <div className="text-center mb-8 sm:mb-12">
-            {/* Navigation */}
-            <div className="flex justify-between items-center mb-6">
-              <Button
-                asChild
-                variant="outline"
-                className="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-400 hover:text-cyan-300 border-cyan-500/30 hover:border-cyan-400/50 transition-all duration-300"
-              >
-                <Link href="/">
-                  <Home className="w-4 h-4 mr-2" />
-                  Back to Dashboard
-                </Link>
-              </Button>
-              
-              {/* Mobile Navigation */}
-              <div className="sm:hidden">
-                <MobileNavigation userSquad={userSquad} isAdmin={isAdmin} />
-              </div>
+      <PageLayout
+        title="📚 Academy Courses"
+        subtitle="Master Web3, NFTs, and crypto trading with our comprehensive course library"
+        showHomeButton={true}
+        showBackButton={true}
+        backHref="/dashboard"
+        backgroundImage={undefined}
+        backgroundOverlay={false}
+        // navigationSections={coursePageNavigation}
+        navigationDrawerTitle="Course Navigation"
+        navigationDrawerSubtitle="Navigate through your learning journey"
+      >
+        {/* Current Time Display */}
+        <CardFeedItem
+          title="Current Time"
+          subtitle="Real-time clock for your learning sessions"
+          badge={currentTime}
+          badgeVariant="outline"
+        >
+          <div className="text-center">
+            <div className="text-3xl font-mono text-cyan-400 mb-2">
+              {currentTime}
             </div>
-            
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
-              <div className="flex items-center gap-4">
-                <h1 className="text-3xl font-bold text-white">Courses</h1>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Clock className="w-4 h-4" />
-                  {currentTime}
-                </div>
-                <div className="text-sm text-cyan-400">
-                  {getFilteredCourses().length} courses available
-                </div>
-              </div>
-              
-              {isAdmin && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setCoursesVersion(prev => prev + 1)}
-                  className="text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
-                >
-                  <RefreshCw className={`w-3 h-3 mr-1 ${coursesVersion > 0 ? 'animate-spin' : ''}`} />
-                  Refresh Courses
-                </Button>
-              )}
-            </div>
-
-            {/* Squad Assignment Notice */}
-            {userSquad && (
-              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-600 mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="text-2xl">
-                    {(() => {
-                      // Try to find squad by name first, then by ID
-                      const squadData = squadTracks.find(s => 
-                        s.name === userSquad || s.id === userSquad
-                      );
-                      return squadData?.icon || '🎯';
-                    })()}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-semibold text-white">
-                      Your Squad: {(() => {
-                        const squadData = squadTracks.find(s => 
-                          s.name === userSquad || s.id === userSquad
-                        );
-                        return squadData?.name || userSquad;
-                      })()}
-                    </h2>
-                    <p className="text-gray-400">
-                      {(() => {
-                        const squadData = squadTracks.find(s => 
-                          s.name === userSquad || s.id === userSquad
-                        );
-                        return squadData?.description || '';
-                      })()}
-                    </p>
-                  </div>
-                </div>
-                {/* Debug info for admins */}
-                {isAdmin && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    Debug: userSquad = "{userSquad}" (type: {typeof userSquad})
-                    <Button
-                      onClick={() => {
-                        if (window.confirm('Clear and fix squad data in localStorage?')) {
-                          localStorage.removeItem('userSquad');
-                          setUserSquad(null);
-                          console.log('Squad data cleared from localStorage');
-                        }
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="ml-2 border-red-500 text-red-400 hover:bg-red-500 hover:text-white"
-                    >
-                      Clear Squad Data
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* No Squad Notice */}
-            {!userSquad && !isAdmin && (
-              <div className="mt-6">
-                <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-orange-500/30 backdrop-blur-sm">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-center space-x-3">
-                      <span className="text-orange-400 text-lg">⚠️</span>
-                      <div className="text-center">
-                        <p className="text-orange-400 font-semibold">Squad Assignment Required</p>
-                        <p className="text-gray-300 text-sm">Complete onboarding to access squad-specific courses</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+            <p className="text-sm text-gray-400">
+              Keep track of your study time and maintain consistent learning habits
+            </p>
           </div>
+        </CardFeedItem>
 
-          {/* Filter Controls */}
-          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-2 sm:gap-4 mb-6 sm:mb-8">
+        {/* Squad Assignment Notice */}
+        {userSquad && (
+          <InfoCard
+            title="Your Squad Assignment"
+            icon="🎯"
+            variant="success"
+          >
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">
+                {(() => {
+                  const squadData = squadTracks.find(s => 
+                    s.name === userSquad || s.id === userSquad
+                  );
+                  return squadData?.icon || '🎯';
+                })()}
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">
+                  Your Squad: {(() => {
+                    const squadData = squadTracks.find(s => 
+                      s.name === userSquad || s.id === userSquad
+                    );
+                    return squadData?.name || userSquad;
+                  })()}
+                </h3>
+                <p className="text-gray-300">
+                  {(() => {
+                    const squadData = squadTracks.find(s => 
+                      s.name === userSquad || s.id === userSquad
+                    );
+                    return squadData?.description || '';
+                  })()}
+                </p>
+              </div>
+            </div>
+            {/* Debug info for admins */}
+            {isAdmin && (
+              <div className="mt-4 p-3 bg-slate-700/30 rounded-lg border border-cyan-500/30">
+                <p className="text-cyan-400 text-sm font-semibold mb-2">Debug: Squad Data</p>
+                <div className="text-xs text-gray-400">
+                  userSquad = "{userSquad}" (type: {typeof userSquad})
+                </div>
+                <Button
+                  onClick={() => {
+                    if (window.confirm('Clear and fix squad data in localStorage?')) {
+                      localStorage.removeItem('userSquad');
+                      setUserSquad(null);
+                      console.log('Squad data cleared from localStorage');
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 border-red-500 text-red-400 hover:bg-red-500 hover:text-white"
+                >
+                  Clear Squad Data
+                </Button>
+              </div>
+            )}
+          </InfoCard>
+        )}
+
+        {/* No Squad Notice */}
+        {!userSquad && !isAdmin && (
+          <InfoCard
+            title="Squad Assignment Required"
+            icon="⚠️"
+            variant="warning"
+          >
+            <div className="text-center">
+              <p className="text-orange-400 font-semibold mb-2">Complete onboarding to access squad-specific courses</p>
+              <p className="text-gray-300 text-sm">Join a squad to unlock specialized content and community features</p>
+            </div>
+          </InfoCard>
+        )}
+
+        {/* Filter Controls */}
+        <ActionCard
+          title="Course Filters"
+          subtitle="Filter courses by type, squad, or completion status"
+          action={
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setCoursesVersion(prev => prev + 1)}
+              className="text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+            >
+              <RefreshCw className={`w-3 h-3 mr-1 ${coursesVersion > 0 ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          }
+        >
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-2 sm:gap-4">
             <Button
               onClick={() => setActiveFilter('all')}
               variant={activeFilter === 'all' ? 'default' : 'outline'}
@@ -555,182 +355,95 @@ export default function CoursesPageClient() {
               <CheckCircle className="w-4 h-4 mr-2" />
               Completed ({completedCoursesCount})
             </Button>
-            <Button
-              onClick={() => {
-                if (isAdmin) {
-                  console.log('Manual refresh triggered');
-                }
-                setCoursesVersion(prev => prev + 1);
-              }}
-              variant="outline"
-              className="border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white w-full sm:w-auto min-h-[44px]"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
           </div>
+        </ActionCard>
 
-          {/* Squad Filter */}
-          <div className="flex justify-center mb-8">
+        {/* Squad Filter */}
+        <CardFeedItem
+          title="Squad Selection"
+          subtitle="Filter courses by specific squad or view all"
+        >
+          <div className="flex justify-center">
             <SquadFilter
               onChange={setSelectedSquad}
               selectedSquad={selectedSquad}
             />
           </div>
+        </CardFeedItem>
 
-          {/* Course Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-7xl mx-auto">
-            {/* Debug: Show what courses are being displayed */}
-            {isAdmin && (
-              <div className="md:col-span-2 lg:col-span-3 mb-4 p-3 bg-slate-800/30 rounded-lg border border-cyan-500/30">
-                <p className="text-cyan-400 text-sm font-semibold mb-2">Debug: Courses being displayed:</p>
-                <div className="text-xs text-gray-400">
-                  {getFilteredCourses().map(course => (
-                    <div key={course.id} className="flex items-center gap-2 mb-1">
-                      <span className={`w-2 h-2 rounded-full ${course.isVisible ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                      <span className={`w-2 h-2 rounded-full ${course.isPublished ? 'bg-blue-500' : 'bg-yellow-500'}`}></span>
-                      <span>{course.title}</span>
-                      <span className="text-gray-500">({course.id})</span>
-                    </div>
-                  ))}
-                </div>
+        {/* Course Grid */}
+        <CardFeedSection
+          title="Available Courses"
+          subtitle={`${getFilteredCourses().length} courses available for your learning journey`}
+        >
+          {/* Debug info for admins */}
+          {isAdmin && (
+            <InfoCard
+              title="Debug: Courses Display"
+              icon="🔍"
+              variant="default"
+            >
+              <div className="text-xs text-gray-400">
+                {getFilteredCourses().map(course => (
+                  <div key={course.id} className="flex items-center gap-2 mb-1">
+                    <span className={`w-2 h-2 rounded-full ${course.isVisible ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                    <span className={`w-2 h-2 rounded-full ${course.isPublished ? 'bg-blue-500' : 'bg-yellow-500'}`}></span>
+                    <span>{course.title}</span>
+                    <span className="text-gray-500">({course.id})</span>
+                  </div>
+                ))}
               </div>
-            )}
-            
+            </InfoCard>
+          )}
+          
+          <CardFeedGrid cols={3}>
             {getFilteredCourses().map((course) => (
-              shouldShowGatedCourse(course) ? (
-                <GatedCourseCard
-                  key={course.id}
-                  id={course.id}
-                  title={course.title}
-                  description={course.description}
-                  badge={course.badge}
-                  emoji={course.emoji}
-                  pathType={course.pathType}
-                  squad={course.squad}
-                  level={course.level}
-                  access={course.access}
-                />
-              ) : (
-                <CourseCard
-                  key={course.id}
-                  id={course.id}
-                  title={course.title}
-                  description={course.description}
-                  badge={course.badge}
-                  emoji={course.emoji}
-                  pathType={course.pathType}
-                  href={course.href}
-                  isCompleted={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.completed : false}
-                  progress={course.localStorageKey ? courseCompletionStatus[course.localStorageKey]?.progress : 0}
-                  isAdmin={isAdmin}
-                  onResetCourse={resetIndividualCourse}
-                  onOpenSyllabus={openSyllabusPanel}
-                />
-              )
+              <div key={course.id} className="h-full">
+                {course.isGated ? (
+                  <GatedCourseCard
+                    id={course.id}
+                    title={course.title}
+                    description={course.description}
+                    badge={course.badge}
+                    emoji={course.emoji}
+                    pathType={course.pathType}
+                    squad={course.squad}
+                    level={course.level}
+                    access={course.access}
+                  />
+                ) : (
+                  <CourseCard
+                    id={course.id}
+                    title={course.title}
+                    description={course.description}
+                    badge={course.badge}
+                    emoji={course.emoji}
+                    pathType={course.pathType}
+                    href={course.href}
+                    localStorageKey={course.localStorageKey}
+                    totalLessons={course.totalLessons}
+                    onOpenSyllabus={(courseId, courseTitle) => {
+                      setSyllabusPanel({
+                        isOpen: true,
+                        data: { courseId, courseTitle },
+                        courseTitle: courseTitle
+                      });
+                    }}
+                  />
+                )}
+              </div>
             ))}
-          </div>
-
-          {/* Admin Controls */}
-          {isAdmin && (
-            <div className="mt-8 sm:mt-12 text-center">
-              <Card className="max-w-md mx-auto bg-slate-800/50 border-2 border-red-500/30 backdrop-blur-sm">
-                <CardContent className="p-4 sm:p-6">
-                  <h3 className="text-red-400 font-semibold mb-4">Admin Controls</h3>
-                  <div className="space-y-3">
-                    <Button
-                      onClick={resetAllCourses}
-                      variant="destructive"
-                      className="w-full min-h-[44px]"
-                    >
-                      Reset All Course Progress
-                    </Button>
-                    <p className="text-xs text-gray-400">
-                      This will clear all user progress and force re-onboarding
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Debug Section for Admin */}
-          {isAdmin && (
-            <div className="mt-8 sm:mt-12">
-              <Card className="max-w-4xl mx-auto bg-slate-800/50 border-2 border-orange-500/30 backdrop-blur-sm">
-                <CardContent className="p-4 sm:p-6">
-                  <h3 className="text-orange-400 font-semibold mb-4 flex items-center gap-2">
-                    <Info className="w-5 h-5" />
-                    Course Visibility Debug Info
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-400 mb-2">LocalStorage Status:</p>
-                      <p className="text-cyan-400">
-                        {typeof window !== 'undefined' && localStorage.getItem('adminCoursesData') ? '✅ Data saved' : '❌ No data'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 mb-2">Courses in Memory:</p>
-                      <p className="text-cyan-400">{getCourses(isAdmin).length} total</p>
-                    </div>
-                    <div className="md:col-span-2 flex justify-center">
-                      <Button
-                        onClick={() => {
-                          if (isAdmin) {
-                            console.log('Manual refresh triggered from courses page');
-                          }
-                          setCoursesVersion(prev => prev + 1);
-                        }}
-                        variant="outline"
-                        size="sm"
-                        className="border-orange-500 text-orange-400 hover:bg-orange-500 hover:text-white"
-                      >
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Refresh Courses
-                      </Button>
-                    </div>
-                    <div className="md:col-span-2">
-                      <p className="text-gray-400 mb-2">All Courses Status:</p>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {getCourses(isAdmin).map(course => (
-                          <div key={course.id} className="flex items-center gap-2 text-xs">
-                            <span className={`w-3 h-3 rounded-full ${course.isVisible ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                            <span className={`w-3 h-3 rounded-full ${course.isPublished ? 'bg-blue-500' : 'bg-yellow-500'}`}></span>
-                            <span className="text-gray-300">{course.title}</span>
-                            <span className="text-gray-500">({course.id})</span>
-                            <span className={`text-xs ${course.isVisible ? 'text-green-400' : 'text-red-400'}`}>
-                              {course.isVisible ? 'Visible' : 'Hidden'}
-                            </span>
-                            <span className={`text-xs ${course.isPublished ? 'text-blue-400' : 'text-yellow-400'}`}>
-                              {course.isPublished ? 'Published' : 'Draft'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Footer */}
-          <div className="text-center mt-8 sm:mt-16 text-gray-400">
-            <p className="text-xs sm:text-sm">
-              🎓 Hoodie Academy - Building the Future of Web3 Education
-            </p>
-          </div>
-        </div>
+          </CardFeedGrid>
+        </CardFeedSection>
 
         {/* Syllabus Panel */}
         <SyllabusPanel
+          isOpen={syllabusPanel.isOpen}
+          onClose={() => setSyllabusPanel({ isOpen: false, data: null, courseTitle: null })}
           data={syllabusPanel.data}
           courseTitle={syllabusPanel.courseTitle}
-          isOpen={syllabusPanel.isOpen}
-          onClose={closeSyllabusPanel}
         />
-      </div>
+      </PageLayout>
     </TokenGate>
   );
 } 

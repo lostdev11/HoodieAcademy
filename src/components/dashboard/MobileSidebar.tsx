@@ -119,70 +119,78 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
 
   // Load user's squad and display name
   useEffect(() => {
-    const squadResult = localStorage.getItem('userSquad');
-    if (squadResult) {
+    const loadUserData = async () => {
       try {
-        const result = JSON.parse(squadResult);
-        let userSquadName: string;
-        
-        // Handle both object and string formats
-        if (typeof result === 'object' && result.name) {
-          userSquadName = result.name;
-        } else if (typeof result === 'string') {
-          userSquadName = result;
-        } else {
-          throw new Error('Invalid squad result format');
+        // Load squad data
+        const squadResult = localStorage.getItem('userSquad');
+        if (squadResult) {
+          try {
+            const result = JSON.parse(squadResult);
+            let userSquadName: string;
+            
+            // Handle both object and string formats
+            if (typeof result === 'object' && result.name) {
+              userSquadName = result.name;
+            } else if (typeof result === 'string') {
+              userSquadName = result;
+            } else {
+              throw new Error('Invalid squad result format');
+            }
+            
+            setUserSquad(userSquadName);
+            setSquadChatUrl(getSquadChatUrl(userSquadName));
+          } catch (error) {
+            console.error('MobileSidebar: Error parsing squad result:', error);
+          }
         }
-        
-        setUserSquad(userSquadName);
-        setSquadChatUrl(getSquadChatUrl(userSquadName));
+
+        // Load user display name and SNS domain
+        const savedDisplayName = localStorage.getItem('userDisplayName');
+        if (savedDisplayName) {
+          setUserDisplayName(savedDisplayName);
+        } else {
+          // Try to resolve SNS domain if no display name is set
+          const storedWallet = localStorage.getItem('walletAddress');
+          if (storedWallet) {
+            try {
+              const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
+              const resolvedName = await getDisplayNameWithSNS(storedWallet);
+              console.log('MobileSidebar: Resolved SNS name:', resolvedName);
+              setUserDisplayName(resolvedName);
+            } catch (error) {
+              console.error('MobileSidebar: Error resolving SNS domain:', error);
+              // Fallback to default name
+              setUserDisplayName('Hoodie Scholar');
+            }
+          }
+        }
+
+        // Load saved profile image
+        const savedProfileImage = localStorage.getItem('userProfileImage');
+        if (savedProfileImage) {
+          setUserProfileImage(savedProfileImage);
+        }
       } catch (error) {
-        console.error('Error parsing squad result:', error);
+        console.error('MobileSidebar: Error loading user data:', error);
       }
-    }
+    };
 
-    // Load user display name
-    const savedDisplayName = typeof window !== 'undefined' ? localStorage.getItem('userDisplayName') : null;
-    if (savedDisplayName) {
-      setUserDisplayName(savedDisplayName);
-    }
-
-    // Load saved profile image
-    const savedProfileImage = typeof window !== 'undefined' ? localStorage.getItem('userProfileImage') : null;
-    if (savedProfileImage) {
-      setUserProfileImage(savedProfileImage);
-    }
+    loadUserData();
   }, []);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const provider = typeof window !== 'undefined' ? window.solana : undefined;
-      if (!provider) return; // Phantom not found
-      
+    const checkAdmin = () => {
       try {
-        // Connect only if not already connected
-        if (!provider.publicKey) {
-          try {
-            await provider.connect({ onlyIfTrusted: true } as any);
-          } catch {
-            await provider.connect();
-          }
-        }
-        
-        const walletAddress = provider.publicKey!.toString();
-        if (!walletAddress) return;
-        console.log('👤 Checking admin for wallet:', walletAddress);
-        const user = await fetchUserByWallet(walletAddress);
-        if (user && user.is_admin) {
-          setIsAdmin(true);
-          console.log('✅ Admin status: true');
+        const adminStatus = typeof window !== 'undefined' && localStorage.getItem('isAdmin') === 'true';
+        setIsAdmin(adminStatus);
+        if (adminStatus) {
+          console.log('✅ MobileSidebar: Admin status: true');
         } else {
-          setIsAdmin(false);
-          console.log('✅ Admin status: false');
+          console.log('✅ MobileSidebar: Admin status: false');
         }
       } catch (err) {
         setIsAdmin(false);
-        console.error('💥 Failed to check admin:', err);
+        console.error('💥 MobileSidebar: Failed to check admin:', err);
       }
     };
     checkAdmin();
