@@ -219,9 +219,6 @@ export interface CourseCompletion {
   started_at?: string;
   completed_at?: string;
   approved?: boolean;
-  final_exam_approved?: boolean;
-  final_exam_approved_by?: string;
-  final_exam_approved_at?: string;
 }
 
 export interface Assignment {
@@ -240,12 +237,12 @@ export interface Assignment {
 export async function startCourse(user_id: string, course_id: string) {
   try {
     const { data, error } = await supabase
-      .from('user_course_completions')
+      .from('course_completions')
       .upsert({
-        user_id,
+        wallet_address: user_id,
         course_id,
-        course_started_at: new Date().toISOString()
-      }, { onConflict: 'user_id,course_id' });
+        started_at: new Date().toISOString()
+      }, { onConflict: 'wallet_address,course_id' });
     
     if (error) throw error;
     console.log(`Course started for user ${user_id} - ${course_id}`);
@@ -260,11 +257,11 @@ export async function startCourse(user_id: string, course_id: string) {
 export async function completeCourse(user_id: string, course_id: string) {
   try {
     const { data, error } = await supabase
-      .from('user_course_completions')
+      .from('course_completions')
       .update({
-        course_completed_at: new Date().toISOString()
+        completed_at: new Date().toISOString()
       })
-      .eq('user_id', user_id)
+      .eq('wallet_address', user_id)
       .eq('course_id', course_id);
     
     if (error) throw error;
@@ -279,7 +276,7 @@ export async function completeCourse(user_id: string, course_id: string) {
 // Record course completion for a wallet address
 export async function recordCourseCompletion(walletAddress: string, courseId: string) {
   const { data, error } = await supabase
-    .from('course_progress')
+    .from('course_completions')
     .upsert([
       {
         wallet_address: walletAddress,
@@ -299,9 +296,9 @@ export async function recordCourseCompletion(walletAddress: string, courseId: st
 export async function fetchAllCourseCompletions(): Promise<CourseCompletion[]> {
   try {
     const { data, error } = await supabase
-      .from('user_course_completions')
+      .from('course_completions')
       .select('*')
-      .order('course_completed_at', { ascending: false });
+      .order('completed_at', { ascending: false });
     if (error) throw error;
     return data || [];
   } catch (error) {
@@ -314,10 +311,10 @@ export async function fetchAllCourseCompletions(): Promise<CourseCompletion[]> {
 export async function fetchUserCourseCompletions(user_id: string): Promise<CourseCompletion[]> {
   try {
     const { data, error } = await supabase
-      .from('user_course_completions')
+      .from('course_completions')
       .select('*')
-      .eq('user_id', user_id)
-      .order('course_completed_at', { ascending: false });
+      .eq('wallet_address', user_id)
+      .order('completed_at', { ascending: false });
     if (error) throw error;
     return data || [];
   } catch (error) {
@@ -330,9 +327,9 @@ export async function fetchUserCourseCompletions(user_id: string): Promise<Cours
 export async function approveBadge(user_id: string, course_id: string) {
   try {
     const { error } = await supabase
-      .from('user_course_completions')
+      .from('course_completions')
       .update({ approved: true })
-      .eq('user_id', user_id)
+      .eq('wallet_address', user_id)
       .eq('course_id', course_id);
 
     if (error) throw error;
@@ -347,9 +344,9 @@ export async function approveBadge(user_id: string, course_id: string) {
 export async function resetCourses(user_id: string, course_id: string) {
   try {
     const { error } = await supabase
-      .from('user_course_completions')
+      .from('course_completions')
       .delete()
-      .eq('user_id', user_id)
+      .eq('wallet_address', user_id)
       .eq('course_id', course_id);
 
     if (error) throw error;
@@ -475,64 +472,7 @@ export async function getAllActivityLogs(limit: number = 100) {
   }
 } 
 
-// Approve final exam for a course completion
-export async function approveFinalExam(wallet_address: string, course_id: string, admin_user_id: string) {
-  try {
-    const { error } = await supabase
-      .from('course_completions')
-      .update({
-        final_exam_approved: true,
-        final_exam_approved_by: admin_user_id,
-        final_exam_approved_at: new Date().toISOString()
-      })
-      .eq('wallet_address', wallet_address)
-      .eq('course_id', course_id);
 
-    if (error) throw error;
-    console.log(`Final exam approved for ${wallet_address} - ${course_id} by admin ${admin_user_id}`);
-  } catch (error) {
-    console.error('Error approving final exam:', error);
-    throw error;
-  }
-}
-
-// Unapprove final exam for a course completion
-export async function unapproveFinalExam(wallet_address: string, course_id: string) {
-  try {
-    const { error } = await supabase
-      .from('course_completions')
-      .update({
-        final_exam_approved: false,
-        final_exam_approved_by: null,
-        final_exam_approved_at: null
-      })
-      .eq('wallet_address', wallet_address)
-      .eq('course_id', course_id);
-
-    if (error) throw error;
-    console.log(`Final exam unapproved for ${wallet_address} - ${course_id}`);
-  } catch (error) {
-    console.error('Error unapproving final exam:', error);
-    throw error;
-  }
-}
-
-// Get final exam approvals by admin
-export async function getFinalExamApprovalsByAdmin(admin_user_id: string) {
-  try {
-    const { data, error } = await supabase
-      .from('course_completions')
-      .select('*')
-      .eq('final_exam_approved_by', admin_user_id)
-      .order('final_exam_approved_at', { ascending: false });
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching final exam approvals by admin:', error);
-    throw error;
-  }
-}
 
 // Assignment submission functions
 export async function submitAssignment(course_slug: string, content: string, user_id: string): Promise<Assignment> {

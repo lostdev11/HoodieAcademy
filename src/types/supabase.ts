@@ -18,12 +18,7 @@ export type Database = {
         Row: {
           approved: boolean | null
           completed_at: string | null
-          course_completed_at: string | null
           course_id: string
-          course_started_at: string | null
-          final_exam_approved: boolean | null
-          final_exam_approved_at: string | null
-          final_exam_approved_by: string | null
           id: string
           started_at: string | null
           wallet_address: string
@@ -31,12 +26,7 @@ export type Database = {
         Insert: {
           approved?: boolean | null
           completed_at?: string | null
-          course_completed_at?: string | null
           course_id: string
-          course_started_at?: string | null
-          final_exam_approved?: boolean | null
-          final_exam_approved_at?: string | null
-          final_exam_approved_by?: string | null
           id?: string
           started_at?: string | null
           wallet_address: string
@@ -44,25 +34,12 @@ export type Database = {
         Update: {
           approved?: boolean | null
           completed_at?: string | null
-          course_completed_at?: string | null
           course_id?: string
-          course_started_at?: string | null
-          final_exam_approved?: boolean | null
-          final_exam_approved_at?: string | null
-          final_exam_approved_by?: string | null
           id?: string
           started_at?: string | null
           wallet_address?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "course_completions_final_exam_approved_by_fkey"
-            columns: ["final_exam_approved_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       messages: {
         Row: {
@@ -149,42 +126,7 @@ export type Database = {
           },
         ]
       }
-      user_course_completions: {
-        Row: {
-          approved: boolean | null
-          completed_at: string | null
-          course_id: string
-          final_exam_approved: boolean | null
-          final_exam_approved_at: string | null
-          final_exam_approved_by: string | null
-          id: string
-          started_at: string | null
-          wallet_address: string
-        }
-        Insert: {
-          approved?: boolean | null
-          completed_at?: string | null
-          course_id: string
-          final_exam_approved?: boolean | null
-          final_exam_approved_at?: string | null
-          final_exam_approved_by?: string | null
-          id?: string
-          started_at?: string | null
-          wallet_address: string
-        }
-        Update: {
-          approved?: boolean | null
-          completed_at?: string | null
-          course_id?: string
-          final_exam_approved?: boolean | null
-          final_exam_approved_at?: string | null
-          final_exam_approved_by?: string | null
-          id?: string
-          started_at?: string | null
-          wallet_address?: string
-        }
-        Relationships: []
-      }
+
       users: {
         Row: {
           approved: boolean | null

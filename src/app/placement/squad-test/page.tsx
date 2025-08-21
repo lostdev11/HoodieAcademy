@@ -95,6 +95,17 @@ export default function SquadTestPage() {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        console.log('Loaded quiz data:', data);
+        console.log('Quiz data structure check:');
+        console.log('- Has questions:', !!data.questions);
+        console.log('- Questions count:', data.questions?.length);
+        console.log('- Has squads:', !!data.squads);
+        console.log('- Squad keys:', Object.keys(data.squads || {}));
+        
+        if (!data.questions || !data.squads) {
+          throw new Error('Invalid quiz data structure');
+        }
+        
         setQuizData(data);
         
         // If we have an old format result, try to convert it now
@@ -125,6 +136,16 @@ export default function SquadTestPage() {
     loadQuizData();
   }, []);
 
+  // Debug useEffect to track state changes
+  useEffect(() => {
+    console.log('State changed:');
+    console.log('- showResults:', showResults);
+    console.log('- assignedSquad:', assignedSquad);
+    console.log('- pendingSquad:', pendingSquad);
+    console.log('- showConfirmation:', showConfirmation);
+    console.log('- isCalculating:', isCalculating);
+  }, [showResults, assignedSquad, pendingSquad, showConfirmation, isCalculating]);
+
   const handleAnswerSelect = (questionId: string, optionId: string) => {
     setAnswers(prev => ({
       ...prev,
@@ -136,6 +157,8 @@ export default function SquadTestPage() {
     if (currentQuestion < (quizData?.questions.length || 0) - 1) {
       setCurrentQuestion(prev => prev + 1);
     } else {
+      // This is the last question, calculate squad
+      console.log('Last question reached, calculating squad...');
       calculateSquad();
     }
   };
@@ -151,6 +174,8 @@ export default function SquadTestPage() {
 
     setIsCalculating(true);
     console.log('Starting squad calculation...');
+    console.log('Quiz data:', quizData);
+    console.log('User answers:', answers);
 
     try {
       const squadScores: Record<string, number> = {};
@@ -162,6 +187,7 @@ export default function SquadTestPage() {
         );
         const option = question?.options.find(opt => opt.id === optionId);
         if (option) {
+          console.log(`Option ${optionId} selected for squad: ${option.squad}`);
           squadScores[option.squad] = (squadScores[option.squad] || 0) + 1;
         }
       });
@@ -175,6 +201,10 @@ export default function SquadTestPage() {
 
       console.log('Top squad key:', topSquad);
       console.log('Available squads:', Object.keys(quizData.squads));
+      console.log('Squad keys vs names mapping:');
+      Object.entries(quizData.squads).forEach(([key, squad]) => {
+        console.log(`  ${key} -> ${squad.name}`);
+      });
 
       let squadInfo = quizData.squads[topSquad];
       
@@ -196,8 +226,22 @@ export default function SquadTestPage() {
       }
       
       console.log('Final squad info:', squadInfo);
+      console.log('Squad info type:', typeof squadInfo);
+      console.log('Squad info keys:', Object.keys(squadInfo || {}));
       setPendingSquad(squadInfo);
       setShowConfirmation(true);
+      
+      // Also set the assigned squad immediately as a fallback
+      // This ensures results are shown even if confirmation dialog has issues
+      setAssignedSquad(squadInfo);
+      setShowResults(true);
+      console.log('Set assignedSquad and showResults as fallback');
+      
+      // For now, let's skip the confirmation dialog and show results immediately
+      // This will help debug the issue
+      console.log('Skipping confirmation dialog for debugging');
+      setShowConfirmation(false);
+      setPendingSquad(null);
     } catch (error) {
       console.error('Error calculating squad:', error);
       // Show error to user
@@ -211,6 +255,7 @@ export default function SquadTestPage() {
     if (!pendingSquad) return;
     
     console.log('Confirming squad assignment for:', pendingSquad);
+    console.log('Setting assignedSquad to:', pendingSquad);
     
     // Calculate lock end date (30 days from now)
     const lockEndDate = new Date();
@@ -252,12 +297,15 @@ export default function SquadTestPage() {
       localStorage.setItem('suggestDisplayName', 'true');
     }
     
+    console.log('Setting assignedSquad and showResults...');
     setAssignedSquad(pendingSquad);
     setShowConfirmation(false);
     setPendingSquad(null);
     setShowResults(true);
     
     console.log('Squad assignment completed, showing results');
+    console.log('Current state - assignedSquad:', pendingSquad);
+    console.log('Current state - showResults:', true);
   };
 
   const resetTest = () => {
@@ -293,6 +341,10 @@ export default function SquadTestPage() {
   }
 
   if (showResults && assignedSquad) {
+    console.log('Rendering results section');
+    console.log('showResults:', showResults);
+    console.log('assignedSquad:', assignedSquad);
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
         <div className="relative z-10 p-6 max-w-4xl mx-auto">
@@ -636,7 +688,13 @@ export default function SquadTestPage() {
               console.log('See Results button clicked');
               console.log('Current answers:', answers);
               console.log('Quiz data:', quizData);
-              handleNext();
+              console.log('All questions answered:', allQuestionsAnswered);
+              console.log('Can see results:', canSeeResults);
+              if (canSeeResults) {
+                calculateSquad();
+              } else {
+                console.log('Cannot see results yet - not all questions answered');
+              }
             }}
             disabled={!canProceed || isCalculating}
             className={`${
@@ -655,6 +713,76 @@ export default function SquadTestPage() {
             )}
           </Button>
         </div>
+
+        {/* Debug Section - Only show in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-8 p-4 bg-slate-800/50 border border-cyan-500/30 rounded-lg">
+            <h3 className="text-cyan-400 font-semibold mb-2">Debug Info</h3>
+            <div className="text-sm text-gray-300 space-y-1">
+              <div>Current Question: {currentQuestion + 1} of {quizData.questions.length}</div>
+              <div>All Questions Answered: {allQuestionsAnswered ? 'Yes' : 'No'}</div>
+              <div>Can See Results: {canSeeResults ? 'Yes' : 'No'}</div>
+              <div>Show Results: {showResults ? 'Yes' : 'No'}</div>
+              <div>Assigned Squad: {assignedSquad ? assignedSquad.name : 'None'}</div>
+              <div>Pending Squad: {pendingSquad ? pendingSquad.name : 'None'}</div>
+              <div>Show Confirmation: {showConfirmation ? 'Yes' : 'No'}</div>
+              <div>Is Calculating: {isCalculating ? 'Yes' : 'No'}</div>
+              <div>Answers Count: {Object.keys(answers).length}</div>
+              <div>Expected Answers: {quizData.questions.length}</div>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <Button
+                onClick={() => {
+                  console.log('Debug: Current state:', {
+                    currentQuestion,
+                    allQuestionsAnswered,
+                    canSeeResults,
+                    showResults,
+                    assignedSquad,
+                    pendingSquad,
+                    showConfirmation,
+                    isCalculating,
+                    answers,
+                    quizData
+                  });
+                }}
+                variant="outline"
+                size="sm"
+                className="border-cyan-500/30 text-cyan-400"
+              >
+                Log State to Console
+              </Button>
+              <Button
+                onClick={() => {
+                  console.log('Debug: Testing squad calculation...');
+                  calculateSquad();
+                }}
+                variant="outline"
+                size="sm"
+                className="border-green-500/30 text-green-400"
+              >
+                Test Squad Calculation
+              </Button>
+              <Button
+                onClick={() => {
+                  console.log('Debug: Force showing results...');
+                  // Force show results with a test squad
+                  const testSquad = quizData.squads.creators;
+                  if (testSquad) {
+                    setAssignedSquad(testSquad);
+                    setShowResults(true);
+                    console.log('Forced results display with test squad:', testSquad);
+                  }
+                }}
+                variant="outline"
+                size="sm"
+                className="border-purple-500/30 text-purple-400"
+              >
+                Force Show Results
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

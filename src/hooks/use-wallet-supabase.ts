@@ -82,7 +82,7 @@ export function useWalletSupabase() {
     if (!wallet) return;
     try {
       await supabase
-        .from('user_course_completions')
+        .from('course_completions')
         .upsert({ wallet_address: wallet, course_id: course_slug, started_at: new Date().toISOString() }, { onConflict: 'wallet_address,course_id' });
       
       // Log course start activity
@@ -101,7 +101,7 @@ export function useWalletSupabase() {
     if (!wallet) return;
     try {
       await supabase
-        .from('user_course_completions')
+        .from('course_completions')
         .upsert({ wallet_address: wallet, course_id: course_slug, completed_at: new Date().toISOString() }, { onConflict: 'wallet_address,course_id' });
       
       // Log course completion activity

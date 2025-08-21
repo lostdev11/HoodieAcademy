@@ -23,9 +23,7 @@ import {
   User as SupabaseUser,
   CourseCompletion,
   approveBadge,
-  resetCourses,
-  approveFinalExam,
-  unapproveFinalExam
+  resetCourses
 } from '@/lib/supabase';
 import {
   Announcement, Event, getAnnouncements, getEvents
@@ -309,34 +307,7 @@ export default function AdminDashboard() {
     setShowUserViewModal(true);
   };
 
-  // Final Exam Approve/Reject handlers
-  const handleApproveFinalExam = async (wallet_address: string, course_id: string) => {
-    if (!walletAddress) return;
-    setFinalExamLoading(wallet_address + course_id + 'approve');
-    try {
-      await approveFinalExam(wallet_address, course_id, walletAddress);
-      // Refresh completions
-      const completions = await fetchAllCourseCompletions();
-      setCourseCompletions(completions);
-    } catch (e) {
-      console.error('Error approving final exam:', e);
-    } finally {
-      setFinalExamLoading(null);
-    }
-  };
-  const handleRejectFinalExam = async (wallet_address: string, course_id: string) => {
-    setFinalExamLoading(wallet_address + course_id + 'reject');
-    try {
-      await unapproveFinalExam(wallet_address, course_id);
-      // Refresh completions
-      const completions = await fetchAllCourseCompletions();
-      setCourseCompletions(completions);
-    } catch (e) {
-      console.error('Error rejecting final exam:', e);
-    } finally {
-      setFinalExamLoading(null);
-    }
-  };
+
 
   // Course management functions
   const handleToggleCourseVisibility = (courseId: string) => {
@@ -1011,10 +982,7 @@ export default function AdminDashboard() {
                     <tbody>
                       {courseCompletions.filter(c => c.course_id === 'wallet-wizardry-final-exam' && c.completed_at).map((completion) => {
                         const user = users.find(u => u.wallet_address === completion.wallet_address);
-                        let statusBadge = null;
-                        if (completion.final_exam_approved === true) statusBadge = <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Approved</Badge>;
-                        else if (completion.final_exam_approved === false) statusBadge = <Badge className="bg-red-500/20 text-red-400 border-red-500/30">Rejected</Badge>;
-                        else statusBadge = <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">Pending</Badge>;
+                        let statusBadge = <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Completed</Badge>;
                         return (
                           <tr key={completion.id || completion.wallet_address + completion.course_id} className="border-b border-slate-700">
                             <td className="px-4 py-2">{user?.display_name || 'Unknown'}</td>
@@ -1025,19 +993,19 @@ export default function AdminDashboard() {
                               <div className="flex gap-2">
                                 <Button
                                   size="sm"
-                                  variant={completion.final_exam_approved === true ? "outline" : "default"}
-                                  disabled={completion.final_exam_approved === true || finalExamLoading === completion.wallet_address + completion.course_id + 'approve'}
-                                  onClick={() => handleApproveFinalExam(completion.wallet_address, completion.course_id)}
+                                  variant="outline"
+                                  disabled={true}
+                                  className="opacity-50"
                                 >
-                                  {finalExamLoading === completion.wallet_address + completion.course_id + 'approve' ? <RefreshCw className="animate-spin w-4 h-4" /> : <CheckCircle className="w-4 h-4 mr-1" />} Approve
+                                  <CheckCircle className="w-4 h-4 mr-1" /> Approved
                                 </Button>
                                 <Button
                                   size="sm"
-                                  variant={completion.final_exam_approved === false ? "outline" : "destructive"}
-                                  disabled={completion.final_exam_approved === false || finalExamLoading === completion.wallet_address + completion.course_id + 'reject'}
-                                  onClick={() => handleRejectFinalExam(completion.wallet_address, completion.course_id)}
+                                  variant="outline"
+                                  disabled={true}
+                                  className="opacity-50"
                                 >
-                                  {finalExamLoading === completion.wallet_address + completion.course_id + 'reject' ? <RefreshCw className="animate-spin w-4 h-4" /> : <XCircle className="w-4 h-4 mr-1" />} Reject
+                                  <XCircle className="w-4 h-4 mr-1" /> Rejected
                                 </Button>
                               </div>
                             </td>
