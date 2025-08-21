@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -11,7 +13,7 @@ export default function SquadBadge({ squad }: { squad: string }) {
       Decoders: '🧠',
       Raiders: '⚔️',
       Speakers: '🎤',
-      Ranger: '🦅',
+      Rangers: '🦅', // Fixed: was "Ranger" but should be "Rangers"
     };
     
     const colorMap: Record<string, string> = {
@@ -19,7 +21,7 @@ export default function SquadBadge({ squad }: { squad: string }) {
       Decoders: 'bg-gray-500/20 border-gray-500/50 text-gray-300',
       Raiders: 'bg-blue-500/20 border-blue-500/50 text-blue-400',
       Speakers: 'bg-red-500/20 border-red-500/50 text-red-400',
-      Ranger: 'bg-purple-500/20 border-purple-500/50 text-purple-400',
+      Rangers: 'bg-purple-500/20 border-purple-500/50 text-purple-400', // Fixed: was "Ranger" but should be "Rangers"
     };
 
     return (
@@ -39,13 +41,13 @@ export default function SquadBadge({ squad }: { squad: string }) {
       .replace(/^Hoodie\s+/, '') // Remove "Hoodie " prefix
       .trim();
     
-    // Map to badge names
+    // Map to badge names - ensure consistency with quiz data
     const nameMap: Record<string, string> = {
       'Creators': 'Creators',
       'Decoders': 'Decoders', 
       'Raiders': 'Raiders',
       'Speakers': 'Speakers',
-      'Rangers': 'Ranger', // Note: badge is named "Ranger" not "Rangers"
+      'Rangers': 'Rangers', // Fixed: was "Ranger" but should be "Rangers"
       'Treasury Builders': 'Creators', // Fallback to Creators badge
     };
     
@@ -59,16 +61,18 @@ export default function SquadBadge({ squad }: { squad: string }) {
     Decoders: '/badges/badge_decoders.png',
     Raiders: '/badges/badge_raiders.png',
     Speakers: '/badges/badge_speakers.png',
-    Ranger: '/badges/badge_ranger.png',
+    Rangers: '/badges/badge_ranger.png', // Note: badge file is named "badge_ranger.png" but represents "Rangers"
   };
 
   const badgePath = badgeMap[normalizedSquad];
   if (!badgePath) {
     // Return fallback badge if no matching badge found
+    console.warn(`No badge found for squad: ${squad} (normalized: ${normalizedSquad})`);
     return getFallbackBadge(normalizedSquad);
   }
 
   if (imageError) {
+    console.warn(`Image failed to load for squad: ${normalizedSquad}, using fallback`);
     return getFallbackBadge(normalizedSquad);
   }
 

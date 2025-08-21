@@ -61,6 +61,26 @@ export default function SquadTestPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingSquad, setPendingSquad] = useState<SquadInfo | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const maxRetries = 3;
+
+  // Simple error boundary for SquadBadge
+  const renderSquadBadge = (squadName: string) => {
+    try {
+      return <SquadBadge squad={squadName} />;
+    } catch (error) {
+      console.error('Error rendering SquadBadge:', error);
+      // Fallback badge display
+      return (
+        <div className="text-center">
+          <div className="w-40 h-40 rounded-xl border-2 border-cyan-500/50 bg-slate-700/30 flex items-center justify-center text-6xl shadow-xl mx-auto">
+            🏆
+          </div>
+          <p className="mt-3 text-lg font-bold text-cyan-400">{squadName} Badge</p>
+        </div>
+      );
+    }
+  };
 
   useEffect(() => {
     // Check if user has already taken the test
@@ -90,10 +110,26 @@ export default function SquadTestPage() {
     // Load quiz data with retry mechanism
     const loadQuizData = async () => {
       try {
-        const response = await fetch('/placement/squad-test/quiz.json');
+        console.log('Attempting to load quiz data...');
+        console.log('Fetching from:', '/placement/squad-test/quiz.json');
+        
+        // Add timeout to fetch request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
+        const response = await fetch('/placement/squad-test/quiz.json', {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
         const data = await response.json();
         console.log('Loaded quiz data:', data);
         console.log('Quiz data structure check:');
@@ -102,10 +138,50 @@ export default function SquadTestPage() {
         console.log('- Has squads:', !!data.squads);
         console.log('- Squad keys:', Object.keys(data.squads || {}));
         
-        if (!data.questions || !data.squads) {
-          throw new Error('Invalid quiz data structure');
+        // Check if data is actually an object
+        if (typeof data !== 'object' || data === null) {
+          throw new Error('Quiz data is not a valid object');
         }
         
+        // Validate quiz data structure
+        if (!data.questions || !Array.isArray(data.questions) || data.questions.length === 0) {
+          throw new Error('Invalid quiz data: questions array is missing or empty');
+        }
+        
+        if (!data.squads || typeof data.squads !== 'object' || Object.keys(data.squads).length === 0) {
+          throw new Error('Invalid quiz data: squads object is missing or empty');
+        }
+        
+        // Validate each question has the required structure
+        for (let i = 0; i < data.questions.length; i++) {
+          const question = data.questions[i];
+          if (!question.id || !question.text || !question.options || !Array.isArray(question.options)) {
+            throw new Error(`Invalid question structure at index ${i}`);
+          }
+          
+          // Validate each option has the required structure
+          for (let j = 0; j < question.options.length; j++) {
+            const option = question.options[j];
+            if (!option.id || !option.text || !option.squad) {
+              throw new Error(`Invalid option structure at question ${i}, option ${j}`);
+            }
+            
+            // Validate that the squad referenced exists
+            if (!data.squads[option.squad]) {
+              throw new Error(`Question ${i}, option ${j} references unknown squad: ${option.squad}`);
+            }
+          }
+        }
+        
+        // Validate each squad has the required structure
+        for (const [squadKey, squad] of Object.entries(data.squads)) {
+          const squadInfo = squad as SquadInfo;
+          if (!squadInfo.name || !squadInfo.description || !Array.isArray(squadInfo.specialties) || !Array.isArray(squadInfo.recommendedCourses)) {
+            throw new Error(`Invalid squad structure for ${squadKey}`);
+          }
+        }
+        
+        console.log('Quiz data validation passed');
         setQuizData(data);
         
         // If we have an old format result, try to convert it now
@@ -128,13 +204,38 @@ export default function SquadTestPage() {
       } catch (error) {
         console.error('Error loading quiz data:', error);
         setIsLoading(false);
-        setError(error instanceof Error ? error.message : 'Unknown error occurred');
+        
+        // Handle specific error types
+        let errorMessage = 'Unknown error occurred';
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            errorMessage = 'Request timed out. Please check your connection and try again.';
+          } else if (error.message.includes('HTTP error')) {
+            errorMessage = `Server error: ${error.message}`;
+          } else if (error.message.includes('Invalid quiz data')) {
+            errorMessage = `Data error: ${error.message}`;
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
+        // Implement retry mechanism
+        if (retryCount < maxRetries) {
+          console.log(`Retrying... Attempt ${retryCount + 1} of ${maxRetries}`);
+          setRetryCount(prev => prev + 1);
+          setTimeout(() => {
+            setIsLoading(true);
+            loadQuizData();
+          }, 1000 * (retryCount + 1)); // Exponential backoff
+        } else {
+          setError(errorMessage);
+        }
         // Don't retry on error to prevent infinite loops
       }
     };
 
     loadQuizData();
-  }, []);
+  }, [retryCount]);
 
   // Debug useEffect to track state changes
   useEffect(() => {
@@ -189,10 +290,27 @@ export default function SquadTestPage() {
         if (option) {
           console.log(`Option ${optionId} selected for squad: ${option.squad}`);
           squadScores[option.squad] = (squadScores[option.squad] || 0) + 1;
+        } else {
+          console.warn(`Could not find option ${optionId} in any question`);
         }
       });
 
       console.log('Squad scores:', squadScores);
+      console.log('Total answers:', Object.keys(answers).length);
+      console.log('Expected answers:', quizData.questions.length);
+      
+      // Check if we have enough answers
+      if (Object.keys(answers).length < quizData.questions.length) {
+        console.warn('Not all questions answered:', Object.keys(answers).length, 'of', quizData.questions.length);
+      }
+      
+      // Check if we have any squad scores
+      if (Object.keys(squadScores).length === 0) {
+        console.error('No valid squad scores calculated');
+        setError('Unable to calculate squad assignment. Please answer all questions and try again.');
+        setIsCalculating(false);
+        return;
+      }
 
       // Find the squad with the most votes
       const topSquad = Object.entries(squadScores).reduce((a, b) => 
@@ -212,6 +330,8 @@ export default function SquadTestPage() {
       if (!squadInfo) {
         console.error('No squad info found for:', topSquad);
         console.error('Available squad keys:', Object.keys(quizData.squads));
+        console.error('Squad scores:', squadScores);
+        console.error('Top squad key:', topSquad);
         
         // Use the first available squad as fallback
         const fallbackSquadKey = Object.keys(quizData.squads)[0];
@@ -221,6 +341,7 @@ export default function SquadTestPage() {
         } else {
           console.error('No squads available at all');
           setIsCalculating(false);
+          setError('No squads available. Please refresh the page and try again.');
           return;
         }
       }
@@ -228,6 +349,28 @@ export default function SquadTestPage() {
       console.log('Final squad info:', squadInfo);
       console.log('Squad info type:', typeof squadInfo);
       console.log('Squad info keys:', Object.keys(squadInfo || {}));
+      
+      // Validate squad info structure
+      if (!squadInfo.name || !squadInfo.description) {
+        console.error('Invalid squad info structure:', squadInfo);
+        setError('Invalid squad data. Please refresh the page and try again.');
+        setIsCalculating(false);
+        return;
+      }
+      
+      // Additional validation for required fields
+      if (!Array.isArray(squadInfo.specialties) || !Array.isArray(squadInfo.recommendedCourses)) {
+        console.error('Missing required squad arrays:', {
+          specialties: squadInfo.specialties,
+          recommendedCourses: squadInfo.recommendedCourses
+        });
+        setError('Invalid squad data structure. Please refresh the page and try again.');
+        setIsCalculating(false);
+        return;
+      }
+      
+      console.log('Squad validation passed, proceeding with assignment');
+      
       setPendingSquad(squadInfo);
       setShowConfirmation(true);
       
@@ -242,10 +385,14 @@ export default function SquadTestPage() {
       console.log('Skipping confirmation dialog for debugging');
       setShowConfirmation(false);
       setPendingSquad(null);
+      
+      console.log('Squad assignment completed successfully');
+      console.log('Final state - assignedSquad:', squadInfo);
+      console.log('Final state - showResults:', true);
     } catch (error) {
       console.error('Error calculating squad:', error);
       // Show error to user
-      alert('There was an error calculating your squad. Please try again.');
+      setError(error instanceof Error ? error.message : 'Unknown error occurred');
     } finally {
       setIsCalculating(false);
     }
@@ -270,12 +417,18 @@ export default function SquadTestPage() {
     };
     console.log('Saving squad result to localStorage:', squadResult);
     
-    // Store the full squad object for better functionality
-    localStorage.setItem('userSquad', JSON.stringify(squadResult));
-    console.log('Squad result saved to localStorage');
-    
-    // Mark placement test as completed
-    localStorage.setItem('placementTestCompleted', 'true');
+    try {
+      // Store the full squad object for better functionality
+      localStorage.setItem('userSquad', JSON.stringify(squadResult));
+      console.log('Squad result saved to localStorage');
+      
+      // Mark placement test as completed
+      localStorage.setItem('placementTestCompleted', 'true');
+      console.log('Placement test marked as completed');
+    } catch (storageError) {
+      console.error('Error saving to localStorage:', storageError);
+      // Continue with the process even if localStorage fails
+    }
     
     // Get wallet address and display name
     const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
@@ -284,17 +437,27 @@ export default function SquadTestPage() {
     // Sync with Supabase
     if (walletAddress) {
       try {
+        console.log('Attempting to sync with Supabase...');
         await recordPlacementTest(walletAddress, pendingSquad.name, displayName || undefined);
         console.log('Successfully synced placement test with Supabase');
       } catch (error) {
         console.error('Error syncing placement test with Supabase:', error);
         // Continue with localStorage even if Supabase sync fails
+        console.log('Continuing with localStorage only due to Supabase sync failure');
       }
+    } else {
+      console.log('No wallet address found, skipping Supabase sync');
     }
     
     // If user doesn't have a display name, suggest they set one
     if (!displayName) {
-      localStorage.setItem('suggestDisplayName', 'true');
+      try {
+        localStorage.setItem('suggestDisplayName', 'true');
+        console.log('Display name suggestion flag set');
+      } catch (storageError) {
+        console.error('Error setting display name suggestion flag:', storageError);
+        // Continue with the process even if this fails
+      }
     }
     
     console.log('Setting assignedSquad and showResults...');
@@ -306,22 +469,57 @@ export default function SquadTestPage() {
     console.log('Squad assignment completed, showing results');
     console.log('Current state - assignedSquad:', pendingSquad);
     console.log('Current state - showResults:', true);
+    
+    // Verify the state was set correctly
+    setTimeout(() => {
+      console.log('State verification - assignedSquad:', assignedSquad);
+      console.log('State verification - showResults:', showResults);
+    }, 100);
   };
 
   const resetTest = () => {
-    localStorage.removeItem('userSquad');
-    setAnswers({});
-    setCurrentQuestion(0);
-    setShowResults(false);
-    setAssignedSquad(null);
-    setShowConfirmation(false);
-    setPendingSquad(null);
+    try {
+      console.log('Resetting placement test...');
+      localStorage.removeItem('userSquad');
+      localStorage.removeItem('placementTestCompleted');
+      localStorage.removeItem('suggestDisplayName');
+      console.log('LocalStorage cleared');
+      
+      setAnswers({});
+      setCurrentQuestion(0);
+      setShowResults(false);
+      setAssignedSquad(null);
+      setShowConfirmation(false);
+      setPendingSquad(null);
+      setError(null);
+      setRetryCount(0);
+      setIsLoading(false);
+      setIsCalculating(false);
+      
+      console.log('State reset completed');
+    } catch (error) {
+      console.error('Error resetting test:', error);
+      // Force reload if reset fails
+      window.location.reload();
+    }
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-cyan-400 text-2xl animate-pulse">Loading squad test...</div>
+        <div className="text-center">
+          <div className="text-cyan-400 text-2xl animate-pulse mb-4">
+            {retryCount > 0 ? `Retrying... (${retryCount}/${maxRetries})` : 'Loading squad test...'}
+          </div>
+          {retryCount > 0 && (
+            <div className="text-gray-400 text-sm">
+              Attempt {retryCount} of {maxRetries}
+            </div>
+          )}
+          <div className="mt-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mx-auto"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -330,11 +528,43 @@ export default function SquadTestPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-red-400 text-xl text-center">
-          <div className="mb-4">Error loading squad test</div>
-          <Button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700">
-            Retry
-          </Button>
+        <div className="text-red-400 text-xl text-center max-w-md mx-auto p-6">
+          <div className="mb-4">
+            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+            <h2 className="text-2xl font-bold mb-2">Error Loading Squad Test</h2>
+            <p className="text-gray-300 text-sm mb-4">{error}</p>
+          </div>
+          
+          <div className="space-y-3">
+            <Button 
+              onClick={() => {
+                setError(null);
+                setRetryCount(0);
+                setIsLoading(true);
+                // Reload the component
+                window.location.reload();
+              }} 
+              className="bg-red-600 hover:bg-red-700 w-full"
+            >
+              Retry
+            </Button>
+            
+            <Button
+              asChild
+              variant="outline"
+              className="border-cyan-500/30 text-cyan-400 hover:text-cyan-300 w-full"
+            >
+              <Link href="/">
+                Back to Dashboard
+              </Link>
+            </Button>
+          </div>
+          
+          {retryCount > 0 && (
+            <p className="text-xs text-gray-500 mt-4">
+              Retry attempts: {retryCount}/{maxRetries}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -344,6 +574,25 @@ export default function SquadTestPage() {
     console.log('Rendering results section');
     console.log('showResults:', showResults);
     console.log('assignedSquad:', assignedSquad);
+    console.log('assignedSquad type:', typeof assignedSquad);
+    console.log('assignedSquad keys:', Object.keys(assignedSquad));
+    console.log('assignedSquad.name:', assignedSquad.name);
+    console.log('assignedSquad.description:', assignedSquad.description);
+    
+    // Validate squad data before rendering
+    if (!assignedSquad.name || !assignedSquad.description || !assignedSquad.specialties || !assignedSquad.recommendedCourses) {
+      console.error('Invalid squad data structure:', assignedSquad);
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+          <div className="text-red-400 text-xl text-center">
+            <div className="mb-4">Invalid squad data</div>
+            <Button onClick={() => resetTest()} className="bg-red-600 hover:bg-red-700">
+              Retake Test
+            </Button>
+          </div>
+        </div>
+      );
+    }
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -386,7 +635,9 @@ export default function SquadTestPage() {
 
               {/* Squad Badge */}
               <div className="mb-6">
-                <SquadBadge squad={assignedSquad.name.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '')} />
+                <div className="error-boundary">
+                  {renderSquadBadge(assignedSquad.name.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, ''))}
+                </div>
               </div>
 
               {/* Specialties */}
@@ -396,14 +647,18 @@ export default function SquadTestPage() {
                   Your Specialties
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {assignedSquad.specialties.map((specialty, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-slate-700/50 border border-cyan-500/30 rounded-full text-cyan-300 text-sm"
-                    >
-                      {specialty}
-                    </span>
-                  ))}
+                  {assignedSquad.specialties && assignedSquad.specialties.length > 0 ? (
+                    assignedSquad.specialties.map((specialty, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-slate-700/50 border border-cyan-500/30 rounded-full text-cyan-300 text-sm"
+                      >
+                        {specialty}
+                      </span>
+                    ))
+                  ) : (
+                    <div className="text-gray-400 text-center py-2 w-full">No specialties available</div>
+                  )}
                 </div>
               </div>
 
@@ -414,22 +669,26 @@ export default function SquadTestPage() {
                   Recommended Course Track
                 </h3>
                 <div className="space-y-2">
-                  {assignedSquad.recommendedCourses.map((courseId, index) => {
-                    const courseNames: Record<string, string> = {
-                      'wallet-wizardry': 'Wallet Wizardry',
-                      'nft-mastery': 'NFT Mastery',
-                      'meme-coin-mania': 'Meme Coin Mania',
-                      'community-strategy': 'Community Strategy',
-                      'sns': 'SNS Simplified',
-                      'technical-analysis': 'Technical Analysis Tactics'
-                    };
-                    return (
-                      <div key={courseId} className="flex items-center">
-                        <CheckCircle className="w-4 h-4 text-green-400 mr-3" />
-                        <span className="text-gray-300">{courseNames[courseId]}</span>
-                      </div>
-                    );
-                  })}
+                  {assignedSquad.recommendedCourses && assignedSquad.recommendedCourses.length > 0 ? (
+                    assignedSquad.recommendedCourses.map((courseId, index) => {
+                      const courseNames: Record<string, string> = {
+                        'wallet-wizardry': 'Wallet Wizardry',
+                        'nft-mastery': 'NFT Mastery',
+                        'meme-coin-mania': 'Meme Coin Mania',
+                        'community-strategy': 'Community Strategy',
+                        'sns': 'SNS Simplified',
+                        'technical-analysis': 'Technical Analysis Tactics'
+                      };
+                      return (
+                        <div key={courseId} className="flex items-center">
+                          <CheckCircle className="w-4 h-4 text-green-400 mr-3" />
+                          <span className="text-gray-300">{courseNames[courseId] || courseId}</span>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-gray-400 text-center py-2">No recommended courses available</div>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -505,21 +764,21 @@ export default function SquadTestPage() {
                     <h4 className="font-semibold text-cyan-400 mb-2">Your Assigned Squad:</h4>
                     <div className="flex items-center gap-3 mb-4">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
-                        pendingSquad.name.includes('Creators') ? 'bg-yellow-500/20' :
-                        pendingSquad.name.includes('Decoders') ? 'bg-gray-500/20' :
-                        pendingSquad.name.includes('Speakers') ? 'bg-red-500/20' :
-                        pendingSquad.name.includes('Raiders') ? 'bg-blue-500/20' :
+                        pendingSquad.name && pendingSquad.name.includes('Creators') ? 'bg-yellow-500/20' :
+                        pendingSquad.name && pendingSquad.name.includes('Decoders') ? 'bg-gray-500/20' :
+                        pendingSquad.name && pendingSquad.name.includes('Speakers') ? 'bg-red-500/20' :
+                        pendingSquad.name && pendingSquad.name.includes('Raiders') ? 'bg-blue-500/20' :
                         'bg-purple-500/20'
                       }`}>
-                        {pendingSquad.name.includes('Creators') ? '🎨' :
-                         pendingSquad.name.includes('Decoders') ? '🧠' :
-                         pendingSquad.name.includes('Speakers') ? '🎤' :
-                         pendingSquad.name.includes('Raiders') ? '⚔️' :
+                        {pendingSquad.name && pendingSquad.name.includes('Creators') ? '🎨' :
+                         pendingSquad.name && pendingSquad.name.includes('Decoders') ? '🧠' :
+                         pendingSquad.name && pendingSquad.name.includes('Speakers') ? '🎤' :
+                         pendingSquad.name && pendingSquad.name.includes('Raiders') ? '⚔️' :
                          '🦅'}
                       </div>
                       <div>
-                        <p className="font-semibold text-white">{pendingSquad.name}</p>
-                        <p className="text-sm text-gray-300">{pendingSquad.description}</p>
+                        <p className="font-semibold text-white">{pendingSquad.name || 'Unknown Squad'}</p>
+                        <p className="text-sm text-gray-300">{pendingSquad.description || 'No description available'}</p>
                       </div>
                     </div>
                     
@@ -527,18 +786,22 @@ export default function SquadTestPage() {
                     <div className="mt-4">
                       <h5 className="font-semibold text-cyan-400 mb-2">Your Answers Summary:</h5>
                       <div className="space-y-2 text-sm">
-                        {quizData?.questions.map((question, index) => {
-                          const answerId = answers[question.id];
-                          const selectedOption = question.options.find(opt => opt.id === answerId);
-                          return (
-                            <div key={question.id} className="flex justify-between items-center p-2 bg-slate-600/30 rounded">
-                              <span className="text-gray-300">Q{index + 1}: {question.text.substring(0, 50)}...</span>
-                              <span className="text-cyan-400 font-medium">
-                                {selectedOption ? selectedOption.text.substring(0, 30) + '...' : 'Not answered'}
-                              </span>
-                            </div>
-                          );
-                        })}
+                        {quizData?.questions && quizData.questions.length > 0 ? (
+                          quizData.questions.map((question, index) => {
+                            const answerId = answers[question.id];
+                            const selectedOption = question.options?.find(opt => opt.id === answerId);
+                            return (
+                              <div key={question.id} className="flex justify-between items-center p-2 bg-slate-600/30 rounded">
+                                <span className="text-gray-300">Q{index + 1}: {question.text.substring(0, 50)}...</span>
+                                <span className="text-cyan-400 font-medium">
+                                  {selectedOption ? selectedOption.text.substring(0, 30) + '...' : 'Not answered'}
+                                </span>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="text-red-400 text-center py-2">No questions available</div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -573,14 +836,81 @@ export default function SquadTestPage() {
   if (!quizData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-red-400 text-xl">Failed to load quiz data</div>
+        <div className="text-red-400 text-xl text-center max-w-md mx-auto p-6">
+          <div className="mb-4">
+            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+            <h2 className="text-2xl font-bold mb-2">Quiz Data Not Available</h2>
+            <p className="text-gray-300 text-sm mb-4">
+              The quiz data could not be loaded. This might be a temporary issue.
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <Button 
+              onClick={() => {
+                setError(null);
+                setRetryCount(0);
+                setIsLoading(true);
+                // Reload the component
+                window.location.reload();
+              }} 
+              className="bg-red-600 hover:bg-red-700 w-full"
+            >
+              Retry
+            </Button>
+            
+            <Button
+              asChild
+              variant="outline"
+              className="border-cyan-500/30 text-cyan-400 hover:text-cyan-300 w-full"
+            >
+              <Link href="/">
+                Back to Dashboard
+              </Link>
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   const currentQuestionData = quizData.questions[currentQuestion];
+  
+  // Validate current question data
+  if (!currentQuestionData || !currentQuestionData.options || currentQuestionData.options.length === 0) {
+    console.error('Invalid current question data:', currentQuestionData);
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-red-400 text-xl text-center max-w-md mx-auto p-6">
+          <div className="mb-4">
+            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+            <h2 className="text-2xl font-bold mb-2">Invalid Question Data</h2>
+            <p className="text-gray-300 text-sm mb-4">
+              The current question data is invalid. Please refresh the page and try again.
+            </p>
+          </div>
+          
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="bg-red-600 hover:bg-red-700 w-full"
+          >
+            Refresh Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
   const progress = ((currentQuestion + 1) / quizData.questions.length) * 100;
   const canProceed = answers[currentQuestionData.id];
+  
+  // Validate progress calculation
+  if (isNaN(progress) || progress < 0 || progress > 100) {
+    console.error('Invalid progress calculation:', { currentQuestion, totalQuestions: quizData.questions.length, progress });
+    // Use fallback progress
+    const fallbackProgress = Math.min(100, Math.max(0, ((currentQuestion + 1) / Math.max(1, quizData.questions.length)) * 100));
+    console.log('Using fallback progress:', fallbackProgress);
+  }
   
   // Check if all questions are answered for the final question
   const allQuestionsAnswered = quizData.questions.every(q => answers[q.id]);
@@ -620,20 +950,24 @@ export default function SquadTestPage() {
             
             {/* Question completion indicator */}
             <div className="flex justify-center gap-1 mt-2">
-              {quizData.questions.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-2 h-2 rounded-full ${
-                    answers[quizData.questions[index].id] 
-                      ? 'bg-green-400' 
-                      : 'bg-gray-400'
-                  }`}
-                />
-              ))}
+              {quizData.questions && quizData.questions.length > 0 ? (
+                quizData.questions.map((question, index) => (
+                  <div
+                    key={index}
+                    className={`w-2 h-2 rounded-full ${
+                      answers[question.id] 
+                        ? 'bg-green-400' 
+                        : 'bg-gray-400'
+                    }`}
+                  />
+                ))
+              ) : (
+                <div className="text-red-400 text-xs">No questions available</div>
+              )}
             </div>
             
             {/* Completion status */}
-            {currentQuestion === quizData.questions.length - 1 && (
+            {currentQuestion === (quizData.questions?.length || 0) - 1 && (
               <div className="text-center mt-2">
                 {allQuestionsAnswered ? (
                   <span className="text-green-400 text-sm">✓ All questions answered</span>
@@ -657,17 +991,23 @@ export default function SquadTestPage() {
               onValueChange={(value) => handleAnswerSelect(currentQuestionData.id, value)}
               className="space-y-4"
             >
-              {currentQuestionData.options.map((option) => (
-                <div key={option.id} className="flex items-center space-x-3">
-                  <RadioGroupItem value={option.id} id={option.id} />
-                  <Label
-                    htmlFor={option.id}
-                    className="text-lg text-gray-300 cursor-pointer hover:text-cyan-300 transition-colors"
-                  >
-                    {option.text}
-                  </Label>
+              {currentQuestionData.options && currentQuestionData.options.length > 0 ? (
+                currentQuestionData.options.map((option) => (
+                  <div key={option.id} className="flex items-center space-x-3">
+                    <RadioGroupItem value={option.id} id={option.id} />
+                    <Label
+                      htmlFor={option.id}
+                      className="text-lg text-gray-300 cursor-pointer hover:text-cyan-300 transition-colors"
+                    >
+                      {option.text}
+                    </Label>
+                  </div>
+                ))
+              ) : (
+                <div className="text-red-400 text-center py-4">
+                  No options available for this question. Please refresh the page.
                 </div>
-              ))}
+              )}
             </RadioGroup>
           </CardContent>
         </Card>
@@ -685,15 +1025,23 @@ export default function SquadTestPage() {
 
           <Button
             onClick={() => {
-              console.log('See Results button clicked');
-              console.log('Current answers:', answers);
-              console.log('Quiz data:', quizData);
-              console.log('All questions answered:', allQuestionsAnswered);
-              console.log('Can see results:', canSeeResults);
-              if (canSeeResults) {
-                calculateSquad();
-              } else {
-                console.log('Cannot see results yet - not all questions answered');
+              try {
+                console.log('See Results button clicked');
+                console.log('Current answers:', answers);
+                console.log('Quiz data:', quizData);
+                console.log('All questions answered:', allQuestionsAnswered);
+                console.log('Can see results:', canSeeResults);
+                
+                if (canSeeResults) {
+                  calculateSquad();
+                } else {
+                  console.log('Cannot see results yet - not all questions answered');
+                  // Show helpful message to user
+                  alert('Please answer all questions before viewing results.');
+                }
+              } catch (error) {
+                console.error('Error in See Results button click:', error);
+                setError('An error occurred while processing your request. Please try again.');
               }
             }}
             disabled={!canProceed || isCalculating}
@@ -733,18 +1081,22 @@ export default function SquadTestPage() {
             <div className="flex gap-2 mt-2">
               <Button
                 onClick={() => {
-                  console.log('Debug: Current state:', {
-                    currentQuestion,
-                    allQuestionsAnswered,
-                    canSeeResults,
-                    showResults,
-                    assignedSquad,
-                    pendingSquad,
-                    showConfirmation,
-                    isCalculating,
-                    answers,
-                    quizData
-                  });
+                  try {
+                    console.log('Debug: Current state:', {
+                      currentQuestion,
+                      allQuestionsAnswered,
+                      canSeeResults,
+                      showResults,
+                      assignedSquad,
+                      pendingSquad,
+                      showConfirmation,
+                      isCalculating,
+                      answers,
+                      quizData
+                    });
+                  } catch (error) {
+                    console.error('Error in debug log:', error);
+                  }
                 }}
                 variant="outline"
                 size="sm"
@@ -754,8 +1106,12 @@ export default function SquadTestPage() {
               </Button>
               <Button
                 onClick={() => {
-                  console.log('Debug: Testing squad calculation...');
-                  calculateSquad();
+                  try {
+                    console.log('Debug: Testing squad calculation...');
+                    calculateSquad();
+                  } catch (error) {
+                    console.error('Error in debug squad calculation:', error);
+                  }
                 }}
                 variant="outline"
                 size="sm"
@@ -765,13 +1121,17 @@ export default function SquadTestPage() {
               </Button>
               <Button
                 onClick={() => {
-                  console.log('Debug: Force showing results...');
-                  // Force show results with a test squad
-                  const testSquad = quizData.squads.creators;
-                  if (testSquad) {
-                    setAssignedSquad(testSquad);
-                    setShowResults(true);
-                    console.log('Forced results display with test squad:', testSquad);
+                  try {
+                    console.log('Debug: Force showing results...');
+                    // Force show results with a test squad
+                    const testSquad = quizData.squads.creators;
+                    if (testSquad) {
+                      setAssignedSquad(testSquad);
+                      setShowResults(true);
+                      console.log('Forced results display with test squad:', testSquad);
+                    }
+                  } catch (error) {
+                    console.error('Error in debug force show results:', error);
                   }
                 }}
                 variant="outline"

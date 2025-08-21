@@ -37,6 +37,20 @@ import {
   type Course
 } from '@/lib/coursesData';
 
+interface Bounty {
+  id: string;
+  title: string;
+  shortDesc: string;
+  reward: string;
+  deadline?: string;
+  linkTo: string;
+  image?: string;
+  squadTag?: string;
+  status: 'active' | 'completed' | 'expired';
+  submissions: number;
+  hidden: boolean;
+}
+
 interface AdminStats {
   totalUsers: number;
   activeUsers: number;
@@ -45,6 +59,9 @@ interface AdminStats {
   totalExamsTaken: number;
   placementTestsCompleted: number;
   squadDistribution: { [squad: string]: number };
+  totalBounties: number;
+  activeBounties: number;
+  hiddenBounties: number;
 }
 
 export default function AdminDashboard() {
@@ -61,7 +78,10 @@ export default function AdminDashboard() {
     pendingApprovals: 0,
     totalExamsTaken: 0,
     placementTestsCompleted: 0,
-    squadDistribution: {}
+    squadDistribution: {},
+    totalBounties: 0,
+    activeBounties: 0,
+    hiddenBounties: 0
   });
 
   // Announcements & Events State
@@ -98,7 +118,117 @@ export default function AdminDashboard() {
   // Course management state
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseManagementLoading, setCourseManagementLoading] = useState(false);
+
+  // Bounty management state
+  const [bounties, setBounties] = useState<Bounty[]>([
+    {
+      id: '1',
+      title: 'Hoodie Academy Logo Redesign',
+      shortDesc: 'Create a modern, pixel-art inspired logo that captures the essence of Hoodie Academy',
+      reward: '2.5 SOL',
+      deadline: '2024-02-15',
+      linkTo: '/bounties/logo-redesign',
+      image: '/images/hoodie-academy-pixel-art-logo.png',
+      squadTag: 'Creators',
+      status: 'active',
+      submissions: 12,
+      hidden: false
+    },
+    {
+      id: '2',
+      title: 'Trading Psychology Meme Collection',
+      shortDesc: 'Design 5 memes that illustrate key trading psychology concepts',
+      reward: '1.8 SOL',
+      deadline: '2024-02-20',
+      linkTo: '/bounties/trading-memes',
+      squadTag: 'Creators',
+      status: 'active',
+      submissions: 8,
+      hidden: false
+    },
+    {
+      id: '3',
+      title: 'Technical Analysis Tutorial Video',
+      shortDesc: 'Create a 5-minute tutorial on support and resistance levels',
+      reward: '3.2 SOL',
+      deadline: '2024-02-25',
+      linkTo: '/bounties/ta-tutorial',
+      squadTag: 'Decoders',
+      status: 'active',
+      submissions: 5,
+      hidden: false
+    },
+    {
+      id: '4',
+      title: 'Community Onboarding Guide',
+      shortDesc: 'Write a comprehensive guide for new Hoodie Academy members',
+      reward: '2.0 SOL',
+      deadline: '2024-02-18',
+      linkTo: '/bounties/onboarding-guide',
+      squadTag: 'Speakers',
+      status: 'active',
+      submissions: 15,
+      hidden: false
+    },
+    {
+      id: '5',
+      title: 'NFT Market Analysis Report',
+      shortDesc: 'Analyze current NFT market trends and provide actionable insights',
+      reward: '4.0 SOL',
+      deadline: '2024-02-22',
+      linkTo: '/bounties/market-analysis',
+      squadTag: 'Raiders',
+      status: 'active',
+      submissions: 3,
+      hidden: false
+    },
+    {
+      id: '6',
+      title: 'Squad Badge Design Contest',
+      shortDesc: 'Design unique badges for each of the four Hoodie squads',
+      reward: '5.0 SOL',
+      deadline: '2024-03-01',
+      linkTo: '/bounties/squad-badges',
+      status: 'active',
+      submissions: 22,
+      hidden: false
+    },
+    {
+      id: '7',
+      title: '🎨 Create a Hoodie Visual',
+      shortDesc: 'Create a unique Hoodie Academy-themed image featuring WifHoodie-style characters in school/training environments',
+      reward: '0.05 SOL (1st), 0.03 SOL (2nd), 0.02 SOL (3rd)',
+      deadline: '2024-03-15',
+      linkTo: '/bounties/hoodie-visual',
+      squadTag: 'Creators',
+      status: 'active',
+      submissions: 7,
+      hidden: false
+    }
+  ]);
+  const [bountyManagementLoading, setBountyManagementLoading] = useState(false);
   const [showHiddenCourses, setShowHiddenCourses] = useState(false);
+
+  // Bounty management functions
+  const toggleBountyVisibility = (bountyId: string) => {
+    setBounties(prev => prev.map(bounty => 
+      bounty.id === bountyId 
+        ? { ...bounty, hidden: !bounty.hidden }
+        : bounty
+    ));
+  };
+
+  const updateBountyStatus = (bountyId: string, newStatus: 'active' | 'completed' | 'expired') => {
+    setBounties(prev => prev.map(bounty => 
+      bounty.id === bountyId 
+        ? { ...bounty, status: newStatus }
+        : bounty
+    ));
+  };
+
+  const deleteBounty = (bountyId: string) => {
+    setBounties(prev => prev.filter(bounty => bounty.id !== bountyId));
+  };
 
   // Get wallet address using your existing logic
   useEffect(() => {
@@ -220,6 +350,11 @@ export default function AdminDashboard() {
       }
     });
 
+    // Calculate bounty stats
+    const totalBounties = bounties.length;
+    const activeBounties = bounties.filter(b => b.status === 'active' && !b.hidden).length;
+    const hiddenBounties = bounties.filter(b => b.hidden).length;
+
     setStats({
       totalUsers,
       activeUsers,
@@ -227,7 +362,10 @@ export default function AdminDashboard() {
       pendingApprovals,
       totalExamsTaken,
       placementTestsCompleted,
-      squadDistribution
+      squadDistribution,
+      totalBounties,
+      activeBounties,
+      hiddenBounties
     });
   };
 
@@ -457,6 +595,20 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="bg-slate-800/50 border-orange-500/30">
+            <CardContent className="p-3 lg:p-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-500/20 rounded-lg">
+                  <Target className="w-5 h-5 lg:w-6 lg:h-6 text-orange-400" />
+                </div>
+                <div>
+                  <p className="text-xs lg:text-sm text-gray-400">Active Bounties</p>
+                  <p className="text-xl lg:text-2xl font-bold text-orange-400">{stats.activeBounties}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content Tabs */}
@@ -510,12 +662,18 @@ export default function AdminDashboard() {
                     Events
                   </div>
                 </SelectItem>
+                <SelectItem value="bounties" className="text-white hover:bg-slate-700">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Bounties
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Desktop tabs - hidden on mobile */}
-          <TabsList className="hidden lg:grid w-full grid-cols-7 bg-slate-800">
+          <TabsList className="hidden lg:grid w-full grid-cols-8 bg-slate-800">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
@@ -543,6 +701,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="events" className="flex items-center gap-2">
               <CalendarDays className="w-4 h-4" />
               Events
+            </TabsTrigger>
+            <TabsTrigger value="bounties" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Bounties
             </TabsTrigger>
           </TabsList>
 
@@ -1106,6 +1268,116 @@ export default function AdminDashboard() {
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button size="sm" variant="outline">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Bounties Tab */}
+          <TabsContent value="bounties" className="space-y-6">
+            <Card className="bg-slate-800/50">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Bounty Management</span>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setBounties(prev => prev.map(b => ({ ...b, hidden: !b.hidden })))}
+                    >
+                      {bounties.some(b => b.hidden) ? (
+                        <>
+                          <Eye className="w-4 h-4 mr-2" />
+                          Show All
+                        </>
+                      ) : (
+                        <>
+                          <EyeOff className="w-4 h-4 mr-2" />
+                          Hide All
+                        </>
+                      )}
+                    </Button>
+                    <Button>
+                      <Plus className="w-4 h-4 mr-2" />
+                      New Bounty
+                    </Button>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {bounties.map((bounty) => (
+                    <div
+                      key={bounty.id}
+                      className={`bg-slate-700/50 p-4 rounded-lg border ${
+                        bounty.hidden ? 'border-red-500/30 opacity-60' : 'border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold">{bounty.title}</h3>
+                            <Badge variant="outline" className={`border-${
+                              bounty.status === 'active' ? 'green' : 
+                              bounty.status === 'completed' ? 'blue' : 'red'
+                            }-500 text-${
+                              bounty.status === 'active' ? 'green' : 
+                              bounty.status === 'completed' ? 'blue' : 'red'
+                            }-400`}>
+                              {bounty.status}
+                            </Badge>
+                            {bounty.hidden && (
+                              <Badge variant="outline" className="border-red-500 text-red-400">
+                                Hidden
+                              </Badge>
+                            )}
+                            {bounty.squadTag && (
+                              <Badge variant="outline" className="border-cyan-500 text-cyan-400">
+                                {bounty.squadTag}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-400 mb-2">{bounty.shortDesc}</p>
+                          <div className="flex gap-4 text-sm text-gray-300">
+                            <span>Reward: {bounty.reward}</span>
+                            {bounty.deadline && (
+                              <span>Deadline: {new Date(bounty.deadline).toLocaleDateString()}</span>
+                            )}
+                            <span>Submissions: {bounty.submissions}</span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => toggleBountyVisibility(bounty.id)}
+                          >
+                            {bounty.hidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          </Button>
+                          <Select 
+                            value={bounty.status} 
+                            onValueChange={(value: 'active' | 'completed' | 'expired') => updateBountyStatus(bounty.id, value)}
+                          >
+                            <SelectTrigger className="w-20">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="expired">Expired</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => deleteBounty(bounty.id)}
+                            className="text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>

@@ -2,12 +2,12 @@
 export const dynamic = "force-static";
 
 import { useState, useEffect } from "react";
-      import TokenGate from "@/components/TokenGate";
-      import { Button } from "@/components/ui/button";
-      import Link from "next/link";
-      import { ArrowLeft } from "lucide-react";
-      import axios from "axios";
-      import { Card, CardContent } from "@/components/ui/card";
+import TokenGate from "@/components/TokenGate";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import axios from "axios";
+import { Card, CardContent } from "@/components/ui/card";
 
       export default function SNSCourse() {
         const [walletAddress, setWalletAddress] = useState<string | null>(null);

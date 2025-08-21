@@ -1,10 +1,11 @@
 'use client';
-      import { useState, useEffect } from "react";
-      import TokenGate from "@/components/TokenGate";
-      import { Button } from "@/components/ui/button";
-      import Link from "next/link";
-      import { ArrowLeft } from "lucide-react";
-      import axios from "axios";
+
+import { useState, useEffect } from "react";
+import TokenGate from "@/components/TokenGate";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import axios from "axios";
 
       export default function Lesson2() {
         const [walletAddress, setWalletAddress] = useState<string | null>(null);
