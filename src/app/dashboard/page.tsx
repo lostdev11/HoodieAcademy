@@ -1,41 +1,101 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
-import { RightSidebar } from '@/components/dashboard/RightSidebar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
+  Trophy, 
+  BookOpen, 
+  Users, 
+  Target, 
+  TrendingUp, 
   Clock, 
-  Bell, 
-  CheckCircle, 
-  Play, 
-  TrendingUp,
+  Star, 
   Award,
-  BookOpen,
-  Video,
-  AlertCircle,
-  Users,
-  Target,
-  Brain,
-  Mic,
-  Palette,
-  Trophy,
   Calendar,
-  FileText,
+  MessageCircle,
+  Bell,
+  CheckCircle,
+  Play,
+  Zap,
+  Home,
+  BarChart3,
+  User,
+  Settings,
+  Video,
+  MessageSquare,
+  Heart,
   Sparkles,
-  Home
-} from 'lucide-react';
-import TokenGate from '@/components/TokenGate';
-import Link from 'next/link';
-import { getActiveAnnouncements, Announcement, getScheduledAnnouncements, getCompletedCoursesCount, getTotalCoursesCount } from '@/lib/utils';
-import GlobalBulletinBoard from '@/components/GlobalBulletinBoard';
-import { squadTracks, SquadTrack } from '@/lib/squadData';
-import { useUserXP } from '@/hooks/useUserXP';
-import { retailstarIncentiveService } from '@/services/retailstar-incentive-service';
-// import { RetailstarRewardCard } from '@/components/retailstar/RetailstarRewardCard';
+  Crown,
+  Medal,
+  Gem,
+  Fire,
+  Lightning,
+  Shield,
+  Sword,
+  Bow,
+  Wand,
+  Hammer,
+  Anvil,
+  Scroll,
+  Book,
+  GraduationCap,
+  Brain,
+  Eye,
+  Ear,
+  Hand,
+  Foot,
+  Heart as HeartIcon,
+  Star as StarIcon,
+  Zap as ZapIcon,
+  Target as TargetIcon,
+  TrendingUp as TrendingUpIcon,
+  Clock as ClockIcon,
+  Calendar as CalendarIcon,
+  MessageCircle as MessageCircleIcon,
+  Bell as BellIcon,
+  CheckCircle as CheckCircleIcon,
+  Play as PlayIcon,
+  Zap as ZapIcon2,
+  Home as HomeIcon,
+  BarChart3 as BarChart3Icon,
+  User as UserIcon,
+  Settings as SettingsIcon,
+  Video as VideoIcon,
+  MessageSquare as MessageSquareIcon,
+  Heart as HeartIcon2,
+  Sparkles as SparklesIcon,
+  Crown as CrownIcon,
+  Medal as MedalIcon,
+  Gem as GemIcon,
+  Fire as FireIcon,
+  Lightning as LightningIcon,
+  Shield as ShieldIcon,
+  Sword as SwordIcon,
+  Bow as BowIcon,
+  Wand as WandIcon,
+  Hammer as HammerIcon,
+  Anvil as AnvilIcon,
+  Scroll as ScrollIcon,
+  Book as BookIcon,
+  GraduationCap as GraduationCapIcon,
+  Brain as BrainIcon,
+  Eye as EyeIcon,
+  Ear as EarIcon,
+  Hand as HandIcon,
+  Foot as FootIcon
+} from "lucide-react";
+import TokenGate from "@/components/TokenGate";
+import { useUserXP } from "@/components/xp";
+import { squadTracks } from "@/lib/squadData";
+
+import { getDisplayNameWithSNS } from "@/services/sns-resolver";
+import PageLayout from "@/components/layouts/PageLayout";
+import { CardFeedLayout, CardFeedItem, CardFeedSection, CardFeedGrid, InfoCard, ActionCard } from "@/components/layouts/CardFeedLayout";
+import { dashboardNavigation } from "@/components/layouts/NavigationDrawer";
 
 interface TodoItem {
   id: string;
@@ -74,6 +134,15 @@ interface SquadActivity {
   activities: string[];
   memberCount: number;
   activeThisWeek: number;
+}
+
+interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'urgent';
+  timestamp: string;
+  squad?: string;
 }
 
 // Real data functions
@@ -253,49 +322,78 @@ const getWeeklyAssignments = (userSquad: string | null): WeeklyAssignment[] => {
   return squadAssignments[userSquad as keyof typeof squadAssignments] || [];
 };
 
-const getSquadActivity = (): SquadActivity[] => {
-  return [
-    {
-      squad: 'creators',
-      icon: '🎨',
-      color: 'text-yellow-400',
-      activities: ['2 memes dropped', '1 lesson summary created', '3 pixel art pieces shared'],
-      memberCount: 24,
-      activeThisWeek: 8
-    },
-    {
-      squad: 'decoders',
-      icon: '🧠',
-      color: 'text-gray-300',
-      activities: ['1 cheat sheet in progress', '2 market analyses completed', '1 alpha thread started'],
-      memberCount: 31,
-      activeThisWeek: 12
-    },
-    {
-      squad: 'speakers',
-      icon: '🎤',
-      color: 'text-red-400',
-      activities: ['1 Space hosted', '2 community check-ins', '1 newsletter drafted'],
-      memberCount: 18,
-      activeThisWeek: 6
-    },
-    {
-      squad: 'raiders',
-      icon: '⚔️',
-      color: 'text-blue-400',
-      activities: ['3 meta analyses shared', '1 raid coordinated', '2 trading strategies posted'],
-      memberCount: 27,
-      activeThisWeek: 9
-    },
-    {
-      squad: 'rangers',
-      icon: '🦅',
-      color: 'text-purple-400',
-      activities: ['2 cross-squad collaborations', '1 multi-track summary', '3 knowledge shares'],
-      memberCount: 15,
-      activeThisWeek: 5
-    }
-  ];
+const getSquadActivity = (userSquad: string | null): SquadActivity[] => {
+  if (!userSquad) return [];
+
+  const activities: SquadActivity[] = [];
+
+  switch (userSquad) {
+    case 'creators':
+      activities.push({
+        squad: 'creators',
+        icon: '🎨',
+        color: 'text-yellow-400',
+        activities: ['2 memes dropped', '1 lesson summary created', '3 pixel art pieces shared'],
+        memberCount: 24,
+        activeThisWeek: 8
+      });
+      break;
+    case 'decoders':
+      activities.push({
+        squad: 'decoders',
+        icon: '🧠',
+        color: 'text-gray-300',
+        activities: ['1 cheat sheet in progress', '2 market analyses completed', '1 alpha thread started'],
+        memberCount: 31,
+        activeThisWeek: 12
+      });
+      break;
+    case 'speakers':
+      activities.push({
+        squad: 'speakers',
+        icon: '🎤',
+        color: 'text-red-400',
+        activities: ['1 Space hosted', '2 community check-ins', '1 newsletter drafted'],
+        memberCount: 18,
+        activeThisWeek: 6
+      });
+      break;
+    case 'raiders':
+      activities.push({
+        squad: 'raiders',
+        icon: '⚔️',
+        color: 'text-blue-400',
+        activities: ['3 meta analyses shared', '1 raid coordinated', '2 trading strategies posted'],
+        memberCount: 27,
+        activeThisWeek: 9
+      });
+      break;
+    case 'rangers':
+      activities.push({
+        squad: 'rangers',
+        icon: '🦅',
+        color: 'text-purple-400',
+        activities: ['2 cross-squad collaborations', '1 multi-track summary', '3 knowledge shares'],
+        memberCount: 15,
+        activeThisWeek: 5
+      });
+      break;
+    default:
+      break;
+  }
+
+  return activities;
+};
+
+// Add missing function definitions
+const getActiveAnnouncements = (): Announcement[] => {
+  // For now, return empty array - announcements would come from backend
+  return [];
+};
+
+const getClaimedRewards = (): any[] => {
+  // For now, return empty array - claimed rewards would come from backend
+  return [];
 };
 
 const getSquadIcon = (squadId: string) => {
@@ -387,11 +485,20 @@ export default function DashboardPage() {
         setUserDisplayName(displayName);
       } else {
         // Try to resolve SNS domain if no display name is set
-        import('@/services/sns-resolver').then(({ getDisplayNameWithSNS }) => {
-          getDisplayNameWithSNS(storedWallet).then((resolvedName) => {
+        const resolveSnsDomain = async () => {
+          try {
+            const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
+            const resolvedName = await getDisplayNameWithSNS(storedWallet);
+            console.log('Dashboard: Resolved SNS name:', resolvedName);
             setUserDisplayName(resolvedName);
-          });
-        });
+          } catch (error) {
+            console.error('Dashboard: Error resolving SNS domain:', error);
+            // Fallback to formatted wallet address
+            setUserDisplayName(`${storedWallet.slice(0, 6)}...${storedWallet.slice(-4)}`);
+          }
+        };
+        
+        resolveSnsDomain();
       }
     }
 
@@ -421,51 +528,30 @@ export default function DashboardPage() {
           'hoodie rangers': 'rangers',
           'treasury builders': 'treasury'
         };
+        
         const squadId = squadMapping[normalized] || normalized;
         setSquadId(squadId);
         
-        // Set user squad info for display
+        // Find squad info for display
         const squadInfo = squadTracks.find(s => s.id === squadId);
-        setUserSquadInfo(squadInfo || null);
+        if (squadInfo) {
+          setUserSquadInfo(squadInfo);
+        }
         
-        // Load weekly assignments for this squad
+        // Load squad-specific data
         setWeeklyAssignments(getWeeklyAssignments(squadId));
+        setSquadActivity(getSquadActivity(squadId));
+        
       } catch (error) {
-        console.error('Error parsing squad result:', error);
+        console.error('Dashboard: Error parsing squad data:', error);
         setSquadId(null);
       }
     }
 
-    // Load saved profile image
-    const savedProfileImage = typeof window !== 'undefined' ? localStorage.getItem('userProfileImage') : null;
-    if (savedProfileImage) {
-      setProfileImage(savedProfileImage);
-    }
-
-    // Calculate completed courses count
-    const completedCount = getCompletedCoursesCount();
-    const totalCount = getTotalCoursesCount();
-    setCompletedCoursesCount(completedCount);
-    setTotalCoursesCount(totalCount);
+    // Load other data
+    setClaimedRewards(getClaimedRewards());
     
-    // Calculate overall progress based on completed courses
-    const progressPercentage = Math.round((completedCount / totalCount) * 100);
-    setOverallProgress(progressPercentage);
-    
-    console.log('Dashboard: Course completion stats:', {
-      completed: completedCount,
-      total: totalCount,
-      percentage: progressPercentage
-    });
-    
-            // Load squad activity
-        setSquadActivity(getSquadActivity());
-
-        // Load claimed retailstar rewards
-        if (storedWallet) {
-          // retailstarIncentiveService.fetchClaimedRewards(storedWallet).then(setClaimedRewards);
-        }
-      }, []);
+  }, []);
 
   // Listen for real-time updates
   useEffect(() => {
@@ -509,583 +595,283 @@ export default function DashboardPage() {
 
   return (
     <TokenGate>
-      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        {/* Left Sidebar */}
-        <DashboardSidebar 
-          isCollapsed={sidebarCollapsed} 
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
-        />
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {/* Home Button - Mobile Only */}
-                <div className="block lg:hidden">
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="bg-slate-700/50 hover:bg-slate-600/50 border-cyan-500/30 text-cyan-400 hover:text-cyan-300"
-                  >
-                    <Link href="/">
-                      <Home className="w-4 h-4 mr-2" />
-                      Home
-                    </Link>
-                  </Button>
-                </div>
-                
-                {/* Profile Picture */}
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-cyan-500/30 shadow-lg">
-                    {profileImage && profileImage !== '🧑‍🎓' ? (
-                      <img 
-                        src={profileImage} 
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          target.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
-                    <div className={`w-full h-full bg-gradient-to-br from-cyan-400 to-pink-400 flex items-center justify-center text-xl ${profileImage && profileImage !== '🧑‍🎓' ? 'hidden' : ''}`}>
-                      🧑‍🎓
-                    </div>
-                  </div>
-                  {profileImage && profileImage !== '🧑‍🎓' && (
-                    <div className="absolute -top-1 -right-1">
-                      <div className="w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center">
-                        <span className="text-white text-xs">✨</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <h1 className="text-3xl font-bold text-cyan-400">Dashboard</h1>
-                  <p className="text-gray-300">
-                    Welcome back, {userDisplayName || 'Hoodie Scholar'}!
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-gray-400">Current Time</div>
-                <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
-              </div>
+      <PageLayout
+        title="🎯 Academy Dashboard"
+        subtitle="Track your progress, manage tasks, and stay connected with your squad"
+        showHomeButton={true}
+        showBackButton={false}
+        backgroundImage={undefined}
+        backgroundOverlay={false}
+        navigationSections={dashboardNavigation}
+        navigationDrawerTitle="Dashboard Navigation"
+        navigationDrawerSubtitle="Quick access to dashboard features"
+      >
+        {/* Current Time Display */}
+        <CardFeedItem
+          title="Current Time"
+          subtitle="Real-time clock for your learning sessions"
+          badge={currentTime}
+          badgeVariant="outline"
+        >
+          <div className="text-center">
+            <div className="text-3xl font-mono text-cyan-400 mb-2">
+              {currentTime}
             </div>
-          </header>
+            <p className="text-sm text-gray-400">
+              Keep track of your study time and maintain consistent learning habits
+            </p>
+          </div>
+        </CardFeedItem>
 
-          {/* Dashboard Content */}
-          <main className="flex-1 p-6 space-y-6">
-            {/* Profile Suggestions */}
-            {showProfileSuggestion && (
-              <Card className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border-orange-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <AlertCircle className="w-6 h-6 text-orange-400" />
-                      <div>
-                        <h3 className="text-lg font-semibold text-orange-400">Complete Your Profile</h3>
-                        <p className="text-gray-300">You've completed the squad placement test! Set a display name to personalize your experience.</p>
-                      </div>
-                    </div>
-                    <Button
-                      asChild
-                      className="bg-orange-600 hover:bg-orange-700"
-                    >
-                      <Link href="/profile">
-                        Set Display Name
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Welcome Message for New Users */}
-            {hasCompletedOnboarding && !showProfileSuggestion && (
-              <Card className="bg-gradient-to-r from-green-500/20 to-cyan-500/20 border-green-500/30">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-6 h-6 text-green-400" />
-                    <div>
-                      <h3 className="text-lg font-semibold text-green-400">Welcome to Hoodie Academy!</h3>
-                      <p className="text-gray-300">Your profile setup is complete. Start exploring courses and join your squad community!</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* XP Progress & Stats */}
-            <Card className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-purple-400 flex items-center space-x-2">
-                  <Sparkles className="w-5 h-5" />
-                  <span>XP Progress & Stats</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Total XP */}
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-purple-400 mb-2">{totalXP}</div>
-                    <div className="text-sm text-gray-400">Total XP</div>
-                  </div>
-                  
-                  {/* Courses Completed */}
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-cyan-400 mb-2">{completedCourses.length}</div>
-                    <div className="text-sm text-gray-400">Courses Completed</div>
-                  </div>
-                  
-                  {/* Streak */}
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-orange-400 mb-2">{streak}</div>
-                    <div className="text-sm text-gray-400">Day Streak</div>
-                  </div>
-                </div>
-                
-                {/* XP Progress Bar */}
-                <div className="mt-6">
-                  <div className="flex justify-between text-sm text-gray-400 mb-2">
-                    <span>Level Progress</span>
-                    <span>{totalXP} / 1000 XP</span>
-                  </div>
-                  <Progress value={(totalXP % 1000) / 10} className="h-3" />
-                  <div className="text-xs text-gray-500 mt-1">
-                    Level {Math.floor(totalXP / 1000) + 1} • {totalXP % 1000} XP to next level
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Badges Section */}
-            <Card className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/30">
-              <CardHeader>
-                <CardTitle className="text-yellow-400 flex items-center space-x-2">
-                  <Award className="w-5 h-5" />
-                  <span>Achievements & Badges</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {badges.map((badge) => (
-                    <div
-                      key={badge.id}
-                      className={`text-center p-4 rounded-lg border-2 transition-all duration-300 ${
-                        badge.unlocked
-                          ? 'bg-gradient-to-br from-yellow-400/20 to-orange-400/20 border-yellow-400/50 shadow-lg'
-                          : 'bg-gray-800/50 border-gray-600/30 opacity-50'
-                      }`}
-                    >
-                      <div className="text-3xl mb-2">{badge.icon}</div>
-                      <div className={`text-sm font-semibold ${
-                        badge.unlocked ? 'text-yellow-400' : 'text-gray-400'
-                      }`}>
-                        {badge.name}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {badge.description}
-                      </div>
-                      {badge.unlocked && (
-                        <div className="text-xs text-green-400 mt-2">✓ Unlocked</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Course Progress Section */}
-            <Card className="bg-slate-800/50 border-blue-500/30">
-              <CardHeader>
-                <CardTitle className="text-blue-400 flex items-center space-x-2">
-                  <BookOpen className="w-5 h-5" />
-                  <span>Course Progress</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {completedCourses.map((courseSlug) => {
-                    const progress = 100; // Completed courses
-                    return (
-                      <div key={courseSlug} className="flex items-center gap-4 p-3 bg-slate-700/30 rounded-lg">
-                        <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                          <CheckCircle className="w-4 h-4 text-green-400" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-semibold text-gray-200 capitalize">
-                            {courseSlug.replace(/-/g, ' ')}
-                          </div>
-                          <div className="text-xs text-gray-400">Completed</div>
-                        </div>
-                        <div className="text-sm text-green-400 font-semibold">100%</div>
-                      </div>
-                    );
-                  })}
-                  {completedCourses.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No courses completed yet.</p>
-                      <p className="text-sm">Start your learning journey!</p>
+        {/* Profile Section */}
+        <CardFeedSection
+          title="Your Profile"
+          subtitle="Manage your identity and track your progress"
+        >
+          <CardFeedGrid cols={2}>
+            <InfoCard
+              title="Profile Information"
+              icon={<User className="w-5 h-5" />}
+              variant="default"
+            >
+              <div className="flex items-center gap-3">
+                <Avatar className="w-16 h-16">
+                  <AvatarImage src={profileImage} />
+                  <AvatarFallback className="text-2xl">{profileImage}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    {userDisplayName || "Hoodie Scholar"}
+                  </h3>
+                  <p className="text-gray-400 text-sm">
+                    {walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : "Wallet not connected"}
+                  </p>
+                  {userSquadInfo && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-2xl">{userSquadInfo.icon}</span>
+                      <span className="text-cyan-400 text-sm">{userSquadInfo.name}</span>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </InfoCard>
 
-            {/* Squad Affiliation & Track Progress */}
-            {userSquadInfo && (
-              <Card className="bg-slate-800/50 border-cyan-500/30">
-                <CardHeader>
-                  <CardTitle className="text-cyan-400 flex items-center space-x-2">
-                    {getSquadIcon(userSquadInfo.id)}
-                    <span>Squad Affiliation & Track Progress</span>
-                    <Badge variant="outline" className={`ml-auto ${userSquadInfo.color} border-current`}>
-                      {userSquadInfo.name}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Squad Info */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-full ${userSquadInfo.bgColor} border ${userSquadInfo.borderColor} flex items-center justify-center text-2xl`}>
-                          {userSquadInfo.icon}
-                        </div>
-                        <div>
-                          <h3 className={`text-lg font-semibold ${userSquadInfo.color}`}>
-                            {userSquadInfo.name}
-                          </h3>
-                          <p className="text-sm text-gray-300">{userSquadInfo.description}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-300">Current Level</span>
-                          <span className="text-cyan-400 font-semibold">Level 100</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-300">Track Progress</span>
-                          <span className="text-cyan-400 font-semibold">{overallProgress}%</span>
-                        </div>
-                        <Progress value={overallProgress} className="h-2 bg-slate-700 [&>div]:bg-gradient-to-r [&>div]:from-cyan-500 [&>div]:to-purple-500" />
-                      </div>
-                    </div>
-                    
-                    {/* Quick Stats */}
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">Track Statistics</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-                          <div className="text-2xl font-bold text-cyan-400">{completedCoursesCount}</div>
-                          <div className="text-xs text-gray-400">Courses Completed</div>
-                        </div>
-                        <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-                          <div className="text-2xl font-bold text-green-400">15</div>
-                          <div className="text-xs text-gray-400">Lessons Finished</div>
-                        </div>
-                        <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-                          <div className="text-2xl font-bold text-yellow-400">8</div>
-                          <div className="text-xs text-gray-400">Quizzes Passed</div>
-                        </div>
-                        <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-                          <div className="text-2xl font-bold text-pink-400">5</div>
-                          <div className="text-xs text-gray-400">NFT Badges</div>
-                        </div>
-                      </div>
-                    </div>
+            <InfoCard
+              title="Learning Progress"
+              icon={<TrendingUp className="w-5 h-5" />}
+              variant="success"
+            >
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-300">Overall Progress</span>
+                    <span className="text-cyan-400">{overallProgress}%</span>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  <Progress value={overallProgress} className="h-2" />
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="text-center p-2 bg-slate-700/30 rounded">
+                    <div className="text-cyan-400 font-semibold">{completedCoursesCount}</div>
+                    <div className="text-gray-400 text-xs">Completed</div>
+                  </div>
+                  <div className="text-center p-2 bg-slate-700/30 rounded">
+                    <div className="text-purple-400 font-semibold">{totalCoursesCount}</div>
+                    <div className="text-gray-400 text-xs">Total</div>
+                  </div>
+                </div>
+              </div>
+            </InfoCard>
+          </CardFeedGrid>
+        </CardFeedSection>
 
-            {/* Weekly Assignments */}
-            {weeklyAssignments.length > 0 && (
-              <Card className="bg-slate-800/50 border-green-500/30">
-                <CardHeader>
-                  <CardTitle className="text-green-400 flex items-center space-x-2">
-                    <Calendar className="w-5 h-5" />
-                    <span>Weekly Assignments</span>
-                    <Badge variant="outline" className="ml-auto border-green-500 text-green-400">
-                      {weeklyAssignments.length} Active
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4">
-                    {weeklyAssignments.map((assignment) => (
-                      <div key={assignment.id} className={`p-4 rounded-lg border transition-all duration-200 ${
-                        assignment.completed 
-                          ? 'bg-green-500/10 border-green-500/30' 
-                          : 'bg-slate-700/30 border-slate-600/30 hover:border-green-500/30'
-                      }`}>
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex items-start gap-3 flex-1">
-                            <div className={`p-2 rounded ${
-                              assignment.completed ? 'bg-green-500/20' : 'bg-slate-600/20'
-                            }`}>
-                              {getAssignmentIcon(assignment.type)}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h4 className={`font-semibold ${
-                                  assignment.completed ? 'text-green-400 line-through' : 'text-white'
-                                }`}>
-                                  {assignment.title}
-                                </h4>
-                                <Badge variant="outline" className="text-xs border-cyan-500/30 text-cyan-400">
-                                  {assignment.points} pts
-                                </Badge>
-                              </div>
-                              <p className={`text-sm ${
-                                assignment.completed ? 'text-green-300' : 'text-gray-300'
-                              }`}>
-                                {assignment.description}
-                              </p>
-                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-                                <span>Due: {new Date(assignment.dueDate).toLocaleDateString()}</span>
-                                <span>Type: {assignment.type}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant={assignment.completed ? "outline" : "default"}
-                            className={assignment.completed ? "border-green-500 text-green-400" : "bg-green-600 hover:bg-green-700"}
-                          >
-                            {assignment.completed ? 'Completed' : 'Submit Work'}
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+        {/* XP and Achievements */}
+        <CardFeedSection
+          title="Experience & Achievements"
+          subtitle="Track your growth and unlock rewards"
+        >
+          <CardFeedGrid cols={3}>
+            <InfoCard
+              title="Total XP"
+              icon={<Star className="w-5 h-5" />}
+              variant="default"
+            >
+              <div className="text-center">
+                <div className="text-3xl font-bold text-yellow-400 mb-2">
+                  {totalXP.toLocaleString()}
+                </div>
+                <p className="text-sm text-gray-400">Experience Points</p>
+              </div>
+            </InfoCard>
 
-            {/* Global Announcements */}
-            <Card className="bg-slate-800/50 border-blue-500/30">
-              <CardHeader>
-                <CardTitle className="text-blue-400 flex items-center space-x-2">
-                  <Bell className="w-5 h-5" />
-                  <span>Global Announcements</span>
-                  {squadId && (
-                    <Badge variant="outline" className="text-xs border-cyan-500/30 text-cyan-400">
-                      {squadId}
-                    </Badge>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <GlobalBulletinBoard squadId={squadId} />
-              </CardContent>
-            </Card>
+            <InfoCard
+              title="Learning Streak"
+              icon={<Fire className="w-5 h-5" />}
+              variant="warning"
+            >
+              <div className="text-center">
+                <div className="text-3xl font-bold text-orange-400 mb-2">
+                  {streak}
+                </div>
+                <p className="text-sm text-gray-400">Days in a Row</p>
+              </div>
+            </InfoCard>
 
-            {/* Retailstar Rewards - Temporarily Disabled */}
-            {/* <Card className="bg-slate-800/50 border-indigo-500/30">
-              <CardHeader>
-                <CardTitle className="text-indigo-400 flex items-center space-x-2">
-                  <Trophy className="w-5 h-5" />
-                  <span>Retailstar Rewards</span>
-                  <Badge variant="outline" className="ml-auto border-indigo-500 text-indigo-400">
-                    {claimedRewards.length} Claimed
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {claimedRewards.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {claimedRewards.slice(0, 6).map((userReward) => {
-                      const reward = retailstarIncentiveService.getRewardById(userReward.reward_id);
-                      if (!reward) return null;
-                      
-                      return (
-                        <RetailstarRewardCard
-                          key={userReward.id}
-                          reward={reward}
-                          isAwarded={true}
-                          userSquad={squadId || undefined}
-                        />
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Trophy className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">No rewards claimed yet</p>
-                    <p className="text-xs text-gray-500 mt-1">Complete tasks to earn rewards!</p>
-                    <Button asChild className="mt-4 bg-indigo-600 hover:bg-indigo-700">
-                      <Link href="/retailstar-incentives">
-                        View Available Rewards
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-                {claimedRewards.length > 6 && (
-                  <div className="text-center mt-4">
-                    <Button asChild variant="outline" className="border-indigo-500 text-indigo-400">
-                      <Link href="/retailstar-incentives">
-                        View All Rewards ({claimedRewards.length})
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card> */}
+            <InfoCard
+              title="Badges Earned"
+              icon={<Award className="w-5 h-5" />}
+              variant="success"
+            >
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-400 mb-2">
+                  {badges.length}
+                </div>
+                <p className="text-sm text-gray-400">Achievements</p>
+              </div>
+            </InfoCard>
+          </CardFeedGrid>
+        </CardFeedSection>
 
-            {/* Squad Activity Summary */}
-            <Card className="bg-slate-800/50 border-purple-500/30">
-              <CardHeader>
-                <CardTitle className="text-purple-400 flex items-center space-x-2">
-                  <Trophy className="w-5 h-5" />
-                  <span>Squad Activity Summary</span>
-                  <Badge variant="outline" className="ml-auto border-purple-500 text-purple-400">
-                    This Week
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4">
-                  {squadActivity.map((squad) => (
-                    <div key={squad.squad} className={`p-4 rounded-lg border transition-all duration-200 ${
-                      squad.squad === squadId 
-                        ? 'bg-purple-500/10 border-purple-500/30' 
-                        : 'bg-slate-700/30 border-slate-600/30'
-                    }`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="text-2xl">{squad.icon}</div>
-                          <div>
-                            <h4 className={`font-semibold capitalize ${squad.color}`}>
-                              {squad.squad} Squad
-                            </h4>
-                            <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
-                              <span>{squad.memberCount} members</span>
-                              <span>{squad.activeThisWeek} active this week</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-gray-300 mb-1">Recent Activity:</div>
-                          <ul className="text-xs text-gray-400 space-y-1">
-                            {squad.activities.slice(0, 2).map((activity, index) => (
-                              <li key={index} className="flex items-center gap-1">
-                                <span className="w-1 h-1 bg-cyan-400 rounded-full"></span>
-                                {activity}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
+        {/* Quick Actions */}
+        <ActionCard
+          title="Quick Actions"
+          subtitle="Jump into your next learning activity"
+        >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Button variant="outline" className="h-20 flex-col gap-2 bg-slate-700/30 hover:bg-slate-600/30">
+              <BookOpen className="w-6 h-6 text-cyan-400" />
+              <span className="text-sm">Continue Course</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col gap-2 bg-slate-700/30 hover:bg-slate-600/30">
+              <Target className="w-6 h-6 text-purple-400" />
+              <span className="text-sm">Take Quiz</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col gap-2 bg-slate-700/30 hover:bg-slate-600/30">
+              <Users className="w-6 h-6 text-pink-400" />
+              <span className="text-sm">Squad Chat</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex-col gap-2 bg-slate-700/30 hover:bg-slate-600/30">
+              <Trophy className="w-6 h-6 text-yellow-400" />
+              <span className="text-sm">Leaderboard</span>
+            </Button>
+          </div>
+        </ActionCard>
+
+        {/* Tasks and Announcements */}
+        <CardFeedSection
+          title="Tasks & Updates"
+          subtitle="Stay on top of your assignments and announcements"
+        >
+          <CardFeedGrid cols={2}>
+            <InfoCard
+              title="Your Tasks"
+              icon={<CheckCircle className="w-5 h-5" />}
+              variant="default"
+            >
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-300">Progress</span>
+                  <span className="text-cyan-400">{completedTodos}/{totalTodos}</span>
+                </div>
+                <Progress value={(completedTodos / totalTodos) * 100} className="h-2" />
+                {realTodos.slice(0, 3).map((todo, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm">
+                    <CheckCircle className={`w-4 h-4 ${todo.completed ? 'text-green-400' : 'text-gray-500'}`} />
+                    <span className={todo.completed ? 'text-gray-400 line-through' : 'text-white'}>
+                      {todo.title}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </InfoCard>
+
+            <InfoCard
+              title="Recent Announcements"
+              icon={<Bell className="w-5 h-5" />}
+              variant="default"
+            >
+              <div className="space-y-2">
+                {realAnnouncements.slice(0, 3).map((announcement, index) => (
+                  <div key={index} className="p-2 bg-slate-700/30 rounded text-sm">
+                    <div className="font-semibold text-white">{announcement.title}</div>
+                    <div className="text-gray-400 text-xs">{announcement.content}</div>
+                  </div>
+                ))}
+              </div>
+            </InfoCard>
+          </CardFeedGrid>
+        </CardFeedSection>
+
+        {/* Squad Activity */}
+        {userSquadInfo && (
+          <CardFeedSection
+            title="Squad Activity"
+            subtitle={`What's happening in ${userSquadInfo.name}`}
+          >
+            <CardFeedGrid cols={2}>
+              <InfoCard
+                title="Weekly Assignments"
+                icon={<Calendar className="w-5 h-5" />}
+                variant="default"
+              >
+                <div className="space-y-2">
+                  {weeklyAssignments.slice(0, 3).map((assignment, index) => (
+                    <div key={index} className="p-2 bg-slate-700/30 rounded text-sm">
+                      <div className="font-semibold text-white">{assignment.title}</div>
+                      <div className="text-gray-400 text-xs">Due: {assignment.dueDate}</div>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </InfoCard>
 
-            {/* To-Do List */}
-            <Card className="bg-slate-800/50 border-green-500/30">
-              <CardHeader>
-                <CardTitle className="text-green-400 flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5" />
-                  <span>To-Do List</span>
-                  <Badge variant="secondary" className="ml-auto">
-                    {completedTodos}/{totalTodos}
-                  </Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {realTodos.length > 0 ? (
-                  realTodos.map((todo) => (
-                    <div key={todo.id} className={`p-3 rounded-lg border transition-all duration-200 ${
-                      todo.completed 
-                        ? 'bg-green-500/10 border-green-500/30' 
-                        : 'bg-slate-700/30 border-slate-600/30 hover:border-green-500/30'
-                    }`}>
-                      <div className="flex items-center space-x-3">
-                        <div className={`p-1 rounded ${
-                          todo.completed ? 'bg-green-500/20' : 'bg-slate-600/20'
-                        }`}>
-                          {getTypeIcon(todo.type)}
-                        </div>
-                        <div className="flex-1">
-                          <p className={`font-medium ${
-                            todo.completed ? 'text-green-400 line-through' : 'text-white'
-                          }`}>
-                            {todo.title}
-                          </p>
-                          <p className="text-sm text-gray-400">{todo.course}</p>
-                          {todo.dueDate && (
-                            <p className="text-xs text-yellow-400">Due: {todo.dueDate}</p>
-                          )}
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant={todo.completed ? "outline" : "default"}
-                          className={todo.completed ? "border-green-500 text-green-400" : "bg-green-600 hover:bg-green-700"}
-                        >
-                          {todo.completed ? 'Done' : 'Complete'}
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <CheckCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">No pending tasks</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Scheduled Announcements */}
-            {getScheduledAnnouncements().length > 0 && (
-              <Card className="bg-slate-800/50 border-cyan-500/30">
-                <CardHeader>
-                  <CardTitle className="text-cyan-400 flex items-center space-x-2">
-                    <Clock className="w-5 h-5" />
-                    <span>Upcoming Announcements</span>
-                    <Badge variant="outline" className="ml-auto border-cyan-500 text-cyan-400">
-                      {getScheduledAnnouncements().length}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {getScheduledAnnouncements().map((announcement) => (
-                    <div key={announcement.id} className="p-3 bg-slate-700/30 rounded-lg border border-cyan-500/30">
-                      <div className="flex items-start space-x-3">
-                        <div className={`p-1 rounded ${getPriorityColor(announcement.priority)}`}>
-                          <Clock className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-white">{announcement.title}</h4>
-                          <p className="text-sm text-gray-300 mt-1">{announcement.content}</p>
-                          <p className="text-xs text-cyan-400 mt-2">
-                            <Clock className="w-3 h-3 inline mr-1" />
-                            Starts: {new Date(announcement.startDate + 'T00:00:00').toLocaleDateString()}
-                            {announcement.endDate && ` • Ends: ${new Date(announcement.endDate + 'T00:00:00').toLocaleDateString()}`}
-                          </p>
-                        </div>
-                      </div>
+              <InfoCard
+                title="Recent Squad Activity"
+                icon={<MessageCircle className="w-5 h-5" />}
+                variant="default"
+              >
+                <div className="space-y-2">
+                  {squadActivity.slice(0, 3).map((activity, index) => (
+                    <div key={index} className="p-2 bg-slate-700/30 rounded text-sm">
+                      <div className="font-semibold text-white">{activity.user}</div>
+                      <div className="text-gray-400 text-xs">{activity.action}</div>
                     </div>
                   ))}
-                </CardContent>
-              </Card>
-            )}
-          </main>
-        </div>
+                </div>
+              </InfoCard>
+            </CardFeedGrid>
+          </CardFeedSection>
+        )}
 
-        {/* Right Sidebar */}
-        <RightSidebar />
-      </div>
+        {/* Upcoming Classes */}
+        {realUpcomingClasses.length > 0 && (
+          <CardFeedSection
+            title="Upcoming Classes"
+            subtitle="Don't miss these scheduled learning sessions"
+          >
+            <CardFeedGrid cols={3}>
+              {realUpcomingClasses.slice(0, 3).map((classItem, index) => (
+                <InfoCard
+                  key={index}
+                  title={classItem.title}
+                  icon={<Clock className="w-5 h-5" />}
+                  variant="default"
+                >
+                  <div className="text-center">
+                    <div className="text-lg font-semibold text-white mb-2">
+                      {classItem.title}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      {classItem.date} at {classItem.time}
+                    </div>
+                    <div className="text-xs text-cyan-400 mt-2">
+                      {classItem.instructor}
+                    </div>
+                  </div>
+                </InfoCard>
+              ))}
+            </CardFeedGrid>
+          </CardFeedSection>
+        )}
+      </PageLayout>
     </TokenGate>
   );
 } 
