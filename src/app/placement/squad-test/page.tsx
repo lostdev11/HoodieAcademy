@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
+import { storeSquad, getSquadName } from '@/utils/squad-storage';
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -84,27 +85,11 @@ export default function SquadTestPage() {
 
   useEffect(() => {
     // Check if user has already taken the test
-    const existingResult = localStorage.getItem('userSquad');
+    const existingResult = getSquadName();
     if (existingResult) {
-      try {
-        const result = JSON.parse(existingResult);
-        // Check if it's the old format (just a string) or new format (object)
-        if (typeof result === 'string') {
-          // Old format - try to find squad info from quiz data
-          console.log('Found old format squad result:', result);
-          // We'll need to load quiz data first to get squad info
-        } else if (result.name) {
-          // New format - we have the full squad object
-          console.log('Found squad result:', result);
-          setAssignedSquad(result);
-          setShowResults(true);
-          setIsLoading(false);
-          return;
-        }
-      } catch (error) {
-        console.error('Error parsing existing squad result:', error);
-        localStorage.removeItem('userSquad');
-      }
+      // We have a squad name, but we need the full squad object for display
+      // We'll need to load quiz data first to get squad info
+      console.log('Found existing squad result:', existingResult);
     }
 
     // Load quiz data with retry mechanism
@@ -184,19 +169,14 @@ export default function SquadTestPage() {
         console.log('Quiz data validation passed');
         setQuizData(data);
         
-        // If we have an old format result, try to convert it now
-        const existingResult = localStorage.getItem('userSquad');
-        if (existingResult && typeof JSON.parse(existingResult) === 'string') {
-          try {
-            const squadName = JSON.parse(existingResult);
-            const squadInfo = data.squads[squadName];
-            if (squadInfo) {
-              console.log('Converted old format to new format:', squadInfo);
-              setAssignedSquad(squadInfo);
-              setShowResults(true);
-            }
-          } catch (error) {
-            console.error('Error converting old format result:', error);
+        // If we have an existing squad result, try to display it
+        const existingResult = getSquadName();
+        if (existingResult) {
+          const squadInfo = data.squads[existingResult];
+          if (squadInfo) {
+            console.log('Found existing squad info:', squadInfo);
+            setAssignedSquad(squadInfo);
+            setShowResults(true);
           }
         }
         
@@ -419,7 +399,10 @@ export default function SquadTestPage() {
     
     try {
       // Store the full squad object for better functionality
-      localStorage.setItem('userSquad', JSON.stringify(squadResult));
+      storeSquad({
+        ...squadResult,
+        id: squadResult.name // Use name as id since we don't have a separate id
+      });
       console.log('Squad result saved to localStorage');
       
       // Mark placement test as completed

@@ -45,6 +45,28 @@ export default function TokenGate({ children }: TokenGateProps) {
   const [showSuccess, setShowSuccess] = useState(false);
   const isPhantomInstalled = typeof window !== 'undefined' && window.solana?.isPhantom;
 
+  // Debug logging
+  useEffect(() => {
+    console.log('TokenGate: Component mounted');
+    console.log('TokenGate: HELIUS_API_KEY available:', !!HELIUS_API_KEY);
+    console.log('TokenGate: WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
+    console.log('TokenGate: isPhantomInstalled:', isPhantomInstalled);
+    console.log('TokenGate: Current state:', {
+      isConnecting,
+      isConnected,
+      walletAddress,
+      isHolder,
+      error,
+      isVerifying,
+      isRedirecting,
+      isAuthenticated,
+      isClient,
+      loading,
+      hasBeenConnected,
+      showSuccess
+    });
+  }, [isPhantomInstalled, isConnecting, isConnected, walletAddress, isHolder, error, isVerifying, isRedirecting, isAuthenticated, isClient, loading, hasBeenConnected, showSuccess]);
+
   // Add the helper function inside the component so it can access state setters
   const checkWifHoodieOwnership = async (wallet: string, showSuccessMessage: boolean = true) => {
     if (!wallet) {
@@ -164,9 +186,9 @@ export default function TokenGate({ children }: TokenGateProps) {
         };
         sessionStorage.setItem(VERIFICATION_SESSION_KEY, JSON.stringify(sessionData));
         
-        // Store wallet address in localStorage for profile access
-        localStorage.setItem('walletAddress', wallet);
-        localStorage.setItem('connectedWallet', wallet);
+        // Store wallet address in database instead of localStorage
+        // TODO: Implement database save here
+        console.log('Wallet verified, should save to database:', wallet);
         
         setHasBeenConnected(true);
         
@@ -174,23 +196,14 @@ export default function TokenGate({ children }: TokenGateProps) {
         if (showSuccessMessage) {
           console.log("🎉 Debug: Showing success message for fresh verification");
           
-          // Check if user needs to complete onboarding
-          const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-          const hasDisplayName = localStorage.getItem('userDisplayName');
+          // Check if user needs to complete onboarding from database
+          // TODO: Implement database check here
+          console.log("🆕 Debug: Checking onboarding status from database...");
           
-          if (!hasCompletedOnboarding || !hasDisplayName) {
-            console.log("🆕 Debug: New user detected - redirecting to onboarding");
-            // Redirect to onboarding for new users
-            setTimeout(() => {
-              window.location.href = '/onboarding';
-            }, 2000);
-          } else {
-            console.log("👤 Debug: Existing user - showing success message");
-            // Existing user - show success message
-            setShowSuccess(true);
-            // Hide success message after 2 seconds
-            setTimeout(() => setShowSuccess(false), 2000);
-          }
+          // For now, always show success message
+          setShowSuccess(true);
+          // Hide success message after 2 seconds
+          setTimeout(() => setShowSuccess(false), 2000);
         } else {
           console.log("🔄 Debug: Skipping success message for existing session");
         }
@@ -213,35 +226,40 @@ export default function TokenGate({ children }: TokenGateProps) {
 
   // Restore session on component mount
   useEffect(() => {
-    const savedWalletAddress = localStorage.getItem('walletAddress');
     const sessionData = sessionStorage.getItem(VERIFICATION_SESSION_KEY);
     
-    if (savedWalletAddress && sessionData) {
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.warn('TokenGate: Session restoration timeout reached');
+      if (!isAuthenticated && !walletAddress) {
+        setError('Session restoration timeout - please refresh the page');
+      }
+    }, 15000); // 15 second timeout
+    
+    if (sessionData) {
       try {
         const session = JSON.parse(sessionData);
         const now = Date.now();
         const sessionAge = now - session.timestamp;
         const sessionValid = sessionAge < 24 * 60 * 60 * 1000; // 24 hours
         
-        if (sessionValid && session.walletAddress === savedWalletAddress) {
-          console.log("🔄 Debug: Restoring session for wallet:", savedWalletAddress);
-          setWalletAddress(savedWalletAddress);
+        if (sessionValid) {
+          console.log("🔄 Debug: Restoring session for wallet:", session.walletAddress);
+          setWalletAddress(session.walletAddress);
           setIsHolder(true);
           setIsAuthenticated(true);
           setHasBeenConnected(true);
         } else {
-          console.log("⏰ Debug: Session expired or invalid, clearing storage");
+          console.log("⏰ Debug: Session expired, clearing storage");
           sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
-          localStorage.removeItem('walletAddress');
-          localStorage.removeItem('connectedWallet');
         }
       } catch (error) {
         console.error("❌ Debug: Error parsing session data:", error);
         sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
-        localStorage.removeItem('walletAddress');
-        localStorage.removeItem('connectedWallet');
       }
     }
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // When walletAddress changes, verify ownership (but only show success if not from session)
@@ -280,8 +298,6 @@ export default function TokenGate({ children }: TokenGateProps) {
     
     // Clear session and local storage
     sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
-    localStorage.removeItem('walletAddress');
-    localStorage.removeItem('connectedWallet');
     
     // Disconnect from wallet providers safely
     const sol = typeof window !== 'undefined' ? window.solana : undefined;
@@ -378,8 +394,18 @@ export default function TokenGate({ children }: TokenGateProps) {
   if (walletAddress && loading) {
     return (
       <div className="flex flex-col items-center justify-center w-full min-h-screen bg-gray-900 text-center">
-        <p className="text-gray-300">Verifying your WifHoodie NFT...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+        <p className="text-gray-300 mb-2">Verifying your WifHoodie NFT...</p>
+        <p className="text-gray-400 text-sm mb-4">This may take a few moments</p>
         {error && <p className="text-red-400 mt-4">{error}</p>}
+        <Button 
+          onClick={() => window.location.reload()} 
+          variant="outline" 
+          size="sm"
+          className="mt-4 text-gray-400 hover:text-gray-300"
+        >
+          Refresh Page
+        </Button>
       </div>
     );
   }

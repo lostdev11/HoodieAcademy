@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Gift, Star, Trophy, Users, ShoppingBag, Crown } from 'lucide-react';
 import { RetailstarRewardCard, RetailstarRewardCardCompact } from '@/components/retailstar/RetailstarRewardCard';
 import { retailstarIncentiveService, RetailstarReward } from '@/services/retailstar-incentive-service';
+import { getSquadName } from '@/utils/squad-storage';
 
 export default function RetailstarIncentivesPage() {
   const [userSquad, setUserSquad] = useState<string | null>(null);
@@ -21,36 +22,30 @@ export default function RetailstarIncentivesPage() {
 
   useEffect(() => {
     // Get user squad and wallet from localStorage
-    const squadResult = localStorage.getItem('userSquad');
+    const squadResult = getSquadName();
     const wallet = localStorage.getItem('walletAddress') || sessionStorage.getItem('walletAddress');
     setWalletAddress(wallet);
 
     if (squadResult) {
-      try {
-        const result = JSON.parse(squadResult);
-        const squad = typeof result === 'object' && result.name ? result.name : result;
-        const normalized = squad.replace(/^[🎨🧠🎤⚔️🦅🏦]+\s*/, '').toLowerCase().trim();
-        const squadMapping: { [key: string]: string } = {
-          'hoodie creators': 'creators',
-          'hoodie decoders': 'decoders', 
-          'hoodie speakers': 'speakers',
-          'hoodie raiders': 'raiders',
-          'treasury builders': 'treasury'
-        };
-        const squadId = squadMapping[normalized] || normalized;
-        setUserSquad(squadId);
-        
-        // Load available rewards for this squad
-        const squadRewards = retailstarIncentiveService.getSquadRewards(squadId);
-        setAvailableRewards(squadRewards);
+      const normalized = squadResult.replace(/^[🎨🧠🎤⚔️🦅🏦]+\s*/, '').toLowerCase().trim();
+      const squadMapping: { [key: string]: string } = {
+        'hoodie creators': 'creators',
+        'hoodie decoders': 'decoders', 
+        'hoodie speakers': 'speakers',
+        'hoodie raiders': 'raiders',
+        'treasury builders': 'treasury'
+      };
+      const squadId = squadMapping[normalized] || normalized;
+      setUserSquad(squadId);
+      
+      // Load available rewards for this squad
+      const squadRewards = retailstarIncentiveService.getSquadRewards(squadId);
+      setAvailableRewards(squadRewards);
 
-        // Load user's claimed rewards if wallet is available - temporarily disabled
-        // if (wallet) {
-        //   retailstarIncentiveService.fetchClaimedRewards(wallet).then(setUserRewards);
-        // }
-      } catch (error) {
-        console.error('Error parsing squad result:', error);
-      }
+      // Load user's claimed rewards if wallet is available - temporarily disabled
+      // if (wallet) {
+      //   retailstarIncentiveService.fetchClaimedRewards(wallet).then(setUserRewards);
+      // }
     }
     setIsLoading(false);
   }, []);

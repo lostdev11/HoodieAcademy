@@ -12,34 +12,54 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate checking for existing user session
-    const checkAuth = () => {
-      // In a real app, this would check localStorage, cookies, or make an API call
-      const storedUser = localStorage.getItem('hoodie_user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+    // Load user from database instead of localStorage
+    const checkAuth = async () => {
+      try {
+        // This should check your database instead of localStorage
+        // For now, set loading to false as we're removing localStorage
+        setLoading(false);
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkAuth();
   }, []);
 
-  const login = (userData: User) => {
-    setUser(userData);
-    localStorage.setItem('hoodie_user', JSON.stringify(userData));
+  const login = async (userData: User) => {
+    try {
+      setUser(userData);
+      // This should save to your database instead of localStorage
+      // TODO: Implement database save here
+      console.log('User logged in, should save to database:', userData);
+    } catch (error) {
+      console.error('Error logging in:', error);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('hoodie_user');
+  const logout = async () => {
+    try {
+      setUser(null);
+      // This should clear from your database instead of localStorage
+      // TODO: Implement database logout here
+      console.log('User logged out, should clear from database');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
   };
 
-  const updateUser = (updates: Partial<User>) => {
+  const updateUser = async (updates: Partial<User>) => {
     if (user) {
-      const updatedUser = { ...user, ...updates };
-      setUser(updatedUser);
-      localStorage.setItem('hoodie_user', JSON.stringify(updatedUser));
+      try {
+        const updatedUser = { ...user, ...updates };
+        setUser(updatedUser);
+        // This should save to your database instead of localStorage
+        // TODO: Implement database update here
+        console.log('User updated, should save to database:', updatedUser);
+      } catch (error) {
+        console.error('Error updating user:', error);
+      }
     }
   };
 

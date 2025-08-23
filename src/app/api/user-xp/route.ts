@@ -48,8 +48,8 @@ export async function GET(request: Request) {
     }
 
     // Calculate XP breakdown
-    const bountyXP = bountySubmissions?.reduce((total, sub) => total + (sub.xp_awarded || 0), 0) || 0;
-    const winnerXP = bountySubmissions?.reduce((total, sub) => {
+    const bountyXP = bountySubmissions?.reduce((total: number, sub: any) => total + (sub.xp_awarded || 0), 0) || 0;
+    const winnerXP = bountySubmissions?.reduce((total: number, sub: any) => {
       if (sub.placement) {
         switch (sub.placement) {
           case 'first': return total + 250;

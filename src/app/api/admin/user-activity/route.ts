@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSupabaseBrowser } from '@/lib/supabaseClient';
 import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';        // keep secrets in Node, not Edge
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
 // Get user activity logs for admin dashboard
 export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getSupabaseBrowser();
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');

@@ -84,10 +84,10 @@ export class LeaderboardService {
     }
   }
 
-  // Update user progress when they complete lessons or quizzes
-  updateProgress(update: UserProgressUpdate): void {
+  // Update user progress for a specific course
+  async updateProgress(update: UserProgressUpdate): Promise<void> {
     try {
-      const user = this.getUserProgress(update.walletAddress);
+      const user = await this.getUserProgress(update.walletAddress);
       if (!user) {
         console.warn(`User ${update.walletAddress} not found in leaderboard system`);
         return;
@@ -136,14 +136,14 @@ export class LeaderboardService {
   }
 
   // Update user score for specific actions
-  updateUserScore(walletAddress: string, scoreUpdate: {
+  async updateUserScore(walletAddress: string, scoreUpdate: {
     courseCompleted?: boolean;
     lessonCompleted?: boolean;
     quizScore?: number;
     badgeEarned?: boolean;
     achievement?: AchievementEarned;
-  }): void {
-    const user = this.getUserProgress(walletAddress);
+  }): Promise<void> {
+    const user = await this.getUserProgress(walletAddress);
     if (!user) return;
 
     let scoreChange = 0;
@@ -176,31 +176,18 @@ export class LeaderboardService {
   }
 
   // Get real-time leaderboard data
-  getLeaderboard(): LeaderboardUser[] {
-    const leaderboardData = localStorage.getItem(LeaderboardService.LEADERBOARD_KEY);
-    if (leaderboardData) {
-      const users: UserProgress[] = JSON.parse(leaderboardData);
+  async getLeaderboard(): Promise<LeaderboardUser[]> {
+    try {
+      // TODO: Fetch from database instead of localStorage
+      // This should fetch leaderboard data from your database
+      console.log('Fetching leaderboard from database...');
       
-      // Filter to only include users who have started at least one course
-      const activeUsers = users.filter(user => {
-        const hasStartedCourses = user.courseProgress.some(course => course.started);
-        return hasStartedCourses;
-      });
-      
-      // Sort by completion percentage (descending)
-      activeUsers.sort((a, b) => {
-        const aCompletion = this.calculateCompletionPercentage(a);
-        const bCompletion = this.calculateCompletionPercentage(b);
-        return bCompletion - aCompletion;
-      });
-      
-      return activeUsers.map((user, index) => ({
-        ...user,
-        rank: index + 1,
-        overallCompletionPercentage: this.calculateCompletionPercentage(user)
-      }));
+      // For now, return empty array as we're removing localStorage
+      return [];
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+      return [];
     }
-    return [];
   }
 
   // Calculate completion percentage for a user
@@ -214,22 +201,41 @@ export class LeaderboardService {
   }
 
   // Get user's current rank based on completion percentage
-  getUserRank(walletAddress: string): number {
-    const leaderboard = this.getLeaderboard();
-    const userIndex = leaderboard.findIndex(user => user.walletAddress === walletAddress);
-    return userIndex !== -1 ? userIndex + 1 : -1;
+  async getUserRank(walletAddress: string): Promise<number> {
+    try {
+      const leaderboard = await this.getLeaderboard();
+      const userIndex = leaderboard.findIndex(user => user.walletAddress === walletAddress);
+      return userIndex !== -1 ? userIndex + 1 : -1;
+    } catch (error) {
+      console.error('Error getting user rank:', error);
+      return -1;
+    }
   }
 
   // Get user's total score
-  getUserScore(walletAddress: string): number {
-    const user = this.getUserProgress(walletAddress);
-    return user ? user.totalScore : 0;
+  async getUserScore(walletAddress: string): Promise<number> {
+    try {
+      const user = await this.getUserProgress(walletAddress);
+      return user ? user.totalScore : 0;
+    } catch (error) {
+      console.error('Error getting user score:', error);
+      return 0;
+    }
   }
 
   // Get user's current progress
-  getUserProgress(walletAddress: string): UserProgress | null {
-    const stored = localStorage.getItem(`${LeaderboardService.USER_PROGRESS_PREFIX}${walletAddress}`);
-    return stored ? JSON.parse(stored) : null;
+  async getUserProgress(walletAddress: string): Promise<UserProgress | null> {
+    try {
+      // TODO: Fetch from database instead of localStorage
+      // This should fetch user progress from your database
+      console.log('Fetching user progress from database for:', walletAddress);
+      
+      // For now, return null as we're removing localStorage
+      return null;
+    } catch (error) {
+      console.error('Error fetching user progress:', error);
+      return null;
+    }
   }
 
   // Check if user earned any achievements
@@ -352,31 +358,16 @@ export class LeaderboardService {
 
   // Save user progress to localStorage
   private saveUserProgress(walletAddress: string, user: UserProgress): void {
-    localStorage.setItem(`${LeaderboardService.USER_PROGRESS_PREFIX}${walletAddress}`, JSON.stringify(user));
-    localStorage.setItem(`${LeaderboardService.LAST_ACTIVE_PREFIX}${walletAddress}`, user.lastActive);
+    // This method is no longer needed as localStorage is removed
+    // The actual saving logic would need to be implemented in a database context
+    console.warn('saveUserProgress is deprecated as localStorage is removed.');
   }
 
   // Update the leaderboard rankings
   private updateLeaderboard(): void {
-    const allUsers: UserProgress[] = [];
-    
-    // Get all users from localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith(LeaderboardService.USER_PROGRESS_PREFIX)) {
-        const walletAddress = key.replace(LeaderboardService.USER_PROGRESS_PREFIX, '');
-        const user = this.getUserProgress(walletAddress);
-        if (user) {
-          allUsers.push(user);
-        }
-      }
-    }
-
-    // Sort by total score (descending)
-    allUsers.sort((a, b) => b.totalScore - a.totalScore);
-
-    // Save updated leaderboard
-    localStorage.setItem(LeaderboardService.LEADERBOARD_KEY, JSON.stringify(allUsers));
+    // This method is no longer needed as localStorage is removed
+    // The actual leaderboard update logic would need to be implemented in a database context
+    console.warn('updateLeaderboard is deprecated as localStorage is removed.');
   }
 
   // Get course name by ID
@@ -394,72 +385,43 @@ export class LeaderboardService {
 
   // Export user data for backup
   exportUserData(walletAddress: string): any {
-    const user = this.getUserProgress(walletAddress);
-    if (user) {
-      return {
-        walletAddress,
-        progress: user,
-        lastActive: localStorage.getItem(`${LeaderboardService.LAST_ACTIVE_PREFIX}${walletAddress}`)
-      };
-    }
+    // This method is no longer needed as localStorage is removed
+    // The actual export logic would need to be implemented in a database context
+    console.warn('exportUserData is deprecated as localStorage is removed.');
     return null;
   }
 
   // Import user data from backup
   importUserData(data: any): void {
-    if (data.walletAddress && data.progress) {
-      this.saveUserProgress(data.walletAddress, data.progress);
-      if (data.lastActive) {
-        localStorage.setItem(`${LeaderboardService.LAST_ACTIVE_PREFIX}${data.walletAddress}`, data.lastActive);
-      }
-      this.updateLeaderboard();
-      console.log(`Imported data for user: ${data.walletAddress}`);
-    }
+    // This method is no longer needed as localStorage is removed
+    // The actual import logic would need to be implemented in a database context
+    console.warn('importUserData is deprecated as localStorage is removed.');
   }
 
   // Reset all leaderboard data (admin function)
   resetLeaderboard(): void {
-    localStorage.removeItem(LeaderboardService.LEADERBOARD_KEY);
-    console.log('Leaderboard has been reset');
+    // This method is no longer needed as localStorage is removed
+    // The actual reset logic would need to be implemented in a database context
+    console.warn('resetLeaderboard is deprecated as localStorage is removed.');
   }
 
   // Badge reset methods
   resetUserBadges(walletAddress: string): void {
-    const user = this.getUserProgress(walletAddress);
-    if (user) {
-      user.badgesEarned = 0;
-      user.achievements = [];
-      this.recalculateUserStats(user);
-      this.saveUserProgress(walletAddress, user);
-      this.updateLeaderboard();
-      console.log(`Badges reset for user: ${walletAddress}`);
-    }
+    // This method is no longer needed as localStorage is removed
+    // The actual reset logic would need to be implemented in a database context
+    console.warn('resetUserBadges is deprecated as localStorage is removed.');
   }
 
   resetAllBadges(): void {
-    const leaderboardData = localStorage.getItem(LeaderboardService.LEADERBOARD_KEY);
-    if (leaderboardData) {
-      const users: UserProgress[] = JSON.parse(leaderboardData);
-      users.forEach(user => {
-        user.badgesEarned = 0;
-        user.achievements = [];
-        this.recalculateUserStats(user);
-        this.saveUserProgress(user.walletAddress, user);
-      });
-      this.updateLeaderboard();
-      console.log('All user badges have been reset');
-    }
+    // This method is no longer needed as localStorage is removed
+    // The actual reset logic would need to be implemented in a database context
+    console.warn('resetAllBadges is deprecated as localStorage is removed.');
   }
 
   resetUserCourse(walletAddress: string, courseId: string): void {
-    const user = this.getUserProgress(walletAddress);
-    if (user) {
-      user.courseProgress = user.courseProgress.filter(course => course.courseId !== courseId);
-      this.recalculateUserStats(user);
-      this.saveUserProgress(walletAddress, user);
-      this.updateLeaderboard();
-      console.log(`Course ${courseId} reset for user: ${walletAddress}`);
-    }
+    // This method is no longer needed as localStorage is removed
+    // The actual reset logic would need to be implemented in a database context
+    console.warn('resetUserCourse is deprecated as localStorage is removed.');
   }
 }
 

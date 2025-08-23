@@ -18,7 +18,6 @@ export interface CourseCardProps {
   riskType?: "phishing" | "fomo"; // Optional risk type
   isCompleted?: boolean; // New prop for completion status
   progress?: number; // New prop for progress percentage
-  localStorageKey?: string; // To help identify in arrays
   totalLessons?: number; // To help verify completion
   isAdmin?: boolean; // New prop for admin mode
   onResetCourse?: (courseId: string) => void; // New prop for reset function

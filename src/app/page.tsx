@@ -40,9 +40,10 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import { MobileNavigation } from "@/components/dashboard/MobileNavigation"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
-import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet, getActiveAnnouncements, getScheduledAnnouncements, getUpcomingEvents, Announcement, Event } from '@/lib/utils'
+import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet } from '@/lib/utils'
+import { getSquadName } from '@/utils/squad-storage'
 import Image from 'next/image'
-import { getSNSResolver, formatWalletAddress } from '@/services/sns-resolver';
+// import { getSNSResolver, formatWalletAddress } from '@/services/sns-resolver';
 import { Connection } from '@solana/web3.js';
 
 // Mock data for the new home page sections
@@ -163,8 +164,9 @@ export default function HoodieAcademy() {
       const resolveSnsDomain = async () => {
         try {
           setIsLoadingSns(true);
-          const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
-          const resolvedName = await getDisplayNameWithSNS(storedWallet);
+          // const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
+          // const resolvedName = await getDisplayNameWithSNS(storedWallet);
+          const resolvedName = storedWallet;
           console.log('Main page: Resolved SNS name:', resolvedName);
           setSnsDomain(resolvedName);
           
@@ -185,38 +187,42 @@ export default function HoodieAcademy() {
     }
 
     // Check if user is admin
-    setIsAdmin(isCurrentUserAdmin());
-
-    // Get squad placement result
-    const squadResult = typeof window !== 'undefined' ? localStorage.getItem('userSquad') : null;
-    console.log('Raw squad result from localStorage:', squadResult);
-    if (squadResult) {
+    const checkAdminStatus = async () => {
       try {
-        const result = JSON.parse(squadResult);
-        let userSquadName: string;
+        console.log('🔍 Main page: Checking admin status...');
         
-        // Handle both object and string formats
-        if (typeof result === 'object' && result.name) {
-          userSquadName = result.name;
-        } else if (typeof result === 'string') {
-          userSquadName = result;
-        } else {
-          throw new Error('Invalid squad result format');
+        // Get wallet address first
+        const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
+        if (!walletAddress) {
+          setIsAdmin(false);
+          return;
         }
         
-        setUserSquad(userSquadName);
+        // Use direct admin check to bypass RLS policy issues
+        const { checkAdminStatusDirect } = await import('@/lib/admin-check');
+        const adminStatus = await checkAdminStatusDirect(walletAddress);
         
-        // Check if squad lock has expired
-        const squadLockTime = localStorage.getItem('squadLockTime');
-        if (squadLockTime) {
-          const lockTime = parseInt(squadLockTime);
-          const now = Date.now();
-          const lockExpired = now - lockTime > 24 * 60 * 60 * 1000; // 24 hours
-          setSquadLockExpired(lockExpired);
-        }
+        console.log('🔍 Main page: Direct admin check result:', adminStatus);
+        setIsAdmin(adminStatus);
       } catch (error) {
-        console.error('Error parsing squad result:', error);
-        setUserSquad(null);
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    };
+    checkAdminStatus();
+
+    // Get squad placement result using utility function
+    const userSquadName = getSquadName();
+    if (userSquadName) {
+      setUserSquad(userSquadName);
+      
+      // Check if squad lock has expired
+      const squadLockTime = localStorage.getItem('squadLockTime');
+      if (squadLockTime) {
+        const lockTime = parseInt(squadLockTime);
+        const now = Date.now();
+        const lockExpired = now - lockTime > 24 * 60 * 60 * 1000; // 24 hours
+        setSquadLockExpired(lockExpired);
       }
     }
   }, []);
@@ -341,32 +347,30 @@ export default function HoodieAcademy() {
                           >
                             {snsDomain}
                           </span>
-                          <Badge variant="outline" className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
-                            .sol
-                          </Badge>
+
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
                           <span title={`Full wallet: ${walletAddress}`} className="font-mono">
                             {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
                           </span>
-                          <Badge variant="outline" className="text-xs bg-gray-500/20 text-gray-400 border-gray-500/30">
-                            No .sol
-                          </Badge>
+
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => {
                               setSnsDomain(null);
                               setIsLoadingSns(true);
-                              const snsResolver = getSNSResolver();
-                              const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
-                              snsResolver.reverseResolve(connection, walletAddress).then(domain => {
-                                setSnsDomain(domain);
-                                setIsLoadingSns(false);
-                              }).catch(() => {
-                                setIsLoadingSns(false);
-                              });
+                              // const snsResolver = getSNSResolver();
+                              // const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
+                              // snsResolver.reverseResolve(connection, walletAddress).then(domain => {
+                              //   setSnsDomain(domain);
+                              //   setIsLoadingSns(false);
+                              // }).catch(() => {
+                              //   setIsLoadingSns(false);
+                              // });
+                              setSnsDomain(null);
+                              setIsLoadingSns(false);
                             }}
                             className="h-4 w-4 p-0 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10"
                             title="Refresh SNS resolution"
@@ -383,6 +387,29 @@ export default function HoodieAcademy() {
                     )}
                   </div>
                 )}
+                
+                {/* Admin Button - Always show, but access restricted */}
+                <Link href={isAdmin ? "/admin" : "#"}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`w-full sm:w-auto min-h-[44px] ${
+                      isAdmin 
+                        ? 'text-blue-400 border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-300' 
+                        : 'text-slate-500 border-slate-500/30 cursor-not-allowed opacity-50'
+                    }`}
+                    onClick={(e) => {
+                      if (!isAdmin) {
+                        e.preventDefault();
+                        alert('Admin access required. Please contact an administrator.');
+                      }
+                    }}
+                  >
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin
+                    {!isAdmin && <span className="ml-1 text-xs">(Restricted)</span>}
+                  </Button>
+                </Link>
                 
                 {/* Disconnect Button */}
                 <Button

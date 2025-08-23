@@ -1,35 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Only create client if environment variables are available
-const createSupabaseClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration is missing');
-  }
-  
-  return createClient(supabaseUrl, supabaseKey);
-};
+import { getSupabaseBrowser } from '@/lib/supabaseClient';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('Test endpoint called');
-    
-    // Create Supabase client
-    let supabase;
-    try {
-      supabase = createSupabaseClient();
-      console.log('Supabase client created successfully');
-    } catch (error) {
-      console.error('Error creating Supabase client:', error);
+    const { searchParams } = new URL(request.url);
+    const walletAddress = searchParams.get('walletAddress');
+
+    if (!walletAddress) {
       return NextResponse.json(
-        { error: 'Database connection failed', details: error },
-        { status: 500 }
+        { error: 'Missing walletAddress parameter' },
+        { status: 400 }
       );
     }
 
+    // Create Supabase client
+    const supabase = getSupabaseBrowser();
+    
     // Test basic connection
     const { data: testData, error: testError } = await supabase
       .from('retailstar_rewards')

@@ -1,30 +1,85 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import CoursePageClient from './CoursePageClient';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import fs from 'fs';
 import path from 'path';
 
 // Function to get course data
 async function getCourseData(slug: string) {
   try {
-    // Try to read the course file directly
-    const coursePath = path.join(process.cwd(), 'public', 'courses', `${slug}.json`);
-    const courseData = fs.readFileSync(coursePath, 'utf8');
-    return JSON.parse(courseData);
-  } catch (error) {
-    console.error(`Error loading course ${slug} from filesystem:`, error);
+    console.log('getCourseData: Attempting to load course:', slug);
     
-    // Fallback: try to fetch from API route
-    try {
-      const response = await fetch(`/api/courses/${slug}`);
-      if (response.ok) {
-        return await response.json();
-      }
-    } catch (apiError) {
-      console.error(`Error loading course ${slug} from API:`, apiError);
+    // Use the API route to get course data
+    const baseUrl = process.env.NODE_ENV === 'development' 
+      ? 'http://localhost:3008' 
+      : 'https://hoodieacademy.xyz';
+    
+    const response = await fetch(`${baseUrl}/api/courses/${slug}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Disable caching for development
+      cache: process.env.NODE_ENV === 'development' ? 'no-store' : 'force-cache'
+    });
+    
+    if (!response.ok) {
+      console.error(`getCourseData: API returned ${response.status}: ${response.statusText}`);
+      return null;
     }
     
-    return null;
+    const course = await response.json();
+    console.log('getCourseData: Course loaded from API:', course.title);
+    console.log('getCourseData: Course has modules:', course.modules?.length || 0);
+    console.log('getCourseData: Course modules:', course.modules);
+    
+    // Validate course structure
+    if (!course.modules || !Array.isArray(course.modules) || course.modules.length === 0) {
+      console.error('getCourseData: Course has no valid modules');
+      return null;
+    }
+    
+    return course;
+  } catch (error) {
+    console.error(`Error loading course ${slug}:`, error);
+    
+    // Fallback: try to read the course file directly
+    try {
+      console.log('getCourseData: API failed, trying fs fallback');
+      const coursePath = path.join(process.cwd(), 'public', 'courses', `${slug}.json`);
+      console.log('getCourseData: Course path:', coursePath);
+      
+      // Check if file exists
+      if (!fs.existsSync(coursePath)) {
+        console.error('getCourseData: Course file does not exist:', coursePath);
+        return null;
+      }
+      
+      const courseData = fs.readFileSync(coursePath, 'utf8');
+      console.log('getCourseData: Course file read successfully, size:', courseData.length);
+      
+      if (!courseData || courseData.trim() === '') {
+        console.error('getCourseData: Course file is empty');
+        return null;
+      }
+      
+      const parsedCourse = JSON.parse(courseData);
+      console.log('getCourseData: Course parsed successfully:', parsedCourse.title);
+      console.log('getCourseData: Course has modules:', parsedCourse.modules?.length || 0);
+      console.log('getCourseData: Course modules:', parsedCourse.modules);
+      
+      // Validate course structure
+      if (!parsedCourse.modules || !Array.isArray(parsedCourse.modules) || parsedCourse.modules.length === 0) {
+        console.error('getCourseData: Course has no valid modules');
+        return null;
+      }
+      
+      return parsedCourse;
+    } catch (fsError) {
+      console.error('getCourseData: FS fallback also failed:', fsError);
+      return null;
+    }
   }
 }
 
@@ -135,11 +190,20 @@ function generateStructuredData(course: any) {
 
 export default async function CoursePage({ params }: { params: { slug: string } }) {
   try {
+    console.log('CoursePage: Loading course with slug:', params.slug);
+    console.log('CoursePage: Current working directory:', process.cwd());
+    
     const course = await getCourseData(params.slug);
     
     if (!course) {
+      console.error('CoursePage: Course not found for slug:', params.slug);
       notFound();
     }
+    
+    console.log('CoursePage: Course loaded successfully:', course.title);
+    console.log('CoursePage: Course has modules:', course.modules?.length || 0);
+    console.log('CoursePage: Course modules:', course.modules);
+    console.log('CoursePage: Course ID:', course.id);
     
     return (
       <>
@@ -179,7 +243,9 @@ export default async function CoursePage({ params }: { params: { slug: string } 
           }}
         />
         
-        <CoursePageClient course={course} />
+        <ErrorBoundary>
+          <CoursePageClient course={course} />
+        </ErrorBoundary>
       </>
     );
   } catch (error) {

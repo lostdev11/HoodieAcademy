@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -94,6 +94,36 @@ export default function BottomNavigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check admin status on mount
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        // Get connected wallet address
+        const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
+        
+        if (walletAddress) {
+          // Use direct admin check to bypass RLS policy issues
+          const { checkAdminStatusDirect } = await import('@/lib/admin-check');
+          const adminStatus = await checkAdminStatusDirect(walletAddress);
+          setIsAdmin(adminStatus);
+        } else {
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    };
+    
+    checkAdmin();
+    
+    // Set up interval to check for wallet connections
+    const interval = setInterval(checkAdmin, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const isActiveRoute = (href: string) => {
     if (href === '/') {
@@ -113,7 +143,16 @@ export default function BottomNavigation() {
 
   const currentActiveGroup = getActiveGroup();
 
+  // Always show all navigation groups, but admin access will be restricted
+  const filteredNavigationGroups = navigationGroups;
+
   const handleMainButtonClick = (group: NavigationGroup) => {
+    // Check if trying to access admin without permissions
+    if (group.key === 'admin' && !isAdmin) {
+      alert('Admin access required. Please contact an administrator.');
+      return;
+    }
+    
     // Navigate to the primary destination
     router.push(group.primaryHref);
     // Close any open dropdown
@@ -130,24 +169,26 @@ export default function BottomNavigation() {
       {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-700/50">
         <div className="flex items-center justify-around px-2 py-2">
-          {navigationGroups.map((group) => {
+          {filteredNavigationGroups.map((group) => {
             const isActive = currentActiveGroup === group.key;
             const hasActiveItem = group.items.some(item => isActiveRoute(item.href));
             
             return (
               <div key={group.key} className="relative">
-                <Button
-                  variant={isActive ? "default" : "ghost"}
-                  size="sm"
-                  className={`flex flex-col items-center gap-1 h-16 px-2 ${
-                    isActive 
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                      : hasActiveItem 
-                        ? 'text-blue-400 hover:text-blue-300' 
-                        : 'text-slate-400 hover:text-slate-300'
-                  }`}
-                  onClick={() => handleMainButtonClick(group)}
-                >
+                                 <Button
+                   variant={isActive ? "default" : "ghost"}
+                   size="sm"
+                   className={`flex flex-col items-center gap-1 h-16 px-2 ${
+                     isActive 
+                       ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                       : hasActiveItem 
+                         ? 'text-blue-400 hover:text-blue-300' 
+                         : group.key === 'admin' && !isAdmin
+                           ? 'text-slate-500 cursor-not-allowed opacity-50'
+                           : 'text-slate-400 hover:text-slate-300'
+                   }`}
+                   onClick={() => handleMainButtonClick(group)}
+                 >
                   {group.icon}
                   <span className="text-xs font-medium">{group.label}</span>
                   {group.badge && (

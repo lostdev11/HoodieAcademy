@@ -1,62 +1,52 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { getDisplayNameWithSNS } from '@/services/sns-resolver';
+import { useState, useEffect } from 'react';
 
-interface UseSNSResolutionReturn {
-  resolvedNames: Record<string, string>;
-  resolveName: (walletAddress: string) => Promise<string>;
-  resolveMultipleNames: (walletAddresses: string[]) => Promise<void>;
-  isLoading: boolean;
-}
+export function useSNSResolution(walletAddress: string | null) {
+  const [resolvedName, setResolvedName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-export function useSNSResolution(): UseSNSResolutionReturn {
-  const [resolvedNames, setResolvedNames] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-
-  const resolveName = useCallback(async (walletAddress: string): Promise<string> => {
-    // Check if we already have this name resolved
-    if (resolvedNames[walletAddress]) {
-      return resolvedNames[walletAddress];
+  useEffect(() => {
+    if (!walletAddress) {
+      setResolvedName(null);
+      return;
     }
 
-    // Check localStorage first
-    const storedName = localStorage.getItem(`displayName_${walletAddress}`);
-    if (storedName) {
-      setResolvedNames(prev => ({ ...prev, [walletAddress]: storedName }));
-      return storedName;
-    }
+    const resolveName = async () => {
+      setLoading(true);
+      try {
+        // This should check your database first instead of localStorage
+        // For now, we'll skip the localStorage check and go straight to resolution
+        
+        // TODO: Check database for existing resolution
+        // const existingName = await fetchResolvedNameFromDatabase(walletAddress);
+        // if (existingName) {
+        //   setResolvedName(existingName);
+        //   setLoading(false);
+        //   return;
+        // }
 
-    try {
-      setIsLoading(true);
-      const resolvedName = await getDisplayNameWithSNS(walletAddress);
-      
-      // Cache the resolved name
-      setResolvedNames(prev => ({ ...prev, [walletAddress]: resolvedName }));
-      localStorage.setItem(`displayName_${walletAddress}`, resolvedName);
-      
-      return resolvedName;
-    } catch (error) {
-      console.error('Error resolving SNS name:', error);
-      const fallbackName = walletAddress.slice(0, 4) + '...' + walletAddress.slice(-4);
-      setResolvedNames(prev => ({ ...prev, [walletAddress]: fallbackName }));
-      return fallbackName;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [resolvedNames]);
+        // Resolve SNS name
+        const response = await fetch(`/api/sns/resolve?address=${walletAddress}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.name) {
+            setResolvedName(data.name);
+            
+            // Save to database instead of localStorage
+            // TODO: Implement database save here
+            console.log('SNS name resolved, should save to database:', { walletAddress, name: data.name });
+          }
+        }
+      } catch (error) {
+        console.error('Error resolving SNS name:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Pre-resolve names for a list of wallet addresses
-  const resolveMultipleNames = useCallback(async (walletAddresses: string[]) => {
-    const uniqueAddresses = Array.from(new Set(walletAddresses));
-    const promises = uniqueAddresses.map(address => resolveName(address));
-    await Promise.all(promises);
-  }, [resolveName]);
+    resolveName();
+  }, [walletAddress]);
 
-  return {
-    resolvedNames,
-    resolveName,
-    isLoading,
-    resolveMultipleNames
-  };
+  return { resolvedName, loading };
 }

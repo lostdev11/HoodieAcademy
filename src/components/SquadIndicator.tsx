@@ -1,13 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
+import { getSquadName } from '@/utils/squad-storage';
 
 export default function SquadIndicator() {
   const [userSquad, setUserSquad] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get squad from localStorage
-    const savedSquad = localStorage.getItem('userSquad');
+    // Get squad from localStorage using utility
+    const savedSquad = getSquadName();
     if (savedSquad) {
       setUserSquad(savedSquad);
     }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { storeSquad } from '@/utils/squad-storage';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Target, Users, Trophy, CheckCircle, ArrowRight, Clock, AlertTriangle, Lock } from 'lucide-react';
@@ -135,7 +136,7 @@ export default function ChooseYourSquadPage() {
     lockEndDate.setDate(lockEndDate.getDate() + 30);
     
     // Save squad assignment with lock info
-    localStorage.setItem('userSquad', selectedSquad.name);
+    storeSquad({ name: selectedSquad.name, id: selectedSquad.id });
     localStorage.setItem('placementTestCompleted', 'true');
     
     // Redirect to home page

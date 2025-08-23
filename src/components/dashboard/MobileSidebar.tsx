@@ -19,6 +19,7 @@ import {
   Menu
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
+import { getSquadName } from '@/utils/squad-storage';
 // Use canonical wallet types
 
 interface SidebarItem {
@@ -121,27 +122,11 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        // Load squad data
-        const squadResult = localStorage.getItem('userSquad');
-        if (squadResult) {
-          try {
-            const result = JSON.parse(squadResult);
-            let userSquadName: string;
-            
-            // Handle both object and string formats
-            if (typeof result === 'object' && result.name) {
-              userSquadName = result.name;
-            } else if (typeof result === 'string') {
-              userSquadName = result;
-            } else {
-              throw new Error('Invalid squad result format');
-            }
-            
-            setUserSquad(userSquadName);
-            setSquadChatUrl(getSquadChatUrl(userSquadName));
-          } catch (error) {
-            console.error('MobileSidebar: Error parsing squad result:', error);
-          }
+        // Load squad data using utility
+        const userSquadName = getSquadName();
+        if (userSquadName) {
+          setUserSquad(userSquadName);
+          setSquadChatUrl(getSquadChatUrl(userSquadName));
         }
 
         // Load user display name and SNS domain
@@ -153,8 +138,9 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
           const storedWallet = localStorage.getItem('walletAddress');
           if (storedWallet) {
             try {
-              const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
-              const resolvedName = await getDisplayNameWithSNS(storedWallet);
+              // const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
+              // const resolvedName = await getDisplayNameWithSNS(storedWallet);
+              const resolvedName = storedWallet;
               console.log('MobileSidebar: Resolved SNS name:', resolvedName);
               setUserDisplayName(resolvedName);
             } catch (error) {

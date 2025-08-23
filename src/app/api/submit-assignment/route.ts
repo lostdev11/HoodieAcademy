@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowser } from '@/lib/supabaseClient';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { 
       slug, 
@@ -16,9 +16,7 @@ export async function POST(req: Request) {
     }
 
     // Initialize Supabase client
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getSupabaseBrowser();
     
     // Record course completion in Supabase
     if (walletAddress) {

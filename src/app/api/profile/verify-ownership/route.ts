@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAssetsByOwner } from '@/lib/solana/das';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseBrowser } from '@/lib/supabaseClient';
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+const supabase = getSupabaseBrowser();
 
 export async function POST(req: NextRequest) {
   const { userId, owner } = await req.json();
@@ -11,8 +10,8 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await supabase.from('profiles').select('pfp_asset_id').eq('id', userId).single();
   if (!profile?.pfp_asset_id) return NextResponse.json({ ok: true });
 
-  const items = await getAssetsByOwner(owner, 200);
-  const stillOwned = items.some(i => i.id === profile.pfp_asset_id);
+  const items = await supabase.from('assets').select('id').eq('owner', owner).eq('id', profile.pfp_asset_id);
+  const stillOwned = items.length > 0;
   if (!stillOwned) {
     await supabase.from('profiles').update({ pfp_url: null, pfp_asset_id: null }).eq('id', userId);
   }

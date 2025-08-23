@@ -140,13 +140,13 @@ export class EnhancedLeaderboardService {
 
       // Transform data and compute derived fields
       const leaderboardUsers: LeaderboardUser[] = (users || [])
-        .filter(user => user.wallet_id)
-        .map(user => {
+        .filter((user: any) => user.wallet_id)
+        .map((user: any) => {
           // Count completed courses
           const coursesCompleted = user.course_completions?.length || 0;
 
           // Filter 100-level courses
-          const course100s = (user.course_completions || []).filter(c => {
+          const course100s = (user.course_completions || []).filter((c: any) => {
             const courseId = c.course_id as keyof typeof COURSE_LEVELS;
             const courseLevel = COURSE_LEVELS[courseId] || 0;
             return courseLevel >= 100 && courseLevel < 200;
@@ -156,7 +156,7 @@ export class EnhancedLeaderboardService {
           const completionPct = Math.round((course100s.length / TOTAL_100_LEVEL_COURSES) * 100);
 
           // Count passed quizzes
-          const quizzesPassed = (user.quiz_results || []).filter(q => q.passed).length;
+          const quizzesPassed = (user.quiz_results || []).filter((q: any) => q.passed).length;
 
           // Count badges
           const badgeCount = user.badges?.length || 0;
@@ -165,7 +165,7 @@ export class EnhancedLeaderboardService {
           const level = 100 + course100s.length;
 
           // Create course progress array
-          const courseProgress = (user.course_completions || []).map(c => ({
+          const courseProgress = (user.course_completions || []).map((c: any) => ({
             courseId: c.course_id,
             courseName: this.getCourseName(c.course_id),
             progress: 100, // Completed courses have 100% progress
@@ -195,9 +195,9 @@ export class EnhancedLeaderboardService {
             courseProgress
           };
         })
-        .filter(user => user.completion > 0) // Only include users with some completion
-        .sort((a, b) => b.completion - a.completion) // Sort by completion percentage
-        .map((user, index) => ({
+        .filter((user: any) => user.completion > 0) // Only include users with some completion
+        .sort((a: any, b: any) => b.completion - a.completion) // Sort by completion percentage
+        .map((user: any, index: number) => ({
           ...user,
           rank: index + 1
         }));

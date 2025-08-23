@@ -6,7 +6,6 @@ export interface Course {
   emoji: string;
   pathType: "tech" | "social" | "converged";
   href: string;
-  localStorageKey?: string;
   totalLessons?: number;
   category?: string;
   level?: string;
@@ -29,7 +28,6 @@ export const allCourses: Course[] = [
     emoji: "🔒",
     pathType: "tech",
     href: "/courses/wallet-wizardry",
-    localStorageKey: "walletWizardryProgress",
     totalLessons: 4,
     squad: "Decoders",
     category: "wallet",
@@ -50,7 +48,6 @@ export const allCourses: Course[] = [
     emoji: "📊",
     pathType: "tech",
     href: "/courses/t100-chart-literacy",
-    localStorageKey: "t100ChartLiteracyProgress",
     totalLessons: 4,
     squad: "Raiders",
     category: "technical-analysis",
@@ -71,7 +68,6 @@ export const allCourses: Course[] = [
     emoji: "🖼️",
     pathType: "tech",
     href: "/courses/nft-mastery",
-    localStorageKey: "nftMasteryProgress",
     totalLessons: 6,
     squad: "Creators",
     category: "nft",
@@ -92,7 +88,6 @@ export const allCourses: Course[] = [
     emoji: "🤖",
     pathType: "tech",
     href: "/courses/ai-automation-curriculum",
-    localStorageKey: "aiAutomationProgress",
     totalLessons: 8,
     squad: "Decoders",
     category: "ai",
@@ -112,7 +107,6 @@ export const allCourses: Course[] = [
     emoji: "🛡️",
     pathType: "tech",
     href: "/courses/cybersecurity-wallet-practices",
-    localStorageKey: "cybersecurityProgress",
     totalLessons: 5,
     squad: "Decoders",
     category: "security",
@@ -132,7 +126,6 @@ export const allCourses: Course[] = [
     emoji: "🌱",
     pathType: "social",
     href: "/courses/community-strategy",
-    localStorageKey: "communityStrategyProgress",
     totalLessons: 7,
     squad: "Speakers",
     category: "community",
@@ -152,7 +145,6 @@ export const allCourses: Course[] = [
     emoji: "📚",
     pathType: "social",
     href: "/courses/lore-narrative-crafting",
-    localStorageKey: "loreNarrativeProgress",
     totalLessons: 6,
     squad: "Creators",
     category: "narrative",
@@ -172,7 +164,6 @@ export const allCourses: Course[] = [
     emoji: "🚀",
     pathType: "tech",
     href: "/courses/meme-coin-mania",
-    localStorageKey: "memeCoinProgress",
     totalLessons: 5,
     squad: "Raiders",
     category: "trading",
@@ -192,7 +183,6 @@ export const allCourses: Course[] = [
     emoji: "🎯",
     pathType: "converged",
     href: "/courses/hoodie-squad-track",
-    localStorageKey: "hoodieSquadProgress",
     totalLessons: 4,
     squad: "Rangers",
     category: "squad",
@@ -214,9 +204,7 @@ export function getVisibleCourses(isAdmin: boolean = false): Course[] {
   }
   
   // For admin users, show all courses but respect visibility settings
-  if (typeof window !== 'undefined' && localStorage.getItem('adminCoursesData')) {
-    initializeCourses(isAdmin);
-  }
+  // TODO: Load from database instead of localStorage
   return allCourses;
 }
 
@@ -246,9 +234,9 @@ export function toggleCourseVisibility(courseId: string, isAdmin: boolean = fals
     allCourses[courseIndex].isVisible = !allCourses[courseIndex].isVisible;
     allCourses[courseIndex].updatedAt = new Date().toISOString();
     
-    // Save to localStorage immediately
+    // Save to database instead of localStorage
     if (typeof window !== 'undefined') {
-      saveCoursesToStorage(isAdmin);
+      saveCoursesToDatabase(isAdmin);
     }
     
     // Dispatch custom event to notify other components
@@ -319,66 +307,67 @@ export function deleteCourse(courseId: string): Course[] {
   return allCourses;
 }
 
-// Local storage persistence
-export function saveCoursesToStorage(isAdmin: boolean = false): void {
-  if (typeof window !== 'undefined') {
-    if (isAdmin) {
-      console.log('Saving courses to localStorage:', allCourses.map(c => ({ id: c.id, title: c.title, isVisible: c.isVisible, isPublished: c.isPublished })));
-    }
-    localStorage.setItem('adminCoursesData', JSON.stringify(allCourses));
-    // Dispatch custom event to notify other components
-    window.dispatchEvent(new CustomEvent('coursesUpdated', { detail: allCourses }));
-    if (isAdmin) {
-      console.log('Courses saved to localStorage and event dispatched');
-    }
-  }
-}
-
-export function loadCoursesFromStorage(isAdmin: boolean = false): Course[] {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('adminCoursesData');
-    if (isAdmin) {
-      console.log('Loading courses from localStorage:', { stored: stored ? 'exists' : 'not found' });
-    }
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (isAdmin) {
-          console.log('Parsed courses from localStorage:', parsed.map((c: Course) => ({ id: c.id, title: c.title, isVisible: c.isVisible, isPublished: c.isPublished })));
-        }
-        // Merge with default courses to ensure all properties exist
-        const merged = allCourses.map(defaultCourse => {
-          const storedCourse = parsed.find((c: Course) => c.id === defaultCourse.id);
-          return storedCourse ? { ...defaultCourse, ...storedCourse } : defaultCourse;
-        });
-        if (isAdmin) {
-          console.log('Merged courses:', merged.map(c => ({ id: c.id, title: c.title, isVisible: c.isVisible, isPublished: c.isPublished })));
-        }
-        return merged;
-      } catch (error) {
-        console.error('Error loading courses from storage:', error);
-      }
-    }
-  }
-  if (isAdmin) {
-    console.log('Returning default courses:', allCourses.map(c => ({ id: c.id, title: c.title, isVisible: c.isVisible, isPublished: c.isPublished })));
-  }
-  return allCourses;
-}
-
-// Initialize courses from storage
-export function initializeCourses(isAdmin: boolean = false): Course[] {
-  const storedCourses = loadCoursesFromStorage(isAdmin);
-  if (isAdmin) {
-    console.log('Initializing courses from storage:', {
-      storedCoursesCount: storedCourses.length,
-      storedCourses: storedCourses.map(c => ({ id: c.id, title: c.title, isVisible: c.isVisible, isPublished: c.isPublished }))
+// Database persistence
+export async function saveCoursesToDatabase(isAdmin: boolean = false): Promise<void> {
+  try {
+    const res = await fetch("/api/courses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(allCourses),
     });
+    if (!res.ok) throw new Error(await res.text());
+    window.dispatchEvent(new CustomEvent('coursesUpdated', { detail: allCourses }));
+    if (isAdmin) console.log('Courses saved.');
+  } catch (e) {
+    console.error('saveCoursesToDatabase error:', e);
   }
-  // Update the allCourses array with stored data
-  Object.assign(allCourses, storedCourses);
-  if (isAdmin) {
-    console.log('Courses after initialization:', allCourses.map(c => ({ id: c.id, title: c.title, isVisible: c.isVisible, isPublished: c.isPublished })));
+}
+
+export async function loadCoursesFromDatabase(isAdmin: boolean = false): Promise<Course[]> {
+  try {
+    const res = await fetch(`/api/courses?admin=${isAdmin ? "1" : "0"}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(await res.text());
+    const rows = await res.json();
+
+    // Map DB -> TS
+    const loaded: Course[] = rows.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      description: r.description,
+      badge: r.badge,
+      emoji: r.emoji,
+      pathType: r.path_type,
+      href: r.href,
+      totalLessons: r.total_lessons ?? undefined,
+      category: r.category ?? undefined,
+      level: r.level ?? undefined,
+      access: r.access ?? undefined,
+      squad: r.squad ?? undefined,
+      isVisible: r.is_visible,
+      isPublished: r.is_published,
+      isGated: r.is_gated ?? undefined,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      createdBy: r.created_by ?? undefined,
+    }));
+
+    return loaded;
+  } catch (e) {
+    console.error('loadCoursesFromDatabase error:', e);
+    return allCourses; // fallback to in-memory defaults
   }
-  return allCourses;
+}
+
+// Initialize courses from database
+export async function initializeCourses(isAdmin: boolean = false): Promise<Course[]> {
+  try {
+    const stored = await loadCoursesFromDatabase(isAdmin);
+    // Replace the array contents in-place so references stay valid
+    allCourses.length = 0;
+    allCourses.push(...stored);
+    window.dispatchEvent(new CustomEvent('coursesUpdated', { detail: allCourses }));
+    return allCourses;
+  } catch {
+    return allCourses;
+  }
 }

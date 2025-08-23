@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 
-const LOCAL_KEY = 'hoodieXP';
-
 export interface XPProfile {
   totalXP: number;
   completedCourses: string[];
@@ -78,26 +76,38 @@ export function useUserXP() {
   });
 
   const [badges, setBadges] = useState<Badge[]>(BADGES);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const raw = localStorage.getItem(LOCAL_KEY);
-    const today = new Date().toISOString().split('T')[0];
-    let parsed: XPProfile;
-
-    if (raw) {
-      parsed = JSON.parse(raw);
-      const lastSeen = parsed.lastLogin;
-      if (lastSeen !== today) {
-        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-        parsed.streak = lastSeen === yesterday ? parsed.streak + 1 : 1;
-        parsed.lastLogin = today;
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(parsed));
+    const loadUserProfile = async () => {
+      try {
+        // This should fetch from your database instead of localStorage
+        // For now, set default values as we're removing localStorage
+        const today = new Date().toISOString().split('T')[0];
+        const defaultProfile: XPProfile = {
+          totalXP: 0,
+          completedCourses: [],
+          streak: 1,
+          lastLogin: today
+        };
+        
+        setProfile(defaultProfile);
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+        // Set default values on error
+        const today = new Date().toISOString().split('T')[0];
+        setProfile({
+          totalXP: 0,
+          completedCourses: [],
+          streak: 1,
+          lastLogin: today
+        });
+      } finally {
+        setLoading(false);
       }
-    } else {
-      parsed = { totalXP: 0, completedCourses: [], streak: 1, lastLogin: today };
-      localStorage.setItem(LOCAL_KEY, JSON.stringify(parsed));
-    }
-    setProfile(parsed);
+    };
+
+    loadUserProfile();
   }, []);
 
   // Update badges based on current progress
@@ -134,20 +144,32 @@ export function useUserXP() {
     setBadges(updatedBadges);
   }, [profile]);
 
-  const completeCourse = (slug: string, xp = 100) => {
+  const completeCourse = async (slug: string, xp = 100) => {
     if (profile.completedCourses.includes(slug)) return;
-    const updated = {
-      ...profile,
-      totalXP: profile.totalXP + xp,
-      completedCourses: [...profile.completedCourses, slug]
-    };
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(updated));
-    setProfile(updated);
+    
+    try {
+      const updated = {
+        ...profile,
+        totalXP: profile.totalXP + xp,
+        completedCourses: [...profile.completedCourses, slug]
+      };
+      
+      // This should save to your database instead of localStorage
+      // For now, just update the local state
+      setProfile(updated);
+      
+      // TODO: Implement database save here
+      console.log('Course completed, should save to database:', updated);
+      
+    } catch (error) {
+      console.error('Error completing course:', error);
+    }
   };
 
   return {
     ...profile,
     completeCourse,
-    badges
+    badges,
+    loading
   };
 } 

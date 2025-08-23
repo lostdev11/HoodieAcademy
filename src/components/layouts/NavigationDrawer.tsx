@@ -91,14 +91,38 @@ export function NavigationDrawer({
   useEffect(() => {
     const checkAdmin = async () => {
       try {
-        const adminStatus = await isCurrentUserAdmin();
-        setIsAdmin(adminStatus);
+        // Get connected wallet address
+        const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
+        
+        if (walletAddress) {
+          // Import here to avoid circular dependencies
+          const { fetchUserByWallet } = await import('@/lib/supabase');
+          const user = await fetchUserByWallet(walletAddress);
+          const adminStatus = user?.is_admin === true;
+          setIsAdmin(adminStatus);
+          
+          if (adminStatus) {
+            console.log('✅ NavigationDrawer: Admin status: true');
+          } else {
+            console.log('✅ NavigationDrawer: Admin status: false');
+          }
+        } else {
+          setIsAdmin(false);
+          console.log('✅ NavigationDrawer: No wallet connected');
+        }
       } catch (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);
       }
     };
+    
+    // Check immediately and set up interval to check when wallet connects
     checkAdmin();
+    
+    // Set up interval to check for wallet connections
+    const interval = setInterval(checkAdmin, 2000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const toggleSection = (sectionId: string) => {

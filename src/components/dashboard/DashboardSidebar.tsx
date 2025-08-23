@@ -20,6 +20,7 @@ import {
   Target
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
+import { getSquadName } from '@/utils/squad-storage';
 // Use canonical wallet types
 
 interface SidebarItem {
@@ -117,46 +118,46 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
 
   // Load user's squad
   useEffect(() => {
-    const squadResult = localStorage.getItem('userSquad');
-    if (squadResult) {
-      try {
-        const result = JSON.parse(squadResult);
-        let userSquadName: string;
-        
-        // Handle both object and string formats
-        if (typeof result === 'object' && result.name) {
-          userSquadName = result.name;
-        } else if (typeof result === 'string') {
-          userSquadName = result;
-        } else {
-          throw new Error('Invalid squad result format');
-        }
-        
-        setUserSquad(userSquadName);
-        setSquadChatUrl(getSquadChatUrl(userSquadName));
-      } catch (error) {
-        console.error('Error parsing squad result:', error);
-      }
+    const userSquadName = getSquadName();
+    if (userSquadName) {
+      setUserSquad(userSquadName);
+      setSquadChatUrl(getSquadChatUrl(userSquadName));
     }
   }, []);
 
+  // Check admin status from database when wallet is connected
   useEffect(() => {
-    // Simple admin check - can be enhanced later
-    const checkAdmin = () => {
+    const checkAdminStatus = async () => {
       try {
-        const adminStatus = typeof window !== 'undefined' && localStorage.getItem('isAdmin') === 'true';
-        setIsAdmin(adminStatus);
-        if (adminStatus) {
-          console.log('✅ DashboardSidebar: Admin status: true');
+        // Get connected wallet address
+        const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
+        
+        if (walletAddress) {
+          console.log('🔍 DashboardSidebar: Checking admin for wallet:', walletAddress.slice(0, 8) + '...');
+          
+          // Use direct admin check to bypass RLS policy issues
+          const { checkAdminStatusDirect } = await import('@/lib/admin-check');
+          const adminStatus = await checkAdminStatusDirect(walletAddress);
+          
+          console.log('🔍 DashboardSidebar: Direct admin check result:', adminStatus);
+          setIsAdmin(adminStatus);
         } else {
-          console.log('✅ DashboardSidebar: Admin status: false');
+          setIsAdmin(false);
+          console.log('❌ DashboardSidebar: No wallet connected');
         }
       } catch (err) {
         setIsAdmin(false);
         console.error('💥 DashboardSidebar: Failed to check admin:', err);
       }
     };
-    checkAdmin();
+
+    // Check immediately and set up interval to check when wallet connects
+    checkAdminStatus();
+    
+    // Set up interval to check for wallet connections
+    const interval = setInterval(checkAdminStatus, 2000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const handleToggle = () => {
@@ -221,13 +222,13 @@ const sidebarItems: SidebarItem[] = [
     icon: <Trophy className="w-5 h-5" />,
     href: '/achievements'
   },
-  // Only include Admin tab if isAdmin is true
-  ...(isAdmin ? [{
+  // Always include Admin tab, but access will be restricted
+  {
     id: 'admin',
     label: 'Admin',
     icon: <Settings className="w-5 h-5" />,
     href: '/admin'
-  }] : [])
+  }
 ];
 
   return (

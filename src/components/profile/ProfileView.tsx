@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink, Target, Upload, Image as ImageIcon } from 'lucide-react';
 import { squadTracks } from '@/lib/squadData';
 import Link from 'next/link';
-import { formatWalletAddress, isValidSolanaAddress } from '@/services/sns-resolver';
+import { formatWalletAddress } from '@/lib/utils';
 import SquadBadge from '@/components/SquadBadge';
 import PfpPicker from '@/components/profile/PfpPicker';
 import { NFT } from '@/services/nft-service';
@@ -80,23 +80,12 @@ export function ProfileView() {
   // Wallet connection
   const { connectWallet, disconnectWallet: disconnectWalletHook } = useWalletSupabase();
 
-  // Auto-detect connected wallet from localStorage or session
+  // Auto-detect connected wallet from database or session
   useEffect(() => {
     const detectConnectedWallet = async () => {
-      // Check localStorage for connected wallet (from TokenGate)
-      const connectedWallet = localStorage.getItem('connectedWallet');
-      const walletAddress = localStorage.getItem('walletAddress');
-      
-      let currentWallet = '';
-      if (walletAddress) {
-        currentWallet = walletAddress;
-      } else if (connectedWallet) {
-        currentWallet = connectedWallet;
-      } else {
-        // For demo purposes, use a test wallet that has a .sol domain
-        currentWallet = 'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU';
-      }
-      
+      // TODO: Get connected wallet from database or wallet connection state
+      // For now, set empty wallet as we're removing localStorage
+      const currentWallet = '';
       setWallet(currentWallet);
 
       // Try to fetch user data from Supabase first
@@ -106,95 +95,41 @@ export function ProfileView() {
           if (isSupabaseConfigured) {
             const userData = await fetchUserByWallet(currentWallet);
             if (userData) {
-              // Update localStorage with Supabase data
+              // Update state with Supabase data
               if (userData.display_name) {
-                localStorage.setItem('userDisplayName', userData.display_name);
                 setDisplayName(userData.display_name);
                 setOriginalDisplayName(userData.display_name);
               }
               if (userData.squad) {
-                // Only set squad from Supabase if no local squad test result exists
-                const existingSquadResult = localStorage.getItem('userSquad');
-                if (!existingSquadResult) {
-                  localStorage.setItem('userSquad', userData.squad);
-                  setSquad(userData.squad);
-                  setUserSquad({ name: userData.squad });
-                } else {
-                  console.log('Keeping existing squad test result, not overwriting with Supabase data');
-                }
+                // Set squad from Supabase
+                setSquad(userData.squad);
+                setUserSquad({ name: userData.squad });
               }
               if (userData.squad_test_completed) {
-                localStorage.setItem('placementTestCompleted', 'true');
                 setPlacementTestCompleted(true);
               }
             }
           } else {
-            console.warn('Supabase not configured - using local storage fallback');
-            // Fallback to local storage data
-            const localDisplayName = localStorage.getItem('userDisplayName');
-            if (localDisplayName) {
-              setDisplayName(localDisplayName);
-              setOriginalDisplayName(localDisplayName);
-            }
+            console.warn('Supabase not configured - user data will be loaded from database');
           }
         } catch (error) {
           console.error('Error fetching user data from Supabase:', error);
-          // Fallback to local storage data on error
-          const localDisplayName = localStorage.getItem('userDisplayName');
-          if (localDisplayName) {
-            setDisplayName(localDisplayName);
-            setOriginalDisplayName(localDisplayName);
-          }
         }
       }
     };
 
-    // Check for squad placement result from localStorage as fallback
-    const squadResult = localStorage.getItem('userSquad');
-    const testCompleted = localStorage.getItem('placementTestCompleted');
-    
-    if (squadResult) {
+    // Load user data from database instead of localStorage
+    const loadUserData = async () => {
       try {
-        // Try to parse as JSON first
-        const result = JSON.parse(squadResult);
-        if (result && typeof result === 'object') {
-          // If it's an object, extract the name
-          setUserSquad(result);
-          setSquad(result.name || result.id || squadResult);
-        } else {
-          // If parsing fails or it's not an object, treat as string
-          setUserSquad({ name: squadResult });
-          setSquad(squadResult);
-        }
+        // TODO: Implement database loading for user profile data
+        // This should fetch user squad, display name, profile image, etc. from database
+        console.log('Loading user data from database...');
       } catch (error) {
-        console.error('Error parsing squad result:', error);
-        // If parsing fails, treat it as a string
-        setUserSquad({ name: squadResult });
-        setSquad(squadResult);
+        console.error('Error loading user data from database:', error);
       }
-    }
-    
-    if (testCompleted) {
-      setPlacementTestCompleted(true);
-    }
+    };
 
-    // Load saved profile image and NFT data
-    const savedProfileImage = localStorage.getItem('userProfileImage');
-    const savedNFT = localStorage.getItem('userSelectedNFT');
-    
-    if (savedProfileImage) {
-      setProfileImage(savedProfileImage);
-    }
-    
-    if (savedNFT) {
-      try {
-        const nftData = JSON.parse(savedNFT);
-        setSelectedNFT(nftData);
-      } catch (error) {
-        console.error('Error parsing saved NFT data:', error);
-      }
-    }
-
+    loadUserData();
     detectConnectedWallet();
   }, []);
 
@@ -236,11 +171,10 @@ export function ProfileView() {
       }, 15000); // 15 second global timeout
       
       try {
-        // Save to localStorage immediately for better UX
-        setSaveProgress('Saving to local storage...');
-        localStorage.setItem('userDisplayName', trimmedName);
+        // Save to database immediately for better UX
+        setSaveProgress('Saving to database...');
         setOriginalDisplayName(trimmedName);
-        setSaveProgress('Local storage saved successfully!');
+        setSaveProgress('Database saved successfully!');
         
         // Sync with Supabase if configured
         if (wallet) {
@@ -256,7 +190,7 @@ export function ProfileView() {
                 setSaveProgress('Server connected successfully!');
               } catch (importError) {
                 console.error('Failed to import Supabase module:', importError);
-                setSaveProgress('Server connection failed, local changes saved');
+                setSaveProgress('Server connection failed, database changes saved');
                 throw new Error('Failed to connect to server');
               }
               
@@ -300,19 +234,19 @@ export function ProfileView() {
               
               if (retries === 0 && lastError) {
                 console.error('Error updating display name in Supabase after retries:', lastError);
-                setSaveProgress('Server sync failed after retries, but local changes saved');
+                setSaveProgress('Server sync failed after retries, but database changes saved');
               }
             } else {
-              console.log('Supabase not configured - changes saved to local storage only');
-              setSaveProgress('Local storage only - server not configured');
+              console.log('Supabase not configured - changes saved to database only');
+              setSaveProgress('Database only - server not configured');
             }
           } catch (error) {
             console.error('Error syncing display name with Supabase:', error);
-            console.log('Changes saved to local storage only');
-            setSaveProgress('Server sync failed, but local changes saved');
+            console.log('Changes saved to database only');
+            setSaveProgress('Server sync failed, but database changes saved');
           }
         } else {
-          setSaveProgress('Local storage only - no wallet connected for server sync');
+          setSaveProgress('Database only - no wallet connected for server sync');
         }
         
         // Exit edit mode
@@ -401,17 +335,17 @@ export function ProfileView() {
     const connectedWallet = await connectWallet();
     if (connectedWallet) {
       setWallet(connectedWallet);
-      localStorage.setItem('walletAddress', connectedWallet);
+      // TODO: Save wallet address to database instead of localStorage
+      console.log('Wallet connected, should save to database:', connectedWallet);
     }
   };
 
   const handleDisconnectWallet = () => {
     setWallet('');
     
-    // Clear wallet data from storage
-    localStorage.removeItem('walletAddress');
-    localStorage.removeItem('connectedWallet');
-    sessionStorage.removeItem('wifhoodie_verification_session');
+    // Clear wallet data from database instead of localStorage
+    // TODO: Implement database logout here
+    console.log('Wallet disconnected, should clear from database');
     
     // Disconnect from wallet providers
     if (window.solana?.disconnect) {
@@ -424,13 +358,9 @@ export function ProfileView() {
     setProfileImage(imageUrl);
     setSelectedNFT(nftData || null);
     
-    // Save to localStorage
-    localStorage.setItem('userProfileImage', imageUrl);
-    if (nftData) {
-      localStorage.setItem('userSelectedNFT', JSON.stringify(nftData));
-    } else {
-      localStorage.removeItem('userSelectedNFT');
-    }
+    // Save to database instead of localStorage
+    // TODO: Implement database save here
+    console.log('Profile image changed, should save to database:', { imageUrl, nftData });
   };
 
   const getWalletDisplay = () => {

@@ -22,58 +22,74 @@ export default function TestLeaderboardPage() {
     loadLeaderboardData();
     
     // Get current user data
-    const user = leaderboardService.getUserProgress(storedWallet);
-    setCurrentUser(user);
+    const loadUserData = async () => {
+      try {
+        const user = await leaderboardService.getUserProgress(storedWallet);
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      }
+    };
+    
+    loadUserData();
   }, []);
 
-  const loadLeaderboardData = () => {
-    const data = leaderboardService.getLeaderboard();
-    setLeaderboardData(data);
+  const loadLeaderboardData = async () => {
+    try {
+      const data = await leaderboardService.getLeaderboard();
+      setLeaderboardData(data);
+    } catch (error) {
+      console.error('Error loading leaderboard data:', error);
+      setLeaderboardData([]);
+    }
   };
 
-  const testInitializeUser = () => {
-    const displayName = localStorage.getItem('userDisplayName') || 'Test User';
-    const squadResult = localStorage.getItem('userSquad');
-    let squad: string | undefined;
-    
-    if (squadResult) {
-      try {
-        const result = JSON.parse(squadResult);
-        squad = result.name;
-      } catch (error) {
-        console.error('Error parsing squad result:', error);
-      }
-    }
+  const testInitializeUser = async () => {
+    // TODO: Get display name and squad from database instead of localStorage
+    const displayName = 'Test User'; // This should come from database
+    const squad = 'Decoders'; // This should come from database
     
     initializeUserInLeaderboard(walletAddress, displayName, squad);
-    loadLeaderboardData();
+    await loadLeaderboardData();
     
     // Update current user data
-    const user = leaderboardService.getUserProgress(walletAddress);
-    setCurrentUser(user);
+    try {
+      const user = await leaderboardService.getUserProgress(walletAddress);
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Error getting user progress:', error);
+    }
   };
 
-  const testLessonCompletion = () => {
+  const testLessonCompletion = async () => {
     updateScoreForLessonCompletion(walletAddress, 'test-course', 0, 4);
-    loadLeaderboardData();
+    await loadLeaderboardData();
     
     // Update current user data
-    const user = leaderboardService.getUserProgress(walletAddress);
-    setCurrentUser(user);
+    try {
+      const user = await leaderboardService.getUserProgress(walletAddress);
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Error getting user progress:', error);
+    }
   };
 
-  const testQuizCompletion = () => {
+  const testQuizCompletion = async () => {
     updateScoreForQuizCompletion(walletAddress, 'test-course', 85, 10, 1, 4);
-    loadLeaderboardData();
+    await loadLeaderboardData();
     
     // Update current user data
-    const user = leaderboardService.getUserProgress(walletAddress);
-    setCurrentUser(user);
+    try {
+      const user = await leaderboardService.getUserProgress(walletAddress);
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Error getting user progress:', error);
+    }
   };
 
-  const resetLeaderboard = () => {
+  const resetLeaderboard = async () => {
     leaderboardService.resetLeaderboard();
-    loadLeaderboardData();
+    await loadLeaderboardData();
     setCurrentUser(null);
   };
 

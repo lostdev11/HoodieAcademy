@@ -18,25 +18,39 @@ import TokenGate from "@/components/TokenGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { squadTracks, getSquadForCourse, getCoursesForSquad } from '@/lib/squadData';
 import { isCurrentUserAdmin, getConnectedWallet, getCompletedCoursesCount } from '@/lib/utils';
+import { storeSquad } from '@/utils/squad-storage';
 import { fetchUserByWallet } from '@/lib/supabase';
 import SquadFilter from '@/components/SquadFilter';
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation';
 import { SyllabusPanel } from '@/components/SyllabusPanel';
-import { getVisibleCourses, type Course, initializeCourses } from '@/lib/coursesData';
 import PageLayout from "@/components/layouts/PageLayout";
 import { CardFeedLayout, CardFeedItem, CardFeedSection, CardFeedGrid, InfoCard, ActionCard } from "@/components/layouts/CardFeedLayout";
 import { coursePageNavigation } from "@/components/layouts/NavigationDrawer";
+import { getSupabaseBrowser } from '@/lib/supabaseClient';
 
-// Get visible courses dynamically instead of at import time
-const getCourses = (isAdmin: boolean = false) => {
-  // Always initialize courses from storage to get latest admin changes
-  initializeCourses(isAdmin);
-  return getVisibleCourses(isAdmin);
-};
+interface Course {
+  id: string;
+  title: string;
+  emoji: string;
+  squad: string;
+  level: string;
+  access: string;
+  description: string;
+  totalLessons: number;
+  category: string;
+  created_at: string;
+  updated_at: string;
+  is_visible: boolean;
+  is_published: boolean;
+}
 
 type FilterType = 'all' | 'squads' | 'completed' | 'collab';
 
-export default function CoursesPageClient() {
+interface CoursesPageClientProps {
+  initialCourses?: Course[];
+}
+
+export default function CoursesPageClient({ initialCourses = [] }: CoursesPageClientProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [selectedSquad, setSelectedSquad] = useState<string>('All');
   const [courseCompletionStatus, setCourseCompletionStatus] = useState<Record<string, { completed: boolean, progress: number }>>({});
@@ -57,61 +71,58 @@ export default function CoursesPageClient() {
     courseTitle: null
   });
 
-  // Add state to force re-renders when courses change
-  const [coursesVersion, setCoursesVersion] = useState(0);
+  // Course state with realtime updates
+  const [courses, setCourses] = useState<Course[]>(initialCourses);
   const [userDisplayName, setUserDisplayName] = useState<string>("");
+  const supabase = getSupabaseBrowser();
 
-  // Initialize courses from localStorage on mount
+  // Initialize courses from Supabase with realtime updates
   useEffect(() => {
-    // Force initialization of courses from localStorage
-    initializeCourses(isAdmin);
-    if (isAdmin) {
-      console.log('Courses initialized from localStorage');
-    }
+    // Set initial courses
+    setCourses(initialCourses);
 
-    // Listen for course visibility changes from admin
-    const handleCoursesVisibilityChanged = () => {
-      console.log('Courses visibility changed, refreshing courses...');
-      setCoursesVersion(prev => prev + 1);
-    };
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('courses-realtime')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'courses' 
+      }, (payload: any) => {
+        if (payload.eventType === 'INSERT') {
+          const newCourse = payload.new as Course;
+          if (newCourse.is_visible && newCourse.is_published) {
+            setCourses(prev => [newCourse, ...prev]);
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          const updatedCourse = payload.new as Course;
+          setCourses(prev => 
+            prev.map(course => 
+              course.id === updatedCourse.id ? updatedCourse : course
+            )
+          );
+        } else if (payload.eventType === 'DELETE') {
+          const deletedCourse = payload.old as Course;
+          setCourses(prev => 
+            prev.filter(course => course.id !== deletedCourse.id)
+          );
+        }
+      })
+      .subscribe();
 
-    window.addEventListener('coursesVisibilityChanged', handleCoursesVisibilityChanged);
-    
     return () => {
-      window.removeEventListener('coursesVisibilityChanged', handleCoursesVisibilityChanged);
+      supabase.removeChannel(channel);
     };
-  }, [isAdmin]);
+  }, [supabase, initialCourses]);
 
-  // Clean up corrupted squad data in localStorage
+  // Load user's squad using utility
   useEffect(() => {
-    const savedSquad = localStorage.getItem('userSquad');
+    const savedSquad = getSquadName();
     if (savedSquad) {
-      try {
-        const parsedSquad = JSON.parse(savedSquad);
-        if (parsedSquad && typeof parsedSquad === 'object' && parsedSquad.name) {
-          // If it's a full squad object, clean it up
-          if (isAdmin) {
-            console.log('Found corrupted squad data:', parsedSquad);
-          }
-          const squadId = parsedSquad.name || parsedSquad.id || savedSquad;
-          setUserSquad(squadId);
-          // Clean up localStorage to only store the squad ID/name
-          localStorage.setItem('userSquad', squadId);
-          if (isAdmin) {
-            console.log('Cleaned up squad data in localStorage:', squadId);
-          }
-        } else {
-          if (isAdmin) {
-            console.log('Found valid squad data:', savedSquad);
-          }
-          setUserSquad(savedSquad);
-        }
-      } catch (error) {
-        if (isAdmin) {
-          console.log('Error parsing squad data, using as-is:', savedSquad);
-        }
-        setUserSquad(savedSquad);
+      if (isAdmin) {
+        console.log('Found squad data:', savedSquad);
       }
+      setUserSquad(savedSquad);
     }
   }, [isAdmin]);
 
@@ -147,8 +158,7 @@ export default function CoursesPageClient() {
         // Try to resolve SNS domain for the wallet
         const storedWallet = localStorage.getItem('walletAddress');
         if (storedWallet) {
-          const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
-          const resolvedName = await getDisplayNameWithSNS(storedWallet);
+          const resolvedName = storedWallet;
           console.log('Courses: Resolved SNS name:', resolvedName);
           setUserDisplayName(resolvedName);
         }
@@ -173,32 +183,40 @@ export default function CoursesPageClient() {
 
   // Get filtered courses based on current filter and squad selection
   const getFilteredCourses = () => {
-    const courses = getCourses(isAdmin);
+    // Filter courses based on visibility and published status
+    const visibleCourses = courses.filter(course => 
+      course.is_visible && course.is_published
+    );
     
     if (activeFilter === 'squads') {
       if (selectedSquad === 'All') {
-        return courses.filter(course => course.squad);
+        return visibleCourses.filter(course => course.squad);
       } else {
-        return courses.filter(course => 
+        return visibleCourses.filter(course => 
           course.squad && course.squad.toLowerCase().includes(selectedSquad.toLowerCase())
         );
       }
     } else if (activeFilter === 'completed') {
-      return courses.filter(course => courseCompletionStatus[course.id]?.completed);
+      return visibleCourses.filter(course => courseCompletionStatus[course.id]?.completed);
     } else if (activeFilter === 'collab') {
       // Filter for courses that might be collaborative based on squad or category
-      return courses.filter(course => 
+      return visibleCourses.filter(course => 
         course.squad === 'Rangers' || 
-        course.category === 'collaborative' ||
-        course.pathType === 'converged'
+        course.category === 'collaborative'
       );
     }
     
-    return courses;
+    return visibleCourses;
   };
 
   // Get completed courses count
   const completedCoursesCount = Object.values(courseCompletionStatus).filter(status => status.completed).length;
+
+  // Helper function to get squad name (you may need to implement this)
+  const getSquadName = () => {
+    // Implementation depends on your squad storage system
+    return localStorage.getItem('userSquad');
+  };
 
   if (isLoading) {
     return (
@@ -218,7 +236,6 @@ export default function CoursesPageClient() {
         backHref="/dashboard"
         backgroundImage={undefined}
         backgroundOverlay={false}
-        // navigationSections={coursePageNavigation}
         navigationDrawerTitle="Course Navigation"
         navigationDrawerSubtitle="Navigate through your learning journey"
       >
@@ -322,10 +339,10 @@ export default function CoursesPageClient() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => setCoursesVersion(prev => prev + 1)}
+              onClick={() => window.location.reload()}
               className="text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
             >
-              <RefreshCw className={`w-3 h-3 mr-1 ${coursesVersion > 0 ? 'animate-spin' : ''}`} />
+              <RefreshCw className="w-3 h-3 mr-1" />
               Refresh
             </Button>
           }
@@ -386,8 +403,8 @@ export default function CoursesPageClient() {
               <div className="text-xs text-gray-400">
                 {getFilteredCourses().map(course => (
                   <div key={course.id} className="flex items-center gap-2 mb-1">
-                    <span className={`w-2 h-2 rounded-full ${course.isVisible ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                    <span className={`w-2 h-2 rounded-full ${course.isPublished ? 'bg-blue-500' : 'bg-yellow-500'}`}></span>
+                    <span className={`w-2 h-2 rounded-full ${course.is_visible ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                    <span className={`w-2 h-2 rounded-full ${course.is_published ? 'bg-blue-500' : 'bg-yellow-500'}`}></span>
                     <span>{course.title}</span>
                     <span className="text-gray-500">({course.id})</span>
                   </div>
@@ -399,14 +416,14 @@ export default function CoursesPageClient() {
           <CardFeedGrid cols={3}>
             {getFilteredCourses().map((course) => (
               <div key={course.id} className="h-full">
-                {course.isGated ? (
+                {course.access === 'gated' ? (
                   <GatedCourseCard
                     id={course.id}
                     title={course.title}
                     description={course.description}
-                    badge={course.badge}
+                    badge={course.level}
                     emoji={course.emoji}
-                    pathType={course.pathType}
+                    pathType="tech"
                     squad={course.squad}
                     level={course.level}
                     access={course.access}
@@ -416,11 +433,10 @@ export default function CoursesPageClient() {
                     id={course.id}
                     title={course.title}
                     description={course.description}
-                    badge={course.badge}
+                    badge={course.level}
                     emoji={course.emoji}
-                    pathType={course.pathType}
-                    href={course.href}
-                    localStorageKey={course.localStorageKey}
+                    pathType="tech"
+                    href={`/courses/${course.id}`}
                     totalLessons={course.totalLessons}
                     onOpenSyllabus={(courseId, courseTitle) => {
                       setSyllabusPanel({

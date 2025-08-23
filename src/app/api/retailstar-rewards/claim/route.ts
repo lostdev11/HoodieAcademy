@@ -1,48 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Only create client if environment variables are available
-const createSupabaseClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration is missing');
-  }
-  
-  return createClient(supabaseUrl, supabaseKey);
-};
+import { getSupabaseBrowser } from '@/lib/supabaseClient';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Claim reward API called');
-    
-    const { walletAddress, rewardId, metadata } = await request.json();
-    console.log('Request body:', { walletAddress, rewardId, metadata });
+    const { walletAddress, rewardId, userSquad } = await request.json();
 
-    if (!walletAddress || !rewardId) {
-      console.error('Missing required fields:', { walletAddress, rewardId });
+    if (!walletAddress || !rewardId || !userSquad) {
       return NextResponse.json(
-        { error: 'Missing required fields: walletAddress, rewardId' },
+        { error: 'Missing required fields: walletAddress, rewardId, userSquad' },
         { status: 400 }
       );
     }
 
     // Create Supabase client
-    let supabase;
-    try {
-      supabase = createSupabaseClient();
-      console.log('Supabase client created successfully');
-    } catch (error) {
-      console.error('Error creating Supabase client:', error);
-      return NextResponse.json(
-        { error: 'Database connection failed', details: error },
-        { status: 500 }
-      );
-    }
+    const supabase = getSupabaseBrowser();
 
     // Check if user already has this reward
-    console.log('Checking for existing reward...');
     const { data: existingReward, error: existingError } = await supabase
       .from('user_retailstar_rewards')
       .select('*')
@@ -68,11 +41,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Award the reward using the database function
-    console.log('Awarding reward using database function...');
     const { data: result, error } = await supabase.rpc('award_retailstar_reward', {
       p_wallet_address: walletAddress,
       p_reward_id: rewardId,
-      p_metadata: metadata || {},
+      p_metadata: {}, // No metadata for now
       p_expires_at: null // No expiration for now
     });
 

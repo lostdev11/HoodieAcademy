@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { getSquadName } from '@/utils/squad-storage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Shield, Users, AlertCircle, Home } from 'lucide-react';
 import Link from 'next/link';
@@ -154,7 +155,7 @@ export default function SquadChatClient({ params }: PageProps) {
 
   // Helper function to debug localStorage squad data
   const debugSquadData = () => {
-    const squadResult = localStorage.getItem('userSquad');
+    const squadResult = getSquadName();
     const onboardingCompleted = localStorage.getItem('onboardingCompleted');
     const hasDisplayName = localStorage.getItem('userDisplayName');
     
@@ -164,16 +165,7 @@ export default function SquadChatClient({ params }: PageProps) {
     console.log('hasDisplayName:', hasDisplayName);
     
     if (squadResult) {
-      try {
-        const parsed = JSON.parse(squadResult);
-        console.log('userSquad parsed:', parsed);
-        console.log('userSquad type:', typeof parsed);
-        if (typeof parsed === 'object') {
-          console.log('userSquad object keys:', Object.keys(parsed));
-        }
-      } catch (e) {
-        console.log('userSquad parse error:', e);
-      }
+      console.log('userSquad type:', typeof squadResult);
     }
   };
 
@@ -192,54 +184,31 @@ export default function SquadChatClient({ params }: PageProps) {
           return;
         }
 
-        // Get user's squad from localStorage
-        const squadResult = localStorage.getItem('userSquad');
+        // Get user's squad using utility
+        const userSquadName = getSquadName();
         
-        if (squadResult) {
-          try {
-            const result = JSON.parse(squadResult);
-            let userSquadName: string;
-            
-            // Handle different squad data formats
-            if (typeof result === 'object' && result.name) {
-              userSquadName = result.name;
-            } else if (typeof result === 'object' && result.squad) {
-              userSquadName = result.squad;
-            } else if (typeof result === 'string') {
-              userSquadName = result;
-            } else if (typeof result === 'object' && result.displayName) {
-              userSquadName = result.displayName;
-            } else {
-              console.error('Unknown squad result format:', result);
-              throw new Error('Invalid squad result format - missing squad name');
-            }
-            
-            console.log('Extracted userSquadName:', userSquadName);
-            
-            setUserSquad(userSquadName);
-            
-            // Check if user has access to this squad's chat
-            const squadsMatch = doSquadsMatch(squadName, userSquadName);
-            
-            // Debug logging for access check
-            console.log('Access check debug:', {
-              squadName,
-              userSquadName,
-              squadsMatch,
-              hasCompletedOnboarding,
-              hasDisplayName
-            });
-            
-            if (squadsMatch) {
-              setHasAccess(true);
-            } else {
-              setHasAccess(false);
-              setError(`Access denied: You're assigned to "${userSquadName}" but trying to access "${squadName}". Squad names must match exactly.`);
-            }
-          } catch (error) {
-            console.error('Error parsing squad result:', error);
+        if (userSquadName) {
+          console.log('Extracted userSquadName:', userSquadName);
+          
+          setUserSquad(userSquadName);
+          
+          // Check if user has access to this squad's chat
+          const squadsMatch = doSquadsMatch(squadName, userSquadName);
+          
+          // Debug logging for access check
+          console.log('Access check debug:', {
+            squadName,
+            userSquadName,
+            squadsMatch,
+            hasCompletedOnboarding,
+            hasDisplayName
+          });
+          
+          if (squadsMatch) {
+            setHasAccess(true);
+          } else {
             setHasAccess(false);
-            setError('Error reading your squad assignment. Please retake the placement test.');
+            setError(`Access denied: You're assigned to "${userSquadName}" but trying to access "${squadName}". Squad names must match exactly.`);
           }
         } else {
           // No squad assigned, redirect to placement test
@@ -350,7 +319,7 @@ export default function SquadChatClient({ params }: PageProps) {
 
   // Custom authentication check for squad chat
   const isAuthenticatedForSquadChat = () => {
-    const userSquad = localStorage.getItem('userSquad');
+    const userSquad = getSquadName();
     const onboardingCompleted = localStorage.getItem('onboardingCompleted');
     const placementTestCompleted = localStorage.getItem('placementTestCompleted');
     

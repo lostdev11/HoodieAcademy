@@ -101,22 +101,39 @@ export const updateScoreForBadgeEarned = (walletAddress: string) => {
 };
 
 // Get user's current rank
-export const getUserRank = (walletAddress: string): number => {
-  return leaderboardService.getUserRank(walletAddress);
+export const getUserRank = async (walletAddress: string): Promise<number> => {
+  return await leaderboardService.getUserRank(walletAddress);
 };
 
 // Get user's current score
-export const getUserScore = (walletAddress: string): number => {
-  return leaderboardService.getUserScore(walletAddress);
+export const getUserScore = async (walletAddress: string): Promise<number> => {
+  return await leaderboardService.getUserScore(walletAddress);
 };
 
-// Check if current user is admin (using session storage)
-export function isCurrentUserAdmin(): boolean {
+// Check if current user is admin (using database check)
+export async function isCurrentUserAdmin(): Promise<boolean> {
+  if (typeof window === 'undefined') return false;
+  
+  try {
+    const connectedWallet = getConnectedWallet();
+    if (!connectedWallet) return false;
+    
+    // Import here to avoid circular dependencies
+    const { fetchUserByWallet } = await import('@/lib/supabase');
+    const user = await fetchUserByWallet(connectedWallet);
+    
+    return user?.is_admin === true;
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
+}
+
+// Check if current user is admin (synchronous version for components that need it)
+export function isCurrentUserAdminSync(): boolean {
   if (typeof window === 'undefined') return false;
   
   const adminSession = sessionStorage.getItem('adminAuthenticated');
-  const connectedWallet = getConnectedWallet();
-  
   return adminSession === 'true';
 }
 
@@ -141,43 +158,16 @@ export function removeDemoWalletAdminAccess(): void {
   // Removed DEMO_WALLET logic as it is no longer used
 }
 
-// Get connected wallet address from localStorage (for other features)
+// Get connected wallet address from database (for other features)
 export function getConnectedWallet(): string | null {
   if (typeof window === 'undefined') return null;
   
-  return localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
+  // Get wallet from localStorage (this is the current implementation)
+  const walletAddress = localStorage.getItem('walletAddress');
+  return walletAddress;
 }
 
-// Safe localStorage utility to prevent SSR errors
-export const safeLocalStorage = {
-  getItem: (key: string): string | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-      return localStorage.getItem(key);
-    } catch (error) {
-      console.error('Error accessing localStorage:', error);
-      return null;
-    }
-  },
-  setItem: (key: string, value: string): void => {
-    if (typeof window === 'undefined') return;
-    try {
-      localStorage.setItem(key, value);
-    } catch (error) {
-      console.error('Error setting localStorage:', error);
-    }
-  },
-  removeItem: (key: string): void => {
-    if (typeof window === 'undefined') return;
-    try {
-      localStorage.removeItem(key);
-    } catch (error) {
-      console.error('Error removing from localStorage:', error);
-    }
-  }
-};
-
-// Events and Announcements utilities
+// Events and Announcements utilities - now database-driven
 export const EVENTS_KEY = 'events';
 export const ANNOUNCEMENTS_KEY = 'announcements';
 
@@ -187,34 +177,37 @@ export interface Event {
   description: string;
   date: string;
   time?: string;
-  type: 'class' | 'event' | 'workshop' | 'meetup';
+  type: string;
   location?: string;
   maxParticipants?: number;
   currentParticipants?: number;
   isActive: boolean;
   createdBy: string;
-  createdAt: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface Announcement {
   id: string;
   title: string;
   content: string;
-  type: 'info' | 'warning' | 'success' | 'important';
-  priority: 'low' | 'medium' | 'high';
-  startDate: string;
-  endDate?: string;
-  isActive: boolean;
-  createdBy: string;
-  createdAt: string;
+  type?: string;
+  priority?: string;
+  starts_at?: string;
+  ends_at?: string;
+  is_published?: boolean;
+  isActive?: boolean;
+  createdBy?: string;
+  created_at: string;
+  updated_at?: string;
 }
 
-// Get all events
-export const getEvents = (): Event[] => {
+// Get all events - now database-driven
+export const getEvents = async (): Promise<Event[]> => {
   try {
-    if (typeof window === 'undefined') return [];
-    const stored = localStorage.getItem(EVENTS_KEY);
-    return stored ? JSON.parse(stored) : [];
+    // This should fetch from your database instead of localStorage
+    // For now, return empty array as we're removing localStorage
+    return [];
   } catch (error) {
     console.error('Error loading events:', error);
     return [];
@@ -222,8 +215,8 @@ export const getEvents = (): Event[] => {
 };
 
 // Get upcoming events (within next 30 days)
-export const getUpcomingEvents = (): Event[] => {
-  const events = getEvents();
+export const getUpcomingEvents = async (): Promise<Event[]> => {
+  const events = await getEvents();
   const today = new Date();
   const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
   
@@ -233,262 +226,31 @@ export const getUpcomingEvents = (): Event[] => {
   });
 };
 
-// Get all announcements
-export const getAnnouncements = (): Announcement[] => {
-  try {
-    if (typeof window === 'undefined') return [];
-    const stored = localStorage.getItem(ANNOUNCEMENTS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('Error loading announcements:', error);
-    return [];
-  }
-};
-
-// Get active announcements
-export const getActiveAnnouncements = (): Announcement[] => {
-  const announcements = getAnnouncements();
-  const today = new Date();
-  const todayString = today.toISOString().split('T')[0]; // Get today's date as YYYY-MM-DD
-  
-  return announcements.filter((announcement) => {
-    if (!announcement.isActive) return false;
-    
-    // Compare dates as strings to avoid timezone issues
-    const startDateString = announcement.startDate;
-    if (startDateString > todayString) return false;
-    
-    if (announcement.endDate) {
-      const endDateString = announcement.endDate;
-      return endDateString >= todayString;
-    }
-    return true;
-  });
-};
-
-// Get scheduled (future) announcements
-export const getScheduledAnnouncements = (): Announcement[] => {
-  const announcements = getAnnouncements();
-  const today = new Date();
-  const todayString = today.toISOString().split('T')[0];
-  
-  return announcements.filter((announcement) => {
-    if (!announcement.isActive) return false;
-    
-    const startDateString = announcement.startDate;
-    return startDateString > todayString; // Future start date
-  });
-};
-
-// Get all active announcements (current + scheduled) for admin view
-export const getAllActiveAnnouncements = (): Announcement[] => {
-  const announcements = getAnnouncements();
-  return announcements.filter((announcement) => announcement.isActive);
-};
-
-// Save events
-export const saveEvents = (events: Event[]): void => {
-  try {
-    localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
-    // Dispatch custom event for real-time updates
-    window.dispatchEvent(new CustomEvent('eventsUpdated', { detail: events }));
-  } catch (error) {
-    console.error('Error saving events:', error);
-  }
-};
-
-// Save announcements
-export const saveAnnouncements = (announcements: Announcement[]): void => {
-  try {
-    localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(announcements));
-    // Dispatch custom event for real-time updates
-    const event = new CustomEvent('announcementsUpdated', { detail: announcements });
-    window.dispatchEvent(event);
-  } catch (error) {
-    console.error('Error saving announcements:', error);
-  }
-};
-
-// Add event
-export const addEvent = (event: Event): void => {
-  const events = getEvents();
-  events.push(event);
-  saveEvents(events);
-};
-
-// Update event
-export const updateEvent = (eventId: string, updatedEvent: Event): void => {
-  const events = getEvents();
-  const updatedEvents = events.map(e => e.id === eventId ? updatedEvent : e);
-  saveEvents(updatedEvents);
-};
-
-// Delete event
-export const deleteEvent = (eventId: string): void => {
-  const events = getEvents();
-  const updatedEvents = events.filter(e => e.id !== eventId);
-  saveEvents(updatedEvents);
-};
-
-// Add announcement
-export const addAnnouncement = (announcement: Announcement): void => {
-  const announcements = getAnnouncements();
-  announcements.push(announcement);
-  saveAnnouncements(announcements);
-};
-
-// Update announcement
-export const updateAnnouncement = (announcementId: string, updatedAnnouncement: Announcement): void => {
-  const announcements = getAnnouncements();
-  const updatedAnnouncements = announcements.map(a => a.id === announcementId ? updatedAnnouncement : a);
-  saveAnnouncements(updatedAnnouncements);
-};
-
-// Delete announcement
-export const deleteAnnouncement = (announcementId: string): void => {
-  const announcements = getAnnouncements();
-  const updatedAnnouncements = announcements.filter(a => a.id !== announcementId);
-  saveAnnouncements(updatedAnnouncements);
-};
-
-// Toggle announcement active status
-export const toggleAnnouncementActive = (announcementId: string): void => {
-  const announcements = getAnnouncements();
-  const updatedAnnouncements = announcements.map(a => 
-    a.id === announcementId ? { ...a, isActive: !a.isActive } : a
-  );
-  saveAnnouncements(updatedAnnouncements);
-};
-
-// Debug function to help troubleshoot announcement issues
-export const debugAnnouncements = (): void => {
-  if (typeof window === 'undefined') return;
-  
-  const allAnnouncements = getAnnouncements();
-  const activeAnnouncements = getActiveAnnouncements();
-  const today = new Date().toISOString().split('T')[0];
-  
-  console.log('=== Announcement Debug Info ===');
-  console.log('Today (YYYY-MM-DD):', today);
-  console.log('All announcements:', allAnnouncements);
-  console.log('Active announcements:', activeAnnouncements);
-  console.log('localStorage announcements key:', localStorage.getItem(ANNOUNCEMENTS_KEY));
-  console.log('================================');
-};
-
-// Hook for real-time updates (can be used in components)
-export const useEventsAndAnnouncementsUpdates = (callback: () => void) => {
-  if (typeof window !== 'undefined') {
-    const handleUpdate = () => callback();
-    window.addEventListener('eventsUpdated', handleUpdate);
-    window.addEventListener('announcementsUpdated', handleUpdate);
-    
-    return () => {
-      window.removeEventListener('eventsUpdated', handleUpdate);
-      window.removeEventListener('announcementsUpdated', handleUpdate);
-    };
-  }
-};
-
-// Course completion utilities
-export const getCompletedCoursesCount = (): number => {
-  if (typeof window === 'undefined') return 0;
-  
-  const allCourses = [
-    { localStorageKey: 'walletWizardryProgress' },
-    { localStorageKey: 'nftMasteryProgress' },
-    { localStorageKey: 'memeCoinManiaProgress' },
-    { localStorageKey: 'communityStrategyProgress' },
-    { localStorageKey: 'snsProgress' },
-    { localStorageKey: 'technicalAnalysisProgress' }
-  ];
-  
-  let completedCount = 0;
-  
-  allCourses.forEach(course => {
-    if (course.localStorageKey) {
-      const savedStatus = localStorage.getItem(course.localStorageKey);
-      if (savedStatus) {
-        try {
-          const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
-          const completedLessons = parsedStatus.filter(s => s === 'completed').length;
-          const totalLessons = parsedStatus.length;
-          const progress = Math.round((completedLessons / totalLessons) * 100);
-          const isCompleted = progress === 100;
-          
-          if (isCompleted) {
-            completedCount++;
-          }
-        } catch (e) {
-          console.error("Failed to parse course progress from localStorage for key:", course.localStorageKey, e);
-        }
-      }
-    }
-  });
-  
-  return completedCount;
+// Course completion utilities - now database-driven
+export const getCompletedCoursesCount = async (): Promise<number> => {
+  // This should fetch from your database instead of localStorage
+  // For now, return 0 as we're removing localStorage
+  return 0;
 };
 
 export const getTotalCoursesCount = (): number => {
   return 6; // Total number of courses
 };
 
-export function getUserSquad(): { squad: string | null; lockExpired: boolean; lockEndDate?: string } {
-  if (typeof window === 'undefined') {
-    return { squad: null, lockExpired: false };
-  }
-
-  const squadResult = localStorage.getItem('userSquad');
-  if (!squadResult) {
-    return { squad: null, lockExpired: false };
-  }
-
-  try {
-    const result = JSON.parse(squadResult);
-    const squad = typeof result === 'object' && result.name ? result.name : result;
-    const lockEndDate = result.lockEndDate || null;
-
-    if (lockEndDate) {
-      const lockEnd = new Date(lockEndDate);
-      const now = new Date();
-      if (now > lockEnd) {
-        // Lock period expired, remove squad assignment
-        localStorage.removeItem('userSquad');
-        return { squad: null, lockExpired: true };
-      }
-    }
-
-    return { 
-      squad, 
-      lockExpired: false, 
-      lockEndDate: lockEndDate 
-    };
-  } catch (error) {
-    console.error('Error parsing squad result:', error);
-    return { squad: squadResult, lockExpired: false };
-  }
+export async function getUserSquad(): Promise<{ squad: string | null; lockExpired: boolean; lockEndDate?: string }> {
+  // This should fetch from your database instead of localStorage
+  // For now, return default values as we're removing localStorage
+  return { squad: null, lockExpired: false };
 }
 
 export function isSquadAssignmentRequired(): boolean {
-  const { squad } = getUserSquad();
-  return !squad;
+  // This should check the database instead of localStorage
+  // For now, return true as we're removing localStorage
+  return true;
 }
 
-export function getSquadLockStatus(): { isLocked: boolean; daysRemaining: number; lockEndDate?: string } {
-  const { squad, lockEndDate } = getUserSquad();
-  
-  if (!squad || !lockEndDate) {
-    return { isLocked: false, daysRemaining: 0 };
-  }
-
-  const lockEnd = new Date(lockEndDate);
-  const now = new Date();
-  const timeDiff = lockEnd.getTime() - now.getTime();
-  const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-  return {
-    isLocked: daysRemaining > 0,
-    daysRemaining: Math.max(0, daysRemaining),
-    lockEndDate
-  };
+export async function getSquadLockStatus(): Promise<{ isLocked: boolean; daysRemaining: number; lockEndDate?: string }> {
+  // This should fetch from your database instead of localStorage
+  // For now, return default values as we're removing localStorage
+  return { isLocked: false, daysRemaining: 0 };
 }

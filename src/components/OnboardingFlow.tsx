@@ -26,23 +26,27 @@ export default function OnboardingFlow() {
 
   // Check if user has already completed onboarding
   useEffect(() => {
-    const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-    const hasSquad = localStorage.getItem('userSquad');
+    // Check if onboarding is completed from database instead of localStorage
+    // TODO: Implement database check here
+    console.log('Checking onboarding status from database...');
     
-    if (hasCompletedOnboarding && hasSquad) {
-      setIsCompleted(true);
-    }
+    // For now, assume onboarding is not completed
+    setIsCompleted(false);
   }, []);
 
   const handleCompleteProfile = () => {
     if (displayName.trim()) {
-      localStorage.setItem('userDisplayName', displayName.trim());
+      // Save to database instead of localStorage
+      // TODO: Implement database save here
+      console.log('Profile completed, should save to database:', displayName.trim());
       setCurrentStep(1);
     }
   };
 
   const handleCompleteSquadTest = () => {
-    localStorage.setItem('onboardingCompleted', 'true');
+    // Save to database instead of localStorage
+    // TODO: Implement database save here
+    console.log('Squad test completed, should save to database');
     setIsCompleted(true);
     // Redirect to dashboard after a short delay
     setTimeout(() => {

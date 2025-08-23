@@ -19,22 +19,44 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
   const [isSending, setIsSending] = useState(false);
   const [currentUser, setCurrentUser] = useState<string>('');
   const [currentUserDisplayName, setCurrentUserDisplayName] = useState<string>('');
-  const { resolvedNames, resolveName, resolveMultipleNames } = useSNSResolution();
+  const [resolvedNames, setResolvedNames] = useState<Record<string, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get current user's wallet address and display name
+  // Get current user's wallet address and display name from database instead of localStorage
   useEffect(() => {
-    const walletAddress = localStorage.getItem('walletAddress');
-    const displayName = localStorage.getItem('userDisplayName');
+    const loadUserData = async () => {
+      // TODO: Get wallet address and display name from database
+      // For now, set empty values as we're removing localStorage
+      console.log('Loading user data from database...');
+    };
     
-    if (walletAddress) {
-      setCurrentUser(walletAddress);
-    }
-    
-    if (displayName) {
-      setCurrentUserDisplayName(displayName);
-    }
+    loadUserData();
   }, []);
+
+  // Helper function to resolve a single name
+  const resolveName = async (walletAddress: string) => {
+    try {
+      // TODO: Implement SNS resolution from database or API
+      // For now, just use a shortened version of the wallet address
+      const shortAddress = walletAddress.slice(0, 4) + '...' + walletAddress.slice(-4);
+      setResolvedNames(prev => ({ ...prev, [walletAddress]: shortAddress }));
+    } catch (error) {
+      console.error('Error resolving name:', error);
+    }
+  };
+
+  // Helper function to resolve multiple names
+  const resolveMultipleNames = async (walletAddresses: string[]) => {
+    try {
+      // TODO: Implement batch SNS resolution from database or API
+      // For now, resolve them one by one
+      for (const address of walletAddresses) {
+        await resolveName(address);
+      }
+    } catch (error) {
+      console.error('Error resolving multiple names:', error);
+    }
+  };
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -77,7 +99,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
           
           // Resolve names for all message senders
           if (data) {
-            const uniqueSenders = Array.from(new Set(data.map(msg => msg.sender)));
+            const uniqueSenders = Array.from(new Set(data.map((msg: any) => msg.sender))) as string[];
             const nonCurrentSenders = uniqueSenders.filter(sender => sender !== currentUser);
             if (nonCurrentSenders.length > 0) {
               resolveMultipleNames(nonCurrentSenders);
@@ -104,10 +126,10 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
+          table: 'squad_chat',
           filter: `squad=eq.${squad}`,
         },
-        (payload) => {
+        (payload: any) => {
           const newMessage = payload.new as Message;
           setMessages((prev) => [...prev, newMessage]);
           
@@ -117,7 +139,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: any) => {
         if (status === 'SUBSCRIBED') {
           // Successfully subscribed
         } else if (status === 'CHANNEL_ERROR') {

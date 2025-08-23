@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Target, ArrowRight, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { getSquadName } from '@/utils/squad-storage';
 
 interface SquadAssignmentGuardProps {
   children: React.ReactNode;
@@ -32,18 +33,13 @@ export default function SquadAssignmentGuard({ children }: SquadAssignmentGuardP
 
   useEffect(() => {
     // Check if user has a squad assigned
-    const squadResult = localStorage.getItem('userSquad');
+    const squadResult = getSquadName();
     let squad: string | null = null;
     let lockEndDate: string | null = null;
     
     if (squadResult) {
-      try {
-        const result = JSON.parse(squadResult);
-        squad = typeof result === 'object' && result.name ? result.name : result;
-        lockEndDate = result.lockEndDate || null;
-      } catch (error) {
-        squad = squadResult;
-      }
+      squad = squadResult;
+      // Note: lockEndDate logic would need to be updated if we want to store it separately
     }
 
     // Check if lock period has expired

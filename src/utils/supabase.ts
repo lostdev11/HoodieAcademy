@@ -1,8 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
+// This file is deprecated - use the centralized client from src/utils/supabase/client.ts
+// or server client from src/utils/supabase/server.ts
 
-export function createServerClient() {
-  return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_ANON_KEY! // now only accessible on server
-  );
-} 
+export { default as supabase } from './supabase/client';
+export { createServerSupabaseClient } from './supabase/server'; 

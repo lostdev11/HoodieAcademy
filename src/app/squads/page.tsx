@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { getSquadName } from '@/utils/squad-storage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Brain, Target, Mic, Palette, MessageSquare, Users, ArrowRight } from 'lucide-react';
@@ -67,7 +68,7 @@ export default function SquadsPage() {
 
   useEffect(() => {
     // Load user's squad from localStorage
-    const savedSquad = localStorage.getItem('userSquad');
+    const savedSquad = getSquadName();
     if (savedSquad) {
       setUserSquad(savedSquad);
     }

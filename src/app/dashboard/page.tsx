@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -95,8 +96,9 @@ import {
 import TokenGate from "@/components/TokenGate";
 
 import { squadTracks, type SquadTrack } from "@/lib/squadData";
+import { getSquadName } from '@/utils/squad-storage';
 
-import { getDisplayNameWithSNS } from "@/services/sns-resolver";
+// import { getDisplayNameWithSNS } from "@/services/sns-resolver";
 import PageLayout from "@/components/layouts/PageLayout";
 import { CardFeedLayout, CardFeedItem, CardFeedSection, CardFeedGrid, InfoCard, ActionCard } from "@/components/layouts/CardFeedLayout";
 import { dashboardNavigation } from "@/components/layouts/NavigationDrawer";
@@ -436,11 +438,12 @@ export default function DashboardPage() {
   const [profileImage, setProfileImage] = useState<string>("🧑‍🎓");
   const [squadId, setSquadId] = useState<string | null>(null);
   const [completedCoursesCount, setCompletedCoursesCount] = useState(0);
-  const [totalCoursesCount, setTotalCoursesCount] = useState(6);
+  const [totalCoursesCount, setTotalCoursesCount] = useState(0);
   const [weeklyAssignments, setWeeklyAssignments] = useState<WeeklyAssignment[]>([]);
   const [squadActivity, setSquadActivity] = useState<SquadActivity[]>([]);
   const [userSquadInfo, setUserSquadInfo] = useState<SquadTrack | null>(null);
   const [claimedRewards, setClaimedRewards] = useState<any[]>([]);
+  const [userCourses, setUserCourses] = useState<any[]>([]);
   
   // XP System - placeholder values for now
   const totalXP = 0;
@@ -495,8 +498,9 @@ export default function DashboardPage() {
         // Try to resolve SNS domain if no display name is set
         const resolveSnsDomain = async () => {
           try {
-            const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
-            const resolvedName = await getDisplayNameWithSNS(storedWallet);
+            // const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
+            // const resolvedName = await getDisplayNameWithSNS(storedWallet);
+            const resolvedName = storedWallet;
             console.log('Dashboard: Resolved SNS name:', resolvedName);
             setUserDisplayName(resolvedName);
           } catch (error) {
@@ -510,52 +514,142 @@ export default function DashboardPage() {
       }
     }
 
-    // Get squad ID for bulletin board and assignments
-    const squadResult = typeof window !== 'undefined' ? localStorage.getItem('userSquad') : null;
-    if (squadResult) {
-      try {
-        const result = JSON.parse(squadResult);
-        let userSquadName: string;
-        
-        // Handle both object and string formats
-        if (typeof result === 'object' && result.name) {
-          userSquadName = result.name;
-        } else if (typeof result === 'string') {
-          userSquadName = result;
-        } else {
-          throw new Error('Invalid squad result format');
-        }
-        
-        // Normalize squad name to get squad ID
-        const normalized = userSquadName.replace(/^[🎨🧠🎤⚔️🦅🏦]+\s*/, '').toLowerCase().trim();
-        const squadMapping: { [key: string]: string } = {
-          'hoodie creators': 'creators',
-          'hoodie decoders': 'decoders', 
-          'hoodie speakers': 'speakers',
-          'hoodie raiders': 'raiders',
-          'hoodie rangers': 'rangers',
-          'treasury builders': 'treasury'
-        };
-        
-        const squadId = squadMapping[normalized] || normalized;
-        setSquadId(squadId);
-        
-        // Find squad info for display
-        const squadInfo = squadTracks.find(s => s.id === squadId);
-        if (squadInfo) {
-          setUserSquadInfo(squadInfo);
-        }
-        
-        // Load squad-specific data
-        setWeeklyAssignments(getWeeklyAssignments(squadId));
-        setSquadActivity(getSquadActivity(squadId));
-        
-      } catch (error) {
-        console.error('Dashboard: Error parsing squad data:', error);
-        setSquadId(null);
+    // Get squad ID for bulletin board and assignments using utility
+    const userSquadName = getSquadName();
+    if (userSquadName) {
+      // Normalize squad name to get squad ID
+      const normalized = userSquadName.replace(/^[🎨🧠🎤⚔️🦅🏦]+\s*/, '').toLowerCase().trim();
+      const squadMapping: { [key: string]: string } = {
+        'hoodie creators': 'creators',
+        'hoodie decoders': 'decoders', 
+        'hoodie speakers': 'speakers',
+        'hoodie raiders': 'raiders',
+        'hoodie rangers': 'rangers',
+        'treasury builders': 'treasury'
+      };
+      
+      const squadId = squadMapping[normalized] || normalized;
+      setSquadId(squadId);
+      
+      // Find squad info for display
+      const squadInfo = squadTracks.find(s => s.id === squadId);
+      if (squadInfo) {
+        setUserSquadInfo(squadInfo);
       }
+      
+      // Load squad-specific data
+      setWeeklyAssignments(getWeeklyAssignments(squadId));
+      setSquadActivity(getSquadActivity(squadId));
     }
 
+            // Load course data and update counts
+        const loadCourseData = async () => {
+          try {
+            console.log('Dashboard: Starting course data loading...');
+            
+            // Add timeout to prevent hanging
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Course loading timeout')), 10000); // 10 second timeout
+            });
+            
+            const courseLoadingPromise = (async () => {
+              // Check if coursesData module is available
+              let getVisibleCourses: any, initializeCourses: any;
+              try {
+                const coursesModule = await import('@/lib/coursesData');
+                getVisibleCourses = coursesModule.getVisibleCourses;
+                initializeCourses = coursesModule.initializeCourses;
+                console.log('Dashboard: Courses module imported successfully');
+              } catch (importError) {
+                console.error('Dashboard: Failed to import courses module:', importError);
+                throw importError;
+              }
+              
+              // Initialize courses
+              try {
+                console.log('Dashboard: About to initialize courses...');
+                initializeCourses(false); // Initialize for non-admin users
+                console.log('Dashboard: Courses initialized');
+              } catch (initError) {
+                console.error('Dashboard: Failed to initialize courses:', initError);
+                // Continue with default courses
+              }
+              
+              // Get visible courses
+              let visibleCourses: any[] = [];
+              try {
+                visibleCourses = getVisibleCourses(false);
+                console.log('Dashboard: Visible courses loaded:', visibleCourses.length);
+              } catch (getError) {
+                console.error('Dashboard: Failed to get visible courses:', getError);
+                visibleCourses = [];
+              }
+              
+              return visibleCourses;
+            })();
+            
+            // Race between timeout and course loading
+            const result = await Promise.race([courseLoadingPromise, timeoutPromise]);
+            const visibleCourses = Array.isArray(result) ? result : [];
+            
+            // Store courses in state for display
+            setUserCourses(visibleCourses);
+            
+            // Update course counts
+            setTotalCoursesCount(visibleCourses.length);
+            
+            // Calculate completed courses from database instead of localStorage
+            let completedCount = 0;
+            // TODO: Implement database-based course completion tracking
+            // For now, set to 0 as we're removing localStorage
+            setCompletedCoursesCount(completedCount);
+            
+            // Calculate overall progress
+            const progress = visibleCourses.length > 0 ? (completedCount / visibleCourses.length) * 100 : 0;
+            setOverallProgress(Math.round(progress));
+            
+            console.log('Dashboard: Course data loaded successfully:', {
+              totalCourses: visibleCourses.length,
+              completedCourses: completedCount,
+              overallProgress: Math.round(progress)
+            });
+            
+          } catch (error) {
+            console.error('Error loading course data:', error);
+            // Fallback to default values and basic course list
+            setTotalCoursesCount(0);
+            setCompletedCoursesCount(0);
+            setOverallProgress(0);
+            setUserCourses([]);
+            
+            // Try to provide a basic fallback course list
+            try {
+              console.log('Dashboard: Attempting fallback course loading...');
+              const fallbackCourses = [
+                {
+                  id: 'wallet-wizardry',
+                  title: 'Wallet Wizardry',
+                  description: 'Master wallet setup with interactive quizzes',
+                  href: '/courses/wallet-wizardry'
+                },
+                {
+                  id: 'nft-mastery',
+                  title: 'NFT Mastery',
+                  description: 'Master the art of NFT creation and trading',
+                  href: '/courses/nft-mastery'
+                }
+              ];
+              setUserCourses(fallbackCourses);
+              setTotalCoursesCount(fallbackCourses.length);
+              console.log('Dashboard: Fallback courses loaded');
+            } catch (fallbackError) {
+              console.error('Dashboard: Fallback course loading also failed:', fallbackError);
+            }
+          }
+        };
+    
+    loadCourseData();
+    
     // Load other data
     setClaimedRewards(getClaimedRewards());
     
@@ -850,6 +944,123 @@ export default function DashboardPage() {
             </CardFeedGrid>
           </CardFeedSection>
         )}
+
+        {/* Course Preview Section */}
+        <CardFeedSection
+          title="Your Courses"
+          subtitle="Continue your learning journey and track progress"
+        >
+          <CardFeedGrid cols={2}>
+            <InfoCard
+              title="Course Overview"
+              icon={<BookOpen className="w-5 h-5" />}
+              variant="default"
+            >
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-300">Total Courses</span>
+                  <span className="text-cyan-400">{totalCoursesCount}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-300">Completed</span>
+                  <span className="text-green-400">{completedCoursesCount}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-300">In Progress</span>
+                  <span className="text-yellow-400">{totalCoursesCount - completedCoursesCount}</span>
+                </div>
+                <Button asChild className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400">
+                  <Link href="/courses">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    View All Courses
+                  </Link>
+                </Button>
+              </div>
+            </InfoCard>
+
+            <InfoCard
+              title="Quick Actions"
+              icon={<Zap className="w-5 h-5" />}
+              variant="success"
+            >
+              <div className="space-y-2">
+                <Button asChild variant="outline" className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10">
+                  <Link href="/courses">
+                    <Play className="w-4 h-4 mr-2" />
+                    Continue Learning
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full border-purple-500/30 text-purple-400 hover:bg-purple-500/10">
+                  <Link href="/bounties">
+                    <Target className="w-4 h-4 mr-2" />
+                    View Bounties
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full border-green-500/30 text-green-400 hover:bg-green-500/10">
+                  <Link href="/leaderboard">
+                    <Trophy className="w-4 h-4 mr-2" />
+                    Leaderboard
+                  </Link>
+                </Button>
+              </div>
+            </InfoCard>
+          </CardFeedGrid>
+        </CardFeedSection>
+
+        {/* Current Courses Progress */}
+        <CardFeedSection
+          title="Current Courses"
+          subtitle="Track your progress on active courses"
+        >
+          {userCourses.length > 0 ? (
+            <CardFeedGrid cols={3}>
+              {userCourses.slice(0, 3).map((course: any) => {
+                // TODO: Get course progress from database instead of localStorage
+                let progressPercent = 0;
+                let isCompleted = false;
+                
+                // For now, set default values as we're removing localStorage
+                // This should be replaced with database queries
+                
+                return (
+                  <InfoCard
+                    key={course.id}
+                    title={course.title}
+                    icon={<BookOpen className="w-5 h-5" />}
+                    variant={isCompleted ? "success" : "default"}
+                  >
+                    <div className="space-y-2">
+                      <div className="text-sm text-gray-300">{course.description}</div>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-400">Progress</span>
+                          <span className="text-cyan-400">{progressPercent}%</span>
+                        </div>
+                        <Progress value={progressPercent} className="h-2" />
+                      </div>
+                      <Button asChild size="sm" variant="outline" className="w-full">
+                        <Link href={course.href}>
+                          {isCompleted ? 'Review Course' : 'Continue Course'}
+                        </Link>
+                      </Button>
+                    </div>
+                  </InfoCard>
+                );
+              })}
+            </CardFeedGrid>
+          ) : (
+            <div className="text-center py-8">
+              <BookOpen className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+              <p className="text-gray-400 mb-4">No courses available at this time</p>
+              <Button asChild className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400">
+                <Link href="/courses">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Browse All Courses
+                </Link>
+              </Button>
+            </div>
+          )}
+        </CardFeedSection>
 
         {/* Upcoming Classes */}
         {realUpcomingClasses.length > 0 && (

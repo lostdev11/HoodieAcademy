@@ -1,17 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Only create client if environment variables are available
-const createSupabaseClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Supabase configuration is missing');
-  }
-  
-  return createClient(supabaseUrl, supabaseKey);
-};
+import { getSupabaseBrowser } from '@/lib/supabaseClient';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +14,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Create Supabase client
-    const supabase = createSupabaseClient();
+    const supabase = getSupabaseBrowser();
 
     // Get user's claimed rewards
     const { data: userRewards, error } = await supabase

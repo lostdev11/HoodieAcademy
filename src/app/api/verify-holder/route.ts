@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/utils/supabase";
+import { createServerSupabaseClient } from "@/utils/supabase/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     console.log("✅ walletAddress received:", walletAddress);
 
-    const supabase = createServerClient();
+    const supabase = createServerSupabaseClient();
 
     const { data, error } = await supabase
       .from("users")

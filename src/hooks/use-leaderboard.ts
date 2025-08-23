@@ -13,14 +13,14 @@ export const useLeaderboard = (walletAddress?: string) => {
     }
   }, [walletAddress]);
 
-  const loadUserData = () => {
+  const loadUserData = async () => {
     if (!walletAddress) return;
 
     setIsLoading(true);
     try {
-      const rank = leaderboardService.getUserRank(walletAddress);
-      const score = leaderboardService.getUserScore(walletAddress);
-      const progress = leaderboardService.getUserProgress(walletAddress);
+      const rank = await leaderboardService.getUserRank(walletAddress);
+      const score = await leaderboardService.getUserScore(walletAddress);
+      const progress = await leaderboardService.getUserProgress(walletAddress);
 
       setUserRank(rank);
       setUserScore(score);
@@ -32,44 +32,44 @@ export const useLeaderboard = (walletAddress?: string) => {
     }
   };
 
-  const updateProgress = (update: UserProgressUpdate) => {
+  const updateProgress = async (update: UserProgressUpdate) => {
     if (!walletAddress) return;
 
     try {
       leaderboardService.updateProgress(update);
-      loadUserData(); // Reload user data after update
+      await loadUserData(); // Reload user data after update
     } catch (error) {
       console.error('Error updating progress:', error);
     }
   };
 
-  const initializeUser = (displayName: string) => {
+  const initializeUser = async (displayName: string) => {
     if (!walletAddress) return;
 
     try {
       leaderboardService.initializeUser(walletAddress, displayName);
-      loadUserData();
+      await loadUserData();
     } catch (error) {
       console.error('Error initializing user:', error);
     }
   };
 
-  const getAchievements = () => {
+  const getAchievements = async () => {
     if (!walletAddress) return [];
-    const userProgress = leaderboardService.getUserProgress(walletAddress);
+    const userProgress = await leaderboardService.getUserProgress(walletAddress);
     if (!userProgress) return [];
     return leaderboardService.checkAchievements(userProgress);
   };
 
-  const exportUserData = () => {
+  const exportUserData = async () => {
     if (!walletAddress) return null;
     return leaderboardService.exportUserData(walletAddress);
   };
 
-  const importUserData = (data: any) => {
+  const importUserData = async (data: any) => {
     if (!walletAddress) return;
     leaderboardService.importUserData(data);
-    loadUserData();
+    await loadUserData();
   };
 
   return {

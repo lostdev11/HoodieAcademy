@@ -1,33 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
+import clientSupabase, { isSupabaseConfigured } from '@/utils/supabase/client';
 
-console.log("✅ SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-console.log("✅ SUPABASE KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+// Re-export the centralized client
+export const supabase = clientSupabase;
 
-// Create Supabase client only if environment variables are available and valid
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-// Check if the URL is a valid Supabase URL (not placeholder)
-const isValidSupabaseUrl = supabaseUrl && 
-  supabaseUrl !== 'your_supabase_url_here' && 
-  supabaseUrl.startsWith('https://');
-
-const isValidSupabaseKey = supabaseKey && 
-  supabaseKey !== 'your_supabase_anon_key_here' && 
-  supabaseKey.length > 0;
-
-export const supabase = isValidSupabaseUrl && isValidSupabaseKey
-  ? createClient(supabaseUrl, supabaseKey)
-  : createClient('https://mock.supabase.co', 'mock-key');
-
-// Add a flag to check if Supabase is properly configured
-export const isSupabaseConfigured = isValidSupabaseUrl && isValidSupabaseKey;
-
-console.log("✅ Supabase Configuration Status:", {
-  url: isValidSupabaseUrl ? "Valid" : "Invalid/Missing",
-  key: isValidSupabaseKey ? "Valid" : "Invalid/Missing",
-  configured: isSupabaseConfigured
-});
+// Re-export the configuration status
+export { isSupabaseConfigured };
 
 // Database types
 export interface Message {
@@ -57,6 +34,16 @@ export interface User {
   squad_test_completed: boolean
   created_at?: string
   last_active?: string
+  is_admin?: boolean
+  placement_test_completed?: boolean
+  last_seen?: string
+}
+
+// Extended user type for admin operations
+export type SupabaseUser = User & { 
+  is_admin?: boolean;
+  placement_test_completed?: boolean;
+  last_seen?: string;
 }
 
 export interface PlacementTest {
@@ -130,7 +117,7 @@ export async function updateUserActivity(wallet_address: string, activity_type: 
   }
 }
 
-export async function fetchAllUsers(): Promise<User[]> {
+export async function fetchAllUsers(): Promise<SupabaseUser[]> {
   try {
     const { data, error } = await supabase
       .from('users')
@@ -219,6 +206,7 @@ export interface CourseCompletion {
   started_at?: string;
   completed_at?: string;
   approved?: boolean;
+  status?: 'pending' | 'completed' | 'failed';
 }
 
 export interface Assignment {
