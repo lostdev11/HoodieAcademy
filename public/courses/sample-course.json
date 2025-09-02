@@ -1,26 +1,23 @@
 {
-  "id": "sample-course",
-  "title": "Sample Course",
-  "description": "A sample course to demonstrate the getCoursePaths utility",
-  "badge": "Sample Badge",
-  "emoji": "🧪",
-  "pathType": "tech",
-  "href": "/sample-course",
-  "localStorageKey": "sampleCourseProgress",
-  "totalLessons": 3,
-  "squad": "Decoders",
-  "category": "testing",
+  "title": "Sample Web3 Course",
+  "description": "This is a sample course to demonstrate the course import functionality. You can replace this with your actual course content.",
+  "emoji": "🚀",
+  "squad": "All",
   "level": "beginner",
   "access": "free",
+  "category": "sample",
+  "totalLessons": 3,
+  "sortOrder": 100,
+  "is_published": true,
+  "is_visible": true,
   "modules": [
     {
-      "id": "module-1",
       "title": "Introduction",
       "lessons": [
         {
-          "id": "lesson-1",
-          "title": "Getting Started",
-          "content": "Welcome to the sample course!"
+          "title": "Welcome to Web3",
+          "duration": "5 minutes",
+          "type": "video"
         }
       ]
     }

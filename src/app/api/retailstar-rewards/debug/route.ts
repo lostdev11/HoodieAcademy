@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseBrowser } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
     const { searchParams } = new URL(request.url);
     const walletAddress = searchParams.get('walletAddress');
 
@@ -14,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Create Supabase client
-    const supabase = getSupabaseBrowser();
+    // const supabase = getSupabaseBrowser(); // This line is removed as per the new_code
 
     // Check if tables exist
     const { data: tables, error: tablesError } = await supabase

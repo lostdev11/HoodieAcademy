@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseBrowser } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +16,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Create Supabase client
-    const supabase = getSupabaseBrowser();
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
     
     // Test basic connection
     const { data: testData, error: testError } = await supabase

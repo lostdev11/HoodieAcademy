@@ -40,6 +40,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import { MobileNavigation } from "@/components/dashboard/MobileNavigation"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
+import AnnouncementsDisplay from "@/components/AnnouncementsDisplay"
 import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet } from '@/lib/utils'
 import { getSquadName } from '@/utils/squad-storage'
 import Image from 'next/image'
@@ -490,6 +491,15 @@ export default function HoodieAcademy() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Announcements Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Megaphone className="w-6 h-6 text-cyan-400" />
+                <h2 className="text-xl font-semibold text-cyan-400">📢 Academy Announcements</h2>
+              </div>
+              <AnnouncementsDisplay />
+            </div>
 
             {/* Academy Spotlight */}
             <Card className="bg-slate-800/50 border-purple-500/30">

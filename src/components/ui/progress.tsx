@@ -13,14 +13,13 @@ const Progress = React.forwardRef<
   <ProgressPrimitive.Root
     ref={ref}
     className={cn(
-      "relative h-4 w-full overflow-hidden rounded-full bg-muted", // Base background
-      className // Allows overriding background per-instance (e.g., bg-purple-900/50, bg-cyan-900/50)
+      "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
+      className
     )}
     {...props}
   >
     <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 transition-all" // Base indicator style, color applied via className
-      // Color is applied via className prop in the usage (e.g., [&>div]:bg-purple-500 or [&>div]:bg-cyan-500)
+      className="h-full w-full flex-1 bg-primary transition-all"
       style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
     />
   </ProgressPrimitive.Root>

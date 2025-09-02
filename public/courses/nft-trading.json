@@ -1,0 +1,46 @@
+{
+  "title": "NFT Trading Mastery",
+  "description": "Master the art of NFT trading with advanced strategies, market analysis, and risk management techniques.",
+  "emoji": "🖼️",
+  "squad": "Traders",
+  "level": "intermediate",
+  "access": "premium",
+  "category": "trading",
+  "totalLessons": 8,
+  "sortOrder": 80,
+  "is_published": true,
+  "is_visible": true,
+  "modules": [
+    {
+      "title": "Market Analysis",
+      "lessons": [
+        {
+          "title": "Reading NFT Charts",
+          "duration": "20 minutes",
+          "type": "video"
+        },
+        {
+          "title": "Volume Analysis",
+          "duration": "15 minutes",
+          "type": "video"
+        }
+      ]
+    },
+    {
+      "title": "Trading Strategies",
+      "lessons": [
+        {
+          "title": "Entry and Exit Points",
+          "duration": "25 minutes",
+          "type": "video"
+        },
+        {
+          "title": "Risk Management",
+          "duration": "18 minutes",
+          "type": "video"
+        }
+      ]
+    }
+  ]
+}
+

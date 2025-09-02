@@ -62,12 +62,18 @@ export function SettingsProvider({
 
       if (error) {
         console.error('Error fetching global settings:', error);
+        // Use default settings if table doesn't exist or has permission issues
+        setGlobalSettings(defaultGlobalSettings);
         return;
       }
 
       setGlobalSettings(data);
     } catch (error) {
       console.error('Error:', error);
+      // Use default settings on any error
+      setGlobalSettings(defaultGlobalSettings);
+    } finally {
+      setIsLoading(false);
     }
   };
 

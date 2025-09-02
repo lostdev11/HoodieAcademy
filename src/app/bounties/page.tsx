@@ -42,14 +42,22 @@ export const metadata: Metadata = {
 };
 
 export default async function BountiesPage() {
-  const supabase = createServerComponentClient({ cookies });
-
-  // Fetch bounties from Supabase (only visible ones for public)
-  const { data: bounties } = await supabase
-    .from("bounties")
-    .select("id,title,short_desc,reward,deadline,link_to,image,squad_tag,status,hidden,submissions,created_at,updated_at")
-    .eq("hidden", false)
-    .order("created_at", { ascending: false });
+  // Use the API to fetch bounties instead of direct database access
+  // This ensures we get the most up-to-date data
+  let bounties = [];
+  
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/bounties`, {
+      cache: 'no-store' // Disable caching to get fresh data
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      bounties = result.bounties || [];
+    }
+  } catch (error) {
+    console.error('Error fetching bounties:', error);
+  }
 
   return (
     <PageLayout
@@ -70,7 +78,7 @@ export default async function BountiesPage() {
           </p>
         </div>
         
-        <BountiesGrid initialBounties={bounties ?? []} showHidden={false} />
+        <BountiesGrid initialBounties={bounties} showHidden={false} />
       </div>
     </PageLayout>
   );

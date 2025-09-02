@@ -22,18 +22,15 @@ export default function BountiesGrid({
   useEffect(() => {
     const fetchBounties = async () => {
       try {
-        const supabase = getSupabaseBrowser();
-        const { data, error } = await supabase
-          .from('bounties')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching bounties:', error);
-          return;
+        // Use the API instead of direct Supabase access
+        const response = await fetch('/api/bounties');
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          setBounties(result.bounties || []);
+        } else {
+          console.error('Error fetching bounties:', result.error);
         }
-
-        setBounties(data || []);
       } catch (error) {
         console.error('Error:', error);
       }

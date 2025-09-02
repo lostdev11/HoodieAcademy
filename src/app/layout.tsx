@@ -52,20 +52,38 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   );
 
   // Fetch initial announcements and settings for the app
-  const { data: announcements } = await supabase
-    .from("announcements")
-    .select("id,title,content,starts_at,ends_at,is_published,created_at,updated_at")
-    .eq("is_published", true)
-    .order("created_at", { ascending: false });
+  let announcements: any[] = [];
+  try {
+    const { data: announcementsData } = await supabase
+      .from("announcements")
+      .select("id,title,content,starts_at,ends_at,is_published,created_at,updated_at")
+      .eq("is_published", true)
+      .order("created_at", { ascending: false });
+    announcements = announcementsData || [];
+  } catch (error) {
+    console.log('Announcements table not available:', error);
+  }
 
-  const { data: globalSettings } = await supabase
-    .from("global_settings")
-    .select("*")
-    .maybeSingle();
+  let globalSettings: any = {};
+  try {
+    const { data: globalSettingsData } = await supabase
+      .from("global_settings")
+      .select("*")
+      .maybeSingle();
+    globalSettings = globalSettingsData || {};
+  } catch (error) {
+    console.log('Global settings table not available:', error);
+  }
 
-  const { data: featureFlags } = await supabase
-    .from("feature_flags")
-    .select("*");
+  let featureFlags: any[] = [];
+  try {
+    const { data: featureFlagsData } = await supabase
+      .from("feature_flags")
+      .select("*");
+    featureFlags = featureFlagsData || [];
+  } catch (error) {
+    console.log('Feature flags table not available:', error);
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>

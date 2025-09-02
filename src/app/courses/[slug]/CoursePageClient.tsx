@@ -332,6 +332,51 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
       )}
 
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        {/* Always show header with navigation buttons - moved to top */}
+        <header className="bg-slate-800/50 border-b border-cyan-500/30 px-4 py-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              {/* Left side - Navigation buttons */}
+              <div className="flex items-center space-x-3">
+                <Button
+                  onClick={() => router.push('/')}
+                  variant="default"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white font-medium px-4 py-2 shadow-lg"
+                >
+                  🏠 Home
+                </Button>
+                <Button
+                  onClick={() => router.push('/')}
+                  variant="outline"
+                  className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 px-4 py-2"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Home
+                </Button>
+              </div>
+              
+              {/* Center - Course title and description */}
+              <div className="flex-1 text-center">
+                <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400 flex items-center justify-center">
+                  <span className="mr-2">{course?.emoji || '📚'}</span>
+                  {course?.title || 'Loading Course...'}
+                </h1>
+                <p className="text-sm sm:text-base text-gray-300 mt-1">{course?.description || 'Course description loading...'}</p>
+              </div>
+              
+              {/* Right side - Course badges */}
+              <div className="flex items-center space-x-4">
+                <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
+                  {course?.level || 'Loading...'}
+                </Badge>
+                <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                  {course?.squad || 'Loading...'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </header>
+
         {/* Error Display */}
         {error && (
           <div className="max-w-7xl mx-auto px-4 py-6">
@@ -374,39 +419,6 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
         {/* Course Content - Only show if no errors, initialized, and course data is valid */}
         {!error && isInitialized && course && course.modules && course.modules.length > 0 && !loadingProgress && (
           <>
-            {/* Header */}
-            <header className="bg-slate-800/50 border-b border-cyan-500/30 px-4 py-6">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center space-x-4">
-                    <Button
-                      onClick={() => router.push('/courses')}
-                      variant="ghost"
-                      className="text-cyan-400 hover:text-cyan-300"
-                    >
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to Courses
-                    </Button>
-                    <div>
-                      <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400 flex items-center">
-                        <span className="mr-2">{course.emoji}</span>
-                        {course.title}
-                      </h1>
-                      <p className="text-sm sm:text-base text-gray-300">{course.description}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30">
-                      {course.level}
-                    </Badge>
-                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-                      {course.squad}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </header>
-
             <div className="max-w-7xl mx-auto px-4 py-6">
               {/* Progress Bar */}
               <div className="mb-6">

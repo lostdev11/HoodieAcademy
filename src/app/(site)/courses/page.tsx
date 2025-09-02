@@ -1,9 +1,9 @@
 import { Metadata } from 'next';
-import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { Course } from '@/types/course';
 import CoursesPageClient from './CoursesPageClient';
 
-// Generate metadata for the courses page
 export const metadata: Metadata = {
   title: 'Courses - Hoodie Academy',
   description: 'Explore Web3 courses on NFT trading, technical analysis, wallet security, and community building. Join the Hoodie Academy and master crypto trading like a degen.',
@@ -45,44 +45,48 @@ export const metadata: Metadata = {
   },
 };
 
-import { headers } from "next/headers";
+// Fetch published courses directly
+const getPublishedCourses = async () => {
+  const supabase = createServerComponentClient({ cookies });
+  
+  const { data: courses, error } = await supabase
+    .from('courses')
+    .select(`
+      id,
+      title,
+      emoji,
+      squad,
+      level,
+      access,
+      description,
+      total_lessons,
+      category,
+      created_at,
+      updated_at,
+      is_visible,
+      is_published,
+      slug,
+      sort_order
+    `)
+    .eq('is_published', true)
+    .eq('is_visible', true)
+    .order('created_at', { ascending: false });
 
-function getBaseUrl() {
-  const h = headers();
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  return `${proto}://${host}`;
-}
+  if (error) {
+    console.error('Error fetching published courses:', error);
+    return [];
+  }
 
-export const revalidate = 0;
-
-async function getCourses() {
-  const base = getBaseUrl();
-  const res = await fetch(`${base}/api/courses`, { cache: "no-store" });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
-}
+  return courses || [];
+};
 
 export default async function CoursesPage() {
-  const courses = await getCourses();
-  return (
-    <main className="max-w-6xl mx-auto p-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {courses.map((c: any) => (
-        <a
-          key={c.id}
-          href={c.href}
-          className="rounded-2xl border p-4 bg-card hover:shadow transition"
-        >
-          <div className="text-3xl">{c.emoji}</div>
-          <h2 className="mt-2 text-lg font-semibold">{c.title}</h2>
-          <p className="text-sm text-muted-foreground line-clamp-3">{c.description}</p>
-          <div className="mt-3 text-xs flex gap-2">
-            <span className="px-2 py-1 border rounded-full">{c.badge}</span>
-            {c.level ? <span className="px-2 py-1 border rounded-full">{c.level}</span> : null}
-            {c.squad ? <span className="px-2 py-1 border rounded-full">{c.squad}</span> : null}
-          </div>
-        </a>
-      ))}
-    </main>
-  );
+  try {
+    const courses = await getPublishedCourses();
+    console.log('Public courses page rendering with:', courses?.length || 0, 'published courses');
+    return <CoursesPageClient initialCourses={courses || []} />;
+  } catch (error) {
+    console.error('Error in CoursesPage:', error);
+    return <CoursesPageClient initialCourses={[]} />;
+  }
 }

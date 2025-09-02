@@ -3,6 +3,9 @@ import { getSupabaseBrowser } from '@/lib/supabaseClient';
 // Re-export the centralized client
 export const supabase = getSupabaseBrowser();
 
+// Note: supabaseAdmin should only be used on the server side
+// Remove client-side export to prevent security issues
+
 // Add a flag to check if Supabase is properly configured
 export const isSupabaseConfigured = Boolean(
   process.env.NEXT_PUBLIC_SUPABASE_URL && 

@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseBrowser } from '@/lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
     const { searchParams } = new URL(request.url);
     const walletAddress = searchParams.get('walletAddress');
 
@@ -12,9 +19,6 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // Create Supabase client
-    const supabase = getSupabaseBrowser();
 
     // Get user's claimed rewards
     const { data: userRewards, error } = await supabase

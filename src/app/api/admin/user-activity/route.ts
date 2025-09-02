@@ -1,22 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseBrowser } from '@/lib/supabaseClient';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const runtime = 'nodejs';        // keep secrets in Node, not Edge
 export const dynamic = 'force-dynamic'; // avoid static optimization
-
-function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (!url || !key) {
-    throw new Error('Missing SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  }
-  
-  return createClient(url, key, { 
-    auth: { persistSession: false } 
-  });
-}
 
 // Log user activity
 export async function POST(req: NextRequest) {
@@ -104,7 +90,7 @@ export async function POST(req: NextRequest) {
 // Get user activity logs for admin dashboard
 export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabaseBrowser();
+    const supabase = getSupabaseAdmin();
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');

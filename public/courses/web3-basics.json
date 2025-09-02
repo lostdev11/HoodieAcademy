@@ -1,0 +1,46 @@
+{
+  "title": "Web3 Fundamentals",
+  "description": "Learn the basics of Web3, blockchain technology, and decentralized applications. Perfect for beginners starting their Web3 journey.",
+  "emoji": "🌐",
+  "squad": "All",
+  "level": "beginner",
+  "access": "free",
+  "category": "blockchain",
+  "totalLessons": 5,
+  "sortOrder": 90,
+  "is_published": true,
+  "is_visible": true,
+  "modules": [
+    {
+      "title": "Blockchain Basics",
+      "lessons": [
+        {
+          "title": "What is Blockchain?",
+          "duration": "10 minutes",
+          "type": "video"
+        },
+        {
+          "title": "How Transactions Work",
+          "duration": "15 minutes",
+          "type": "video"
+        }
+      ]
+    },
+    {
+      "title": "Web3 Concepts",
+      "lessons": [
+        {
+          "title": "Decentralization",
+          "duration": "12 minutes",
+          "type": "video"
+        },
+        {
+          "title": "Smart Contracts",
+          "duration": "18 minutes",
+          "type": "video"
+        }
+      ]
+    }
+  ]
+}
+

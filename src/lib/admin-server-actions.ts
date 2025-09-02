@@ -5,17 +5,44 @@ import { revalidatePath } from "next/cache";
 import { createServerActionClient } from "@supabase/auth-helpers-nextjs";
 
 async function assertAdminClient() {
-  const supabase = createServerActionClient({ cookies });
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not signed in");
-  const { data: me, error } = await supabase
-    .from("users")
-    .select("is_admin")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (error) throw error;
-  if (!me?.is_admin) throw new Error("Not an admin");
-  return { supabase, user };
+  try {
+    const supabase = createServerActionClient({ cookies });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error('Auth error:', authError);
+      throw new Error(`Authentication error: ${authError.message}`);
+    }
+    
+    if (!user) {
+      console.error('No user found');
+      throw new Error("Not signed in");
+    }
+    
+    console.log('User authenticated:', user.id);
+    
+    const { data: me, error: adminError } = await supabase
+      .from("users")
+      .select("is_admin")
+      .eq("id", user.id)
+      .maybeSingle();
+      
+    if (adminError) {
+      console.error('Admin check error:', adminError);
+      throw adminError;
+    }
+    
+    if (!me?.is_admin) {
+      console.error('User is not admin:', user.id);
+      throw new Error("Not an admin");
+    }
+    
+    console.log('Admin access confirmed for user:', user.id);
+    return { supabase, user };
+  } catch (error) {
+    console.error('assertAdminClient error:', error);
+    throw error;
+  }
 }
 
 /* ------------------------ BOUNTIES ------------------------ */
@@ -33,28 +60,49 @@ export async function createOrUpdateBounty(input: {
   hidden?: boolean;
   submissions?: number;
 }) {
-  const { supabase, user } = await assertAdminClient();
-  const row = {
-    ...input,
-    id: input.id, // upsert supports insert if id absent
-    updated_at: new Date().toISOString(),
-    updated_by: user.id,
-  };
+  try {
+    console.log('createOrUpdateBounty called with input:', input);
+    
+    const { supabase, user } = await assertAdminClient();
+    console.log('Admin client obtained for user:', user.id);
+    
+    const row = {
+      ...input,
+      id: input.id, // upsert supports insert if id absent
+      created_at: input.id ? undefined : new Date().toISOString(), // Only set created_at for new records
+      updated_at: new Date().toISOString(),
+    };
+    
+    console.log('Prepared row data:', row);
 
-  const { error } = await supabase
-    .from("bounties")
-    .upsert(row, { onConflict: "id" });
+    const { data, error } = await supabase
+      .from("bounties")
+      .upsert(row, { onConflict: "id" })
+      .select()
+      .single();
 
-  if (error) throw error;
-  revalidatePath("/admin");
-  revalidatePath("/bounties");
+    if (error) {
+      console.error('Supabase upsert error:', error);
+      throw error;
+    }
+    
+    console.log('Bounty upsert successful, data:', data);
+    
+    revalidatePath("/admin");
+    revalidatePath("/bounties");
+    
+    return data;
+  } catch (error) {
+    console.error('createOrUpdateBounty error:', error);
+    throw error;
+  }
 }
 
 export async function toggleBountyHidden(id: string, hidden: boolean) {
   const { supabase, user } = await assertAdminClient();
   const { error } = await supabase
     .from("bounties")
-    .update({ hidden, updated_by: user.id, updated_at: new Date().toISOString() })
+    .update({ hidden, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) throw error;
