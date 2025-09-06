@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ success: true, bounties: bounties || [] });
+    return NextResponse.json(bounties || []);
   } catch (error) {
     console.error('Error in bounties API:', error);
     return NextResponse.json(
@@ -59,10 +59,35 @@ export async function POST(request: Request) {
     );
     const body = await request.json();
     
-    const { title, short_desc, squad_tag, reward, deadline, status = 'active', hidden = false } = body;
+    const { 
+      title, 
+      short_desc, 
+      squad_tag, 
+      reward, 
+      reward_type = 'XP',
+      start_date,
+      deadline, 
+      status = 'active', 
+      hidden = false,
+      walletAddress 
+    } = body;
     
-    if (!title || !short_desc || !reward) {
+    if (!title || !short_desc || !reward || !walletAddress) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Check if user is admin
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('wallet_address', walletAddress)
+      .single();
+
+    if (userError || !userData?.is_admin) {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
     }
     
     const bountyData = {
@@ -70,13 +95,17 @@ export async function POST(request: Request) {
       short_desc,
       squad_tag: squad_tag || null,
       reward,
-      deadline: deadline || null,
+      reward_type: reward_type || 'XP',
+      start_date: start_date ? new Date(start_date).toISOString() : null,
+      deadline: deadline ? new Date(deadline).toISOString() : null,
       status,
       hidden,
       submissions: 0, // Initialize with 0 submissions
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+
+    console.log('Creating bounty with data:', bountyData);
     
     const { data: bounty, error } = await supabase
       .from('bounties')
@@ -86,7 +115,12 @@ export async function POST(request: Request) {
     
     if (error) {
       console.error('Error creating bounty:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Error details:', JSON.stringify(error, null, 2));
+      return NextResponse.json({ 
+        error: 'Failed to create bounty', 
+        details: error.message,
+        code: error.code 
+      }, { status: 500 });
     }
     
     return NextResponse.json(bounty, { status: 201 });

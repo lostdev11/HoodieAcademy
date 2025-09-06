@@ -13,7 +13,7 @@ export function useRealtimeList<T>(
   useEffect(() => {
     const supabase = getSupabaseBrowser();
     setData(initialData);
-  }, [initialData]);
+  }, []); // Only run once on mount, not when initialData changes
 
   useEffect(() => {
     const supabase = getSupabaseBrowser();

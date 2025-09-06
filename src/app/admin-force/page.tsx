@@ -5,14 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 
-export default function AdminDirectPage() {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+export default function AdminForcePage() {
+  const [walletAddress, setWalletAddress] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [overrideCode, setOverrideCode] = useState('');
-  const [showOverride, setShowOverride] = useState(false);
 
   // Hardcoded admin wallets
   const adminWallets = [
@@ -21,9 +18,6 @@ export default function AdminDirectPage() {
     '7vswdZFphxbtd1tCB5EhLNn2khiDiKmQEehSNUFHjz7M',
     '63B9jg8iBy9pf4W4VDizbQnBD45QujmzbHyGRtHxknr7'
   ];
-
-  // Override codes
-  const OVERRIDE_CODES = ['admin123', 'hoodie2024', 'bypass'];
 
   useEffect(() => {
     // Check if wallet is already connected
@@ -54,7 +48,7 @@ export default function AdminDirectPage() {
     localStorage.setItem('hoodie_academy_wallet', wallet);
     localStorage.setItem('hoodie_academy_is_admin', isAdminWallet.toString());
     
-    console.log('🔍 Direct admin check:', { wallet, isAdmin: isAdminWallet });
+    console.log('🔍 Hardcoded admin check:', { wallet, isAdmin: isAdminWallet });
   };
 
   const connectWallet = async () => {
@@ -75,35 +69,22 @@ export default function AdminDirectPage() {
     }
   };
 
-  const handleOverride = () => {
-    if (OVERRIDE_CODES.includes(overrideCode)) {
+  const forceAdmin = () => {
+    if (walletAddress) {
       setIsAdmin(true);
       localStorage.setItem('hoodie_academy_is_admin', 'true');
-      setShowOverride(false);
-      console.log('🔧 Admin override activated with code:', overrideCode);
-    } else {
-      alert('Invalid override code. Try: admin123, hoodie2024, or bypass');
+      console.log('🔧 Forced admin status to true');
     }
-  };
-
-  const forceAdmin = () => {
-    setIsAdmin(true);
-    localStorage.setItem('hoodie_academy_is_admin', 'true');
-    console.log('🔧 Admin forced to true');
   };
 
   const goToAdmin = () => {
     window.location.href = '/admin';
   };
 
-  const goToAdminForce = () => {
-    window.location.href = '/admin-force';
-  };
-
   return (
     <div className="min-h-screen bg-slate-900 text-white p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">🔧 Direct Admin Access</h1>
+        <h1 className="text-3xl font-bold mb-8">🔧 Admin Force Access</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card className="bg-slate-800">
@@ -130,13 +111,6 @@ export default function AdminDirectPage() {
                 {loading ? 'Connecting...' : 'Connect Wallet'}
               </Button>
               <Button 
-                onClick={() => setShowOverride(!showOverride)} 
-                variant="outline" 
-                className="w-full"
-              >
-                {showOverride ? 'Hide Override' : 'Show Override Options'}
-              </Button>
-              <Button 
                 onClick={forceAdmin} 
                 variant="destructive" 
                 className="w-full"
@@ -144,35 +118,16 @@ export default function AdminDirectPage() {
               >
                 Force Admin = True
               </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {showOverride && (
-          <Card className="bg-slate-800 mb-8">
-            <CardHeader>
-              <CardTitle>Override Options</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="override-code">Override Code</Label>
-                <Input
-                  id="override-code"
-                  type="password"
-                  value={overrideCode}
-                  onChange={(e) => setOverrideCode(e.target.value)}
-                  placeholder="Enter override code"
-                />
-                <p className="text-sm text-slate-400 mt-1">
-                  Valid codes: admin123, hoodie2024, bypass
-                </p>
-              </div>
-              <Button onClick={handleOverride} className="w-full">
-                Activate Override
+              <Button 
+                onClick={goToAdmin} 
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={!isAdmin}
+              >
+                Go to Admin Dashboard
               </Button>
             </CardContent>
           </Card>
-        )}
+        </div>
 
         <Card className="bg-slate-800 mb-8">
           <CardHeader>
@@ -186,7 +141,7 @@ export default function AdminDirectPage() {
                     {wallet}
                   </span>
                   {wallet === walletAddress && (
-                    <Badge variant="default">Current</Badge>
+                    <span className="text-green-400">← Current</span>
                   )}
                 </div>
               ))}
@@ -201,20 +156,12 @@ export default function AdminDirectPage() {
             </CardHeader>
             <CardContent>
               <p>You have admin access! You can now access the admin dashboard.</p>
-              <div className="flex space-x-2 mt-4">
-                <Button 
-                  onClick={goToAdmin} 
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Go to Admin Dashboard
-                </Button>
-                <Button 
-                  onClick={goToAdminForce} 
-                  variant="outline"
-                >
-                  Go to Admin Force Page
-                </Button>
-              </div>
+              <Button 
+                onClick={goToAdmin} 
+                className="mt-4 bg-green-600 hover:bg-green-700"
+              >
+                Go to Admin Dashboard
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -223,7 +170,7 @@ export default function AdminDirectPage() {
               <CardTitle className="text-red-400">❌ Admin Access Denied</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>Connect your wallet and use the override options above if needed.</p>
+              <p>Connect your wallet and use the "Force Admin = True" button if needed.</p>
             </CardContent>
           </Card>
         )}

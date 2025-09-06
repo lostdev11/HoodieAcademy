@@ -96,18 +96,26 @@ export default function BottomNavigation() {
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Check admin status on mount
+  // Check admin status on mount using hardcoded list
   useEffect(() => {
-    const checkAdmin = async () => {
+    const checkAdmin = () => {
       try {
         // Get connected wallet address
-        const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
+        const walletAddress = localStorage.getItem('hoodie_academy_wallet') || 
+                             localStorage.getItem('walletAddress') || 
+                             localStorage.getItem('connectedWallet');
+        
+        // Hardcoded admin wallets
+        const adminWallets = [
+          'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU',
+          'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA',
+          '7vswdZFphxbtd1tCB5EhLNn2khiDiKmQEehSNUFHjz7M',
+          '63B9jg8iBy9pf4W4VDizbQnBD45QujmzbHyGRtHxknr7'
+        ];
         
         if (walletAddress) {
-          // Use direct admin check to bypass RLS policy issues
-          const { checkAdminStatusDirect } = await import('@/lib/admin-check');
-          const adminStatus = await checkAdminStatusDirect(walletAddress);
-          setIsAdmin(adminStatus);
+          const isAdminWallet = adminWallets.includes(walletAddress);
+          setIsAdmin(isAdminWallet);
         } else {
           setIsAdmin(false);
         }

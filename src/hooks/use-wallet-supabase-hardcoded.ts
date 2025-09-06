@@ -2,7 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logCourseActivity, logWalletConnection } from '@/lib/activity-logger';
 
-export function useWalletSupabase() {
+// Hardcoded admin wallets - this will always work
+const ADMIN_WALLETS = [
+  'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU',
+  'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA',
+  '7vswdZFphxbtd1tCB5EhLNn2khiDiKmQEehSNUFHjz7M',
+  '63B9jg8iBy9pf4W4VDizbQnBD45QujmzbHyGRtHxknr7'
+];
+
+export function useWalletSupabaseHardcoded() {
   const [wallet, setWallet] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
@@ -11,7 +19,7 @@ export function useWalletSupabase() {
 
   // Debug state changes
   useEffect(() => {
-    console.log('🔄 useWalletSupabase - State changed:', { wallet, isAdmin, loading, error, isInitialized });
+    console.log('🔄 useWalletSupabaseHardcoded - State changed:', { wallet, isAdmin, loading, error, isInitialized });
   }, [wallet, isAdmin, loading, error, isInitialized]);
 
   // Initialize from localStorage after component mounts (client-side only)
@@ -92,9 +100,14 @@ export function useWalletSupabase() {
       const walletAddress = provider.publicKey!.toString();
       console.log('🎯 Wallet address:', walletAddress);
       
-      // Set wallet address first (this is the most important part)
+      // Set wallet address first
       setWallet(walletAddress);
       setLoading(false);
+      
+      // Check admin status using hardcoded list
+      const isAdminWallet = ADMIN_WALLETS.includes(walletAddress);
+      console.log('👑 Hardcoded admin check:', { wallet: walletAddress, isAdmin: isAdminWallet });
+      setIsAdmin(isAdminWallet);
       
       // Now try to do the additional operations, but don't fail the connection if they error
       try {
@@ -103,7 +116,6 @@ export function useWalletSupabase() {
         console.log('📊 Wallet connection logged');
       } catch (logError) {
         console.warn('Failed to log wallet connection:', logError);
-        // Don't fail the connection for logging errors
       }
       
       try {
@@ -124,132 +136,75 @@ export function useWalletSupabase() {
         }
       } catch (dbError) {
         console.warn('Failed to update user last_active:', dbError);
-        // Don't fail the connection for database errors
       }
       
-      // Check admin status asynchronously without blocking the connection
-      setTimeout(async () => {
-        try {
-          console.log('🔍 Checking admin status for wallet:', walletAddress);
-          // Use RPC function to check admin status (bypasses RLS issues)
-          const { data: isAdminStatus, error: adminError } = await supabase.rpc('is_wallet_admin', { 
-            wallet: walletAddress 
-          });
-          
-          if (adminError) {
-            console.warn('Failed to check admin status:', adminError);
-            setIsAdmin(false);
-          } else {
-            console.log('👑 Admin status:', !!isAdminStatus);
-            setIsAdmin(!!isAdminStatus);
-          }
-        } catch (adminError) {
-          console.warn('Failed to check admin status:', adminError);
-          setIsAdmin(false);
-        }
-      }, 100); // Small delay to ensure connection is established first
-      
-      console.log('🎉 Wallet connection successful!');
-      return walletAddress;
-    } catch (err: any) {
-      console.error('💥 Wallet connection failed:', err);
-      setError(err.message || 'Unknown error');
-      setIsAdmin(false);
-      setWallet(null);
+    } catch (error) {
+      console.error('Wallet connection failed:', error);
+      setError(error instanceof Error ? error.message : 'Unknown error');
       setLoading(false);
-      return null;
     }
   }, []);
 
-  // Disconnect wallet
-  const disconnectWallet = useCallback(async () => {
-    if (wallet) {
-      // Log wallet disconnection activity
-      await logWalletConnection(wallet, 'wallet_disconnect', { reason: 'user_disconnect' });
-    }
-    setWallet(null);
-    setIsAdmin(false);
-    setError(null);
-    // Phantom does not have a disconnect method, but you can clear state
-  }, [wallet]);
-
-  // Auto-connect on mount if already connected
+  // Auto-connect on page load if wallet is already connected
   useEffect(() => {
-    const sol = typeof window !== 'undefined' ? window.solana : undefined;
-    
-    if (sol?.publicKey && !wallet) {
-      console.log('🔄 Auto-connecting to existing wallet:', sol.publicKey.toString());
-      // Only auto-connect if we don't already have a wallet
-      const autoConnect = async () => {
+    if (typeof window !== 'undefined' && !wallet && !loading) {
+      const checkExistingConnection = async () => {
         try {
-          const walletAddress = sol.publicKey!.toString();
-          console.log('🎯 Auto-connecting to wallet:', walletAddress);
-          
-          // Set wallet state directly without calling connectWallet
-          setWallet(walletAddress);
-          
-          // Check admin status using RPC function
-          const { data: isAdminStatus, error: adminError } = await supabase.rpc('is_wallet_admin', { 
-            wallet: walletAddress 
-          });
-          
-          if (adminError) {
-            console.warn('Failed to check admin status during auto-connect:', adminError);
-            setIsAdmin(false);
-          } else {
-            console.log('👑 Auto-connect admin status:', !!isAdminStatus);
-            setIsAdmin(!!isAdminStatus);
+          const provider = window.solana;
+          if (provider && provider.publicKey) {
+            const walletAddress = provider.publicKey.toString();
+            console.log('🎯 Auto-connecting to wallet:', walletAddress);
+            
+            // Set wallet state directly without calling connectWallet
+            setWallet(walletAddress);
+            
+            // Check admin status using hardcoded list
+            const isAdminWallet = ADMIN_WALLETS.includes(walletAddress);
+            console.log('👑 Auto-connect hardcoded admin check:', { wallet: walletAddress, isAdmin: isAdminWallet });
+            setIsAdmin(isAdminWallet);
           }
         } catch (error) {
           console.error('Auto-connect failed:', error);
         }
       };
-      
-      autoConnect();
+
+      checkExistingConnection();
     }
-    
-    // Listen for wallet connection changes
-    const handleAccountChange = () => {
-      if (sol?.publicKey) {
-        const newWalletAddress = sol.publicKey.toString();
-        if (newWalletAddress !== wallet) {
-          console.log('🔄 Account changed to:', newWalletAddress);
-          setWallet(newWalletAddress);
+  }, [wallet, loading]);
+
+  // Listen for wallet changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handleWalletChange = () => {
+        const provider = window.solana;
+        if (provider && provider.publicKey) {
+          const newWallet = provider.publicKey.toString();
+          console.log('🔄 Wallet changed to:', newWallet);
+          setWallet(newWallet);
+          
           // Check admin status for new wallet
-          checkAdminStatus(newWalletAddress);
+          checkAdminStatus(newWallet);
+        } else {
+          console.log('🔄 Wallet disconnected');
+          setWallet(null);
+          setIsAdmin(false);
         }
-      } else {
-        console.log('🔄 Account disconnected');
-        setWallet(null);
-        setIsAdmin(false);
-      }
-    };
-    
-    if (sol && typeof sol.on === 'function') {
-      sol.on('accountChanged', handleAccountChange);
+      };
+
+      window.addEventListener('walletChange', handleWalletChange);
+      return () => window.removeEventListener('walletChange', handleWalletChange);
     }
-    
-    return () => {
-      if (sol && typeof sol.off === 'function') {
-        sol.off('accountChanged', handleAccountChange);
-      }
-    };
-  }, []); // Remove connectWallet and wallet from dependencies
-  
+  }, []);
+
   // Separate function to check admin status
   const checkAdminStatus = useCallback(async (walletAddress: string) => {
     try {
       console.log('🔍 checkAdminStatus: Checking admin status for wallet:', walletAddress);
-      const { data: isAdminStatus, error: adminError } = await supabase.rpc('is_wallet_admin', { 
-        wallet: walletAddress 
-      });
-      if (adminError) {
-        console.warn('Failed to check admin status:', adminError);
-        setIsAdmin(false);
-      } else {
-        console.log('👑 checkAdminStatus: Admin status result:', !!isAdminStatus);
-        setIsAdmin(!!isAdminStatus);
-      }
+      
+      // Use hardcoded list instead of database query
+      const isAdminWallet = ADMIN_WALLETS.includes(walletAddress);
+      console.log('👑 checkAdminStatus: Hardcoded admin status result:', isAdminWallet);
+      setIsAdmin(isAdminWallet);
     } catch (adminError) {
       console.warn('Failed to check admin status:', adminError);
       setIsAdmin(false);
@@ -264,33 +219,28 @@ export function useWalletSupabase() {
         .from('course_completions')
         .upsert({ wallet_address: wallet, course_id: course_slug, started_at: new Date().toISOString() }, { onConflict: 'wallet_address,course_id' });
       
-      // Log course start activity
-      await logCourseActivity(wallet, 'course_start', {
-        course_id: course_slug,
-        course_name: course_slug,
-        completion_status: 'started'
-      });
-    } catch (err) {
-      console.error('Course start tracking failed:', err);
+      await logCourseActivity(wallet, 'course_start', { course_id: course_slug });
+    } catch (error) {
+      console.error('Failed to track course start:', error);
     }
   }, [wallet]);
 
   // Track course completion
-  const trackCourseCompletion = useCallback(async (course_slug: string) => {
+  const trackCourseCompletion = useCallback(async (course_slug: string, score?: number) => {
     if (!wallet) return;
     try {
       await supabase
         .from('course_completions')
-        .upsert({ wallet_address: wallet, course_id: course_slug, completed_at: new Date().toISOString() }, { onConflict: 'wallet_address,course_id' });
+        .upsert({ 
+          wallet_address: wallet, 
+          course_id: course_slug, 
+          completed_at: new Date().toISOString(),
+          score: score || null
+        }, { onConflict: 'wallet_address,course_id' });
       
-      // Log course completion activity
-      await logCourseActivity(wallet, 'course_complete', {
-        course_id: course_slug,
-        course_name: course_slug,
-        completion_status: 'completed'
-      });
-    } catch (err) {
-      console.error('Completion logging failed:', err);
+      await logCourseActivity(wallet, 'course_complete', { course_id: course_slug, score });
+    } catch (error) {
+      console.error('Failed to track course completion:', error);
     }
   }, [wallet]);
 
@@ -302,6 +252,22 @@ export function useWalletSupabase() {
     }
   }, [wallet, checkAdminStatus]);
 
+  // Disconnect wallet
+  const disconnectWallet = useCallback(async () => {
+    try {
+      if (typeof window !== 'undefined' && window.solana && window.solana.disconnect) {
+        await window.solana.disconnect();
+      }
+      setWallet(null);
+      setIsAdmin(false);
+      localStorage.removeItem('hoodie_academy_wallet');
+      localStorage.removeItem('hoodie_academy_is_admin');
+      console.log('🔌 Wallet disconnected');
+    } catch (error) {
+      console.error('Failed to disconnect wallet:', error);
+    }
+  }, []);
+
   return {
     wallet,
     isAdmin,
@@ -311,6 +277,6 @@ export function useWalletSupabase() {
     disconnectWallet,
     trackCourseStart,
     trackCourseCompletion,
-    refreshAdminStatus,
+    refreshAdminStatus
   };
-} 
+}

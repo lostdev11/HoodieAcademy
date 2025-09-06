@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Admin Cache</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1e293b;
+            color: white;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #2563eb;
+        }
+        .danger {
+            background: #dc2626;
+        }
+        .danger:hover {
+            background: #b91c1c;
+        }
+        .success {
+            background: #059669;
+        }
+        .success:hover {
+            background: #047857;
+        }
+        .info {
+            background: #1e293b;
+            border: 1px solid #475569;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Admin Cache Clearer</h1>
+    
+    <div class="info">
+        <h3>Current Status:</h3>
+        <p><strong>Wallet:</strong> <span id="wallet">Not connected</span></p>
+        <p><strong>Admin Status:</strong> <span id="admin">Unknown</span></p>
+        <p><strong>LocalStorage Items:</strong> <span id="storage">Loading...</span></p>
+    </div>
+
+    <div>
+        <button class="button" onclick="checkStatus()">Check Current Status</button>
+        <button class="button danger" onclick="clearAllCache()">Clear All Cache</button>
+        <button class="button success" onclick="forceAdmin()">Force Admin = True</button>
+        <button class="button" onclick="reloadPage()">Reload Page</button>
+    </div>
+
+    <div id="output" style="margin-top: 20px; padding: 10px; background: #0f172a; border-radius: 5px; font-family: monospace; white-space: pre-wrap;"></div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('output');
+            output.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+        }
+
+        function checkStatus() {
+            log('Checking current status...');
+            
+            // Check localStorage
+            const wallet = localStorage.getItem('hoodie_academy_wallet');
+            const admin = localStorage.getItem('hoodie_academy_is_admin');
+            
+            document.getElementById('wallet').textContent = wallet || 'Not stored';
+            document.getElementById('admin').textContent = admin || 'Not stored';
+            
+            // List all localStorage items
+            const items = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                items.push(key + '=' + localStorage.getItem(key));
+            }
+            document.getElementById('storage').textContent = items.join(', ') || 'Empty';
+            
+            log('Status check complete');
+        }
+
+        function clearAllCache() {
+            log('Clearing all cache...');
+            
+            // Clear localStorage
+            localStorage.clear();
+            log('localStorage cleared');
+            
+            // Clear sessionStorage
+            sessionStorage.clear();
+            log('sessionStorage cleared');
+            
+            // Clear cookies (if any)
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            log('Cookies cleared');
+            
+            // Update display
+            checkStatus();
+            
+            log('All cache cleared! Please reload the page.');
+        }
+
+        function forceAdmin() {
+            const wallet = localStorage.getItem('hoodie_academy_wallet');
+            if (wallet) {
+                localStorage.setItem('hoodie_academy_is_admin', 'true');
+                log('Forced admin status to true for wallet: ' + wallet);
+                checkStatus();
+            } else {
+                log('No wallet found in localStorage. Connect wallet first.');
+            }
+        }
+
+        function reloadPage() {
+            log('Reloading page...');
+            window.location.reload();
+        }
+
+        // Check status on page load
+        window.onload = function() {
+            checkStatus();
+        };
+    </script>
+</body>
+</html>

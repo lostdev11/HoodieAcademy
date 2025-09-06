@@ -6,17 +6,26 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await request.json();
-    const { title, short_desc, reward, deadline, status, squad_tag, hidden, walletAddress } = body;
+    const { 
+      title, 
+      short_desc, 
+      reward, 
+      reward_type,
+      start_date, 
+      deadline, 
+      status, 
+      hidden, 
+      squad_tag, 
+      walletAddress 
+    } = body;
 
-    if (!walletAddress) {
+    // Validate required fields
+    if (!title || !short_desc || !reward || !walletAddress) {
       return NextResponse.json(
-        { error: 'Wallet address is required' },
+        { error: 'Missing required fields' },
         { status: 400 }
       );
     }
@@ -36,21 +45,22 @@ export async function PUT(
     }
 
     // Update bounty
-    const updateData = {
+    const bountyData = {
       title,
       short_desc,
       reward,
+      reward_type: reward_type || 'XP',
+      start_date: start_date ? new Date(start_date).toISOString() : null,
       deadline: deadline ? new Date(deadline).toISOString() : null,
-      status,
-      squad_tag,
-      hidden,
+      status: status || 'active',
+      hidden: hidden || false,
+      squad_tag: squad_tag || null,
       updated_at: new Date().toISOString()
-      // Temporarily removed updated_by to fix schema cache issue
     };
 
     const { data: bounty, error: bountyError } = await supabase
       .from('bounties')
-      .update(updateData)
+      .update(bountyData)
       .eq('id', params.id)
       .select()
       .single();
@@ -73,17 +83,14 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { searchParams } = new URL(request.url);
     const walletAddress = searchParams.get('walletAddress');
 
     if (!walletAddress) {
       return NextResponse.json(
-        { error: 'Wallet address is required' },
+        { error: 'Wallet address required' },
         { status: 400 }
       );
     }
@@ -103,15 +110,15 @@ export async function DELETE(
     }
 
     // Delete bounty
-    const { error: bountyError } = await supabase
+    const { error: deleteError } = await supabase
       .from('bounties')
       .delete()
       .eq('id', params.id);
 
-    if (bountyError) {
-      console.error('Error deleting bounty:', bountyError);
+    if (deleteError) {
+      console.error('Error deleting bounty:', deleteError);
       return NextResponse.json(
-        { error: 'Failed to delete bounty', details: bountyError.message },
+        { error: 'Failed to delete bounty', details: deleteError.message },
         { status: 500 }
       );
     }

@@ -25,6 +25,8 @@ export type DBBounty = {
   title: string;
   short_desc: string;
   reward: string;
+  reward_type: 'XP' | 'SOL';
+  start_date: string | null; // 'YYYY-MM-DD'
   deadline: string | null; // 'YYYY-MM-DD'
   link_to: string | null;
   image: string | null;

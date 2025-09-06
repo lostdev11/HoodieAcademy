@@ -26,10 +26,11 @@ export default function BountiesGrid({
         const response = await fetch('/api/bounties');
         const result = await response.json();
         
-        if (response.ok && result.success) {
-          setBounties(result.bounties || []);
+        if (response.ok) {
+          // API returns bounties directly, not wrapped in a bounties property
+          setBounties(Array.isArray(result) ? result : []);
         } else {
-          console.error('Error fetching bounties:', result.error);
+          console.error('Error fetching bounties:', result.error || 'Unknown error');
         }
       } catch (error) {
         console.error('Error:', error);

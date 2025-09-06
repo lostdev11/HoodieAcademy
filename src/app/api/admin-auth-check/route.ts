@@ -16,44 +16,50 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 Admin auth check API called for wallet:', walletAddress);
 
-    // Check admin status in database
-    const { data, error } = await supabase
-      .from('users')
-      .select('wallet_address, is_admin, display_name, squad')
-      .eq('wallet_address', walletAddress)
-      .single();
+    // Check admin status using RPC function (bypasses RLS issues)
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_wallet_admin', { 
+      wallet: walletAddress 
+    });
 
-    if (error) {
-      console.error('❌ Database error:', error);
+    if (adminError) {
+      console.error('❌ Admin check error:', adminError);
       return NextResponse.json(
-        { error: 'Database query failed', details: error.message },
+        { error: 'Admin check failed', details: adminError.message },
         { status: 500 }
       );
     }
 
-    if (!data) {
-      console.log('❌ User not found:', walletAddress);
-      return NextResponse.json(
-        { wallet: walletAddress, isAdmin: false, user: null },
-        { status: 200 }
-      );
+    // Get user details if admin check passed
+    let userDetails = null;
+    if (isAdmin) {
+      try {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('wallet_address, display_name, squad')
+          .eq('wallet_address', walletAddress)
+          .single();
+        
+        if (!userError && userData) {
+          userDetails = {
+            displayName: userData.display_name,
+            squad: userData.squad
+          };
+        }
+      } catch (userErr) {
+        console.warn('Could not fetch user details:', userErr);
+      }
     }
 
-    const isAdmin = !!data.is_admin;
     console.log('✅ Admin auth check response:', { 
-      wallet: data.wallet_address, 
-      isAdmin, 
-      displayName: data.display_name,
-      squad: data.squad
+      wallet: walletAddress, 
+      isAdmin: !!isAdmin, 
+      userDetails
     });
 
     return NextResponse.json({
-      wallet: data.wallet_address,
-      isAdmin,
-      user: {
-        displayName: data.display_name,
-        squad: data.squad
-      }
+      wallet: walletAddress,
+      isAdmin: !!isAdmin,
+      user: userDetails
     });
 
   } catch (error) {
@@ -80,44 +86,50 @@ export async function POST(request: NextRequest) {
 
     console.log('🔍 Admin auth check POST called for wallet:', walletAddress);
 
-    // Check admin status in database
-    const { data, error } = await supabase
-      .from('users')
-      .select('wallet_address, is_admin, display_name, squad')
-      .eq('wallet_address', walletAddress)
-      .single();
+    // Check admin status using RPC function (bypasses RLS issues)
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_wallet_admin', { 
+      wallet: walletAddress 
+    });
 
-    if (error) {
-      console.error('❌ Database error:', error);
+    if (adminError) {
+      console.error('❌ Admin check error:', adminError);
       return NextResponse.json(
-        { error: 'Database query failed', details: error.message },
+        { error: 'Admin check failed', details: adminError.message },
         { status: 500 }
       );
     }
 
-    if (!data) {
-      console.log('❌ User not found:', walletAddress);
-      return NextResponse.json(
-        { wallet: walletAddress, isAdmin: false, user: null },
-        { status: 200 }
-      );
+    // Get user details if admin check passed
+    let userDetails = null;
+    if (isAdmin) {
+      try {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('wallet_address, display_name, squad')
+          .eq('wallet_address', walletAddress)
+          .single();
+        
+        if (!userError && userData) {
+          userDetails = {
+            displayName: userData.display_name,
+            squad: userData.squad
+          };
+        }
+      } catch (userErr) {
+        console.warn('Could not fetch user details:', userErr);
+      }
     }
 
-    const isAdmin = !!data.is_admin;
     console.log('✅ Admin auth check POST response:', { 
-      wallet: data.wallet_address, 
-      isAdmin, 
-      displayName: data.display_name,
-      squad: data.squad
+      wallet: walletAddress, 
+      isAdmin: !!isAdmin, 
+      userDetails
     });
 
     return NextResponse.json({
-      wallet: data.wallet_address,
-      isAdmin,
-      user: {
-        displayName: data.display_name,
-        squad: data.squad
-      }
+      wallet: walletAddress,
+      isAdmin: !!isAdmin,
+      user: userDetails
     });
 
   } catch (error) {

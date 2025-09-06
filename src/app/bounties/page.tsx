@@ -53,7 +53,8 @@ export default async function BountiesPage() {
     
     if (response.ok) {
       const result = await response.json();
-      bounties = result.bounties || [];
+      // API returns bounties directly, not wrapped in a bounties property
+      bounties = Array.isArray(result) ? result : [];
     }
   } catch (error) {
     console.error('Error fetching bounties:', error);

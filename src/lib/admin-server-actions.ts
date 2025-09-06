@@ -52,7 +52,9 @@ export async function createOrUpdateBounty(input: {
   title: string;
   short_desc: string;
   reward: string;
-  deadline?: string | null;     // 'YYYY-MM-DD'
+  reward_type?: 'XP' | 'SOL';
+  start_date?: string | null;   // 'YYYY-MM-DDTHH:MM'
+  deadline?: string | null;     // 'YYYY-MM-DDTHH:MM'
   link_to?: string | null;
   image?: string | null;
   squad_tag?: string | null;

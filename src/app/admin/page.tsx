@@ -1,7 +1,11 @@
-import AdminSimple from '../admin-simple/page';
+import AdminDashboardFixed from '../admin-fixed/page';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
-// Simple admin page - no complex data fetching needed
-// All authentication and admin checks happen in the client component
+// Main admin page - uses the fixed admin dashboard without infinite loops
 export default function AdminPage() {
-  return <AdminSimple />;
+  return (
+    <ErrorBoundary>
+      <AdminDashboardFixed />
+    </ErrorBoundary>
+  );
 }
