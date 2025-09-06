@@ -105,8 +105,8 @@ export default function AdminDashboardFixed() {
         
         // Simple data fetching without complex dependencies
         const [usersResponse, bountiesResponse] = await Promise.all([
-          fetch('/api/admin/users').catch(() => ({ ok: false })),
-          fetch('/api/bounties').catch(() => ({ ok: false }))
+          fetch('/api/admin/users').catch(() => ({ ok: false, json: () => Promise.resolve([]) })),
+          fetch('/api/bounties').catch(() => ({ ok: false, json: () => Promise.resolve([]) }))
         ]);
         
         // Parse responses safely
