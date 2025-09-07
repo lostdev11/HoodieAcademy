@@ -132,7 +132,6 @@ export default function AdminDashboardFixed() {
         const safeBountiesData = Array.isArray(bountiesData) ? bountiesData : [];
         
         console.log(`📊 Loaded ${safeUsersData.length} users and ${safeBountiesData.length} bounties`);
-        console.log('Bounties data:', safeBountiesData);
         
         setUsers(safeUsersData);
         setBounties(safeBountiesData);
@@ -550,7 +549,6 @@ export default function AdminDashboardFixed() {
 
             {/* Bounties List */}
             <div className="grid gap-4">
-              {console.log('Rendering bounties, count:', safeBounties.length, 'data:', safeBounties)}
               {safeBounties.length === 0 ? (
                 <Card className="bg-slate-800">
                   <CardContent className="pt-6 text-center">
