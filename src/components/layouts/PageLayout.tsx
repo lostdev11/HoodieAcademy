@@ -63,7 +63,7 @@ export default function PageLayout({
   const toggleNavigationDrawer = () => setIsNavigationDrawerOpen(!isNavigationDrawerOpen);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 overflow-x-hidden">
       {/* Background image */}
       {backgroundImage && (
         <div className="absolute inset-0 -z-10">
@@ -161,7 +161,7 @@ export default function PageLayout({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <div className="flex gap-6">
           {/* Main Content Area */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {/* Vertical Card Feed Container */}
             <div className="space-y-6">
               {children}
