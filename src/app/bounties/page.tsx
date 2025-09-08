@@ -47,7 +47,7 @@ export default async function BountiesPage() {
   let bounties = [];
   
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/bounties`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/bounties/`, {
       cache: 'no-store' // Disable caching to get fresh data
     });
     

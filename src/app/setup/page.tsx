@@ -205,7 +205,7 @@ export default function SetupPage() {
 
                 <div className="mt-6 text-center">
                   <a 
-                    href="/admin" 
+                    href="/admin-dashboard" 
                     className="inline-block bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-semibold"
                   >
                     🎉 Go to Admin Dashboard

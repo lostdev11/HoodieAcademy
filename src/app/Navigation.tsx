@@ -20,7 +20,7 @@ export default function Navigation() {
       <Link href="/dojo/logs" className="text-purple-400">📜 Dojo Logs</Link>
       <Link href="/retailstar-incentives" className="text-orange-400">🛍️ Incentives</Link>
       {isAdmin && (
-        <Link href="/admin" className="text-green-400">Admin</Link>
+        <Link href="/admin-dashboard" className="text-green-400">Admin Dashboard</Link>
       )}
       {wallet ? (
         <>

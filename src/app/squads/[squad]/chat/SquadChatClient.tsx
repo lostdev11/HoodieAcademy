@@ -56,37 +56,56 @@ export default function SquadChatClient({ params }: PageProps) {
       return name.replace(/^[🎨🧠🎤⚔️🦅🏦]+\s*/, '').toLowerCase().trim();
     };
     
-    // Create reverse mapping from URL format to display names
-    const urlToDisplayMapping: { [key: string]: string } = {
-      'hoodie-creators': 'Hoodie Creators',
-      'hoodie-decoders': 'Hoodie Decoders',
-      'hoodie-speakers': 'Hoodie Speakers',
-      'hoodie-raiders': 'Hoodie Raiders',
-      'hoodie-rangers': 'Hoodie Rangers',
-      'treasury-builders': 'Treasury Builders'
+    // Create comprehensive mapping from URL format to all possible display names
+    const urlToDisplayMapping: { [key: string]: string[] } = {
+      'hoodie-creators': ['Hoodie Creators', '🎨 Hoodie Creators', 'creators', 'Creators'],
+      'hoodie-decoders': ['Hoodie Decoders', '🧠 Hoodie Decoders', 'decoders', 'Decoders'],
+      'hoodie-speakers': ['Hoodie Speakers', '🎤 Hoodie Speakers', 'speakers', 'Speakers'],
+      'hoodie-raiders': ['Hoodie Raiders', '⚔️ Hoodie Raiders', 'raiders', 'Raiders'],
+      'hoodie-rangers': ['Hoodie Rangers', '🦅 Hoodie Rangers', 'rangers', 'Rangers'],
+      'treasury-builders': ['Treasury Builders', '🏦 Treasury Builders', 'treasury', 'Treasury']
     };
     
-    // First, try to convert URL format to display format
-    let normalizedSquadName = squadName;
-    if (urlToDisplayMapping[squadName]) {
-      normalizedSquadName = urlToDisplayMapping[squadName];
-    }
+    // Get all possible names for the requested squad
+    const possibleNames = urlToDisplayMapping[squadName] || [squadName];
     
-    // Normalize both names for comparison
-    const normalizedRequested = normalizeSquadName(normalizedSquadName);
+    // Normalize user squad name
     const normalizedUserSquad = normalizeSquadName(userSquad);
+    
+    // Check if user squad matches any of the possible names for the requested squad
+    const matches = possibleNames.some(possibleName => {
+      const normalizedPossible = normalizeSquadName(possibleName);
+      return normalizedPossible === normalizedUserSquad;
+    });
+    
+    // Additional check: if user squad is just the short name (e.g., "Creators"), 
+    // check if it matches the short name of the requested squad
+    if (!matches) {
+      const squadShortNames: { [key: string]: string } = {
+        'hoodie-creators': 'creators',
+        'hoodie-decoders': 'decoders',
+        'hoodie-speakers': 'speakers',
+        'hoodie-raiders': 'raiders',
+        'hoodie-rangers': 'rangers',
+        'treasury-builders': 'treasury'
+      };
+      
+      const requestedShortName = squadShortNames[squadName];
+      if (requestedShortName && normalizedUserSquad === requestedShortName) {
+        return true;
+      }
+    }
     
     // Debug logging (can be removed in production)
     console.log('Squad matching debug:', {
       originalSquadName: squadName,
-      normalizedSquadName: normalizedSquadName,
-      normalizedRequested,
+      possibleNames,
       userSquad,
       normalizedUserSquad,
-      matches: normalizedRequested === normalizedUserSquad
+      matches
     });
     
-    return normalizedRequested === normalizedUserSquad;
+    return matches;
   };
 
   // Helper function to generate squad chat URL
@@ -116,13 +135,19 @@ export default function SquadChatClient({ params }: PageProps) {
       'hoodie raiders': 'hoodie-raiders',
       'hoodie rangers': 'hoodie-rangers',
       'treasury builders': 'treasury-builders',
-      // Squad IDs (fallback)
+      // Squad IDs (fallback) - including capitalized versions
       'creators': 'hoodie-creators',
+      'Creators': 'hoodie-creators',
       'decoders': 'hoodie-decoders',
+      'Decoders': 'hoodie-decoders',
       'speakers': 'hoodie-speakers',
+      'Speakers': 'hoodie-speakers',
       'raiders': 'hoodie-raiders',
+      'Raiders': 'hoodie-raiders',
       'rangers': 'hoodie-rangers',
-      'treasury': 'treasury-builders'
+      'Rangers': 'hoodie-rangers',
+      'treasury': 'treasury-builders',
+      'Treasury': 'treasury-builders'
     };
 
     // Try exact match first
@@ -175,20 +200,71 @@ export default function SquadChatClient({ params }: PageProps) {
         // Debug localStorage data
         debugSquadData();
         
-        // Check if user has completed onboarding and has a squad
-        const hasCompletedOnboarding = localStorage.getItem('onboardingCompleted');
-        const hasDisplayName = localStorage.getItem('userDisplayName');
+        // Get wallet address from localStorage
+        const walletAddress = typeof window !== 'undefined' 
+          ? localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet')
+          : null;
         
-        if (!hasCompletedOnboarding || !hasDisplayName) {
+        if (!walletAddress) {
           router.push('/onboarding');
           return;
         }
 
-        // Get user's squad using utility
-        const userSquadName = getSquadName();
+        // Try to get user data from database first
+        let userSquadName = null;
+        try {
+          console.log('Fetching user data for wallet:', walletAddress);
+          const response = await fetch(`/api/users/?walletAddress=${walletAddress}`);
+          console.log('Database response status:', response.status);
+          
+          if (response.ok) {
+            const userData = await response.json();
+            console.log('Database user data:', userData);
+            if (userData && userData.squad) {
+              userSquadName = userData.squad;
+              console.log('Got squad from database:', userSquadName);
+            } else {
+              console.log('No squad found in database for user');
+            }
+          } else if (response.status === 404) {
+            console.log('User not found in database, will fallback to localStorage');
+          } else {
+            console.log('Database request failed:', response.status, await response.text());
+          }
+        } catch (error) {
+          console.error('Error fetching user data from database:', error);
+        }
+
+        // Fallback to localStorage if database doesn't have squad info
+        if (!userSquadName) {
+          userSquadName = getSquadName();
+          console.log('Fallback to localStorage squad:', userSquadName);
+          
+          // If still no squad found, check other localStorage keys
+          if (!userSquadName) {
+            const placementTestCompleted = localStorage.getItem('placementTestCompleted');
+            const assignedSquad = localStorage.getItem('assignedSquad');
+            
+            console.log('Additional localStorage checks:', {
+              placementTestCompleted,
+              assignedSquad
+            });
+            
+            if (assignedSquad) {
+              try {
+                const parsedSquad = JSON.parse(assignedSquad);
+                userSquadName = parsedSquad.name || parsedSquad;
+                console.log('Found squad in assignedSquad:', userSquadName);
+              } catch (e) {
+                userSquadName = assignedSquad;
+                console.log('Found squad in assignedSquad (string):', userSquadName);
+              }
+            }
+          }
+        }
         
         if (userSquadName) {
-          console.log('Extracted userSquadName:', userSquadName);
+          console.log('Final userSquadName:', userSquadName);
           
           setUserSquad(userSquadName);
           
@@ -200,20 +276,31 @@ export default function SquadChatClient({ params }: PageProps) {
             squadName,
             userSquadName,
             squadsMatch,
-            hasCompletedOnboarding,
-            hasDisplayName
+            walletAddress
           });
           
           if (squadsMatch) {
             setHasAccess(true);
           } else {
+            // Check if we should redirect to the correct squad chat
+            const correctSquadUrl = getSquadChatUrl(userSquadName);
+            const currentUrl = `/squads/${squadName}/chat`;
+            
+            // If the user is trying to access a different squad, redirect them
+            if (correctSquadUrl !== currentUrl) {
+              console.log('Redirecting user to correct squad chat:', correctSquadUrl);
+              router.push(correctSquadUrl);
+              return;
+            }
+            
             setHasAccess(false);
-            setError(`Access denied: You're assigned to "${userSquadName}" but trying to access "${squadName}". Squad names must match exactly.`);
+            setError(`Access denied: You're assigned to "${userSquadName}" but trying to access "${squadName}". Please access your assigned squad's chat room.`);
           }
         } else {
-          // No squad assigned, redirect to placement test
-          router.push('/placement/squad-test');
-          return;
+          // No squad assigned, show helpful error message
+          setError(`No squad assignment found. Please complete the placement test to access squad chats.`);
+          setHasAccess(false);
+          console.log('No squad found for user, showing error message');
         }
       } catch (error) {
         console.error('Error checking squad access:', error);

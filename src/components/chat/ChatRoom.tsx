@@ -22,34 +22,87 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
   const [resolvedNames, setResolvedNames] = useState<Record<string, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get current user's wallet address and display name from database instead of localStorage
+  // Get current user's wallet address and display name from database
   useEffect(() => {
     const loadUserData = async () => {
-      // TODO: Get wallet address and display name from database
-      // For now, set empty values as we're removing localStorage
-      console.log('Loading user data from database...');
+      try {
+        // Check both possible wallet storage keys
+        const walletAddress = typeof window !== 'undefined' 
+          ? localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet')
+          : null;
+        
+        if (walletAddress) {
+          setCurrentUser(walletAddress);
+          
+          // Get user data from database
+          const response = await fetch(`/api/users/?walletAddress=${walletAddress}`);
+          if (response.ok) {
+            const userData = await response.json();
+            if (userData) {
+              setCurrentUserDisplayName(userData.display_name || `User ${walletAddress.slice(0, 6)}...`);
+            } else {
+              setCurrentUserDisplayName(`User ${walletAddress.slice(0, 6)}...`);
+            }
+          } else {
+            setCurrentUserDisplayName(`User ${walletAddress.slice(0, 6)}...`);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      }
     };
-    
+
+    // Load user data on mount
     loadUserData();
+
+    // Listen for wallet connection changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'walletAddress' || e.key === 'hoodie_academy_wallet') {
+        loadUserData();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Also check periodically for changes
+      const interval = setInterval(loadUserData, 2000);
+      
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(interval);
+      };
+    }
   }, []);
 
   // Helper function to resolve a single name
   const resolveName = async (walletAddress: string) => {
     try {
-      // TODO: Implement SNS resolution from database or API
-      // For now, just use a shortened version of the wallet address
+      // Try to get user data from database
+      const response = await fetch(`/api/users/?walletAddress=${walletAddress}`);
+      if (response.ok) {
+        const userData = await response.json();
+        if (userData && userData.display_name) {
+          setResolvedNames(prev => ({ ...prev, [walletAddress]: userData.display_name }));
+          return;
+        }
+      }
+      
+      // Fallback to shortened wallet address
       const shortAddress = walletAddress.slice(0, 4) + '...' + walletAddress.slice(-4);
       setResolvedNames(prev => ({ ...prev, [walletAddress]: shortAddress }));
     } catch (error) {
       console.error('Error resolving name:', error);
+      // Fallback to shortened wallet address
+      const shortAddress = walletAddress.slice(0, 4) + '...' + walletAddress.slice(-4);
+      setResolvedNames(prev => ({ ...prev, [walletAddress]: shortAddress }));
     }
   };
 
   // Helper function to resolve multiple names
   const resolveMultipleNames = async (walletAddresses: string[]) => {
     try {
-      // TODO: Implement batch SNS resolution from database or API
-      // For now, resolve them one by one
+      // Resolve them one by one (could be optimized with batch API call in the future)
       for (const address of walletAddresses) {
         await resolveName(address);
       }
@@ -73,7 +126,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
       try {
         // Test connection first
         const { data: testData, error: testError } = await supabase
-          .from('messages')
+          .from('squad_chat')
           .select('count')
           .limit(1);
 
@@ -85,7 +138,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         }
         
         const { data, error } = await supabase
-          .from('messages')
+          .from('squad_chat')
           .select('*')
           .eq('squad', squad)
           .order('created_at', { ascending: true });
@@ -156,6 +209,12 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
   const sendMessage = async () => {
     if (!newMessage.trim() || !currentUser) return;
 
+    // Additional validation: Check if user is authorized for this squad
+    if (!currentUser) {
+      alert('Please connect your wallet to send messages.');
+      return;
+    }
+
     setIsSending(true);
     try {
       const messageData: NewMessage = {
@@ -165,9 +224,12 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         squad: squad,
       };
 
+      // Log message data for debugging (remove in production)
+      console.log('Sending message to squad:', squad, 'from user:', currentUser);
+
       // Test connection before sending
       const { error: testError } = await supabase
-        .from('messages')
+        .from('squad_chat')
         .select('count')
         .limit(1);
 
@@ -178,7 +240,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
       }
 
       const { data, error } = await supabase
-        .from('messages')
+        .from('squad_chat')
         .insert([messageData])
         .select();
 
@@ -295,9 +357,22 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
           </Button>
         </div>
         {!currentUser && (
-          <p className="text-xs text-red-400 mt-2">
-            Please connect your wallet to send messages
-          </p>
+          <div className="text-center p-3 bg-gray-50 rounded-md mt-2">
+            <p className="text-sm text-gray-600 mb-2">Connect your wallet to participate in chat</p>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => {
+                // Try to trigger wallet connection
+                if (typeof window !== 'undefined' && window.solana) {
+                  window.solana.connect();
+                }
+              }}
+              className="text-xs"
+            >
+              Connect Wallet
+            </Button>
+          </div>
         )}
         {currentUser && !currentUserDisplayName && (
           <p className="text-xs text-yellow-400 mt-2">

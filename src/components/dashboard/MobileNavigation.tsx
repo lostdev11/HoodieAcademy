@@ -178,7 +178,7 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
       id: 'admin',
       label: 'Admin',
       icon: <Settings className="w-5 h-5" />,
-      href: '/admin'
+      href: '/admin-dashboard'
     }] : [])
   ];
 

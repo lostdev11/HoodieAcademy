@@ -19,13 +19,16 @@ interface Bounty {
   title: string;
   short_desc: string;
   reward: string;
-  reward_type: 'XP' | 'SOL';
+  reward_type: 'XP' | 'SOL' | 'NFT';
   start_date?: string;
   deadline?: string;
   status: 'active' | 'completed' | 'expired';
   hidden: boolean;
   squad_tag?: string;
   submissions?: number;
+  nft_prize?: string;
+  nft_prize_image?: string;
+  nft_prize_description?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -52,7 +55,10 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
     deadline: '',
     status: 'active',
     hidden: false,
-    squad_tag: ''
+    squad_tag: 'none',
+    nft_prize: '',
+    nft_prize_image: '',
+    nft_prize_description: ''
   });
 
   // Reset form when editing changes
@@ -91,6 +97,7 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
     try {
       const bountyData = {
         ...formData,
+        squad_tag: formData.squad_tag === 'none' ? null : formData.squad_tag,
         start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
         deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
         walletAddress
@@ -145,6 +152,12 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
 
   const handleEdit = (bounty: Bounty) => {
     setEditingBounty(bounty);
+    setFormData({
+      ...bounty,
+      start_date: bounty.start_date ? bounty.start_date.split('T')[0] : '',
+      deadline: bounty.deadline ? bounty.deadline.split('T')[0] : '',
+      squad_tag: bounty.squad_tag || 'none'
+    });
     setShowForm(true);
   };
 
@@ -186,7 +199,8 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
         throw new Error('Failed to update bounty');
       }
 
-      const updatedBounty = await response.json();
+      const responseData = await response.json();
+      const updatedBounty = responseData.bounty || responseData;
       onBountiesChange(bounties.map(b => b.id === bounty.id ? updatedBounty : b));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update bounty');
@@ -296,7 +310,7 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
                   <Label htmlFor="reward_type">Reward Type *</Label>
                   <Select
                     value={formData.reward_type || 'XP'}
-                    onValueChange={(value: 'XP' | 'SOL') => setFormData({ ...formData, reward_type: value })}
+                    onValueChange={(value: 'XP' | 'SOL' | 'NFT') => setFormData({ ...formData, reward_type: value })}
                   >
                     <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                       <SelectValue />
@@ -304,22 +318,60 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
                     <SelectContent>
                       <SelectItem value="XP">XP Points</SelectItem>
                       <SelectItem value="SOL">SOL Tokens</SelectItem>
+                      <SelectItem value="NFT">NFT Prize</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div>
-                  <Label htmlFor="reward">Reward Amount *</Label>
-                  <Input
-                    id="reward"
-                    type="number"
-                    value={formData.reward || ''}
-                    onChange={(e) => setFormData({ ...formData, reward: e.target.value })}
-                    placeholder="Enter reward amount"
-                    required
-                    className="bg-slate-700 border-slate-600 text-white"
-                  />
-                </div>
+                {formData.reward_type === 'NFT' ? (
+                  <>
+                    <div>
+                      <Label htmlFor="nft_prize">NFT Prize Name *</Label>
+                      <Input
+                        id="nft_prize"
+                        value={formData.nft_prize || ''}
+                        onChange={(e) => setFormData({ ...formData, nft_prize: e.target.value })}
+                        placeholder="e.g., Hoodie Academy Genesis NFT"
+                        required
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="nft_prize_image">NFT Image URL</Label>
+                      <Input
+                        id="nft_prize_image"
+                        value={formData.nft_prize_image || ''}
+                        onChange={(e) => setFormData({ ...formData, nft_prize_image: e.target.value })}
+                        placeholder="https://example.com/nft-image.png"
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="nft_prize_description">NFT Description</Label>
+                      <Textarea
+                        id="nft_prize_description"
+                        value={formData.nft_prize_description || ''}
+                        onChange={(e) => setFormData({ ...formData, nft_prize_description: e.target.value })}
+                        placeholder="Describe the NFT prize..."
+                        className="bg-slate-700 border-slate-600 text-white"
+                        rows={3}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    <Label htmlFor="reward">Reward Amount *</Label>
+                    <Input
+                      id="reward"
+                      type="number"
+                      value={formData.reward || ''}
+                      onChange={(e) => setFormData({ ...formData, reward: e.target.value })}
+                      placeholder="Enter reward amount"
+                      required
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                )}
 
                 {/* Start Date */}
                 <div>
@@ -356,7 +408,7 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
                       <SelectValue placeholder="Select squad" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No Squad</SelectItem>
+                      <SelectItem value="none">No Squad</SelectItem>
                       <SelectItem value="Creators">Creators</SelectItem>
                       <SelectItem value="Speakers">Speakers</SelectItem>
                       <SelectItem value="Raiders">Raiders</SelectItem>
@@ -412,7 +464,10 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
                       deadline: '',
                       status: 'active',
                       hidden: false,
-                      squad_tag: ''
+                      squad_tag: 'none',
+                      nft_prize: '',
+                      nft_prize_image: '',
+                      nft_prize_description: ''
                     });
                   }}
                   className="border-slate-600 text-slate-300"
@@ -466,8 +521,23 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
                     <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
                       <div className="flex items-center space-x-1">
                         <Award className="w-4 h-4" />
-                        <span>{bounty.reward} {bounty.reward_type}</span>
+                        <span>
+                          {bounty.reward_type === 'NFT' 
+                            ? (bounty.nft_prize || 'NFT Prize')
+                            : `${bounty.reward} ${bounty.reward_type}`
+                          }
+                        </span>
                       </div>
+                      
+                      {bounty.reward_type === 'NFT' && bounty.nft_prize_image && (
+                        <div className="flex items-center space-x-1">
+                          <img 
+                            src={bounty.nft_prize_image} 
+                            alt={bounty.nft_prize}
+                            className="w-6 h-6 rounded object-cover"
+                          />
+                        </div>
+                      )}
                       
                       {bounty.start_date && (
                         <div className="flex items-center space-x-1">

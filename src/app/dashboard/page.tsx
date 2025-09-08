@@ -371,7 +371,7 @@ export default function HoodieAcademy() {
                       )}
                     </div>
                   )}
-                  <Link href={isAdmin ? "/admin" : "#"}>
+                  <Link href={isAdmin ? "/admin-dashboard" : "#"}>
                     <Button
                       variant="outline"
                       size="sm"

@@ -43,7 +43,7 @@ export default function AdminAuthCheck() {
                                  if (!adminError && data?.is_admin) {
                    console.log('✅ Direct admin check successful, redirecting...');
                    // Use window.location.replace to avoid redirect loops
-                   window.location.replace('/admin');
+                   window.location.replace('/admin-dashboard');
                  } else {
                   console.log('❌ Direct admin check failed or not admin:', adminError || data);
                   setChecking(false);
@@ -75,7 +75,7 @@ export default function AdminAuthCheck() {
       // Use window.location directly to avoid redirect loops
       console.log('🔄 Using window.location to redirect to /admin');
       // Force redirect and prevent further rendering
-      window.location.replace('/admin');
+      window.location.replace('/admin-dashboard');
       return;
     }
     

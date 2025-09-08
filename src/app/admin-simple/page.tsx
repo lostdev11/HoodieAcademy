@@ -3047,29 +3047,38 @@ export default function AdminDashboard() {
                   Use the Review and Approve buttons to manage submission status.
                 </p>
                 <p className="text-sm text-slate-400 mt-1">
-                  <strong>Current Data:</strong> Showing {initialSubmissions.length} total submissions across all categories.
+                  <strong>Current Data:</strong> Showing {submissions.length} total submissions across all categories.
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="grid gap-4">
-                  {initialSubmissions.map((submission: any) => (
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="text-slate-400">Loading submissions...</div>
+                  </div>
+                ) : submissions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="text-slate-400">No submissions found</div>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {submissions.map((submission: any) => (
                     <div key={submission.id} className="border border-slate-700 rounded-lg p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h3 className="font-semibold text-lg mb-2">{submission.title}</h3>
                           <p className="text-sm text-gray-400 mb-2">{submission.description}</p>
                           <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
-                            <span>Bounty ID: {submission.bounty_id || 'No Bounty'}</span>
+                            <span>Bounty ID: {submission.bountyId || 'No Bounty'}</span>
                             <span>Squad: {submission.squad || 'No Squad'}</span>
-                            <span>Upvotes: {submission.total_upvotes || 0}</span>
+                            <span>Upvotes: {submission.totalUpvotes || 0}</span>
                             <Badge variant={submission.status === 'approved' ? 'default' : submission.status === 'rejected' ? 'destructive' : 'secondary'}>
                               {submission.status}
                             </Badge>
                           </div>
                           <div className="text-xs text-gray-400">
-                            <p>Submitted by: {submission.wallet_address?.slice(0, 8)}...{submission.wallet_address?.slice(-6)}</p>
-                            <p>Created: {new Date(submission.created_at).toLocaleDateString()}</p>
-                            {submission.image_url && (
+                            <p>Submitted by: {submission.walletAddress?.slice(0, 8)}...{submission.walletAddress?.slice(-6)}</p>
+                            <p>Created: {new Date(submission.timestamp).toLocaleDateString()}</p>
+                            {submission.imageUrl && (
                               <p>Has Image: Yes</p>
                             )}
                           </div>
@@ -3100,13 +3109,9 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                     </div>
-                  ))}
-                  {initialSubmissions.length === 0 && (
-                    <div className="text-center text-gray-400 py-8">
-                      No submissions found. Submissions will appear here when users submit content.
-                    </div>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

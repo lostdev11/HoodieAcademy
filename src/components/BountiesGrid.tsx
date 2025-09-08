@@ -24,10 +24,34 @@ export default function BountiesGrid({
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get wallet address from localStorage
-    const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
-    if (storedWallet) {
-      setWalletAddress(storedWallet);
+    // Get wallet address from localStorage - check both possible keys
+    const checkWalletConnection = () => {
+      if (typeof window !== 'undefined') {
+        const storedWallet = localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet');
+        setWalletAddress(storedWallet);
+      }
+    };
+
+    // Check on mount
+    checkWalletConnection();
+
+    // Listen for storage changes (when wallet connects/disconnects)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'walletAddress' || e.key === 'hoodie_academy_wallet') {
+        checkWalletConnection();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Also check periodically for changes
+      const interval = setInterval(checkWalletConnection, 1000);
+      
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(interval);
+      };
     }
   }, []);
 
@@ -35,7 +59,7 @@ export default function BountiesGrid({
     const fetchBounties = async () => {
       try {
         // Use the API instead of direct Supabase access
-        const response = await fetch('/api/bounties');
+        const response = await fetch('/api/bounties/');
         const result = await response.json();
         
         if (response.ok) {
@@ -61,7 +85,7 @@ export default function BountiesGrid({
       
       for (const bounty of bounties) {
         try {
-          const response = await fetch(`/api/bounties/${bounty.id}/submit?walletAddress=${walletAddress}`);
+          const response = await fetch(`/api/bounties/${bounty.id}/submit/?walletAddress=${walletAddress}`);
           if (response.ok) {
             const result = await response.json();
             if (result.submission) {
@@ -84,7 +108,7 @@ export default function BountiesGrid({
 
     setSubmittingBounty(bountyId);
     try {
-      const response = await fetch(`/api/bounties/${bountyId}/submit`, {
+      const response = await fetch(`/api/bounties/${bountyId}/submit/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -248,9 +272,26 @@ export default function BountiesGrid({
             </div>
             
             {/* User Actions */}
-            {walletAddress && bounty.status === 'active' && (
+            {bounty.status === 'active' && (
               <div className="mt-4 space-y-3">
-                {userSubmissions[bounty.id] ? (
+                {!walletAddress ? (
+                  <div className="text-center p-3 bg-gray-50 rounded-md">
+                    <p className="text-sm text-gray-600 mb-2">Connect your wallet to submit</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        // Try to trigger wallet connection
+                        if (typeof window !== 'undefined' && window.solana) {
+                          window.solana.connect();
+                        }
+                      }}
+                      className="text-xs"
+                    >
+                      Connect Wallet
+                    </Button>
+                  </div>
+                ) : userSubmissions[bounty.id] ? (
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-2 text-green-600 mb-2">
                       <CheckCircle className="w-4 h-4" />

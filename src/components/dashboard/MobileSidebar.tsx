@@ -247,7 +247,7 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
       id: 'admin',
       label: 'Admin',
       icon: <Settings className="w-5 h-5" />,
-      href: '/admin'
+      href: '/admin-dashboard'
     }] : [])
   ];
 

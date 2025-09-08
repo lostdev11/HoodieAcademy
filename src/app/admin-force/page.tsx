@@ -78,7 +78,7 @@ export default function AdminForcePage() {
   };
 
   const goToAdmin = () => {
-    window.location.href = '/admin';
+    window.location.href = '/admin-dashboard';
   };
 
   return (

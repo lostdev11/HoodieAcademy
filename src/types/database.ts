@@ -25,7 +25,7 @@ export type DBBounty = {
   title: string;
   short_desc: string;
   reward: string;
-  reward_type: 'XP' | 'SOL';
+  reward_type: 'XP' | 'SOL' | 'NFT';
   start_date: string | null; // 'YYYY-MM-DD'
   deadline: string | null; // 'YYYY-MM-DD'
   link_to: string | null;
@@ -34,6 +34,9 @@ export type DBBounty = {
   status: "active" | "completed" | "expired";
   hidden: boolean;
   submissions: number;
+  nft_prize?: string | null;
+  nft_prize_image?: string | null;
+  nft_prize_description?: string | null;
   created_at: string;
   updated_at: string;
 };

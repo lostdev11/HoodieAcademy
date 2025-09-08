@@ -166,8 +166,12 @@ export function useUserXP() {
     }
   };
 
+  // Calculate level based on total XP (1000 XP per level)
+  const level = Math.floor(profile.totalXP / 1000) + 1;
+
   return {
     ...profile,
+    level,
     completeCourse,
     badges,
     loading

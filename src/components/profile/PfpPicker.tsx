@@ -37,34 +37,50 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
 
   const showImage = isHttpUrl(selectedPfpUrl);
 
-  // Wallet state management using the same method as TokenGate
+  // Wallet state management - more flexible connection check
   useEffect(() => {
     const checkWalletConnection = () => {
-      const savedWalletAddress = localStorage.getItem('walletAddress');
+      const savedWalletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet');
       const sessionData = sessionStorage.getItem('wifhoodie_verification');
       
-      if (savedWalletAddress && sessionData) {
-        try {
-          const session = JSON.parse(sessionData);
-          const now = Date.now();
-          const sessionAge = now - session.timestamp;
-          const sessionValid = sessionAge < 24 * 60 * 60 * 1000; // 24 hours
-          
-          if (sessionValid && session.walletAddress === savedWalletAddress && session.isHolder) {
+      console.log('PfpPicker: Checking wallet connection', { savedWalletAddress, sessionData });
+      
+      if (savedWalletAddress) {
+        // If we have a wallet address, check if we also have session data
+        if (sessionData) {
+          try {
+            const session = JSON.parse(sessionData);
+            const now = Date.now();
+            const sessionAge = now - session.timestamp;
+            const sessionValid = sessionAge < 24 * 60 * 60 * 1000; // 24 hours
+            
+            if (sessionValid && session.walletAddress === savedWalletAddress && session.isHolder) {
+              setOwner(savedWalletAddress);
+              setConnected(true);
+              console.log('PfpPicker: Connected with session data');
+            } else {
+              // Fallback: just use wallet address without session verification
+              setOwner(savedWalletAddress);
+              setConnected(true);
+              console.log('PfpPicker: Connected with wallet address only');
+            }
+          } catch (error) {
+            console.error("❌ Debug: Error parsing session data:", error);
+            // Fallback: just use wallet address
             setOwner(savedWalletAddress);
             setConnected(true);
-          } else {
-            setOwner(null);
-            setConnected(false);
+            console.log('PfpPicker: Connected with wallet address (session error)');
           }
-        } catch (error) {
-          console.error("❌ Debug: Error parsing session data:", error);
-          setOwner(null);
-          setConnected(false);
+        } else {
+          // No session data, but we have wallet address - allow connection
+          setOwner(savedWalletAddress);
+          setConnected(true);
+          console.log('PfpPicker: Connected with wallet address (no session)');
         }
       } else {
         setOwner(null);
         setConnected(false);
+        console.log('PfpPicker: No wallet address found');
       }
     };
 
@@ -207,8 +223,9 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
             variant="secondary"
             onClick={() => {
               if (!connected) {
-                // Redirect to dashboard to connect wallet
-                window.location.href = '/';
+                // Show a more helpful message instead of redirecting
+                alert('Please connect your wallet first to set a profile picture. You can connect your wallet from the dashboard.');
+                return;
               }
             }}
           >
@@ -224,7 +241,14 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
             </p>
           </DialogHeader>
 
-          {!connected && <div className="py-6 text-sm opacity-70">Connect your wallet to see your NFTs.</div>}
+          {!connected && (
+            <div className="py-6 text-center">
+              <div className="text-sm opacity-70 mb-4">Connect your wallet to see your NFTs.</div>
+              <div className="text-xs text-gray-500">
+                Don't have WifHoodie NFTs? You can still use emoji avatars!
+              </div>
+            </div>
+          )}
           {loading && <div className="py-6">Loading your NFTs…</div>}
 
           {!loading && connected && (

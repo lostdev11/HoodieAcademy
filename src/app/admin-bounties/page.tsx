@@ -10,13 +10,16 @@ interface Bounty {
   title: string;
   short_desc: string;
   reward: string;
-  reward_type: 'XP' | 'SOL';
+  reward_type: 'XP' | 'SOL' | 'NFT';
   start_date?: string;
   deadline?: string;
   status: 'active' | 'completed' | 'expired';
   hidden: boolean;
   squad_tag?: string;
   submissions?: number;
+  nft_prize?: string;
+  nft_prize_image?: string;
+  nft_prize_description?: string;
   created_at?: string;
   updated_at?: string;
 }

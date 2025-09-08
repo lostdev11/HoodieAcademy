@@ -45,6 +45,9 @@ import { useRealtimeList } from '@/hooks/useRealtimeList';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { DBAnnouncement, DBEvent, DBBounty } from '@/types/database';
 import { Course } from '@/types/course';
+import { SubmissionsManager } from '@/components/admin/SubmissionsManager';
+import { UsersManager } from '@/components/admin/UsersManager';
+import { EnhancedUsersManager } from '@/components/admin/EnhancedUsersManager';
 
 // Type for file-based courses (from JSON files)
 interface CourseFile {
@@ -890,71 +893,14 @@ export default function AdminDashboard({
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-6">
-            <Card className="bg-slate-800/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  User Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-700">
-                        <th className="text-left p-2">User</th>
-                        <th className="text-left p-2">Squad</th>
-                        <th className="text-left p-2">Status</th>
-                        <th className="text-left p-2">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((user) => (
-                        <tr key={user.id} className="border-b border-slate-700/50">
-                          <td className="p-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
-                                <User className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <p className="font-medium">{user.display_name || 'Anonymous'}</p>
-                                <p className="text-xs text-slate-400">{user.wallet_address?.slice(0, 8)}...{user.wallet_address?.slice(-6)}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-2">
-                            <Badge variant="outline">{user.squad || 'No Squad'}</Badge>
-                          </td>
-                          <td className="p-2">
-                            <Badge variant={user.is_admin ? "default" : "secondary"}>
-                              {user.is_admin ? 'Admin' : 'User'}
-                            </Badge>
-                          </td>
-                          <td className="p-2">
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleViewUser(user)}
-                              >
-                                <Eye className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEditUser(user)}
-                              >
-                                <Edit className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+            <EnhancedUsersManager 
+              walletAddress={walletAddress}
+              onViewUserSubmissions={(user) => {
+                // Switch to submissions tab and filter by user
+                setActiveTab('submissions');
+                console.log('Viewing submissions for user:', user.displayName);
+              }}
+            />
           </TabsContent>
 
           {/* Courses Tab */}
@@ -1850,79 +1796,7 @@ export default function AdminDashboard({
 
           {/* Submissions Tab */}
           <TabsContent value="submissions" className="space-y-6">
-            <Card className="bg-slate-800/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
-                  All Submissions
-                </CardTitle>
-                <p className="text-sm text-slate-400 mt-2">
-                  All user submissions across the platform. This includes bounty submissions, course submissions, and other content.
-                  Use the Review and Approve buttons to manage submission status.
-                </p>
-                <p className="text-sm text-slate-400 mt-1">
-                  <strong>Current Data:</strong> Showing {initialSubmissions.length} total submissions across all categories.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4">
-                  {initialSubmissions.map((submission: any) => (
-                    <div key={submission.id} className="border border-slate-700 rounded-lg p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg mb-2">{submission.title}</h3>
-                          <p className="text-sm text-gray-400 mb-2">{submission.description}</p>
-                          <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
-                            <span>Bounty ID: {submission.bounty_id || 'No Bounty'}</span>
-                            <span>Squad: {submission.squad || 'No Squad'}</span>
-                            <span>Upvotes: {submission.total_upvotes || 0}</span>
-                            <Badge variant={submission.status === 'approved' ? 'default' : submission.status === 'rejected' ? 'destructive' : 'secondary'}>
-                              {submission.status}
-                            </Badge>
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            <p>Submitted by: {submission.wallet_address?.slice(0, 8)}...{submission.wallet_address?.slice(-6)}</p>
-                            <p>Created: {new Date(submission.created_at).toLocaleDateString()}</p>
-                            {submission.image_url && (
-                              <p>Has Image: Yes</p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-xs"
-                            onClick={() => {
-                              // TODO: Implement submission review functionality
-                              alert('Submission review functionality coming soon!');
-                            }}
-                          >
-                            <Eye className="w-3 h-3 mr-1" /> Review
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="text-xs"
-                            onClick={() => {
-                              // TODO: Implement submission approval/rejection
-                              alert('Submission approval functionality coming soon!');
-                            }}
-                          >
-                            <CheckSquare className="w-3 h-3 mr-1" /> Approve
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {initialSubmissions.length === 0 && (
-                    <div className="text-center text-gray-400 py-8">
-                      No submissions found. Submissions will appear here when users submit content.
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <SubmissionsManager />
           </TabsContent>
 
           {/* Announcements Tab */}

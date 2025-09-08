@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink, Target, Upload, Image as ImageIcon } from 'lucide-react';
+import { Pencil, Save, User, Award, BookOpen, Wallet, Users, ChevronDown, ChevronUp, CheckCircle, TrendingUp, Home, Copy, ExternalLink, Target, Upload, Image as ImageIcon, Star, Zap, Trophy, Medal, Crown, Gem, Shield, AlertCircle } from 'lucide-react';
 import { squadTracks } from '@/lib/squadData';
 import Link from 'next/link';
 import { formatWalletAddress } from '@/lib/utils';
@@ -17,6 +17,8 @@ import { NFT } from '@/services/nft-service';
 import { fetchUserByWallet, isSupabaseConfigured } from '@/lib/supabase';
 import { BountySubmissionForm, BountySubmissionData } from '@/components/bounty';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
+import { useUserXP } from '@/hooks/useUserXP';
+import { useUserBounties } from '@/hooks/useUserBounties';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -80,12 +82,33 @@ export function ProfileView() {
   // Wallet connection
   const { connectWallet, disconnectWallet: disconnectWalletHook } = useWalletSupabase();
 
+  // XP System integration
+  const { 
+    totalXP = 0, 
+    level = 1, 
+    completedCourses = [], 
+    badges = [], 
+    loading: xpLoading = false,
+    completeCourse 
+  } = useUserXP();
+
+  // Bounty System integration
+  const {
+    submissions: bountySubmissions,
+    stats: bountyStats,
+    loading: bountyLoading,
+    error: bountyError
+  } = useUserBounties(wallet);
+
   // Auto-detect connected wallet from database or session
   useEffect(() => {
     const detectConnectedWallet = async () => {
-      // TODO: Get connected wallet from database or wallet connection state
-      // For now, set empty wallet as we're removing localStorage
-      const currentWallet = '';
+      // Check localStorage for wallet address
+      const currentWallet = typeof window !== 'undefined' 
+        ? localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet') || ''
+        : '';
+      
+      console.log('ProfileView: Detected wallet:', currentWallet);
       setWallet(currentWallet);
 
       // Try to fetch user data from Supabase first
@@ -394,15 +417,24 @@ export function ProfileView() {
               <p className="text-gray-300 mb-4">
                 Please connect your wallet to view your profile.
               </p>
-              <Button
-                asChild
-                className="bg-cyan-600 hover:bg-cyan-700"
-              >
-                <Link href="/">
-                  <Home className="w-4 h-4 mr-2" />
-                  Go to Dashboard
-                </Link>
-              </Button>
+              <div className="space-y-3">
+                <Button
+                  asChild
+                  className="bg-cyan-600 hover:bg-cyan-700"
+                >
+                  <Link href="/">
+                    <Home className="w-4 h-4 mr-2" />
+                    Go to Dashboard
+                  </Link>
+                </Button>
+                <Button
+                  onClick={handleWalletConnect}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  <Wallet className="w-4 h-4 mr-2" />
+                  Connect Wallet
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -439,8 +471,8 @@ export function ProfileView() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="flex-1 flex flex-col items-center py-12 px-4">
-        {/* Back to Dashboard Button */}
-        <div className="w-full max-w-2xl mb-6">
+        {/* Navigation Buttons */}
+        <div className="w-full max-w-2xl mb-6 flex gap-3">
           <Button
             asChild
             variant="outline"
@@ -449,6 +481,16 @@ export function ProfileView() {
             <Link href="/">
               <Home className="w-4 h-4 mr-2" />
               Back to Dashboard
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="bg-slate-800/50 hover:bg-slate-700/50 text-purple-400 hover:text-purple-300 border-purple-500/30 hover:border-purple-400/50 transition-all duration-300"
+          >
+            <Link href="/admin-dashboard">
+              <Shield className="w-4 h-4 mr-2" />
+              Admin Dashboard
             </Link>
           </Button>
         </div>
@@ -647,23 +689,55 @@ export function ProfileView() {
                     onChange={(url) => handleProfileImageChange(url || '🧑‍🎓')}
                     userId={wallet}
                   />
+                  
+                  {/* Emoji Picker Fallback */}
+                  <div className="text-center">
+                    <p className="text-xs text-gray-400 mb-2">Or choose an emoji:</p>
+                    <div className="flex gap-2 flex-wrap justify-center">
+                      {['🧑‍🎓', '🎨', '🧠', '🎤', '⚔️', '🦅', '🏦', '👨‍💻', '👩‍💻', '🤖', '🎭', '🎪'].map((emoji) => (
+                        <button
+                          key={emoji}
+                          onClick={() => handleProfileImageChange(emoji)}
+                          className={`w-8 h-8 text-lg rounded-full border-2 transition-all ${
+                            profileImage === emoji 
+                              ? 'border-cyan-400 bg-cyan-400/20' 
+                              : 'border-gray-600 hover:border-cyan-300 hover:bg-cyan-400/10'
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 
                 {/* Squad Badge */}
                 {userSquad && (
-                  <div className="text-center">
+                  <div className="text-center space-y-3">
                     <SquadBadge squad={getSquadForBadge()} />
+                    <div className="text-xs text-gray-400">
+                      {getSquadDisplayName()}
+                    </div>
+                    <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                      <Crown className="w-3 h-3 mr-1" />
+                      Squad Member
+                    </Badge>
                   </div>
                 )}
                 
                 <div className="flex flex-wrap gap-2 justify-center">
-                  {userData?.badges?.length > 0 ? (
-                    userData.badges.map((badge: any) => (
+                  {badges.filter(b => b.unlocked).length > 0 ? (
+                    badges.filter(b => b.unlocked).slice(0, 4).map((badge) => (
                       <Badge key={badge.id} className="flex items-center gap-1 px-3 py-1 border border-cyan-500/30 bg-slate-900/60 text-cyan-300">
-                        {badge.icon} {badge.label}
+                        {badge.icon} {badge.name}
                       </Badge>
                     ))
                   ) : (
                     <p className="text-gray-400 text-sm">No badges earned yet</p>
+                  )}
+                  {badges.filter(b => b.unlocked).length > 4 && (
+                    <Badge className="bg-slate-600/50 text-gray-300 border-gray-500/30">
+                      +{badges.filter(b => b.unlocked).length - 4} more
+                    </Badge>
                   )}
                 </div>
 
@@ -691,6 +765,102 @@ export function ProfileView() {
                     )}
                   </div>
                 )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* XP System Card */}
+        <Card className="w-full max-w-2xl bg-slate-800/60 border-purple-500/30 mb-8">
+          <CardHeader>
+            <CardTitle className="text-purple-400 flex items-center gap-2">
+              <Zap className="w-6 h-6" />
+              Experience & Progress
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {/* Level and XP Display */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                      {level}
+                    </div>
+                    <div className="absolute -top-1 -right-1 bg-yellow-500 text-slate-900 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                      ★
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Level {level}</h3>
+                    <p className="text-purple-400 font-mono">{totalXP.toLocaleString()} XP</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-400">Next Level</p>
+                  <p className="text-purple-400 font-semibold">
+                    {((level) * 1000).toLocaleString()} XP
+                  </p>
+                </div>
+              </div>
+
+              {/* XP Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-300">Progress to Level {level + 1}</span>
+                  <span className="text-purple-400">
+                    {totalXP % 1000}/1,000 XP
+                  </span>
+                </div>
+                <Progress 
+                  value={(totalXP % 1000) / 10} 
+                  className="h-3 bg-slate-700 [&>div]:bg-gradient-to-r [&>div]:from-purple-500 [&>div]:to-pink-500" 
+                />
+              </div>
+
+              {/* XP Breakdown */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <BookOpen className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
+                  <p className="text-cyan-400 font-semibold">{completedCourses.length}</p>
+                  <p className="text-xs text-gray-400">Courses</p>
+                </div>
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <Trophy className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
+                  <p className="text-yellow-400 font-semibold">{badges.filter(b => b.unlocked).length}</p>
+                  <p className="text-xs text-gray-400">Badges</p>
+                </div>
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <Target className="w-6 h-6 text-orange-400 mx-auto mb-2" />
+                  <p className="text-orange-400 font-semibold">{bountyStats.totalSubmissions}</p>
+                  <p className="text-xs text-gray-400">Bounties</p>
+                </div>
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <Star className="w-6 h-6 text-pink-400 mx-auto mb-2" />
+                  <p className="text-pink-400 font-semibold">{totalXP}</p>
+                  <p className="text-xs text-gray-400">Total XP</p>
+                </div>
+              </div>
+
+              {/* Recent Badges */}
+              <div>
+                <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                  <Medal className="w-4 h-4" />
+                  Recent Badges
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {badges.filter(b => b.unlocked).slice(0, 6).map((badge) => (
+                    <Badge 
+                      key={badge.id} 
+                      className="flex items-center gap-1 px-3 py-1 border border-purple-500/30 bg-slate-900/60 text-purple-300"
+                    >
+                      {badge.icon} {badge.name}
+                    </Badge>
+                  ))}
+                  {badges.filter(b => b.unlocked).length === 0 && (
+                    <p className="text-gray-400 text-sm">No badges earned yet</p>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -797,36 +967,89 @@ export function ProfileView() {
           <CardHeader>
             <CardTitle className="text-green-400 flex items-center gap-2">
               <BookOpen className="w-5 h-5" />
-              Completed Courses
+              Course Progress & Completion
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {userData?.completedCourses?.length > 0 ? (
-                userData.completedCourses.map((course: any) => (
-                  <div key={course.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-cyan-500/20 rounded-lg">
-                        <BookOpen className="w-5 h-5 text-cyan-400" />
+              {/* Course Progress Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="text-center p-4 bg-slate-700/30 rounded-lg">
+                  <div className="text-2xl font-bold text-green-400">{completedCourses.length}</div>
+                  <div className="text-sm text-gray-400">Completed</div>
+                </div>
+                <div className="text-center p-4 bg-slate-700/30 rounded-lg">
+                  <div className="text-2xl font-bold text-cyan-400">{completedCourses.length * 100}</div>
+                  <div className="text-sm text-gray-400">XP Earned</div>
+                </div>
+                <div className="text-center p-4 bg-slate-700/30 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-400">0</div>
+                  <div className="text-sm text-gray-400">In Progress</div>
+                </div>
+              </div>
+
+              {/* Completed Courses */}
+              {completedCourses.length > 0 ? (
+                <div className="space-y-3">
+                  <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    Completed Courses
+                  </h4>
+                  {completedCourses.map((course: string, index: number) => (
+                    <div key={course} className="flex items-center justify-between p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-500/20 rounded-lg">
+                          <CheckCircle className="w-5 h-5 text-green-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-white">
+                            {course.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </h4>
+                          <p className="text-sm text-gray-400">Completed</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-white">{course.title}</h4>
-                        <p className="text-sm text-gray-400">Progress: {Math.round(course.progress)}%</p>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-green-400">+100 XP</p>
+                          <p className="text-xs text-gray-400">Reward</p>
+                        </div>
+                        <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                          Complete
+                        </Badge>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-cyan-400">{course.score}%</p>
-                        <p className="text-xs text-gray-400">Final Score</p>
-                      </div>
-                      <CheckCircle className="w-5 h-5 text-green-400" />
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               ) : (
                 <div className="text-center py-8">
                   <BookOpen className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-400 text-sm">No courses completed yet</p>
+                  <p className="text-gray-400 text-sm mb-4">No courses completed yet</p>
+                  <Button asChild className="bg-cyan-600 hover:bg-cyan-700">
+                    <Link href="/courses">
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      Start Learning
+                    </Link>
+                  </Button>
+                </div>
+              )}
+
+              {/* Course Recommendations */}
+              {userSquad && (
+                <div className="border-t border-slate-600/30 pt-4">
+                  <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                    <Star className="w-4 h-4 text-yellow-400" />
+                    Recommended for {getSquadDisplayName()}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <h5 className="font-semibold text-white text-sm">Advanced Trading Psychology</h5>
+                      <p className="text-xs text-gray-400">Perfect for your squad's focus</p>
+                    </div>
+                    <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <h5 className="font-semibold text-white text-sm">NFT Market Analysis</h5>
+                      <p className="text-xs text-gray-400">Build on your strengths</p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -856,67 +1079,124 @@ export function ProfileView() {
           <CardHeader>
             <CardTitle className="text-orange-400 flex items-center gap-2">
               <Target className="w-5 h-5" />
-              Your Bounty Submissions
-              {/* Contribution Badge */}
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 ml-auto">
-                🏆 Contributor
-              </Badge>
+              Bounty Activity & Submissions
+              {bountyStats.wins > 0 && (
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30 ml-auto">
+                  🏆 {bountyStats.wins} Win{bountyStats.wins > 1 ? 's' : ''}
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Submission History */}
-              <div className="mb-6">
-                <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
-                  <Upload className="w-4 h-4" />
-                  Recent Submissions
-                </h4>
-                <div className="space-y-3">
-                  {/* Sample submissions - in real app this would come from API/database */}
-                  <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-orange-500/20 rounded-lg">
-                          <ImageIcon className="w-4 h-4 text-orange-400" />
-                        </div>
-                        <div>
-                          <h5 className="font-semibold text-white">Hoodie Academy Visual</h5>
-                          <p className="text-sm text-gray-400">Submitted 2 days ago</p>
-                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
-                            Creators
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-orange-400">Pending Review</p>
-                        <p className="text-xs text-gray-400">Sit tight, the Council is watching...</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-500/20 rounded-lg">
-                          <Award className="w-4 h-4 text-green-400" />
-                        </div>
-                        <div>
-                          <h5 className="font-semibold text-white">Trading Psychology Meme</h5>
-                          <p className="text-sm text-gray-400">Submitted 1 week ago</p>
-                          <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
-                            Creators
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-green-400">Approved</p>
-                        <p className="text-xs text-gray-400">🧱 Added to the Academy Wall</p>
-                        <p className="text-xs text-yellow-400">💰 Payout: 1.8 SOL</p>
-                      </div>
-                    </div>
-                  </div>
+              {/* Bounty Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <div className="text-xl font-bold text-orange-400">{bountyStats.totalSubmissions}</div>
+                  <div className="text-xs text-gray-400">Total Submissions</div>
+                </div>
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <div className="text-xl font-bold text-green-400">{bountyStats.wins}</div>
+                  <div className="text-xs text-gray-400">Wins</div>
+                </div>
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <div className="text-xl font-bold text-yellow-400">{bountyStats.totalXP}</div>
+                  <div className="text-xs text-gray-400">Bounty XP</div>
+                </div>
+                <div className="text-center p-3 bg-slate-700/30 rounded-lg">
+                  <div className="text-xl font-bold text-purple-400">{bountyStats.totalSOL.toFixed(2)}</div>
+                  <div className="text-xs text-gray-400">SOL Earned</div>
                 </div>
               </div>
+
+              {/* Submission History */}
+              {bountyLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-400 mx-auto mb-2"></div>
+                  <p className="text-gray-400 text-sm">Loading bounty submissions...</p>
+                </div>
+              ) : bountyError ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                  <p className="text-red-400 text-sm">Error loading bounty data</p>
+                </div>
+              ) : bountySubmissions.length > 0 ? (
+                <div className="space-y-3">
+                  <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    Recent Submissions
+                  </h4>
+                  {bountySubmissions.slice(0, 5).map((submission) => (
+                    <div key={submission.id} className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${
+                            submission.placement 
+                              ? 'bg-green-500/20' 
+                              : 'bg-orange-500/20'
+                          }`}>
+                            {submission.placement ? (
+                              <Award className="w-4 h-4 text-green-400" />
+                            ) : (
+                              <ImageIcon className="w-4 h-4 text-orange-400" />
+                            )}
+                          </div>
+                          <div>
+                            <h5 className="font-semibold text-white">
+                              {submission.bounty?.title || 'Unknown Bounty'}
+                            </h5>
+                            <p className="text-sm text-gray-400">
+                              Submitted {new Date(submission.created_at).toLocaleDateString()}
+                            </p>
+                            {submission.bounty?.squad_tag && (
+                              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs mt-1">
+                                {submission.bounty.squad_tag}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {submission.placement ? (
+                            <>
+                              <p className="text-sm font-semibold text-green-400">
+                                {submission.placement === 'first' ? '🥇 1st Place' :
+                                 submission.placement === 'second' ? '🥈 2nd Place' : '🥉 3rd Place'}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                +{submission.xp_awarded} XP
+                                {submission.sol_prize > 0 && ` • ${submission.sol_prize} SOL`}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-sm font-semibold text-orange-400">Pending Review</p>
+                              <p className="text-xs text-gray-400">Under consideration</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {bountySubmissions.length > 5 && (
+                    <div className="text-center">
+                      <Button variant="outline" size="sm" className="text-orange-400 border-orange-500/30">
+                        View All {bountySubmissions.length} Submissions
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Target className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-400 text-sm mb-4">No bounty submissions yet</p>
+                  <Button asChild className="bg-orange-600 hover:bg-orange-700">
+                    <Link href="/bounties">
+                      <Target className="w-4 h-4 mr-2" />
+                      Browse Bounties
+                    </Link>
+                  </Button>
+                </div>
+              )}
 
               {/* Submit New Bounty */}
               <div className="border-t border-slate-600/30 pt-4">

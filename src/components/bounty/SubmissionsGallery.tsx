@@ -30,13 +30,19 @@ export const SubmissionsGallery = ({
 
   const fetchSubmissions = async () => {
     try {
+      setLoading(true);
       const response = await fetch('/api/submissions');
       if (response.ok) {
         const data = await response.json();
-        setSubmissions(data);
+        console.log('Fetched submissions:', data);
+        setSubmissions(Array.isArray(data) ? data : []);
+      } else {
+        console.error('Failed to fetch submissions:', response.status, response.statusText);
+        setSubmissions([]);
       }
     } catch (error) {
       console.error('Error fetching submissions:', error);
+      setSubmissions([]);
     } finally {
       setLoading(false);
     }

@@ -93,7 +93,7 @@ export default function AdminDirectPage() {
   };
 
   const goToAdmin = () => {
-    window.location.href = '/admin';
+    window.location.href = '/admin-dashboard';
   };
 
   const goToAdminForce = () => {

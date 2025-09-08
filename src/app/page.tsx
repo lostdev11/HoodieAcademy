@@ -312,12 +312,12 @@ export default function HoodieAcademy() {
         <div className="flex-1 flex flex-col">
           {/* Header */}
           <header className="bg-slate-800/50 border-b border-cyan-500/30 px-4 py-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center space-x-4 sm:space-x-6">
                 {/* Mobile Navigation */}
                 <MobileNavigation userSquad={userSquad} isAdmin={isAdmin} />
                 
-                <div>
+                <div className="flex-1 min-w-0">
                   <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-cyan-400">🏛️ Hoodie Academy</h1>
                   <p className="text-sm sm:text-base text-gray-300">Home of elite Web3 scholars and the future of decentralized learning</p>
                 </div>
@@ -329,12 +329,12 @@ export default function HoodieAcademy() {
                   </div>
                 )}
               </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full">
                 {/* Wallet Info */}
                 {walletAddress && (
-                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30 w-full sm:w-auto">
-                    <User className="w-4 h-4 text-cyan-400" />
-                    <span className="text-sm text-cyan-400 font-mono">
+                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30 w-full sm:w-auto min-w-0">
+                    <User className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                    <span className="text-sm text-cyan-400 font-mono truncate">
                       {isLoadingSns ? (
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
@@ -390,7 +390,7 @@ export default function HoodieAcademy() {
                 )}
                 
                 {/* Admin Button - Always show, but access restricted */}
-                <Link href={isAdmin ? "/admin" : "#"}>
+                <Link href={isAdmin ? "/admin-dashboard" : "#"}>
                   <Button
                     variant="outline"
                     size="sm"
@@ -433,7 +433,7 @@ export default function HoodieAcademy() {
           </header>
 
           {/* Home Page Content */}
-          <main className="flex-1 px-4 py-6 space-y-6">
+          <main className="flex-1 px-4 py-6 space-y-6 max-w-full overflow-x-hidden">
             {/* Welcome Header */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-cyan-400 mb-2">🏛️ Welcome to Hoodie Academy</h1>
@@ -443,14 +443,14 @@ export default function HoodieAcademy() {
             {/* Squad Assignment CTA - Only show if user hasn't been assigned a squad */}
             {!userSquad && (
               <Card className={`bg-gradient-to-r from-purple-800/50 to-pink-800/50 border-purple-500/30 ${squadLockExpired ? '' : 'animate-pulse'}`}>
-                <CardContent className="p-8 text-center">
-                  <div className="flex items-center justify-center mb-4">
-                    <Trophy className="w-12 h-12 text-purple-400 mr-4" />
-                    <div>
-                      <h2 className="text-2xl font-bold text-purple-400 mb-2">
+                <CardContent className="p-4 sm:p-6 lg:p-8 text-center">
+                  <div className="flex flex-col sm:flex-row items-center justify-center mb-4 gap-4">
+                    <Trophy className="w-12 h-12 text-purple-400 flex-shrink-0" />
+                    <div className="text-center sm:text-left">
+                      <h2 className="text-xl sm:text-2xl font-bold text-purple-400 mb-2">
                         {squadLockExpired ? 'Choose a New Squad' : 'Choose Your Squad'}
                       </h2>
-                      <p className="text-gray-300">
+                      <p className="text-gray-300 text-sm sm:text-base">
                         {squadLockExpired ? 'Your 30-day lock period has expired. Time to explore new paths!' : 'Discover your path in the Hoodie Academy'}
                       </p>
                     </div>
@@ -640,7 +640,7 @@ export default function HoodieAcademy() {
                     <p className="text-sm text-gray-300 mb-4">
                       Latest memes, promo flyers, and course visuals submitted by the community.
                     </p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       {mediaWall.map((item, index) => (
                         <div key={index} className="relative group">
                           <div className="aspect-square bg-slate-700 rounded-lg overflow-hidden border border-slate-600/30 group-hover:border-pink-500/50 transition-colors">
@@ -675,7 +675,7 @@ export default function HoodieAcademy() {
               <CardContent className="p-6">
                 <div className="text-center">
                   <h3 className="text-lg font-semibold text-purple-400 mb-4">🔥 Want to appear on the Home Page?</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-400" />
                       <span className="text-gray-300">Complete 2 assignments this week</span>

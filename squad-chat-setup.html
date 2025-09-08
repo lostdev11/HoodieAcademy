@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Squad Chat Database Setup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            background-color: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #444;
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+        }
+        .step {
+            background-color: #333;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .sql-code {
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #555;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            color: #f8f8f2;
+        }
+        .copy-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        .copy-btn:hover {
+            background-color: #45a049;
+        }
+        .warning {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .success {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Squad Chat Database Setup</h1>
+        
+        <div class="warning">
+            <strong>⚠️ IMPORTANT:</strong> You need to create the squad_chat table in your Supabase database to enable chat functionality.
+        </div>
+
+        <div class="step">
+            <h2>📋 Step-by-Step Instructions:</h2>
+            <ol>
+                <li>Go to your <strong>Supabase Dashboard</strong></li>
+                <li>Navigate to <strong>SQL Editor</strong></li>
+                <li>Copy the SQL script below</li>
+                <li>Paste it into the SQL Editor</li>
+                <li>Click <strong>Run</strong> to execute the script</li>
+                <li>Refresh your squad chat page</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h2>📝 SQL Script to Run:</h2>
+            <div class="sql-code" id="sqlScript">-- Create the squad_chat table
+CREATE TABLE IF NOT EXISTS squad_chat (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  text TEXT NOT NULL,
+  sender TEXT NOT NULL,
+  sender_display_name TEXT,
+  squad TEXT NOT NULL,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_squad_chat_squad ON squad_chat(squad);
+CREATE INDEX IF NOT EXISTS idx_squad_chat_sender ON squad_chat(sender);
+CREATE INDEX IF NOT EXISTS idx_squad_chat_timestamp ON squad_chat(timestamp);
+
+-- Enable RLS (Row Level Security)
+ALTER TABLE squad_chat ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for squad_chat
+CREATE POLICY "Users can view squad messages" ON squad_chat
+  FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert squad messages" ON squad_chat
+  FOR INSERT WITH CHECK (true);
+
+-- Insert sample welcome messages
+INSERT INTO squad_chat (text, sender, sender_display_name, squad) VALUES
+('Welcome to the Hoodie Creators squad! 🎨', 'system', 'System', '🎨 Hoodie Creators'),
+('Welcome to the Hoodie Decoders squad! 🧠', 'system', 'System', '🧠 Hoodie Decoders'),
+('Welcome to the Hoodie Speakers squad! 🎤', 'system', 'System', '🎤 Hoodie Speakers'),
+('Welcome to the Hoodie Raiders squad! ⚔️', 'system', 'System', '⚔️ Hoodie Raiders'),
+('Welcome to the Hoodie Rangers squad! 🦅', 'system', 'System', '🦅 Hoodie Rangers'),
+('Welcome to the Treasury Builders squad! 🏦', 'system', 'System', '🏦 Treasury Builders')
+ON CONFLICT DO NOTHING;</div>
+            <button class="copy-btn" onclick="copyToClipboard()">📋 Copy SQL Script</button>
+        </div>
+
+        <div class="step">
+            <h2>✅ What This Script Does:</h2>
+            <ul>
+                <li>Creates the <code>squad_chat</code> table with proper schema</li>
+                <li>Adds indexes for better performance</li>
+                <li>Enables Row Level Security (RLS)</li>
+                <li>Creates policies to allow users to view and send messages</li>
+                <li>Inserts welcome messages for each squad</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h2>🧪 After Running the Script:</h2>
+            <ol>
+                <li>Go back to your squad chat page</li>
+                <li>Try sending a message</li>
+                <li>You should see "Message sent successfully!" instead of the local storage message</li>
+                <li>Messages will now be saved to the database and visible to other squad members</li>
+            </ol>
+        </div>
+
+        <div class="success">
+            <strong>🎉 Once you run this script, your squad chat will be fully functional!</strong>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard() {
+            const sqlScript = document.getElementById('sqlScript').textContent;
+            navigator.clipboard.writeText(sqlScript).then(function() {
+                alert('SQL script copied to clipboard!');
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = sqlScript;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('SQL script copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>

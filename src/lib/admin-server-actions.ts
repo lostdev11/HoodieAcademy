@@ -52,7 +52,7 @@ export async function createOrUpdateBounty(input: {
   title: string;
   short_desc: string;
   reward: string;
-  reward_type?: 'XP' | 'SOL';
+  reward_type?: 'XP' | 'SOL' | 'NFT';
   start_date?: string | null;   // 'YYYY-MM-DDTHH:MM'
   deadline?: string | null;     // 'YYYY-MM-DDTHH:MM'
   link_to?: string | null;

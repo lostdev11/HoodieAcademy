@@ -19,13 +19,32 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       status, 
       hidden, 
       squad_tag, 
+      nft_prize,
+      nft_prize_image,
+      nft_prize_description,
       walletAddress 
     } = body;
 
     // Validate required fields
-    if (!title || !short_desc || !reward || !walletAddress) {
+    if (!title || !short_desc || !walletAddress) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // For NFT rewards, validate NFT prize name
+    if (reward_type === 'NFT' && !nft_prize) {
+      return NextResponse.json(
+        { error: 'NFT prize name is required for NFT rewards' },
+        { status: 400 }
+      );
+    }
+
+    // For XP/SOL rewards, validate reward amount
+    if ((reward_type === 'XP' || reward_type === 'SOL') && !reward) {
+      return NextResponse.json(
+        { error: 'Reward amount is required for XP/SOL rewards' },
         { status: 400 }
       );
     }
@@ -48,13 +67,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const bountyData = {
       title,
       short_desc,
-      reward,
+      reward: reward_type === 'NFT' ? (nft_prize || '') : reward,
       reward_type: reward_type || 'XP',
       start_date: start_date ? new Date(start_date).toISOString() : null,
       deadline: deadline ? new Date(deadline).toISOString() : null,
       status: status || 'active',
       hidden: hidden || false,
       squad_tag: squad_tag || null,
+      nft_prize: nft_prize || null,
+      nft_prize_image: nft_prize_image || null,
+      nft_prize_description: nft_prize_description || null,
       updated_at: new Date().toISOString()
     };
 

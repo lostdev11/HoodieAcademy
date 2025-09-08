@@ -453,7 +453,7 @@ export const academyNavigationSections: NavigationSection[] = [
         id: 'admin-dashboard',
         label: 'Admin Dashboard',
         icon: <BarChart3 className="w-4 h-4" />,
-        href: '/admin',
+        href: '/admin-dashboard',
         description: 'Manage academy settings and users',
         adminOnly: true
       },

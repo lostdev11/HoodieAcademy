@@ -69,11 +69,30 @@ export async function POST(request: Request) {
       deadline, 
       status = 'active', 
       hidden = false,
+      nft_prize,
+      nft_prize_image,
+      nft_prize_description,
       walletAddress 
     } = body;
     
-    if (!title || !short_desc || !reward || !walletAddress) {
+    if (!title || !short_desc || !walletAddress) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // For NFT rewards, validate NFT prize name
+    if (reward_type === 'NFT' && !nft_prize) {
+      return NextResponse.json(
+        { error: 'NFT prize name is required for NFT rewards' },
+        { status: 400 }
+      );
+    }
+
+    // For XP/SOL rewards, validate reward amount
+    if ((reward_type === 'XP' || reward_type === 'SOL') && !reward) {
+      return NextResponse.json(
+        { error: 'Reward amount is required for XP/SOL rewards' },
+        { status: 400 }
+      );
     }
 
     // Check if user is admin
@@ -94,12 +113,15 @@ export async function POST(request: Request) {
       title,
       short_desc,
       squad_tag: squad_tag || null,
-      reward,
+      reward: reward_type === 'NFT' ? (nft_prize || '') : reward,
       reward_type: reward_type || 'XP',
       start_date: start_date ? new Date(start_date).toISOString() : null,
       deadline: deadline ? new Date(deadline).toISOString() : null,
       status,
       hidden,
+      nft_prize: nft_prize || null,
+      nft_prize_image: nft_prize_image || null,
+      nft_prize_description: nft_prize_description || null,
       submissions: 0, // Initialize with 0 submissions
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()

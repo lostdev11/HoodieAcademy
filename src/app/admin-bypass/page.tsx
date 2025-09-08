@@ -144,7 +144,7 @@ export default function AdminBypassPage() {
             <CardContent>
               <p>You have admin access! You can now navigate to the admin dashboard.</p>
               <Button 
-                onClick={() => window.location.href = '/admin'} 
+                onClick={() => window.location.href = '/admin-dashboard'} 
                 className="mt-4 bg-green-600 hover:bg-green-700"
               >
                 Go to Admin Dashboard

@@ -83,9 +83,9 @@ const navigationGroups: NavigationGroup[] = [
     key: 'admin',
     label: 'Admin',
     icon: <Shield className="h-4 w-4" />,
-    primaryHref: '/admin',
+    primaryHref: '/admin-dashboard',
     items: [
-      { key: 'admin', label: 'Admin', icon: <Shield className="h-4 w-4" />, href: '/admin' },
+      { key: 'admin', label: 'Admin', icon: <Shield className="h-4 w-4" />, href: '/admin-dashboard' },
     ]
   }
 ];

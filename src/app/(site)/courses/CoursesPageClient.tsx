@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Course, CourseProgress } from '@/types/course';
 import { supabase } from '@/utils/supabase/client';
+import { ArrowLeft, Home } from 'lucide-react';
 
 interface CoursesPageClientProps {
   initialCourses: Course[];
@@ -176,15 +177,55 @@ export default function CoursesPageClient({ initialCourses }: CoursesPageClientP
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
+      {/* Navigation Header */}
+      <header className="bg-slate-800/50 border-b border-cyan-500/30 px-4 py-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            {/* Left side - Navigation buttons */}
+            <div className="flex items-center space-x-3">
+              <Button
+                onClick={() => router.push('/')}
+                variant="default"
+                className="bg-cyan-600 hover:bg-cyan-700 text-white font-medium px-4 py-2 shadow-lg"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                Home
+              </Button>
+              <Button
+                onClick={() => router.push('/')}
+                variant="outline"
+                className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 px-4 py-2"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Home
+              </Button>
+            </div>
+            
+            {/* Center - Page title */}
+            <div className="flex-1 text-center">
+              <h1 className="text-2xl sm:text-3xl font-bold text-cyan-400">
+                📚 Academy Courses
+              </h1>
+              <p className="text-sm sm:text-base text-gray-300 mt-1">
+                Master Web3, NFTs, and crypto trading
+              </p>
+            </div>
+            
+            {/* Right side - Spacer for balance */}
+            <div className="w-32"></div>
+          </div>
+        </div>
+      </header>
+
       <div className="max-w-7xl mx-auto p-6">
-        {/* Header */}
+        {/* Content Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-            📚 Academy Courses
-          </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Master Web3, NFTs, and crypto trading with our comprehensive course library. 
-            From beginners to advanced traders, we have something for everyone.
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Available Courses
+          </h2>
+          <p className="text-lg text-gray-300 max-w-3xl mx-auto">
+            From beginners to advanced traders, we have something for everyone. 
+            Choose your path and start your Web3 journey today.
           </p>
         </div>
 

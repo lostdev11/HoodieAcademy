@@ -10,11 +10,44 @@ export async function GET() {
     // First try to get from database
     const { data: dbSubmissions, error: dbError } = await supabase
       .from('submissions')
-      .select('*')
+      .select(`
+        *,
+        bounty:bounties(id, title, description, xp_reward)
+      `)
       .order('created_at', { ascending: false });
 
+    if (dbError) {
+      console.error('[SUBMISSIONS API] Database error:', dbError);
+    }
+    
     if (dbSubmissions && !dbError) {
-      return NextResponse.json(dbSubmissions);
+      console.log('[SUBMISSIONS API] Found', dbSubmissions.length, 'submissions in database');
+      console.log('[SUBMISSIONS API] First submission:', dbSubmissions[0]);
+      
+      // Transform database submissions to match expected format
+      const transformedSubmissions = dbSubmissions.map(submission => ({
+        id: submission.id,
+        title: submission.title,
+        description: submission.description,
+        squad: submission.squad,
+        courseRef: submission.course_ref,
+        bountyId: submission.bounty_id,
+        walletAddress: submission.wallet_address || 'Unknown Wallet',
+        imageUrl: submission.image_url,
+        status: submission.status || 'pending',
+        upvotes: submission.upvotes || {},
+        totalUpvotes: submission.total_upvotes || 0,
+        timestamp: submission.created_at,
+        bounty: submission.bounty,
+        // Add additional fields for admin components
+        wallet_address: submission.wallet_address || 'Unknown Wallet',
+        bounty_id: submission.bounty_id,
+        created_at: submission.created_at,
+        updated_at: submission.updated_at
+      }));
+      
+      console.log('[SUBMISSIONS API] Transformed submissions:', transformedSubmissions.length);
+      return NextResponse.json(transformedSubmissions);
     }
 
     // Fallback to JSON file

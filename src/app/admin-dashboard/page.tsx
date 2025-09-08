@@ -6,9 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import BountyManagerSimple from '@/components/admin/BountyManagerSimple';
+import BountyXPManager from '@/components/admin/BountyXPManager';
+import SubmissionApproval from '@/components/admin/SubmissionApproval';
+import XPManagement from '@/components/admin/XPManagement';
+import { EnhancedUsersManager } from '@/components/admin/EnhancedUsersManager';
 import { 
   Users, BookOpen, Trophy, Settings, Shield, BarChart3, 
-  Target, Megaphone, Bell, Database, Activity 
+  Target, Megaphone, Bell, Database, Activity, Zap, 
+  FileText, Star, CheckCircle
 } from 'lucide-react';
 
 interface Bounty {
@@ -16,13 +21,16 @@ interface Bounty {
   title: string;
   short_desc: string;
   reward: string;
-  reward_type: 'XP' | 'SOL';
+  reward_type: 'XP' | 'SOL' | 'NFT';
   start_date?: string;
   deadline?: string;
   status: 'active' | 'completed' | 'expired';
   hidden: boolean;
   squad_tag?: string;
   submissions?: number;
+  nft_prize?: string;
+  nft_prize_image?: string;
+  nft_prize_description?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -32,6 +40,7 @@ export default function AdminDashboardPage() {
   const [bounties, setBounties] = useState<Bounty[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+
 
   // Fetch bounties on component mount
   useEffect(() => {
@@ -134,28 +143,68 @@ export default function AdminDashboardPage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-            <TabsTrigger value="overview" className="flex items-center space-x-2">
+          <div className="flex flex-wrap gap-2 mb-6">
+            <Button
+              variant={activeTab === "overview" ? "default" : "outline"}
+              onClick={() => setActiveTab("overview")}
+              className="flex items-center space-x-2"
+            >
               <BarChart3 className="w-4 h-4" />
               <span>Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="bounties" className="flex items-center space-x-2">
+            </Button>
+            <Button
+              variant={activeTab === "bounties" ? "default" : "outline"}
+              onClick={() => setActiveTab("bounties")}
+              className="flex items-center space-x-2"
+            >
               <Target className="w-4 h-4" />
               <span>Bounties</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center space-x-2">
+            </Button>
+            <Button
+              variant={activeTab === "submissions" ? "default" : "outline"}
+              onClick={() => setActiveTab("submissions")}
+              className="flex items-center space-x-2"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Submissions</span>
+            </Button>
+            <Button
+              variant={activeTab === "bounty-xp" ? "default" : "outline"}
+              onClick={() => setActiveTab("bounty-xp")}
+              className="flex items-center space-x-2"
+            >
+              <Zap className="w-4 h-4" />
+              <span>Bounty XP</span>
+            </Button>
+            <Button
+              variant={activeTab === "xp-management" ? "default" : "outline"}
+              onClick={() => setActiveTab("xp-management")}
+              className="flex items-center space-x-2"
+            >
+              <Star className="w-4 h-4" />
+              <span>XP Management</span>
+            </Button>
+            <Button
+              variant={activeTab === "users" ? "default" : "outline"}
+              onClick={() => setActiveTab("users")}
+              className="flex items-center space-x-2"
+            >
               <Users className="w-4 h-4" />
               <span>Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
+            </Button>
+            <Button
+              variant={activeTab === "settings" ? "default" : "outline"}
+              onClick={() => setActiveTab("settings")}
+              className="flex items-center space-x-2"
+            >
               <Settings className="w-4 h-4" />
               <span>Settings</span>
-            </TabsTrigger>
-          </TabsList>
+            </Button>
+          </div>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
               <Card className="bg-slate-800">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-slate-400">Total Bounties</CardTitle>
@@ -201,6 +250,16 @@ export default function AdminDashboardPage() {
                   <p className="text-xs text-slate-500">Across all bounties</p>
                 </CardContent>
               </Card>
+
+              <Card className="bg-slate-800">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-slate-400">Bounty XP System</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-400">+10 XP</div>
+                  <p className="text-xs text-slate-500">Per submission</p>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -216,6 +275,30 @@ export default function AdminDashboardPage() {
                   >
                     <Target className="w-4 h-4 mr-2" />
                     Manage Bounties
+                  </Button>
+                  <Button 
+                    onClick={() => setActiveTab('submissions')} 
+                    className="w-full justify-start"
+                    variant="outline"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Review Submissions
+                  </Button>
+                  <Button 
+                    onClick={() => setActiveTab('bounty-xp')} 
+                    className="w-full justify-start"
+                    variant="outline"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Bounty XP Management
+                  </Button>
+                  <Button 
+                    onClick={() => setActiveTab('xp-management')} 
+                    className="w-full justify-start"
+                    variant="outline"
+                  >
+                    <Star className="w-4 h-4 mr-2" />
+                    XP Management
                   </Button>
                   <Button 
                     onClick={() => window.location.href = '/admin-bounties'} 
@@ -275,24 +358,32 @@ export default function AdminDashboardPage() {
             />
           </TabsContent>
 
+          {/* Submissions Tab */}
+          <TabsContent value="submissions">
+            <SubmissionApproval walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Bounty XP Tab */}
+          <TabsContent value="bounty-xp">
+            <BountyXPManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* XP Management Tab */}
+          <TabsContent value="xp-management">
+            <XPManagement walletAddress={walletAddress} />
+          </TabsContent>
+
           {/* Users Tab */}
           <TabsContent value="users">
-            <Card className="bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-white">User Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-slate-400">User management features coming soon...</p>
-                <Button 
-                  onClick={() => window.location.href = '/admin-force'} 
-                  className="mt-4"
-                  variant="outline"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Go to Admin Force Page
-                </Button>
-              </CardContent>
-            </Card>
+            <EnhancedUsersManager 
+              walletAddress={walletAddress}
+              onViewUserSubmissions={(user) => {
+                // Switch to submissions tab and filter by user
+                setActiveTab('submissions');
+                // You could add a filter mechanism here to show only this user's submissions
+                console.log('Viewing submissions for user:', user.displayName);
+              }}
+            />
           </TabsContent>
 
           {/* Settings Tab */}
