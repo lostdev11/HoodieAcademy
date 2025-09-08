@@ -25,7 +25,7 @@ export async function GET() {
       console.log('[SUBMISSIONS API] First submission:', dbSubmissions[0]);
       
       // Transform database submissions to match expected format
-      const transformedSubmissions = dbSubmissions.map(submission => ({
+      const transformedSubmissions = dbSubmissions.map((submission: any) => ({
         id: submission.id,
         title: submission.title,
         description: submission.description,

@@ -128,13 +128,13 @@ export function SubmissionsManager({ walletAddress }: SubmissionsManagerProps) {
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
         case 'oldest':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
         case 'most_upvotes':
-          return b.total_upvotes - a.total_upvotes;
+          return (b.totalUpvotes || 0) - (a.totalUpvotes || 0);
         case 'least_upvotes':
-          return a.total_upvotes - b.total_upvotes;
+          return (a.totalUpvotes || 0) - (b.totalUpvotes || 0);
         default:
           return 0;
       }
