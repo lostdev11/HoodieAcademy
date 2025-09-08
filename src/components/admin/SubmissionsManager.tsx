@@ -59,7 +59,7 @@ export function SubmissionsManager({ walletAddress }: SubmissionsManagerProps) {
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/submissions');
+      const response = await fetch(`/api/admin/submissions?wallet=${walletAddress || ''}`);
       
       if (!response.ok) {
         console.error('Failed to fetch submissions:', response.status, response.statusText);
@@ -69,7 +69,26 @@ export function SubmissionsManager({ walletAddress }: SubmissionsManagerProps) {
 
       const data = await response.json();
       console.log('Fetched submissions for admin:', data);
-      setSubmissions(Array.isArray(data) ? data : []);
+      
+      // Transform the admin API data to match the expected format
+      const transformedSubmissions = Array.isArray(data) ? data.map(item => ({
+        id: item.id,
+        title: item.submission.title,
+        description: item.submission.description,
+        squad: item.bounty?.squad_tag || 'Unknown',
+        courseRef: item.submission.course_ref || '',
+        bountyId: item.bounty_id,
+        walletAddress: item.wallet_address,
+        imageUrl: item.submission.image_url,
+        status: item.status,
+        upvotes: {},
+        totalUpvotes: 0,
+        timestamp: item.created_at,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      })) : [];
+      
+      setSubmissions(transformedSubmissions);
     } catch (error) {
       console.error('Error fetching submissions:', error);
       setSubmissions([]);

@@ -60,7 +60,7 @@ export default function SubmissionApproval({ walletAddress }: SubmissionApproval
       setError(null);
 
       try {
-        const response = await fetch('/api/submissions');
+        const response = await fetch(`/api/admin/submissions?wallet=${walletAddress || ''}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch submissions');
@@ -73,31 +73,11 @@ export default function SubmissionApproval({ walletAddress }: SubmissionApproval
           console.log('First submission structure:', data[0]);
         }
         
-        // Transform the data to match the expected format
-        const transformedSubmissions = Array.isArray(data) ? data.map(submission => ({
-          id: submission.id,
-          wallet_address: submission.walletAddress || submission.wallet_address || 'Unknown Wallet',
-          bounty_id: submission.bountyId || submission.bounty_id,
-          submission_id: submission.id,
-          xp_awarded: 0,
-          placement: null,
-          sol_prize: 0,
-          status: submission.status || 'pending',
-          created_at: submission.timestamp || submission.created_at,
-          updated_at: submission.timestamp || submission.updated_at,
-          bounty: submission.bounty,
-          submission: {
-            id: submission.id,
-            title: submission.title,
-            description: submission.description,
-            image_url: submission.imageUrl || submission.image_url,
-            created_at: submission.timestamp || submission.created_at,
-            status: submission.status || 'pending'
-          }
-        })) : [];
+        // Data is already in the correct format from the admin API
+        const transformedSubmissions = Array.isArray(data) ? data : [];
         
         setSubmissions(transformedSubmissions);
-        console.log('Transformed submissions:', transformedSubmissions);
+        console.log('Admin submissions:', transformedSubmissions);
         console.log('Pending submissions count:', transformedSubmissions.filter(sub => sub.status === 'pending').length);
 
       } catch (err) {

@@ -249,7 +249,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmiss
             id="title"
             name="title"
             placeholder="Enter your artwork title"
-            className="mt-1 bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:text-black"
+            className="mt-1 bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:text-white focus:bg-gray-800"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             required
@@ -284,7 +284,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmiss
             id="courseRef"
             name="courseRef"
             placeholder="e.g., v120-meme-creation, t100-chart-literacy"
-            className="mt-1 bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:text-black"
+            className="mt-1 bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:text-white focus:bg-gray-800"
             value={formData.courseRef}
             onChange={(e) => setFormData({ ...formData, courseRef: e.target.value })}
           />
@@ -296,7 +296,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmiss
             id="description"
             name="description"
             placeholder="Describe your submission and creative process..."
-            className="mt-1 bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:text-black min-h-[100px]"
+            className="mt-1 bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:text-white focus:bg-gray-800 min-h-[100px]"
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             required

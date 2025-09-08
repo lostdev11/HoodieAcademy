@@ -319,7 +319,7 @@ export default function BountiesGrid({
                         ...prev,
                         [bounty.id]: e.target.value
                       }))}
-                      className="w-full p-2 text-sm border border-gray-300 rounded-md resize-none break-words overflow-wrap-anywhere"
+                      className="w-full p-2 text-sm border border-gray-300 rounded-md resize-none break-words overflow-wrap-anywhere bg-white text-gray-900 placeholder:text-gray-500 focus:text-gray-900 focus:bg-white"
                       rows={2}
                     />
                     <Button

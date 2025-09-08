@@ -28,22 +28,46 @@ export async function POST(request: NextRequest) {
     // TODO: Re-enable admin check once database is properly set up
     console.log('[ADMIN CHECK] Skipping admin verification for testing');
 
-    // Get the submission details
-    const { data: submission, error: submissionError } = await supabase
+    // Try to get the submission from both tables
+    let submission = null;
+    let submissionError = null;
+    let submissionTable = 'submissions';
+
+    // First try the submissions table
+    const { data: regularSubmission, error: regularError } = await supabase
       .from('submissions')
       .select('*')
       .eq('id', submissionId)
       .single();
 
-    if (submissionError) {
+    if (regularSubmission) {
+      submission = regularSubmission;
+      submissionTable = 'submissions';
+    } else {
+      // If not found in submissions, try bounty_submissions table
+      const { data: bountySubmission, error: bountyError } = await supabase
+        .from('bounty_submissions')
+        .select('*')
+        .eq('id', submissionId)
+        .single();
+
+      if (bountySubmission) {
+        submission = bountySubmission;
+        submissionTable = 'bounty_submissions';
+      } else {
+        submissionError = bountyError || regularError;
+      }
+    }
+
+    if (submissionError || !submission) {
       console.error('[FETCH SUBMISSION ERROR]', submissionError);
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
 
     if (action === 'approve') {
-      // Update the submission status to approved
+      // Update the submission status to approved in the correct table
       const { data: updatedSubmission, error: updateError } = await supabase
-        .from('submissions')
+        .from(submissionTable)
         .update({
           status: 'approved',
           updated_at: new Date().toISOString()
@@ -66,7 +90,8 @@ export async function POST(request: NextRequest) {
             activity_type: 'submission_approved',
             activity_data: {
               submission_id: submissionId,
-              bounty_id: submission.bounty_id
+              bounty_id: submission.bounty_id,
+              table: submissionTable
             }
           });
       } catch (logError) {
@@ -76,13 +101,14 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        submission: updatedSubmission
+        submission: updatedSubmission,
+        table: submissionTable
       });
 
     } else if (action === 'reject') {
-      // Update the submission with rejection
+      // Update the submission with rejection in the correct table
       const { data: updatedSubmission, error: updateError } = await supabase
-        .from('submissions')
+        .from(submissionTable)
         .update({
           status: 'rejected',
           updated_at: new Date().toISOString()
@@ -105,7 +131,8 @@ export async function POST(request: NextRequest) {
             activity_type: 'submission_rejected',
             activity_data: {
               submission_id: submissionId,
-              bounty_id: submission.bounty_id
+              bounty_id: submission.bounty_id,
+              table: submissionTable
             }
           });
       } catch (logError) {
@@ -115,7 +142,8 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        submission: updatedSubmission
+        submission: updatedSubmission,
+        table: submissionTable
       });
     }
 
