@@ -16,6 +16,21 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_HELIUS_API_KEY: process.env.NEXT_PUBLIC_HELIUS_API_KEY,
   },
+  // Temporary redirect for T100 course until database slug is fixed
+  async redirects() {
+    return [
+      {
+        source: '/courses/ab647c24-8554-4bc5-a275-53456bc0851e',
+        destination: '/courses/t100-chart-literacy',
+        permanent: false,
+      },
+      {
+        source: '/courses/ab647c24-8554-4bc5-a275-53456bc0851e/',
+        destination: '/courses/t100-chart-literacy/',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig; 
