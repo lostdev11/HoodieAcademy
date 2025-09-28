@@ -66,20 +66,33 @@ export function useUserBounties(walletAddress?: string) {
       setError(null);
 
       try {
-        const response = await fetch(`/api/user-bounties?wallet=${walletAddress}`);
+        // Fetch user tracking data which includes bounty submissions
+        const response = await fetch(`/api/users/track?wallet=${walletAddress}`);
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch user bounties: ${response.status}`);
+          throw new Error(`Failed to fetch user data: ${response.status}`);
         }
 
         const data = await response.json();
-        setSubmissions(data.submissions || []);
-        setStats(data.stats || {
-          totalSubmissions: 0,
-          totalXP: 0,
-          totalSOL: 0,
-          wins: 0,
-          pendingSubmissions: 0
+        
+        // Extract bounty submissions from the user tracking data
+        const bountySubmissions = data.submissions || [];
+        const bountyCompletions = data.bountyCompletions || [];
+        
+        // Calculate stats
+        const totalSubmissions = bountySubmissions.length;
+        const totalXP = bountyCompletions.reduce((sum: number, completion: any) => sum + (completion.xp_awarded || 0), 0);
+        const totalSOL = bountyCompletions.reduce((sum: number, completion: any) => sum + (completion.sol_prize || 0), 0);
+        const wins = bountyCompletions.length; // Completed bounties count as wins
+        const pendingSubmissions = bountySubmissions.filter((sub: any) => sub.status === 'pending').length;
+        
+        setSubmissions(bountySubmissions);
+        setStats({
+          totalSubmissions,
+          totalXP,
+          totalSOL,
+          wins,
+          pendingSubmissions
         });
       } catch (err) {
         console.error('Error fetching user bounties:', err);

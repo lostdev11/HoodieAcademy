@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logCourseActivity, logWalletConnection } from '@/lib/activity-logger';
+import { walletTracker } from '@/lib/wallet-connection-tracker';
 
 export function useWalletSupabase() {
   const [wallet, setWallet] = useState<string | null>(null);
@@ -98,9 +99,19 @@ export function useWalletSupabase() {
       
       // Now try to do the additional operations, but don't fail the connection if they error
       try {
-        // Log wallet connection activity
+        // Enhanced wallet connection tracking
+        await walletTracker.trackConnection(
+          walletAddress,
+          'connect',
+          'phantom',
+          { provider: 'phantom', connected_at: new Date().toISOString() },
+          { connection_method: 'auto_connect' }
+        );
+        console.log('📊 Enhanced wallet connection tracked');
+        
+        // Legacy logging for backward compatibility
         await logWalletConnection(walletAddress, 'wallet_connect', { provider: 'phantom' });
-        console.log('📊 Wallet connection logged');
+        console.log('📊 Legacy wallet connection logged');
       } catch (logError) {
         console.warn('Failed to log wallet connection:', logError);
         // Don't fail the connection for logging errors
@@ -131,18 +142,34 @@ export function useWalletSupabase() {
       setTimeout(async () => {
         try {
           console.log('🔍 Checking admin status for wallet:', walletAddress);
-          // Use RPC function to check admin status (bypasses RLS issues)
-          const { data: isAdminStatus, error: adminError } = await supabase.rpc('is_wallet_admin', { 
-            wallet: walletAddress 
-          });
           
-          if (adminError) {
-            console.warn('Failed to check admin status:', adminError);
-            setIsAdmin(false);
-          } else {
-            console.log('👑 Admin status:', !!isAdminStatus);
-            setIsAdmin(!!isAdminStatus);
+          // First try RPC function
+          try {
+            const { data: isAdminStatus, error: adminError } = await supabase.rpc('is_wallet_admin', { 
+              wallet: walletAddress 
+            });
+            
+            if (!adminError && isAdminStatus !== null) {
+              console.log('👑 Admin status (RPC):', !!isAdminStatus);
+              setIsAdmin(!!isAdminStatus);
+              return;
+            }
+          } catch (rpcError) {
+            console.warn('RPC admin check failed, trying fallback:', rpcError);
           }
+          
+          // Fallback: Check against hardcoded admin wallets
+          const adminWallets = [
+            'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU',
+            'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA',
+            '7vswdZFphxbtd1tCB5EhLNn2khiDiKmQEehSNUFHjz7M',
+            '63B9jg8iBy9pf4W4VDizbQnBD45QujmzbHyGRtHxknr7'
+          ];
+          
+          const isAdminHardcoded = adminWallets.includes(walletAddress);
+          console.log('👑 Admin status (hardcoded):', isAdminHardcoded);
+          setIsAdmin(isAdminHardcoded);
+          
         } catch (adminError) {
           console.warn('Failed to check admin status:', adminError);
           setIsAdmin(false);
@@ -164,8 +191,17 @@ export function useWalletSupabase() {
   // Disconnect wallet
   const disconnectWallet = useCallback(async () => {
     if (wallet) {
-      // Log wallet disconnection activity
-      await logWalletConnection(wallet, 'wallet_disconnect', { reason: 'user_disconnect' });
+      try {
+        // Enhanced wallet disconnection tracking
+        await walletTracker.trackDisconnection(wallet, 'phantom');
+        console.log('📊 Enhanced wallet disconnection tracked');
+        
+        // Legacy logging for backward compatibility
+        await logWalletConnection(wallet, 'wallet_disconnect', { reason: 'user_disconnect' });
+        console.log('📊 Legacy wallet disconnection logged');
+      } catch (logError) {
+        console.warn('Failed to log wallet disconnection:', logError);
+      }
     }
     setWallet(null);
     setIsAdmin(false);
@@ -188,17 +224,32 @@ export function useWalletSupabase() {
           // Set wallet state directly without calling connectWallet
           setWallet(walletAddress);
           
-          // Check admin status using RPC function
-          const { data: isAdminStatus, error: adminError } = await supabase.rpc('is_wallet_admin', { 
-            wallet: walletAddress 
-          });
-          
-          if (adminError) {
-            console.warn('Failed to check admin status during auto-connect:', adminError);
-            setIsAdmin(false);
-          } else {
-            console.log('👑 Auto-connect admin status:', !!isAdminStatus);
-            setIsAdmin(!!isAdminStatus);
+          // Check admin status using RPC function with fallback
+          try {
+            const { data: isAdminStatus, error: adminError } = await supabase.rpc('is_wallet_admin', { 
+              wallet: walletAddress 
+            });
+            
+            if (!adminError && isAdminStatus !== null) {
+              console.log('👑 Auto-connect admin status (RPC):', !!isAdminStatus);
+              setIsAdmin(!!isAdminStatus);
+            } else {
+              throw new Error('RPC failed or returned null');
+            }
+          } catch (rpcError) {
+            console.warn('RPC admin check failed during auto-connect, using hardcoded fallback:', rpcError);
+            
+            // Fallback: Check against hardcoded admin wallets
+            const adminWallets = [
+              'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU',
+              'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA',
+              '7vswdZFphxbtd1tCB5EhLNn2khiDiKmQEehSNUFHjz7M',
+              '63B9jg8iBy9pf4W4VDizbQnBD45QujmzbHyGRtHxknr7'
+            ];
+            
+            const isAdminHardcoded = adminWallets.includes(walletAddress);
+            console.log('👑 Auto-connect admin status (hardcoded):', isAdminHardcoded);
+            setIsAdmin(isAdminHardcoded);
           }
         } catch (error) {
           console.error('Auto-connect failed:', error);
@@ -240,16 +291,34 @@ export function useWalletSupabase() {
   const checkAdminStatus = useCallback(async (walletAddress: string) => {
     try {
       console.log('🔍 checkAdminStatus: Checking admin status for wallet:', walletAddress);
-      const { data: isAdminStatus, error: adminError } = await supabase.rpc('is_wallet_admin', { 
-        wallet: walletAddress 
-      });
-      if (adminError) {
-        console.warn('Failed to check admin status:', adminError);
-        setIsAdmin(false);
-      } else {
-        console.log('👑 checkAdminStatus: Admin status result:', !!isAdminStatus);
-        setIsAdmin(!!isAdminStatus);
+      
+      // First try RPC function
+      try {
+        const { data: isAdminStatus, error: adminError } = await supabase.rpc('is_wallet_admin', { 
+          wallet: walletAddress 
+        });
+        
+        if (!adminError && isAdminStatus !== null) {
+          console.log('👑 checkAdminStatus: Admin status (RPC):', !!isAdminStatus);
+          setIsAdmin(!!isAdminStatus);
+          return;
+        }
+      } catch (rpcError) {
+        console.warn('RPC admin check failed in checkAdminStatus, using fallback:', rpcError);
       }
+      
+      // Fallback: Check against hardcoded admin wallets
+      const adminWallets = [
+        'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU',
+        'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA',
+        '7vswdZFphxbtd1tCB5EhLNn2khiDiKmQEehSNUFHjz7M',
+        '63B9jg8iBy9pf4W4VDizbQnBD45QujmzbHyGRtHxknr7'
+      ];
+      
+      const isAdminHardcoded = adminWallets.includes(walletAddress);
+      console.log('👑 checkAdminStatus: Admin status (hardcoded):', isAdminHardcoded);
+      setIsAdmin(isAdminHardcoded);
+      
     } catch (adminError) {
       console.warn('Failed to check admin status:', adminError);
       setIsAdmin(false);

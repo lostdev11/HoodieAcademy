@@ -473,7 +473,7 @@ export default function AdminDashboard() {
           console.log('Server action failed, trying API endpoint...', serverActionError);
           
           // Fallback to API endpoint
-                              const response = await fetch('/api/bounties', {
+                              const response = await fetch('/api/bounties/', {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -538,7 +538,7 @@ export default function AdminDashboard() {
           console.log('Server action failed, trying API endpoint...', serverActionError);
           
           // Fallback to API endpoint
-          const response = await fetch('/api/bounties', {
+          const response = await fetch('/api/bounties/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -551,6 +551,7 @@ export default function AdminDashboard() {
               squad_tag: bountyData.squad_tag,
               status: bountyData.status || 'active',
               hidden: bountyData.hidden || false,
+              walletAddress: walletAddress
             })
           });
           
@@ -593,7 +594,7 @@ export default function AdminDashboard() {
   // Simple function to refresh bounties data
   const refreshBounties = async () => {
     try {
-      const response = await fetch('/api/bounties');
+      const response = await fetch('/api/bounties/');
       if (response.ok) {
         const freshBounties = await response.json();
         setBounties(freshBounties);
@@ -683,7 +684,7 @@ export default function AdminDashboard() {
         const [usersData, completionsData, bountiesData, announcementsData, eventsData, submissionsData] = await Promise.all([
           fetchAllUsers(),
           fetchAllCourseCompletions(),
-          fetch('/api/bounties').then(res => {
+          fetch('/api/bounties/').then(res => {
             if (!res.ok) {
               console.error('Failed to fetch bounties:', res.status, res.statusText);
               return [];

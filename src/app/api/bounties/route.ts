@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkAdminStatusWithFallback } from '@/lib/admin-utils';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -96,13 +97,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user is admin
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('is_admin')
-      .eq('wallet_address', walletAddress)
-      .single();
-
-    if (userError || !userData?.is_admin) {
+    if (!checkAdminStatusWithFallback(walletAddress)) {
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }

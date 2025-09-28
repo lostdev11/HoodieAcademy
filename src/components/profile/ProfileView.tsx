@@ -19,6 +19,7 @@ import { BountySubmissionForm, BountySubmissionData } from '@/components/bounty'
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { useUserXP } from '@/hooks/useUserXP';
 import { useUserBounties } from '@/hooks/useUserBounties';
+import { UserDataDebug } from '@/components/debug/UserDataDebug';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -90,7 +91,7 @@ export function ProfileView() {
     badges = [], 
     loading: xpLoading = false,
     completeCourse 
-  } = useUserXP();
+  } = useUserXP(wallet);
 
   // Bounty System integration
   const {
@@ -511,6 +512,9 @@ export function ProfileView() {
             </CardContent>
           </Card>
         )}
+
+        {/* Debug Component - Remove this in production */}
+        <UserDataDebug />
 
         <Card className="w-full max-w-2xl bg-slate-800/60 border-cyan-500/30 mb-8">
           <CardHeader>

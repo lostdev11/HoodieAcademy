@@ -67,7 +67,7 @@ const BADGES: Badge[] = [
   }
 ];
 
-export function useUserXP() {
+export function useUserXP(walletAddress?: string) {
   const [profile, setProfile] = useState<XPProfile>({
     totalXP: 0,
     completedCourses: [],
@@ -79,19 +79,35 @@ export function useUserXP() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!walletAddress) {
+      setLoading(false);
+      return;
+    }
+
     const loadUserProfile = async () => {
       try {
-        // This should fetch from your database instead of localStorage
-        // For now, set default values as we're removing localStorage
+        // Fetch user data from the tracking API
+        const response = await fetch(`/api/users/track?wallet=${walletAddress}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch user data: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Extract XP and course data
+        const totalXP = data.stats?.totalXP || 0;
+        const completedCourses = data.courseCompletions?.map((course: any) => course.course_id) || [];
         const today = new Date().toISOString().split('T')[0];
-        const defaultProfile: XPProfile = {
-          totalXP: 0,
-          completedCourses: [],
-          streak: 1,
+        
+        const userProfile: XPProfile = {
+          totalXP,
+          completedCourses,
+          streak: 1, // TODO: Implement streak tracking
           lastLogin: today
         };
         
-        setProfile(defaultProfile);
+        setProfile(userProfile);
       } catch (error) {
         console.error('Error loading user profile:', error);
         // Set default values on error
@@ -108,7 +124,7 @@ export function useUserXP() {
     };
 
     loadUserProfile();
-  }, []);
+  }, [walletAddress]);
 
   // Update badges based on current progress
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkAdminStatusWithFallback } from '@/lib/admin-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,9 +25,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Temporarily skip admin check for testing
-    // TODO: Re-enable admin check once database is properly set up
-    console.log('[ADMIN CHECK] Skipping admin verification for testing');
+    // Check if user is admin
+    if (!checkAdminStatusWithFallback(walletAddress)) {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
 
     // Try to get the submission from both tables
     let submission = null;
@@ -79,6 +84,42 @@ export async function POST(request: NextRequest) {
       if (updateError) {
         console.error('[UPDATE SUBMISSION ERROR]', updateError);
         return NextResponse.json({ error: 'Failed to approve submission' }, { status: 500 });
+      }
+
+      // Mark bounty as completed for the user if it's a bounty submission
+      if (submissionTable === 'bounty_submissions' && submission.bounty_id) {
+        try {
+          // Get bounty details to determine XP reward
+          const { data: bounty, error: bountyError } = await supabase
+            .from('bounties')
+            .select('reward, reward_type')
+            .eq('id', submission.bounty_id)
+            .single();
+
+          if (bounty && !bountyError) {
+            // Calculate XP reward (default to 10 if not specified or not XP type)
+            const xpReward = bounty.reward_type === 'XP' ? parseInt(bounty.reward) || 10 : 10;
+            
+            // Mark bounty as completed using the database function
+            const { error: completionError } = await supabase.rpc('mark_bounty_completed', {
+              p_wallet_address: submission.wallet_address,
+              p_bounty_id: submission.bounty_id,
+              p_submission_id: submissionId,
+              p_xp_awarded: xpReward,
+              p_sol_prize: bounty.reward_type === 'SOL' ? parseFloat(bounty.reward) || 0 : 0
+            });
+
+            if (completionError) {
+              console.error('[BOUNTY COMPLETION ERROR]', completionError);
+              // Don't fail the approval for completion tracking errors
+            } else {
+              console.log(`[BOUNTY COMPLETED] User ${submission.wallet_address} completed bounty ${submission.bounty_id}`);
+            }
+          }
+        } catch (completionError) {
+          console.error('[BOUNTY COMPLETION ERROR]', completionError);
+          // Don't fail the approval for completion tracking errors
+        }
       }
 
       // Log the approval activity

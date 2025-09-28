@@ -61,6 +61,23 @@ export async function GET(request: NextRequest) {
       .eq('wallet_address', walletAddress)
       .order('completed_at', { ascending: false });
 
+    // Get bounty completions
+    const { data: bountyCompletions, error: bountyCompletionError } = await supabase
+      .from('user_bounty_completions')
+      .select(`
+        *,
+        bounties:bounty_id (
+          id,
+          title,
+          short_desc,
+          reward,
+          reward_type,
+          squad_tag
+        )
+      `)
+      .eq('wallet_address', walletAddress)
+      .order('completed_at', { ascending: false });
+
     // Get placement test data
     const { data: placementTest, error: placementError } = await supabase
       .from('placement_tests')
@@ -95,6 +112,8 @@ export async function GET(request: NextRequest) {
       // Activity stats
       totalSubmissions: bountySubmissions?.length || 0,
       totalCourseCompletions: courseCompletions?.length || 0,
+      totalBountyCompletions: bountyCompletions?.length || 0,
+      totalBountyXP: bountyCompletions?.reduce((sum, completion) => sum + (completion.xp_awarded || 0), 0) || 0,
       totalActivity: userActivity?.length || 0,
       
       // Squad and placement stats
@@ -112,6 +131,7 @@ export async function GET(request: NextRequest) {
       stats,
       submissions: bountySubmissions || [],
       courseCompletions: courseCompletions || [],
+      bountyCompletions: bountyCompletions || [],
       placementTest: placementTest || null,
       activity: userActivity || []
     });

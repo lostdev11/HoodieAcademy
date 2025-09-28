@@ -26,6 +26,8 @@ export interface UserTrackingData {
     streakXP: number;
     totalSubmissions: number;
     totalCourseCompletions: number;
+    totalBountyCompletions: number;
+    totalBountyXP: number;
     totalActivity: number;
     currentSquad: string | null;
     placementTestScore: number | null;
@@ -35,6 +37,7 @@ export interface UserTrackingData {
   };
   submissions: any[];
   courseCompletions: any[];
+  bountyCompletions: any[];
   placementTest: any;
   activity: any[];
 }
@@ -184,6 +187,38 @@ export function useUserTracking(walletAddress?: string) {
     }
   }, [walletAddress, updateUserActivity]);
 
+  const fetchBountyCompletions = useCallback(async () => {
+    if (!walletAddress) return [];
+
+    try {
+      const response = await fetch(`/api/users/bounty-completions?wallet=${walletAddress}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch bounty completions: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.completions || [];
+    } catch (err) {
+      console.error('Error fetching bounty completions:', err);
+      return [];
+    }
+  }, [walletAddress]);
+
+  const recordBountyCompletion = useCallback(async (bountyId: string, submissionId: string) => {
+    if (!walletAddress) return;
+
+    try {
+      await updateUserActivity('bounty_completed', {
+        bounty_id: bountyId,
+        submission_id: submissionId,
+        completed_at: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error('Error recording bounty completion:', err);
+    }
+  }, [walletAddress, updateUserActivity]);
+
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
@@ -198,6 +233,8 @@ export function useUserTracking(walletAddress?: string) {
     recordPlacementTest,
     recordWalletConnection,
     recordBountySubmission,
-    recordCourseCompletion
+    recordCourseCompletion,
+    fetchBountyCompletions,
+    recordBountyCompletion
   };
 }

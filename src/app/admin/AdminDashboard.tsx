@@ -1638,7 +1638,8 @@ export default function AdminDashboard({
                         reward: String(formData.get('reward') || ''),
                         deadline: String(formData.get('deadline') || ''),
                         status: 'active' as const,
-                        hidden: false
+                        hidden: false,
+                        walletAddress: walletAddress
                       };
                       
                       try {

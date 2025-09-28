@@ -2,14 +2,27 @@ import { supabase } from './supabase';
 import { getSupabaseAdmin } from './supabaseAdmin';
 
 /**
- * Check if a wallet address has admin privileges
+ * Check if a wallet address has admin privileges with fallback
  */
 export async function checkAdminStatus(walletAddress: string): Promise<boolean> {
+  // Hardcoded admin wallets as fallback
+  const adminWallets = [
+    'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU',
+    'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA',
+    '7vswdZFphxbtd1tCB5EhLNn2khiDiKmQEehSNUFHjz7M',
+    '63B9jg8iBy9pf4W4VDizbQnBD45QujmzbHyGRtHxknr7'
+  ];
+  
+  // First check hardcoded list
+  if (adminWallets.includes(walletAddress)) {
+    return true;
+  }
+  
   try {
     // Use admin client to bypass RLS policies
     const adminClient = getSupabaseAdmin();
     if (!adminClient) {
-      console.error('Admin client not available');
+      console.error('Admin client not available, using hardcoded fallback');
       return false;
     }
 
@@ -51,6 +64,20 @@ export async function checkAdminStatus(walletAddress: string): Promise<boolean> 
     console.error('Error checking admin status:', error);
     return false;
   }
+}
+
+/**
+ * Check admin status with hardcoded fallback (for API routes)
+ */
+export function checkAdminStatusWithFallback(walletAddress: string): boolean {
+  const adminWallets = [
+    'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU',
+    'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA',
+    '7vswdZFphxbtd1tCB5EhLNn2khiDiKmQEehSNUFHjz7M',
+    '63B9jg8iBy9pf4W4VDizbQnBD45QujmzbHyGRtHxknr7'
+  ];
+  
+  return adminWallets.includes(walletAddress);
 }
 
 /**

@@ -13,7 +13,7 @@ import {
   Calendar, User, Target, ChevronLeft, ChevronRight,
   MoreVertical, Download, Award, BookOpen, Trophy, 
   TrendingUp, Star, CheckCircle, Clock, XCircle, FileText,
-  ExternalLink, Zap, Crown, Shield
+  ExternalLink, Zap, Crown, Shield, Activity
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -60,10 +60,19 @@ interface EnhancedUser {
     rejected: number;
   };
   recentActivity: UserActivity[];
+  connectionData: {
+    firstConnection: string | null;
+    lastConnection: string | null;
+    totalConnections: number;
+    hasVerifiedNFT: boolean;
+    connectionHistory: any[];
+  };
   displayName: string;
   formattedWallet: string;
   lastActiveFormatted: string;
   joinedFormatted: string;
+  firstConnectionFormatted: string;
+  lastConnectionFormatted: string;
 }
 
 interface EnhancedUsersManagerProps {
@@ -77,6 +86,7 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [squadFilter, setSquadFilter] = useState<string>('all');
+  const [connectionFilter, setConnectionFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('xp_desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<EnhancedUser | null>(null);
@@ -90,7 +100,8 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/users?wallet=' + (walletAddress || ''));
+      const url = walletAddress ? `/api/admin/users?wallet=${walletAddress}` : '/api/admin/users';
+      const response = await fetch(url);
       
       if (!response.ok) {
         console.error('Failed to fetch users:', response.status, response.statusText);
@@ -132,6 +143,27 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
       filtered = filtered.filter(user => user.squad === squadFilter);
     }
 
+    // Connection filter
+    if (connectionFilter !== 'all') {
+      switch (connectionFilter) {
+        case 'verified':
+          filtered = filtered.filter(user => user.connectionData.hasVerifiedNFT);
+          break;
+        case 'unverified':
+          filtered = filtered.filter(user => !user.connectionData.hasVerifiedNFT);
+          break;
+        case 'active':
+          filtered = filtered.filter(user => user.connectionData.totalConnections > 0);
+          break;
+        case 'inactive':
+          filtered = filtered.filter(user => user.connectionData.totalConnections === 0);
+          break;
+        case 'frequent':
+          filtered = filtered.filter(user => user.connectionData.totalConnections >= 5);
+          break;
+      }
+    }
+
     // Sort
     filtered.sort((a, b) => {
       switch (sortBy) {
@@ -151,6 +183,10 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
           return b.submissionStats.pending - a.submissionStats.pending;
         case 'pending_asc':
           return a.submissionStats.pending - b.submissionStats.pending;
+        case 'connections_desc':
+          return b.connectionData.totalConnections - a.connectionData.totalConnections;
+        case 'connections_asc':
+          return a.connectionData.totalConnections - b.connectionData.totalConnections;
         case 'newest':
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case 'oldest':
@@ -162,7 +198,7 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
 
     setFilteredUsers(filtered);
     setCurrentPage(1);
-  }, [users, searchTerm, squadFilter, sortBy]);
+  }, [users, searchTerm, squadFilter, connectionFilter, sortBy]);
 
   // Pagination
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -187,6 +223,10 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
         'Pending Submissions': user.submissionStats.pending,
         'Approved Submissions': user.submissionStats.approved,
         'Rejected Submissions': user.submissionStats.rejected,
+        'Total Connections': user.connectionData.totalConnections,
+        'Has Verified NFT': user.connectionData.hasVerifiedNFT ? 'Yes' : 'No',
+        'First Connection': user.firstConnectionFormatted,
+        'Last Connection': user.lastConnectionFormatted,
         'Joined': user.joinedFormatted,
         'Last Active': user.lastActiveFormatted,
       }));
@@ -291,7 +331,7 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
       </Card>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         <Card className="bg-slate-800/50">
           <CardContent className="pt-6">
             <div className="flex items-center">
@@ -351,12 +391,48 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
             </div>
           </CardContent>
         </Card>
+        
+        <Card className="bg-slate-800/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <Zap className="h-8 w-8 text-cyan-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-slate-400">Total Connections</p>
+                <p className="text-2xl font-bold text-white">{stats.totalConnections || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-slate-800/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <Shield className="h-8 w-8 text-emerald-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-slate-400">Verified NFTs</p>
+                <p className="text-2xl font-bold text-white">{stats.usersWithVerifiedNFTs || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-slate-800/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <Activity className="h-8 w-8 text-indigo-500" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-slate-400">Active Users</p>
+                <p className="text-2xl font-bold text-white">{stats.activeUsers || 0}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters and Search */}
       <Card className="bg-slate-800/50">
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <Input
@@ -379,6 +455,20 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
               </SelectContent>
             </Select>
 
+            <Select value={connectionFilter} onValueChange={setConnectionFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by connection" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users</SelectItem>
+                <SelectItem value="verified">Verified NFTs</SelectItem>
+                <SelectItem value="unverified">Unverified</SelectItem>
+                <SelectItem value="active">Active Users</SelectItem>
+                <SelectItem value="inactive">Inactive Users</SelectItem>
+                <SelectItem value="frequent">Frequent Connectors</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger>
                 <SelectValue placeholder="Sort by" />
@@ -392,6 +482,8 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
                 <SelectItem value="submissions_asc">Submissions (Low to High)</SelectItem>
                 <SelectItem value="pending_desc">Pending (High to Low)</SelectItem>
                 <SelectItem value="pending_asc">Pending (Low to High)</SelectItem>
+                <SelectItem value="connections_desc">Connections (High to Low)</SelectItem>
+                <SelectItem value="connections_asc">Connections (Low to High)</SelectItem>
                 <SelectItem value="newest">Newest First</SelectItem>
                 <SelectItem value="oldest">Oldest First</SelectItem>
               </SelectContent>
@@ -502,6 +594,16 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
                           <Clock className="w-3 h-3" />
                           <span>Last active {user.lastActiveFormatted}</span>
                         </div>
+                        <div className="flex items-center gap-1">
+                          <Zap className="w-3 h-3" />
+                          <span>{user.connectionData.totalConnections} connections</span>
+                        </div>
+                        {user.connectionData.hasVerifiedNFT && (
+                          <div className="flex items-center gap-1">
+                            <Shield className="w-3 h-3 text-emerald-400" />
+                            <span className="text-emerald-400">Verified NFT</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     
@@ -578,9 +680,10 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
 
                             {/* Submissions */}
                             <Tabs defaultValue="submissions" className="w-full">
-                              <TabsList className="grid w-full grid-cols-2">
+                              <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="submissions">Submissions</TabsTrigger>
                                 <TabsTrigger value="activity">Recent Activity</TabsTrigger>
+                                <TabsTrigger value="connections">Connections</TabsTrigger>
                               </TabsList>
 
                               <TabsContent value="submissions" className="space-y-4">
@@ -627,6 +730,65 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
                                 ) : (
                                   <div className="text-center py-8 text-slate-400">
                                     No recent activity
+                                  </div>
+                                )}
+                              </TabsContent>
+
+                              <TabsContent value="connections" className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                  <div className="p-4 bg-slate-700/50 rounded-lg">
+                                    <div className="text-sm text-slate-400">Total Connections</div>
+                                    <div className="text-2xl font-bold text-white">{user.connectionData.totalConnections}</div>
+                                  </div>
+                                  <div className="p-4 bg-slate-700/50 rounded-lg">
+                                    <div className="text-sm text-slate-400">First Connection</div>
+                                    <div className="text-lg font-semibold text-white">{user.firstConnectionFormatted}</div>
+                                  </div>
+                                  <div className="p-4 bg-slate-700/50 rounded-lg">
+                                    <div className="text-sm text-slate-400">Last Connection</div>
+                                    <div className="text-lg font-semibold text-white">{user.lastConnectionFormatted}</div>
+                                  </div>
+                                  <div className="p-4 bg-slate-700/50 rounded-lg">
+                                    <div className="text-sm text-slate-400">NFT Verification</div>
+                                    <div className="text-lg font-semibold text-white">
+                                      {user.connectionData.hasVerifiedNFT ? (
+                                        <span className="text-emerald-400">Verified</span>
+                                      ) : (
+                                        <span className="text-slate-400">Not Verified</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {user.connectionData.connectionHistory && user.connectionData.connectionHistory.length > 0 ? (
+                                  <div className="space-y-2">
+                                    <h4 className="font-semibold text-white mb-3">Connection History</h4>
+                                    {user.connectionData.connectionHistory.map((connection, index) => (
+                                      <div key={index} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                                        <div>
+                                          <div className="font-medium capitalize">{connection.connection_type.replace(/_/g, ' ')}</div>
+                                          <div className="text-sm text-slate-400">
+                                            {new Date(connection.session_data?.timestamp || '').toLocaleString()}
+                                          </div>
+                                          {connection.verification_result && (
+                                            <div className="text-xs text-slate-500 mt-1">
+                                              {connection.verification_result.provider && `Provider: ${connection.verification_result.provider}`}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <Badge className={
+                                          connection.connection_type === 'connect' 
+                                            ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                            : 'bg-red-500/20 text-red-400 border-red-500/30'
+                                        }>
+                                          {connection.connection_type}
+                                        </Badge>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="text-center py-8 text-slate-400">
+                                    No connection history available
                                   </div>
                                 )}
                               </TabsContent>
