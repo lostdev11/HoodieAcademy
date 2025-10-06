@@ -10,23 +10,23 @@ export async function GET() {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
     
-    // Select only the fields that exist in the database and match our Course interface
+    // Select only the fields that exist in the database
     const { data: courses, error } = await supabase
       .from('courses')
       .select(`
         id,
         title,
+        description,
         emoji,
         squad,
         level,
         access,
-        description,
-        totalLessons,
         category,
-        created_at,
-        updated_at,
+        totalLessons,
         is_visible,
-        is_published
+        is_published,
+        created_at,
+        updated_at
       `)
       .eq('is_published', true)
       .eq('is_visible', true)

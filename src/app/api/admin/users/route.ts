@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all users with their basic information
-    // Use a more flexible select to handle missing columns
+    // Only select columns that actually exist in the database
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select(`
@@ -42,18 +42,7 @@ export async function GET(request: NextRequest) {
         squad,
         is_admin,
         created_at,
-        updated_at,
-        last_active,
-        profile_completed,
-        squad_test_completed,
-        placement_test_completed,
-        last_seen,
-        total_xp,
-        level,
-        username,
-        bio,
-        profile_picture,
-        xp_total
+        updated_at
       `)
       .order('created_at', { ascending: false });
 
@@ -84,16 +73,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Fetch XP data for all users
-    const { data: xpData, error: xpError } = await supabase
-      .from('user_xp')
-      .select('*');
-
-    if (xpError) {
-      console.warn('[ADMIN USERS API] Error fetching XP data:', xpError);
-    }
-
-    // Fetch submission statistics from both tables
+    // Fetch submission statistics from submissions table only
     const { data: submissions, error: submissionsError } = await supabase
       .from('submissions')
       .select('wallet_address, status');
@@ -102,75 +82,17 @@ export async function GET(request: NextRequest) {
       console.warn('[ADMIN USERS API] Error fetching submissions:', submissionsError);
     }
 
-    // Fetch bounty submissions for XP tracking and submission stats
-    const { data: bountySubmissions, error: bountySubmissionsError } = await supabase
-      .from('bounty_submissions')
-      .select('wallet_address, xp_awarded, placement, status');
-
-    if (bountySubmissionsError) {
-      console.warn('[ADMIN USERS API] Error fetching bounty submissions:', bountySubmissionsError);
-    }
-
-    // Fetch recent activity (last 10 activities per user)
-    const { data: activities, error: activitiesError } = await supabase
-      .from('user_activity')
-      .select('wallet_address, activity_type, created_at, metadata')
-      .order('created_at', { ascending: false })
-      .limit(100); // Get recent activities, we'll filter per user
-
-    if (activitiesError) {
-      console.warn('[ADMIN USERS API] Error fetching activities:', activitiesError);
-    }
-
-    // Fetch wallet connection logs for connection tracking
-    const { data: walletConnections, error: connectionsError } = await supabase
-      .from('wallet_connections')
-      .select('wallet_address, connection_type, connection_timestamp, verification_result, user_agent')
-      .order('connection_timestamp', { ascending: false });
-
-    if (connectionsError) {
-      console.warn('[ADMIN USERS API] Error fetching wallet connections:', connectionsError);
-    }
-
-    // Enrich users with all the data
+    // Enrich users with basic data
     const enrichedUsers = users.map(user => {
-      // Get XP data for this user
-      const userXP = xpData?.find(xp => xp.wallet_address === user.wallet_address);
-      
-      // Calculate submission stats for this user (from both tables)
+      // Calculate submission stats for this user
       const userSubmissions = submissions?.filter(sub => sub.wallet_address === user.wallet_address) || [];
-      const userBountySubmissions = bountySubmissions?.filter(sub => sub.wallet_address === user.wallet_address) || [];
-      
-      // Combine both types of submissions
-      const allUserSubmissions = [
-        ...userSubmissions.map(sub => ({ status: sub.status })),
-        ...userBountySubmissions.map(sub => ({ status: sub.status }))
-      ];
       
       const submissionStats = {
-        total: allUserSubmissions.length,
-        pending: allUserSubmissions.filter(sub => sub.status === 'pending').length,
-        approved: allUserSubmissions.filter(sub => sub.status === 'approved').length,
-        rejected: allUserSubmissions.filter(sub => sub.status === 'rejected').length
+        total: userSubmissions.length,
+        pending: userSubmissions.filter(sub => sub.status === 'pending').length,
+        approved: userSubmissions.filter(sub => sub.status === 'approved').length,
+        rejected: userSubmissions.filter(sub => sub.status === 'rejected').length
       };
-
-      // Get recent activity for this user (last 5 activities)
-      const userActivities = activities?.filter(activity => activity.wallet_address === user.wallet_address).slice(0, 5) || [];
-
-      // Get wallet connection data for this user
-      const userConnections = walletConnections?.filter(conn => conn.wallet_address === user.wallet_address) || [];
-      const firstConnection = userConnections.find(conn => conn.connection_type === 'connect');
-      const lastConnection = userConnections.find(conn => conn.connection_type === 'connect');
-      const totalConnections = userConnections.filter(conn => conn.connection_type === 'connect').length;
-      const hasVerifiedNFT = userConnections.some(conn => 
-        conn.verification_result && 
-        typeof conn.verification_result === 'object' && 
-        conn.verification_result.wifhoodie_found === true
-      );
-
-      // Calculate level based on total XP (simple formula: level = floor(total_xp / 100) + 1)
-      const totalXP = userXP?.total_xp || 0;
-      const level = Math.floor(totalXP / 100) + 1;
 
       return {
         id: user.id,
@@ -178,33 +100,29 @@ export async function GET(request: NextRequest) {
         display_name: user.display_name,
         username: user.display_name, // Use display_name as username for now
         squad: user.squad,
-        total_xp: totalXP,
-        level: level,
+        total_xp: 0, // Default to 0 since XP table doesn't exist yet
+        level: 1, // Default to level 1
         profile_picture: null, // TODO: Add profile picture support
         bio: null, // TODO: Add bio support
         created_at: user.created_at,
-        last_active: user.last_active,
+        last_active: user.updated_at, // Use updated_at as last_active
         updated_at: user.updated_at,
         submissions: [], // TODO: Add detailed submission data if needed
         submissionStats: submissionStats,
-        recentActivity: userActivities.map(activity => ({
-          activity_type: activity.activity_type,
-          activity_data: activity.metadata,
-          created_at: activity.created_at
-        })),
+        recentActivity: [], // TODO: Add activity tracking
         connectionData: {
-          firstConnection: firstConnection?.connection_timestamp,
-          lastConnection: lastConnection?.connection_timestamp,
-          totalConnections: totalConnections,
-          hasVerifiedNFT: hasVerifiedNFT,
-          connectionHistory: userConnections.slice(0, 10) // Last 10 connections
+          firstConnection: null,
+          lastConnection: null,
+          totalConnections: 0,
+          hasVerifiedNFT: false,
+          connectionHistory: []
         },
         displayName: user.display_name || `User ${user.wallet_address.slice(0, 6)}...`,
         formattedWallet: `${user.wallet_address.slice(0, 8)}...${user.wallet_address.slice(-6)}`,
-        lastActiveFormatted: user.last_active ? new Date(user.last_active).toLocaleDateString() : 'Never',
+        lastActiveFormatted: user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'Never',
         joinedFormatted: new Date(user.created_at).toLocaleDateString(),
-        firstConnectionFormatted: firstConnection?.connection_timestamp ? new Date(firstConnection.connection_timestamp).toLocaleDateString() : 'Never',
-        lastConnectionFormatted: lastConnection?.connection_timestamp ? new Date(lastConnection.connection_timestamp).toLocaleDateString() : 'Never'
+        firstConnectionFormatted: 'Never',
+        lastConnectionFormatted: 'Never'
       };
     });
 
@@ -213,8 +131,8 @@ export async function GET(request: NextRequest) {
     const avgLevel = enrichedUsers.length > 0 ? Math.round(enrichedUsers.reduce((sum, user) => sum + user.level, 0) / enrichedUsers.length) : 0;
     const totalSubmissions = enrichedUsers.reduce((sum, user) => sum + user.submissionStats.total, 0);
     const pendingSubmissions = enrichedUsers.reduce((sum, user) => sum + user.submissionStats.pending, 0);
-    const totalConnections = enrichedUsers.reduce((sum, user) => sum + user.connectionData.totalConnections, 0);
-    const usersWithVerifiedNFTs = enrichedUsers.filter(user => user.connectionData.hasVerifiedNFT).length;
+    const totalConnections = 0; // Default to 0 since connection tracking doesn't exist yet
+    const usersWithVerifiedNFTs = 0; // Default to 0 since NFT verification tracking doesn't exist yet
     const activeUsers = enrichedUsers.filter(user => {
       const lastActive = user.last_active ? new Date(user.last_active) : new Date(0);
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -236,7 +154,7 @@ export async function GET(request: NextRequest) {
         pendingSubmissions: pendingSubmissions,
         totalConnections: totalConnections,
         usersWithVerifiedNFTs: usersWithVerifiedNFTs,
-        avgConnectionsPerUser: enrichedUsers.length > 0 ? Math.round(totalConnections / enrichedUsers.length * 10) / 10 : 0
+        avgConnectionsPerUser: 0
       }
     });
 
