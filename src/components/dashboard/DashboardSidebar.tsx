@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAdminStatus } from '@/hooks/useAdminStatus';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,7 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
   const [collapsed, setCollapsed] = useState(isCollapsed);
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [squadChatUrl, setSquadChatUrl] = useState<string>('/squads/hoodie-creators/chat');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { isAdmin } = useAdminStatus();
 
   // Helper function to get squad chat URL
   const getSquadChatUrl = (squadName: string): string => {
@@ -125,40 +126,7 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
     }
   }, []);
 
-  // Check admin status from database when wallet is connected
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      try {
-        // Get connected wallet address
-        const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
-        
-        if (walletAddress) {
-          console.log('🔍 DashboardSidebar: Checking admin for wallet:', walletAddress.slice(0, 8) + '...');
-          
-          // Use direct admin check to bypass RLS policy issues
-          const { checkAdminStatusDirect } = await import('@/lib/admin-check');
-          const adminStatus = await checkAdminStatusDirect(walletAddress);
-          
-          console.log('🔍 DashboardSidebar: Direct admin check result:', adminStatus);
-          setIsAdmin(adminStatus);
-        } else {
-          setIsAdmin(false);
-          console.log('❌ DashboardSidebar: No wallet connected');
-        }
-      } catch (err) {
-        setIsAdmin(false);
-        console.error('💥 DashboardSidebar: Failed to check admin:', err);
-      }
-    };
-
-    // Check immediately and set up interval to check when wallet connects
-    checkAdminStatus();
-    
-    // Set up interval to check for wallet connections
-    const interval = setInterval(checkAdminStatus, 2000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  // Admin status is now managed by useAdminStatus hook
 
   const handleToggle = () => {
     setCollapsed(!collapsed);

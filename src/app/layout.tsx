@@ -6,6 +6,7 @@ import AppProvider from '@/components/providers/AppProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://hoodieacademy.com'),
   title: 'Hoodie Academy',
   description: 'Learn Web3 the Hoodie way',
   icons: {

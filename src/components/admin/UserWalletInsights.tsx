@@ -139,7 +139,7 @@ export default function UserWalletInsights({ className = '' }: UserWalletInsight
     const connectionDates = connections.map(c => 
       new Date(c.session_data?.timestamp || '').toDateString()
     );
-    const uniqueDates = [...new Set(connectionDates)].sort().reverse();
+    const uniqueDates = Array.from(new Set(connectionDates)).sort().reverse();
     
     let streak = 0;
     const today = new Date().toDateString();
@@ -321,7 +321,7 @@ export default function UserWalletInsights({ className = '' }: UserWalletInsight
         <div className="flex space-x-4">
           <select
             value={filterBy}
-            onChange={(e) => setFilterBy(e.target.value as any)}
+            onChange={(e) => setFilterBy(e.target.value as 'all' | 'high_engagement' | 'at_risk' | 'new_users')}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Users</option>
@@ -331,7 +331,7 @@ export default function UserWalletInsights({ className = '' }: UserWalletInsight
           </select>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'engagement' | 'connections' | 'risk')}
             className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="engagement">Engagement Score</option>

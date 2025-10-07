@@ -1,198 +1,111 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
-  Trophy, Star, Target, Users, Award, TrendingUp, 
-  CheckCircle, Clock, AlertCircle, Zap, Medal, Crown,
-  BarChart3, Activity, Gift, Coins
+  Trophy, Users, Award, CheckCircle, AlertCircle
 } from 'lucide-react';
-import { bountyXPService } from '@/services/bounty-xp-service';
-
-interface BountySubmission {
-  id: string;
-  wallet_address: string;
-  bounty_id: string;
-  submission_id: string;
-  xp_awarded: number;
-  placement?: 'first' | 'second' | 'third';
-  sol_prize: number;
-  created_at: string;
-  updated_at: string;
-  bounty?: {
-    id: string;
-    title: string;
-    short_desc: string;
-    reward: string;
-    reward_type: 'XP' | 'SOL';
-    status: 'active' | 'completed' | 'expired';
-    squad_tag?: string;
-  };
-  submission?: {
-    id: string;
-    title: string;
-    description: string;
-    image_url?: string;
-    created_at: string;
-  };
-}
-
-interface BountyXPStats {
-  totalSubmissions: number;
-  totalXP: number;
-  totalSOL: number;
-  wins: number;
-  pendingSubmissions: number;
-  averageXPPerSubmission: number;
-  topPerformers: Array<{
-    wallet_address: string;
-    totalXP: number;
-    totalSOL: number;
-    submissions: number;
-    wins: number;
-  }>;
-}
 
 interface BountyXPManagerProps {
   walletAddress: string | null;
 }
 
 export default function BountyXPManager({ walletAddress }: BountyXPManagerProps) {
-  const [submissions, setSubmissions] = useState<BountySubmission[]>([]);
-  const [stats, setStats] = useState<BountyXPStats>({
-    totalSubmissions: 0,
-    totalXP: 0,
-    totalSOL: 0,
-    wins: 0,
-    pendingSubmissions: 0,
-    averageXPPerSubmission: 0,
-    topPerformers: []
-  });
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [xpAmount, setXpAmount] = useState<string>('');
+  const [reason, setReason] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedBounty, setSelectedBounty] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(60000); // 1 minute for users
 
-  // Get XP rules from service
-  const xpRules = bountyXPService.getXPRules();
+  // Fetch users for XP management
+  const fetchUsers = useCallback(async () => {
+    if (!walletAddress) return;
+    
+    setLoading(true);
+    setError(null);
 
-  // Fetch all bounty submissions and calculate stats
-  useEffect(() => {
-    const fetchBountyData = async () => {
-      if (!walletAddress) return;
+    try {
+      const response = await fetch(`/api/admin/users?wallet=${walletAddress}`);
       
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Fetch user bounty data (this will get all submissions for admin view)
-        const response = await fetch(`/api/admin/bounty-submissions?wallet=${walletAddress}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch bounty submissions');
-        }
-
-        const data = await response.json();
-        setSubmissions(data.submissions || []);
-
-        // Calculate comprehensive stats
-        const calculatedStats = calculateBountyStats(data.submissions || []);
-        setStats(calculatedStats);
-
-      } catch (err) {
-        console.error('Error fetching bounty data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch bounty data');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
       }
-    };
 
-    fetchBountyData();
+      const data = await response.json();
+      setUsers(data.users || []);
+
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch users');
+    } finally {
+      setLoading(false);
+    }
   }, [walletAddress]);
 
-  const calculateBountyStats = (submissions: BountySubmission[]): BountyXPStats => {
-    const totalSubmissions = submissions.length;
-    const totalXP = submissions.reduce((sum, sub) => sum + sub.xp_awarded, 0);
-    const totalSOL = submissions.reduce((sum, sub) => sum + sub.sol_prize, 0);
-    const wins = submissions.filter(sub => sub.placement).length;
-    const pendingSubmissions = submissions.filter(sub => !sub.placement).length;
-    const averageXPPerSubmission = totalSubmissions > 0 ? totalXP / totalSubmissions : 0;
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
-    // Calculate top performers
-    const performerMap = new Map<string, {
-      wallet_address: string;
-      totalXP: number;
-      totalSOL: number;
-      submissions: number;
-      wins: number;
-    }>();
+  // Auto-refresh functionality
+  useEffect(() => {
+    if (!autoRefresh || !walletAddress) return;
 
-    submissions.forEach(sub => {
-      const wallet = sub.wallet_address;
-      if (!performerMap.has(wallet)) {
-        performerMap.set(wallet, {
-          wallet_address: wallet,
-          totalXP: 0,
-          totalSOL: 0,
-          submissions: 0,
-          wins: 0
-        });
-      }
+    console.log('Setting up auto-refresh for users with interval:', refreshInterval);
+    const interval = setInterval(() => {
+      console.log('Auto-refreshing users...');
+      fetchUsers();
+    }, refreshInterval);
 
-      const performer = performerMap.get(wallet)!;
-      performer.totalXP += sub.xp_awarded;
-      performer.totalSOL += sub.sol_prize;
-      performer.submissions += 1;
-      if (sub.placement) performer.wins += 1;
-    });
-
-    const topPerformers = Array.from(performerMap.values())
-      .sort((a, b) => b.totalXP - a.totalXP)
-      .slice(0, 10);
-
-    return {
-      totalSubmissions,
-      totalXP,
-      totalSOL,
-      wins,
-      pendingSubmissions,
-      averageXPPerSubmission,
-      topPerformers
+    return () => {
+      console.log('Clearing users auto-refresh interval');
+      clearInterval(interval);
     };
-  };
+  }, [autoRefresh, refreshInterval, fetchUsers]);
 
-  const handleAwardWinner = async (submissionId: string, placement: 'first' | 'second' | 'third') => {
-    if (!walletAddress) return;
+  const handleAwardXP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!walletAddress || !selectedUser || !xpAmount || !reason) return;
 
     setLoading(true);
+    setError(null);
+    setSuccess(null);
+
     try {
-      const response = await fetch('/api/submissions/award-winner', {
+      const response = await fetch('/api/admin/xp/award', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          submissionId,
-          placement,
-          walletAddress
+          targetWallet: selectedUser,
+          xpAmount: parseInt(xpAmount),
+          reason: reason,
+          awardedBy: walletAddress
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to award winner');
+        throw new Error('Failed to award XP');
       }
 
-      // Refresh data
-      const updatedSubmissions = submissions.map(sub => 
-        sub.id === submissionId 
-          ? { ...sub, placement, xp_awarded: sub.xp_awarded + xpRules.winnerBonuses[placement].xp, sol_prize: sub.sol_prize + xpRules.winnerBonuses[placement].sol }
-          : sub
-      );
-      setSubmissions(updatedSubmissions);
-      setStats(calculateBountyStats(updatedSubmissions));
+      // Refresh users data
+      const usersResponse = await fetch(`/api/admin/users?wallet=${walletAddress}`);
+      const usersData = await usersResponse.json();
+      setUsers(usersData.users || []);
+
+      // Reset form
+      setSelectedUser(null);
+      setXpAmount('');
+      setReason('');
+      setSuccess(`Successfully awarded ${xpAmount} XP to user!`);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to award winner');
+      setError(err instanceof Error ? err.message : 'Failed to award XP');
     } finally {
       setLoading(false);
     }
@@ -220,12 +133,12 @@ export default function BountyXPManager({ walletAddress }: BountyXPManagerProps)
     }
   };
 
-  if (loading) {
+  if (loading && users.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading bounty XP data...</p>
+          <p className="text-slate-400">Loading users...</p>
         </div>
       </div>
     );
@@ -251,306 +164,174 @@ export default function BountyXPManager({ walletAddress }: BountyXPManagerProps)
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Trophy className="w-6 h-6 text-yellow-400" />
-            Bounty XP Management
+            XP Management
           </h2>
-          <p className="text-slate-400">Track and manage bounty XP rewards and winner bonuses</p>
+          <p className="text-slate-400">Award XP points to users manually</p>
         </div>
+          <div className="flex items-center space-x-2">
+            <label className="text-sm text-slate-400">Auto-refresh:</label>
+            <select
+              value={refreshInterval}
+              onChange={(e) => setRefreshInterval(Number(e.target.value))}
+              className="bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-sm"
+              disabled={!autoRefresh}
+            >
+              <option value={10000}>10s</option>
+              <option value={30000}>30s</option>
+              <option value={60000}>1m</option>
+              <option value={300000}>5m</option>
+              <option value={600000}>10m</option>
+            </select>
+            <Button
+              onClick={() => setAutoRefresh(!autoRefresh)}
+              variant={autoRefresh ? "default" : "outline"}
+              size="sm"
+              className={autoRefresh ? "bg-green-600 hover:bg-green-700" : "border-slate-600 text-slate-300"}
+            >
+              {autoRefresh ? "ON" : "OFF"}
+            </Button>
+            {autoRefresh && (
+              <div className="flex items-center space-x-1 text-green-400 text-xs">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span>Live</span>
+              </div>
+            )}
+          </div>
       </div>
 
-      {/* XP System Rules Display */}
-      <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
+      {/* Success/Error Messages */}
+      {success && (
+        <Card className="bg-green-900/20 border-green-500">
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-2 text-green-400">
+              <CheckCircle className="w-4 h-4" />
+              <span>{success}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* XP Award Form */}
+      <Card className="bg-slate-800">
         <CardHeader>
-          <CardTitle className="text-purple-400 flex items-center gap-2">
-            <Zap className="w-5 h-5" />
-            Bounty XP System Rules
+          <CardTitle className="text-white flex items-center gap-2">
+            <Award className="w-5 h-5" />
+            Award XP to User
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-              <div className="text-2xl font-bold text-green-400">+{xpRules.participationXP} XP</div>
-              <div className="text-sm text-gray-400">Per Submission</div>
+          <form onSubmit={handleAwardXP} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="userSelect" className="text-white">Select User</Label>
+                <select
+                  id="userSelect"
+                  value={selectedUser || ''}
+                  onChange={(e) => setSelectedUser(e.target.value)}
+                  className="mt-1 w-full bg-slate-700 border border-slate-600 text-white rounded-md px-3 py-2"
+                  required
+                >
+                  <option value="">Choose a user...</option>
+                  {users.map((user) => (
+                    <option key={user.wallet_address} value={user.wallet_address}>
+                      {user.displayName || formatWalletAddress(user.wallet_address)} - {user.total_xp || 0} XP
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="xpAmount" className="text-white">XP Amount</Label>
+                <Input
+                  id="xpAmount"
+                  type="number"
+                  value={xpAmount}
+                  onChange={(e) => setXpAmount(e.target.value)}
+                  placeholder="Enter XP amount"
+                  className="mt-1 bg-slate-700 border-slate-600 text-white"
+                  required
+                  min="1"
+                />
+              </div>
             </div>
-            <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-              <div className="text-2xl font-bold text-blue-400">{xpRules.maxSubmissionsPerBounty}</div>
-              <div className="text-sm text-gray-400">Max Submissions</div>
+
+            <div>
+              <Label htmlFor="reason" className="text-white">Reason</Label>
+              <Input
+                id="reason"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Enter reason for XP award"
+                className="mt-1 bg-slate-700 border-slate-600 text-white"
+                required
+              />
             </div>
-            <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-              <div className="text-2xl font-bold text-purple-400">{xpRules.participationXP * xpRules.maxSubmissionsPerBounty} XP</div>
-              <div className="text-sm text-gray-400">Max Participation</div>
+
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={loading || !selectedUser || !xpAmount || !reason}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                {loading ? 'Awarding...' : 'Award XP'}
+              </Button>
             </div>
-            <div className="text-center p-3 bg-slate-700/30 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-400">{xpRules.winnerBonuses.first.xp} XP</div>
-              <div className="text-sm text-gray-400">1st Place Bonus</div>
-            </div>
-          </div>
-          
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30">
-              <div className="text-lg font-bold text-yellow-400">🥇 1st Place</div>
-              <div className="text-sm text-yellow-300">+{xpRules.winnerBonuses.first.xp} XP + {xpRules.winnerBonuses.first.sol} SOL</div>
-            </div>
-            <div className="text-center p-3 bg-gray-500/10 rounded-lg border border-gray-500/30">
-              <div className="text-lg font-bold text-gray-400">🥈 2nd Place</div>
-              <div className="text-sm text-gray-300">+{xpRules.winnerBonuses.second.xp} XP + {xpRules.winnerBonuses.second.sol} SOL</div>
-            </div>
-            <div className="text-center p-3 bg-orange-500/10 rounded-lg border border-orange-500/30">
-              <div className="text-lg font-bold text-orange-400">🥉 3rd Place</div>
-              <div className="text-sm text-orange-300">+{xpRules.winnerBonuses.third.xp} XP + {xpRules.winnerBonuses.third.sol} SOL</div>
-            </div>
-          </div>
+          </form>
         </CardContent>
       </Card>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Total Submissions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-400">{stats.totalSubmissions}</div>
-            <p className="text-xs text-slate-500">All time</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Total XP Awarded</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-400">{stats.totalXP.toLocaleString()}</div>
-            <p className="text-xs text-slate-500">XP distributed</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Total SOL Awarded</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-400">{stats.totalSOL.toFixed(3)}</div>
-            <p className="text-xs text-slate-500">SOL distributed</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-slate-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">Winner Awards</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-400">{stats.wins}</div>
-            <p className="text-xs text-slate-500">Winners awarded</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="submissions" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="submissions">Submissions</TabsTrigger>
-          <TabsTrigger value="winners">Winners</TabsTrigger>
-          <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-        </TabsList>
-
-        {/* Submissions Tab */}
-        <TabsContent value="submissions" className="space-y-4">
-          <Card className="bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-white">All Submissions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {submissions.length === 0 ? (
-                <div className="text-center py-8">
-                  <Target className="w-12 h-12 mx-auto text-slate-500 mb-4" />
-                  <h3 className="text-lg font-semibold text-slate-300 mb-2">No Submissions Yet</h3>
-                  <p className="text-slate-500">Bounty submissions will appear here once users start participating.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {submissions.map((submission) => (
-                    <div key={submission.id} className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${
-                            submission.placement 
-                              ? 'bg-yellow-500/20' 
-                              : 'bg-blue-500/20'
-                          }`}>
-                            <span className="text-2xl">{getPlacementIcon(submission.placement)}</span>
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-white">
-                              {submission.bounty?.title || 'Unknown Bounty'}
-                            </h4>
-                            <p className="text-sm text-gray-400">
-                              Submitted by {formatWalletAddress(submission.wallet_address)}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(submission.created_at).toLocaleDateString()}
-                            </p>
-                            {submission.bounty?.squad_tag && (
-                              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs mt-1">
-                                {submission.bounty.squad_tag}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className={`font-semibold ${getPlacementColor(submission.placement)}`}>
-                              {submission.placement ? `${submission.placement.charAt(0).toUpperCase() + submission.placement.slice(1)} Place` : 'Pending Review'}
-                            </span>
-                            {!submission.placement && (
-                              <div className="flex gap-1">
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleAwardWinner(submission.id, 'first')}
-                                  className="bg-yellow-600 hover:bg-yellow-700 text-xs px-2 py-1"
-                                >
-                                  🥇
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleAwardWinner(submission.id, 'second')}
-                                  className="bg-gray-600 hover:bg-gray-700 text-xs px-2 py-1"
-                                >
-                                  🥈
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleAwardWinner(submission.id, 'third')}
-                                  className="bg-orange-600 hover:bg-orange-700 text-xs px-2 py-1"
-                                >
-                                  🥉
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-sm">
-                            <p className="text-green-400">+{submission.xp_awarded} XP</p>
-                            {submission.sol_prize > 0 && (
-                              <p className="text-green-400">+{submission.sol_prize} SOL</p>
-                            )}
-                          </div>
-                        </div>
+      {/* Users List */}
+      <Card className="bg-slate-800">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Users ({users.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {users.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 mx-auto text-slate-500 mb-4" />
+              <h3 className="text-lg font-semibold text-slate-300 mb-2">No Users Found</h3>
+              <p className="text-slate-500">Users will appear here once they join the academy.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {users
+                .sort((a, b) => (b.total_xp || 0) - (a.total_xp || 0))
+                .map((user, index) => (
+                <div key={user.wallet_address} className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-white">
+                          {user.displayName || formatWalletAddress(user.wallet_address)}
+                        </h4>
+                        <p className="text-sm text-slate-400">
+                          Level {user.level || 1} • {user.submissionStats?.total || 0} submissions
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Winners Tab */}
-        <TabsContent value="winners" className="space-y-4">
-          <Card className="bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-white">Awarded Winners</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {submissions.filter(sub => sub.placement).length === 0 ? (
-                <div className="text-center py-8">
-                  <Trophy className="w-12 h-12 mx-auto text-slate-500 mb-4" />
-                  <h3 className="text-lg font-semibold text-slate-300 mb-2">No Winners Yet</h3>
-                  <p className="text-slate-500">Award winners by clicking the medal buttons in the submissions tab.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {submissions
-                    .filter(sub => sub.placement)
-                    .sort((a, b) => {
-                      const order = { first: 1, second: 2, third: 3 };
-                      return (order[a.placement!] || 999) - (order[b.placement!] || 999);
-                    })
-                    .map((submission) => (
-                    <div key={submission.id} className="p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-yellow-500/30">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="text-3xl">{getPlacementIcon(submission.placement)}</div>
-                          <div>
-                            <h4 className="font-semibold text-white">
-                              {submission.bounty?.title || 'Unknown Bounty'}
-                            </h4>
-                            <p className="text-sm text-gray-400">
-                              Winner: {formatWalletAddress(submission.wallet_address)}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Awarded {new Date(submission.updated_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-yellow-400">
-                            {submission.placement ? submission.placement.charAt(0).toUpperCase() + submission.placement.slice(1) + ' Place' : 'Unknown Place'}
-                          </div>
-                          <div className="text-sm">
-                            <p className="text-green-400">+{submission.xp_awarded} XP</p>
-                            {submission.sol_prize > 0 && (
-                              <p className="text-green-400">+{submission.sol_prize} SOL</p>
-                            )}
-                          </div>
-                        </div>
+                    <div className="text-right">
+                      <div className="text-lg font-bold text-yellow-400">
+                        {(user.total_xp || 0).toLocaleString()} XP
+                      </div>
+                      <div className="text-sm text-slate-400">
+                        {user.squad || 'No Squad'}
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Leaderboard Tab */}
-        <TabsContent value="leaderboard" className="space-y-4">
-          <Card className="bg-slate-800">
-            <CardHeader>
-              <CardTitle className="text-white">Top Performers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {stats.topPerformers.length === 0 ? (
-                <div className="text-center py-8">
-                  <BarChart3 className="w-12 h-12 mx-auto text-slate-500 mb-4" />
-                  <h3 className="text-lg font-semibold text-slate-300 mb-2">No Data Yet</h3>
-                  <p className="text-slate-500">Leaderboard will populate as users participate in bounties.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {stats.topPerformers.map((performer, index) => (
-                    <div key={performer.wallet_address} className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-white">
-                              {formatWalletAddress(performer.wallet_address)}
-                            </h4>
-                            <p className="text-sm text-gray-400">
-                              {performer.submissions} submission{performer.submissions !== 1 ? 's' : ''} • {performer.wins} win{performer.wins !== 1 ? 's' : ''}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-purple-400">
-                            {performer.totalXP.toLocaleString()} XP
-                          </div>
-                          {performer.totalSOL > 0 && (
-                            <div className="text-sm text-green-400">
-                              {performer.totalSOL.toFixed(3)} SOL
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
+

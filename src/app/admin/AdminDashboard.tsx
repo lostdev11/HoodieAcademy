@@ -48,6 +48,16 @@ import { Course } from '@/types/course';
 import { SubmissionsManager } from '@/components/admin/SubmissionsManager';
 import { UsersManager } from '@/components/admin/UsersManager';
 import { EnhancedUsersManager } from '@/components/admin/EnhancedUsersManager';
+import { simpleUserSync } from '@/lib/simple-user-sync';
+import { robustUserSync } from '@/lib/robust-user-sync';
+import WalletUserInsights from '@/components/admin/WalletUserInsights';
+import RealtimeUserMonitor from '@/components/admin/RealtimeUserMonitor';
+import UserProfileManager from '@/components/admin/UserProfileManager';
+import WalletAnalytics from '@/components/admin/WalletAnalytics';
+import UserConnectionTest from '@/components/admin/UserConnectionTest';
+import UserTrackingDashboard from '@/components/admin/UserTrackingDashboard';
+import SimpleWalletTracker from '@/components/admin/SimpleWalletTracker';
+import TrackingSystemTest from '@/components/admin/TrackingSystemTest';
 
 // Type for file-based courses (from JSON files)
 interface CourseFile {
@@ -112,7 +122,7 @@ export default function AdminDashboard({
   const [users, setUsers] = useState<SupabaseUser[]>([]);
   const [courseCompletions, setCourseCompletions] = useState<CourseCompletion[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [refreshing, setRefreshing] = useState(false);
 
   const [activeTab, setActiveTab] = useState<string>("users");
   const [stats, setStats] = useState<AdminStats>({
@@ -435,6 +445,75 @@ export default function AdminDashboard({
     setFilteredCourses(initialCourses);
   }, [initialCourses]);
 
+  // Refresh function for manual data refresh
+  const refreshData = async () => {
+    setRefreshing(true);
+    try {
+      // Try to refresh users using the simplified API endpoint first
+      let usersData = [];
+      
+      try {
+        const usersResponse = await fetch('/api/admin/users-robust');
+        if (usersResponse.ok) {
+          const usersApiData = await usersResponse.json();
+          usersData = usersApiData.users || [];
+          console.log('🔄 Refreshed users from simplified API:', usersData.length);
+        } else {
+          console.warn('Simplified API failed during refresh, trying simple sync service');
+          usersData = await robustUserSync.getAllUsers();
+          console.log('🔄 Refreshed users from simple sync service:', usersData.length);
+        }
+      } catch (apiError) {
+        console.warn('API endpoint failed during refresh, trying simple sync service:', apiError);
+        try {
+          usersData = await robustUserSync.getAllUsers();
+          console.log('🔄 Refreshed users from simple sync service:', usersData.length);
+        } catch (syncError) {
+          console.warn('Simple sync service failed during refresh, trying direct fetch:', syncError);
+          usersData = await fetchAllUsers();
+          console.log('🔄 Refreshed users from direct fetch:', usersData.length);
+        }
+      }
+
+      // Fetch course completions
+      const completionsData = await fetchAllCourseCompletions();
+      
+      setUsers(usersData);
+      setCourseCompletions(completionsData);
+      
+      // Recalculate stats
+      const squadDistribution: { [squad: string]: number } = {};
+      usersData.forEach((user: any) => {
+        if (user.squad) {
+          squadDistribution[user.squad] = (squadDistribution[user.squad] || 0) + 1;
+        }
+      });
+
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const activeUsers = usersData.filter((u: any) => {
+        if (!u.last_active && !u.last_seen) return false;
+        const lastActive = u.last_active ? new Date(u.last_active) : new Date(u.last_seen);
+        return lastActive > oneDayAgo;
+      }).length;
+      
+      setStats(prev => ({
+        ...prev,
+        totalUsers: usersData.length,
+        activeUsers: activeUsers,
+        completedCourses: completionsData.filter(c => c.status === 'completed').length,
+        pendingApprovals: completionsData.filter(c => c.status === 'pending').length,
+        totalExamsTaken: completionsData.filter(c => c.status === 'completed').length,
+        placementTestsCompleted: usersData.filter((u: any) => u.placement_test_completed).length,
+        squadDistribution
+      }));
+      
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Fetch course stats on mount
   useEffect(() => {
     fetchCourseStats();
@@ -444,11 +523,34 @@ export default function AdminDashboard({
   useEffect(() => {
     const initializeData = async () => {
       try {
-        // Fetch users and course completions
-        const [usersData, completionsData] = await Promise.all([
-          fetchAllUsers(),
-          fetchAllCourseCompletions()
-        ]);
+        // Try to fetch users using the simplified API endpoint first
+        let usersData = [];
+        
+        try {
+          const usersResponse = await fetch('/api/admin/users-robust');
+          if (usersResponse.ok) {
+            const usersApiData = await usersResponse.json();
+            usersData = usersApiData.users || [];
+            console.log('📊 Loaded users from simplified API:', usersData.length);
+          } else {
+            console.warn('Simplified API failed, trying simple sync service');
+            usersData = await robustUserSync.getAllUsers();
+            console.log('📊 Loaded users from simple sync service:', usersData.length);
+          }
+        } catch (apiError) {
+          console.warn('API endpoint failed, trying simple sync service:', apiError);
+          try {
+            usersData = await robustUserSync.getAllUsers();
+            console.log('📊 Loaded users from simple sync service:', usersData.length);
+          } catch (syncError) {
+            console.warn('Simple sync service failed, trying direct fetch:', syncError);
+            usersData = await fetchAllUsers();
+            console.log('📊 Loaded users from direct fetch:', usersData.length);
+          }
+        }
+
+        // Fetch course completions
+        const completionsData = await fetchAllCourseCompletions();
         
         setUsers(usersData);
         setCourseCompletions(completionsData);
@@ -461,19 +563,27 @@ export default function AdminDashboard({
         
         // Calculate stats
         const squadDistribution: { [squad: string]: number } = {};
-        usersData.forEach(user => {
+        usersData.forEach((user: any) => {
           if (user.squad) {
             squadDistribution[user.squad] = (squadDistribution[user.squad] || 0) + 1;
           }
         });
+
+        // Calculate active users (last 24 hours)
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const activeUsers = usersData.filter((u: any) => {
+          if (!u.last_active && !u.last_seen) return false;
+          const lastActive = u.last_active ? new Date(u.last_active) : new Date(u.last_seen);
+          return lastActive > oneDayAgo;
+        }).length;
         
         setStats({
           totalUsers: usersData.length,
-          activeUsers: usersData.filter(u => u.last_seen && new Date(u.last_seen) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length,
+          activeUsers: activeUsers,
           completedCourses: completionsData.filter(c => c.status === 'completed').length,
           pendingApprovals: completionsData.filter(c => c.status === 'pending').length,
           totalExamsTaken: completionsData.filter(c => c.status === 'completed').length,
-          placementTestsCompleted: usersData.filter(u => u.placement_test_completed).length,
+          placementTestsCompleted: usersData.filter((u: any) => u.placement_test_completed).length,
           squadDistribution,
           totalBounties: initialBounties.length,
           activeBounties: initialBounties.filter(b => b.status === 'active').length,
@@ -551,7 +661,14 @@ export default function AdminDashboard({
             </Link>
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold">Admin Dashboard</h1>
-              <p className="text-slate-400 text-sm lg:text-base">Live user tracking and management</p>
+              <p className="text-slate-400 text-sm lg:text-base">
+                Live user tracking and management
+                {stats.totalUsers > 0 && (
+                  <span className="ml-2 text-green-400">
+                    • {stats.totalUsers} users • {stats.activeUsers} active
+                  </span>
+                )}
+              </p>
               
               {/* Wallet Connection Status */}
               <div className="mt-2 flex items-center gap-2">
@@ -615,6 +732,20 @@ export default function AdminDashboard({
                     ⚠️ {courses.filter(c => !c.is_visible || !c.is_published).length} hidden/draft
                   </Badge>
                 )}
+              </div>
+              
+              {/* Refresh Button */}
+              <div className="mt-2">
+                <Button
+                  size="sm"
+                  onClick={refreshData}
+                  disabled={refreshing}
+                  variant="outline"
+                  className="flex items-center gap-1"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  {refreshing ? 'Refreshing...' : 'Refresh Data'}
+                </Button>
               </div>
             </div>
           </div>
@@ -856,10 +987,26 @@ export default function AdminDashboard({
 
         {/* Main Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-12">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Users
+            </TabsTrigger>
+            <TabsTrigger value="wallet-insights" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Wallet Insights
+            </TabsTrigger>
+            <TabsTrigger value="user-tracking" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              User Tracking
+            </TabsTrigger>
+            <TabsTrigger value="wallet-tracker" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Wallet Tracker
+            </TabsTrigger>
+            <TabsTrigger value="debug" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Debug
             </TabsTrigger>
             <TabsTrigger value="courses" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
@@ -893,6 +1040,7 @@ export default function AdminDashboard({
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-6">
+
             <EnhancedUsersManager 
               walletAddress={walletAddress}
               onViewUserSubmissions={(user) => {
@@ -901,6 +1049,50 @@ export default function AdminDashboard({
                 console.log('Viewing submissions for user:', user.displayName);
               }}
             />
+          </TabsContent>
+
+          {/* Wallet Insights Tab */}
+          <TabsContent value="wallet-insights" className="space-y-6">
+            <Tabs defaultValue="insights" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="insights">User Insights</TabsTrigger>
+                <TabsTrigger value="monitor">Real-time Monitor</TabsTrigger>
+                <TabsTrigger value="profiles">Profile Manager</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="insights" className="space-y-6">
+                <WalletUserInsights />
+              </TabsContent>
+              
+              <TabsContent value="monitor" className="space-y-6">
+                <RealtimeUserMonitor />
+              </TabsContent>
+              
+              <TabsContent value="profiles" className="space-y-6">
+                <UserProfileManager />
+              </TabsContent>
+              
+              <TabsContent value="analytics" className="space-y-6">
+                <WalletAnalytics />
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* User Tracking Tab */}
+          <TabsContent value="user-tracking" className="space-y-6">
+            <UserTrackingDashboard />
+          </TabsContent>
+
+          {/* Wallet Tracker Tab */}
+          <TabsContent value="wallet-tracker" className="space-y-6">
+            <SimpleWalletTracker />
+          </TabsContent>
+
+          {/* Debug Tab - Temporary for testing */}
+          <TabsContent value="debug" className="space-y-6">
+            <TrackingSystemTest />
+            <UserConnectionTest />
           </TabsContent>
 
           {/* Courses Tab */}

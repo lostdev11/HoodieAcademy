@@ -1,6 +1,4 @@
 import { Metadata } from 'next';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { Course } from '@/types/course';
 import CoursesPageClient from './CoursesPageClient';
 
@@ -45,9 +43,14 @@ export const metadata: Metadata = {
   },
 };
 
-// Fetch published courses directly
+// Fetch published courses directly using service role key for static generation
 const getPublishedCourses = async () => {
-  const supabase = createServerComponentClient({ cookies });
+  const { createClient } = await import('@supabase/supabase-js');
+  
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
   
   const { data: courses, error } = await supabase
     .from('courses')

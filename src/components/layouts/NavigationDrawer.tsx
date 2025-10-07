@@ -99,31 +99,34 @@ export function NavigationDrawer({
           const { fetchUserByWallet } = await import('@/lib/supabase');
           const user = await fetchUserByWallet(walletAddress);
           const adminStatus = user?.is_admin === true;
-          setIsAdmin(adminStatus);
           
-          if (adminStatus) {
-            console.log('✅ NavigationDrawer: Admin status: true');
-          } else {
-            console.log('✅ NavigationDrawer: Admin status: false');
+          // Only update and log if status changed
+          if (adminStatus !== isAdmin) {
+            setIsAdmin(adminStatus);
+            console.log('✅ NavigationDrawer: Admin status changed to:', adminStatus);
           }
         } else {
-          setIsAdmin(false);
-          console.log('✅ NavigationDrawer: No wallet connected');
+          if (isAdmin !== false) {
+            setIsAdmin(false);
+            console.log('✅ NavigationDrawer: No wallet connected');
+          }
         }
       } catch (error) {
-        console.error('Error checking admin status:', error);
-        setIsAdmin(false);
+        if (isAdmin !== false) {
+          console.error('Error checking admin status:', error);
+          setIsAdmin(false);
+        }
       }
     };
     
-    // Check immediately and set up interval to check when wallet connects
+    // Check immediately
     checkAdmin();
     
-    // Set up interval to check for wallet connections
-    const interval = setInterval(checkAdmin, 2000);
+    // Set up interval to check for wallet connections (less frequent)
+    const interval = setInterval(checkAdmin, 10000); // Changed from 2000ms to 10000ms
     
     return () => clearInterval(interval);
-  }, []);
+  }, [isAdmin]); // Add isAdmin as dependency to track changes
 
   const toggleSection = (sectionId: string) => {
     const newExpanded = new Set(expandedSections);

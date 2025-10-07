@@ -12,7 +12,16 @@ export async function POST(
 ) {
   try {
     const body = await request.json();
-    const { submission, walletAddress, submissionType = 'text' } = body;
+    const { 
+      submission, 
+      walletAddress, 
+      submissionType = 'text',
+      title,
+      description,
+      imageUrl,
+      squad,
+      courseRef
+    } = body;
     
     if (!submission || !walletAddress) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -50,6 +59,11 @@ export async function POST(
         wallet_address: walletAddress,
         submission_content: submission,
         submission_type: submissionType,
+        title: title || null,
+        description: description || null,
+        image_url: imageUrl || null,
+        squad: squad || null,
+        course_ref: courseRef || null,
         status: 'pending',
         created_at: new Date().toISOString()
       }])

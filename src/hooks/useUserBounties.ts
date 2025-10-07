@@ -66,14 +66,19 @@ export function useUserBounties(walletAddress?: string) {
       setError(null);
 
       try {
+        console.log('🔄 useUserBounties: Fetching bounties for wallet:', walletAddress?.slice(0, 8) + '...');
+        
         // Fetch user tracking data which includes bounty submissions
         const response = await fetch(`/api/users/track?wallet=${walletAddress}`);
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch user data: ${response.status}`);
+          const errorText = await response.text();
+          console.error('❌ useUserBounties: API response error:', response.status, errorText);
+          throw new Error(`Failed to fetch user data: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
+        console.log('📊 useUserBounties: Received data:', data);
         
         // Extract bounty submissions from the user tracking data
         const bountySubmissions = data.submissions || [];
@@ -86,17 +91,29 @@ export function useUserBounties(walletAddress?: string) {
         const wins = bountyCompletions.length; // Completed bounties count as wins
         const pendingSubmissions = bountySubmissions.filter((sub: any) => sub.status === 'pending').length;
         
-        setSubmissions(bountySubmissions);
-        setStats({
+        const newStats = {
           totalSubmissions,
           totalXP,
           totalSOL,
           wins,
           pendingSubmissions
-        });
+        };
+        
+        console.log('✅ useUserBounties: Setting stats:', newStats);
+        setSubmissions(bountySubmissions);
+        setStats(newStats);
       } catch (err) {
-        console.error('Error fetching user bounties:', err);
+        console.error('💥 useUserBounties: Error fetching user bounties:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch user bounties');
+        // Set default values on error
+        setSubmissions([]);
+        setStats({
+          totalSubmissions: 0,
+          totalXP: 0,
+          totalSOL: 0,
+          wins: 0,
+          pendingSubmissions: 0
+        });
       } finally {
         setLoading(false);
       }

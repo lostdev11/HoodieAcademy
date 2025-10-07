@@ -14,6 +14,12 @@ import Link from 'next/link';
 interface BountySubmissionFormProps {
   onSubmit: (data: BountySubmissionData) => void;
   className?: string;
+  bountyData?: {
+    image_required?: boolean;
+    submission_type?: 'text' | 'image' | 'both';
+    title?: string;
+    description?: string;
+  };
 }
 
 export interface BountySubmissionData {
@@ -23,17 +29,23 @@ export interface BountySubmissionData {
   courseRef: string;
   bountyId?: string;
   file: File | null;
+  imageUrl?: string;
   author?: string;
   walletAddress?: string;
 }
 
-export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmissionFormProps) => {
+export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: BountySubmissionFormProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
+  const [isDragOver, setIsDragOver] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     squad: '',
     description: '',
-    courseRef: ''
+    courseRef: '',
+    imageUrl: ''
   });
   
   // Wallet connection state
@@ -54,10 +66,93 @@ export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmiss
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setSelectedFile(file);
+      setUploadError('');
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      // Auto-upload the image
+      await uploadImage(file);
+    }
+  };
+
+  const uploadImage = async (file: File) => {
+    setIsUploading(true);
+    setUploadError('');
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('walletAddress', wallet || '');
+      formData.append('context', 'bounty_submission');
+      
+      const response = await fetch('/api/upload/moderated-image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload image');
+      }
+      
+      const result = await response.json();
+      console.log('✅ Image uploaded successfully:', result);
+      
+      // Store the uploaded image URL in form data
+      setFormData(prev => ({ ...prev, imageUrl: result.url }));
+      
+    } catch (error) {
+      console.error('❌ Error uploading image:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload image');
+      setSelectedFile(null);
+      setImagePreview(null);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        setSelectedFile(file);
+        setUploadError('');
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImagePreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+        
+        // Auto-upload the image
+        await uploadImage(file);
+      } else {
+        setUploadError('Please drop an image file');
+      }
     }
   };
 
@@ -81,12 +176,15 @@ export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmiss
     onSubmit({ 
       ...formData, 
       file: selectedFile,
+      imageUrl: formData.imageUrl,
       walletAddress: wallet 
     });
     
     // Reset form
-    setFormData({ title: '', squad: '', description: '', courseRef: '' });
+    setFormData({ title: '', squad: '', description: '', courseRef: '', imageUrl: '' });
     setSelectedFile(null);
+    setImagePreview(null);
+    setUploadError('');
   };
 
   return (
@@ -303,26 +401,137 @@ export const BountySubmissionForm = ({ onSubmit, className = '' }: BountySubmiss
           />
         </div>
 
-        <div>
-          <Label htmlFor="file" className="text-white">Upload Artwork</Label>
-          <div className="mt-1">
-            <Input
-              id="file"
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="bg-gray-800 border-gray-600 text-white file:bg-purple-600 file:border-0 file:text-white file:px-4 file:py-2 file:rounded file:cursor-pointer"
-              required
-            />
-          </div>
-          {selectedFile && (
-            <div className="mt-2 flex items-center gap-2 text-sm text-gray-300">
-              <ImageIcon className="w-4 h-4" />
-              <span>{selectedFile.name}</span>
-              <span className="text-gray-500">({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+        {/* Conditional Image Upload Section */}
+        {(bountyData?.image_required || bountyData?.submission_type === 'image' || bountyData?.submission_type === 'both') && (
+          <div>
+            <Label className="text-white block mb-3">
+              {bountyData?.image_required ? 'Upload Image *' : 'Upload Image (Optional)'}
+            </Label>
+            
+            {/* Custom Upload Button with Drag & Drop */}
+            <div className="mt-1">
+              <input
+                id="file"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+                required={bountyData?.image_required}
+                disabled={isUploading}
+              />
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`
+                  relative border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200
+                  ${isDragOver 
+                    ? 'border-cyan-500 bg-cyan-500/10' 
+                    : isUploading 
+                      ? 'border-blue-500 bg-blue-500/10' 
+                      : selectedFile 
+                        ? 'border-green-500 bg-green-500/10' 
+                        : 'border-purple-500 bg-purple-500/10 hover:border-purple-400 hover:bg-purple-500/20'
+                  }
+                `}
+              >
+                <label
+                  htmlFor="file"
+                  className={`
+                    inline-flex items-center gap-2 cursor-pointer transition-all duration-200
+                    ${isUploading 
+                      ? 'text-blue-400 cursor-not-allowed' 
+                      : selectedFile 
+                        ? 'text-green-400 hover:text-green-300' 
+                        : 'text-purple-400 hover:text-purple-300'
+                    }
+                  `}
+                >
+                  {isUploading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-lg font-medium">Uploading Image...</span>
+                    </>
+                  ) : selectedFile ? (
+                    <>
+                      <ImageIcon className="w-6 h-6" />
+                      <span className="text-lg font-medium">Change Image</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-6 h-6" />
+                      <span className="text-lg font-medium">Click to Upload or Drag & Drop</span>
+                    </>
+                  )}
+                </label>
+                
+                {!selectedFile && !isUploading && (
+                  <p className="text-sm text-gray-400 mt-2">
+                    Supports: JPG, PNG, GIF (Max 10MB)
+                  </p>
+                )}
+                
+                {isDragOver && (
+                  <div className="absolute inset-0 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                    <div className="text-cyan-400 font-medium">Drop your image here</div>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+            
+            {/* Upload Status */}
+            {isUploading && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-blue-400">
+                <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                <span>Uploading image...</span>
+              </div>
+            )}
+            
+            {uploadError && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-red-400">
+                <AlertCircle className="w-4 h-4" />
+                <span>{uploadError}</span>
+              </div>
+            )}
+            
+            {/* File Info */}
+            {selectedFile && !isUploading && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-gray-300">
+                <ImageIcon className="w-4 h-4" />
+                <span>{selectedFile.name}</span>
+                <span className="text-gray-500">({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</span>
+              </div>
+            )}
+            
+            {/* Image Preview */}
+            {imagePreview && (
+              <div className="mt-3">
+                <div className="relative inline-block group">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="max-w-full h-32 object-cover rounded-lg border border-gray-600"
+                  />
+                  <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                    ✓ Uploaded
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setImagePreview(null);
+                      setFormData(prev => ({ ...prev, imageUrl: '' }));
+                      setUploadError('');
+                    }}
+                    className="absolute top-2 left-2 bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <Button 
           type="submit" 

@@ -684,7 +684,7 @@ export default function AdminDashboard() {
         const [usersData, completionsData, bountiesData, announcementsData, eventsData, submissionsData] = await Promise.all([
           fetchAllUsers(),
           fetchAllCourseCompletions(),
-          fetch('/api/bounties/').then(res => {
+          fetch('/api/bounties').then(res => {
             if (!res.ok) {
               console.error('Failed to fetch bounties:', res.status, res.statusText);
               return [];

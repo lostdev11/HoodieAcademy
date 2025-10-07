@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import {
   ExternalLink, Zap, Crown, Shield, Activity
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
 
 interface UserSubmission {
   id: string;
@@ -91,13 +92,26 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<EnhancedUser | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<EnhancedUser | null>(null);
+  const [editForm, setEditForm] = useState({
+    display_name: '',
+    username: '',
+    squad: '',
+    bio: '',
+    level: 0,
+    total_xp: 0
+  });
+  const [saveLoading, setSaveLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [stats, setStats] = useState<any>({});
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(120000); // 2 minutes for users
   
   const itemsPerPage = 10;
 
   // Fetch users with comprehensive data
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const url = walletAddress ? `/api/admin/users?wallet=${walletAddress}` : '/api/admin/users';
@@ -119,11 +133,83 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
     } finally {
       setLoading(false);
     }
+  }, [walletAddress]);
+
+  // Save user data
+  const handleSaveUser = async () => {
+    if (!editingUser || !walletAddress) return;
+
+    setSaveLoading(true);
+    try {
+      const response = await fetch('/api/admin/users/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: walletAddress,
+          targetWallet: editingUser.wallet_address,
+          updates: editForm
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user');
+      }
+
+      // Refresh users data
+      await fetchUsers();
+      
+      // Close edit modal
+      setIsEditModalOpen(false);
+      setEditingUser(null);
+      setEditForm({
+        display_name: '',
+        username: '',
+        squad: '',
+        bio: '',
+        level: 0,
+        total_xp: 0
+      });
+
+    } catch (error) {
+      console.error('Error saving user:', error);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Open edit modal
+  const handleEditUser = (user: EnhancedUser) => {
+    setEditingUser(user);
+    setEditForm({
+      display_name: user.display_name || '',
+      username: user.username || '',
+      squad: user.squad || '',
+      bio: user.bio || '',
+      level: user.level || 0,
+      total_xp: user.total_xp || 0
+    });
+    setIsEditModalOpen(true);
   };
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
+
+  // Auto-refresh functionality
+  useEffect(() => {
+    if (!autoRefresh || !walletAddress) return;
+
+    console.log('Setting up auto-refresh for enhanced users with interval:', refreshInterval);
+    const interval = setInterval(() => {
+      console.log('Auto-refreshing enhanced users...');
+      fetchUsers();
+    }, refreshInterval);
+
+    return () => {
+      console.log('Clearing enhanced users auto-refresh interval');
+      clearInterval(interval);
+    };
+  }, [autoRefresh, refreshInterval, fetchUsers]);
 
   // Filter and search users
   useEffect(() => {
@@ -308,7 +394,35 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
               <Users className="w-5 h-5" />
               <CardTitle>User Management</CardTitle>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              <div className="flex items-center space-x-2">
+                <label className="text-sm text-slate-400">Auto-refresh:</label>
+                <select
+                  value={refreshInterval}
+                  onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                  className="bg-slate-700 border border-slate-600 text-white rounded px-2 py-1 text-sm"
+                  disabled={!autoRefresh}
+                >
+                  <option value={60000}>1m</option>
+                  <option value={120000}>2m</option>
+                  <option value={300000}>5m</option>
+                  <option value={600000}>10m</option>
+                </select>
+                <Button
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                  variant={autoRefresh ? "default" : "outline"}
+                  size="sm"
+                  className={autoRefresh ? "bg-green-600 hover:bg-green-700" : "border-slate-600 text-slate-300"}
+                >
+                  {autoRefresh ? "ON" : "OFF"}
+                </Button>
+                {autoRefresh && (
+                  <div className="flex items-center space-x-1 text-green-400 text-xs">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span>Live</span>
+                  </div>
+                )}
+              </div>
               <Button 
                 onClick={handleExport} 
                 variant="outline" 
@@ -804,7 +918,10 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem className="text-blue-600">
+                          <DropdownMenuItem 
+                            className="text-blue-600"
+                            onClick={() => handleEditUser(user)}
+                          >
                             <Edit className="w-4 h-4 mr-2" />
                             Edit Profile
                           </DropdownMenuItem>
@@ -862,6 +979,112 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
           </CardContent>
         </Card>
       )}
+
+      {/* Edit User Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="bg-slate-800 border-slate-600 max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Edit className="w-5 h-5" />
+              Edit User Profile
+            </DialogTitle>
+          </DialogHeader>
+          
+          {editingUser && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-white">Display Name</Label>
+                  <Input
+                    id="display_name"
+                    value={editForm.display_name}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, display_name: e.target.value }))}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="Enter display name"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-white">Username</Label>
+                  <Input
+                    id="username"
+                    value={editForm.username}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="Enter username"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-white">Squad</Label>
+                  <Input
+                    id="squad"
+                    value={editForm.squad}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, squad: e.target.value }))}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    placeholder="Enter squad"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-white">Level</Label>
+                  <Input
+                    id="level"
+                    type="number"
+                    value={editForm.level}
+                    onChange={(e) => setEditForm(prev => ({ ...prev, level: parseInt(e.target.value) || 0 }))}
+                    className="bg-slate-700 border-slate-600 text-white"
+                    min="1"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-white">Total XP</Label>
+                <Input
+                  id="total_xp"
+                  type="number"
+                  value={editForm.total_xp}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, total_xp: parseInt(e.target.value) || 0 }))}
+                  className="bg-slate-700 border-slate-600 text-white"
+                  min="0"
+                />
+              </div>
+
+              <div>
+                <Label className="text-white">Bio</Label>
+                <textarea
+                  id="bio"
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
+                  className="w-full bg-slate-700 border border-slate-600 text-white rounded-md px-3 py-2"
+                  rows={3}
+                  placeholder="Enter bio"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="border-slate-600 text-slate-300"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveUser}
+                  disabled={saveLoading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {saveLoading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

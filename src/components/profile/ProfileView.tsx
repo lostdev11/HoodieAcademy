@@ -79,6 +79,8 @@ export function ProfileView() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState<string>('');
+  const [saveError, setSaveError] = useState<string>('');
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Wallet connection
   const { connectWallet, disconnectWallet: disconnectWalletHook } = useWalletSupabase();
@@ -101,6 +103,108 @@ export function ProfileView() {
     error: bountyError
   } = useUserBounties(wallet);
 
+  // Save profile function
+  const saveProfile = async () => {
+    if (!wallet) {
+      setSaveError('No wallet connected');
+      return;
+    }
+
+    if (displayName.trim() === '') {
+      setSaveError('Display name cannot be empty');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError('');
+    setSaveSuccess(false);
+    setSaveProgress('Saving profile...');
+
+    try {
+      const response = await fetch('/api/users/track', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          walletAddress: wallet,
+          displayName: displayName.trim(),
+          squad: squad,
+          activityType: 'profile_update',
+          metadata: {
+            field: 'display_name',
+            old_value: originalDisplayName,
+            new_value: displayName.trim(),
+            timestamp: new Date().toISOString()
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save profile');
+      }
+
+      const result = await response.json();
+      console.log('✅ Profile saved successfully:', result);
+
+      // Update localStorage
+      localStorage.setItem('userDisplayName', displayName.trim());
+      setOriginalDisplayName(displayName.trim());
+      setSaveSuccess(true);
+      setSaveProgress('Profile saved successfully!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSaveSuccess(false);
+        setSaveProgress('');
+      }, 3000);
+
+    } catch (error) {
+      console.error('❌ Error saving profile:', error);
+      setSaveError(error instanceof Error ? error.message : 'Failed to save profile');
+      setSaveProgress('');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Cancel editing function
+  const cancelEdit = () => {
+    setDisplayName(originalDisplayName);
+    setEditMode(false);
+    setSaveError('');
+    setSaveSuccess(false);
+    setSaveProgress('');
+  };
+
+  // Load profile data from API
+  const loadProfileData = async (walletAddress: string) => {
+    try {
+      console.log('🔄 Loading profile data for wallet:', walletAddress.slice(0, 8) + '...');
+      
+      const response = await fetch(`/api/users/track?wallet=${walletAddress}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📊 Profile data loaded:', data);
+        
+        if (data.user && data.user.display_name) {
+          const savedDisplayName = data.user.display_name;
+          setDisplayName(savedDisplayName);
+          setOriginalDisplayName(savedDisplayName);
+          localStorage.setItem('userDisplayName', savedDisplayName);
+          console.log('✅ Loaded saved display name:', savedDisplayName);
+        }
+        
+        if (data.user && data.user.squad) {
+          setSquad(data.user.squad);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading profile data:', error);
+    }
+  };
+
   // Auto-detect connected wallet from database or session
   useEffect(() => {
     const detectConnectedWallet = async () => {
@@ -111,6 +215,11 @@ export function ProfileView() {
       
       console.log('ProfileView: Detected wallet:', currentWallet);
       setWallet(currentWallet);
+
+      // Load profile data from API
+      if (currentWallet) {
+        await loadProfileData(currentWallet);
+      }
 
       // Try to fetch user data from Supabase first
       if (currentWallet) {
@@ -526,24 +635,94 @@ export function ProfileView() {
           <CardContent>
             <div className="flex flex-col md:flex-row gap-8">
               <div className="flex-1 space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Display Name:</span>
-                  {editMode ? (
-                    <div className="relative">
-                      <Input 
-                        value={displayName} 
-                        onChange={e => setDisplayName(e.target.value)} 
-                        className="w-40 bg-slate-700/50 border-cyan-500/30 text-white pr-8" 
-                        disabled={isSaving}
-                      />
-                      {isSaving && (
-                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                          <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-400">Display Name:</span>
+                    {editMode ? (
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <Input 
+                            value={displayName} 
+                            onChange={e => setDisplayName(e.target.value)} 
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && !isSaving && displayName.trim() !== originalDisplayName) {
+                                saveProfile();
+                              } else if (e.key === 'Escape') {
+                                cancelEdit();
+                              }
+                            }}
+                            className="w-48 bg-slate-700/50 border-cyan-500/30 text-white pr-8" 
+                            disabled={isSaving}
+                            placeholder="Enter your display name"
+                            autoFocus
+                          />
+                          {isSaving && (
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <Button 
+                          onClick={saveProfile}
+                          disabled={isSaving || displayName.trim() === originalDisplayName}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <Save className="w-3 h-3 mr-1" />
+                          Save
+                        </Button>
+                        <Button 
+                          onClick={cancelEdit}
+                          disabled={isSaving}
+                          size="sm"
+                          variant="outline"
+                          className="border-gray-500 text-gray-400 hover:bg-gray-700"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-cyan-300 font-semibold">{displayName}</span>
+                        <Button 
+                          onClick={() => setEditMode(true)}
+                          size="sm"
+                          variant="outline"
+                          className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                        >
+                          <Pencil className="w-3 h-3 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Save Status Messages */}
+                  {editMode && !saveProgress && !saveSuccess && !saveError && (
+                    <div className="text-xs text-gray-500">
+                      Press Enter to save, Escape to cancel
                     </div>
-                  ) : (
-                    <span className="text-cyan-300 font-semibold">{displayName}</span>
+                  )}
+                  
+                  {saveProgress && (
+                    <div className="text-sm text-blue-400 flex items-center gap-2">
+                      <div className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                      {saveProgress}
+                    </div>
+                  )}
+                  
+                  {saveSuccess && (
+                    <div className="text-sm text-green-400 flex items-center gap-2">
+                      <CheckCircle className="w-3 h-3" />
+                      Profile saved successfully!
+                    </div>
+                  )}
+                  
+                  {saveError && (
+                    <div className="text-sm text-red-400 flex items-center gap-2">
+                      <AlertCircle className="w-3 h-3" />
+                      {saveError}
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
@@ -1191,23 +1370,36 @@ export function ProfileView() {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Target className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-400 text-sm mb-4">No bounty submissions yet</p>
-                  <Button asChild className="bg-orange-600 hover:bg-orange-700">
-                    <Link href="/bounties">
-                      <Target className="w-4 h-4 mr-2" />
-                      Browse Bounties
-                    </Link>
-                  </Button>
+                  <Target className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                  <p className="text-gray-400 text-sm mb-6">No bounty submissions yet</p>
+                  <div className="space-y-3">
+                    <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 text-sm font-medium">
+                      <Link href="/bounties">
+                        <Target className="w-4 h-4 mr-2" />
+                        Browse Bounties
+                      </Link>
+                    </Button>
+                    <div className="text-xs text-gray-500">
+                      Complete bounties to earn XP, SOL, and exclusive rewards
+                    </div>
+                  </div>
                 </div>
               )}
 
               {/* Submit New Bounty */}
-              <div className="border-t border-slate-600/30 pt-4">
-                <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
-                  <Target className="w-4 h-4" />
-                  Submit New Bounty Entry
-                </h4>
+              <div className="border-t border-slate-600/30 pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-white font-semibold flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Submit New Bounty Entry
+                  </h4>
+                  <Button asChild variant="outline" size="sm" className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10">
+                    <Link href="/bounties">
+                      <Target className="w-3 h-3 mr-1" />
+                      Quick Browse
+                    </Link>
+                  </Button>
+                </div>
                 <BountySubmissionForm 
                   onSubmit={(data: BountySubmissionData) => {
                     console.log('Submitting bounty from profile:', data);

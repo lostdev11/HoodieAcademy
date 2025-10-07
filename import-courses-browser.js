@@ -6,8 +6,21 @@
   
   console.log('🚀 Starting browser-based course import...');
   
-  // Course data to import (manually extracted from public/courses/*.json files)
-  const COURSES_TO_IMPORT = [
+  // Fetch course data from API instead of hardcoded data
+  const fetchCoursesFromAPI = async () => {
+    try {
+      const response = await fetch('/api/courses');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch courses: ${response.status}`);
+      }
+      const courses = await response.json();
+      console.log('📚 Fetched courses from API:', courses.length);
+      return courses;
+    } catch (error) {
+      console.error('❌ Error fetching courses from API:', error);
+      // Fallback to hardcoded data if API fails
+      console.log('🔄 Falling back to hardcoded course data...');
+      return [
     {
       id: 'nft-mastery',
       title: 'NFT Mastery',
@@ -489,7 +502,9 @@
       totalLessons: 6,
       sort_order: 37
     }
-  ];
+      ];
+    }
+  };
   
   // Function to add a course via the admin dashboard
   async function addCourseToDatabase(courseData) {
@@ -523,7 +538,9 @@
   
   // Function to import all courses
   async function importAllCourses() {
-    console.log(`📚 Starting import of ${COURSES_TO_IMPORT.length} courses...\n`);
+    // Fetch courses from API first
+    const coursesToImport = await fetchCoursesFromAPI();
+    console.log(`📚 Starting import of ${coursesToImport.length} courses...\n`);
     
     const results = {
       success: 0,
@@ -531,9 +548,9 @@
       errors: []
     };
     
-    for (let i = 0; i < COURSES_TO_IMPORT.length; i++) {
-      const course = COURSES_TO_IMPORT[i];
-      console.log(`🔄 Processing ${i + 1}/${COURSES_TO_IMPORT.length}: ${course.title}`);
+    for (let i = 0; i < coursesToImport.length; i++) {
+      const course = coursesToImport[i];
+      console.log(`🔄 Processing ${i + 1}/${coursesToImport.length}: ${course.title}`);
       
       try {
         const result = await addCourseToDatabase(course);

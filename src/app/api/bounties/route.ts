@@ -1,212 +1,102 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
-import { checkAdminStatusWithFallback } from '@/lib/admin-utils';
+import { isAdminForUser } from '@/lib/admin';
+import { BountyStatus } from '@/types/tracking';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const squad = searchParams.get('squad');
-    const status = searchParams.get('status');
-    const search = searchParams.get('search');
+const BountyCreate = z.object({
+  title: z.string().min(3),
+  description: z.string().optional(),
+  slug: z.string().optional(),
+  reward_xp: z.number().int().min(1).default(50),
+  status: z.enum(['draft','open','closed']).default('draft'),
+  open_at: z.string().datetime().optional(),
+  close_at: z.string().datetime().optional(),
+  tags: z.array(z.string()).optional(),
+  max_submissions: z.number().int().positive().optional(),
+  allow_multiple_submissions: z.boolean().optional(),
+  image_required: z.boolean().default(false),
+  submission_type: z.enum(['text', 'image', 'both']).default('text')
+});
 
+export const runtime = 'edge';
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get('status');
+    
     let query = supabase
       .from('bounties')
       .select('*')
       .order('created_at', { ascending: false });
-
-    // Apply filters
-    if (squad && squad !== 'all') {
-      query = query.eq('squad_tag', squad);
-    }
-
-    if (status && status !== 'all') {
+    
+    if (status) {
       query = query.eq('status', status);
     }
-
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,short_desc.ilike.%${search}%`);
-    }
-
-    const { data: bounties, error } = await query;
-
+    
+    const { data, error } = await query;
+    
     if (error) {
-      console.error('Error fetching bounties:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch bounties', details: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
-
-    return NextResponse.json(bounties || []);
+    
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error in bounties API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Error fetching bounties:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    const body = await request.json();
-    
-    const { 
-      title, 
-      short_desc, 
-      squad_tag, 
-      reward, 
-      reward_type = 'XP',
-      start_date,
-      deadline, 
-      status = 'active', 
-      hidden = false,
-      nft_prize,
-      nft_prize_image,
-      nft_prize_description,
-      walletAddress 
-    } = body;
-    
-    if (!title || !short_desc || !walletAddress) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    // For NFT rewards, validate NFT prize name
-    if (reward_type === 'NFT' && !nft_prize) {
-      return NextResponse.json(
-        { error: 'NFT prize name is required for NFT rewards' },
-        { status: 400 }
-      );
-    }
-
-    // For XP/SOL rewards, validate reward amount
-    if ((reward_type === 'XP' || reward_type === 'SOL') && !reward) {
-      return NextResponse.json(
-        { error: 'Reward amount is required for XP/SOL rewards' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user is admin
-    if (!checkAdminStatusWithFallback(walletAddress)) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      );
+    // Check admin permissions
+    const admin = await isAdminForUser(supabase);
+    if (!admin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     
-    const bountyData = {
-      title,
-      short_desc,
-      squad_tag: squad_tag || null,
-      reward: reward_type === 'NFT' ? (nft_prize || '') : reward,
-      reward_type: reward_type || 'XP',
-      start_date: start_date ? new Date(start_date).toISOString() : null,
-      deadline: deadline ? new Date(deadline).toISOString() : null,
-      status,
-      hidden,
-      nft_prize: nft_prize || null,
-      nft_prize_image: nft_prize_image || null,
-      nft_prize_description: nft_prize_description || null,
-      submissions: 0, // Initialize with 0 submissions
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    console.log('Creating bounty with data:', bountyData);
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     
-    const { data: bounty, error } = await supabase
-      .from('bounties')
-      .insert([bountyData])
-      .select()
-      .single();
-    
-    if (error) {
-      console.error('Error creating bounty:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
+    // Parse request body
+    const body = await req.json();
+    const parsed = BountyCreate.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json({ 
-        error: 'Failed to create bounty', 
-        details: error.message,
-        code: error.code 
-      }, { status: 500 });
+        error: 'Invalid request data', 
+        details: parsed.error.flatten() 
+      }, { status: 400 });
     }
     
-    return NextResponse.json(bounty, { status: 201 });
-  } catch (error) {
-    console.error('Error in bounties POST:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function PUT(request: Request) {
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    const body = await request.json();
-    const { id, ...updateData } = body;
+    const input = parsed.data;
     
-    if (!id) {
-      return NextResponse.json({ error: 'Bounty ID is required' }, { status: 400 });
-    }
-    
-    updateData.updated_at = new Date().toISOString();
-    
-    const { data: bounty, error } = await supabase
+    // Create bounty
+    const { data, error } = await supabase
       .from('bounties')
-      .update(updateData)
-      .eq('id', id)
-      .select()
+      .insert({
+        ...input,
+        tags: input.tags ?? [],
+        created_by: user.id
+      })
+      .select('*')
       .single();
     
     if (error) {
-      console.error('Error updating bounty:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     
-    return NextResponse.json(bounty);
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error in bounties PUT:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return NextResponse.json({ error: 'Bounty ID is required' }, { status: 400 });
-    }
-    
-    const { error } = await supabase
-      .from('bounties')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Error deleting bounty:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error in bounties DELETE:', error);
+    console.error('Error creating bounty:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

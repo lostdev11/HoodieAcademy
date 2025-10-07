@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { getSupabaseBrowser } from '@/lib/supabaseClient';
-import { Target, Clock, Award, Users, Eye, EyeOff, Send, CheckCircle } from 'lucide-react';
+import { Target, Clock, Award, Users, Eye, EyeOff, Send, CheckCircle, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DBBounty } from '@/types/database';
@@ -18,7 +18,7 @@ export default function BountiesGrid({
   showHidden = false 
 }: BountiesGridProps) {
   const [bounties, setBounties] = useState<DBBounty[]>(initialBounties);
-  const [userSubmissions, setUserSubmissions] = useState<{ [bountyId: string]: any }>({});
+  const [userSubmissions, setUserSubmissions] = useState<{ [bountyId: string]: { status: string; submission: string } }>({});
   const [submittingBounty, setSubmittingBounty] = useState<string | null>(null);
   const [submissionText, setSubmissionText] = useState<{ [bountyId: string]: string }>({});
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export default function BountiesGrid({
     const fetchBounties = async () => {
       try {
         // Use the API instead of direct Supabase access
-        const response = await fetch('/api/bounties/');
+        const response = await fetch('/api/bounties');
         const result = await response.json();
         
         if (response.ok) {
@@ -81,7 +81,7 @@ export default function BountiesGrid({
     if (!walletAddress || bounties.length === 0) return;
 
     const fetchUserSubmissions = async () => {
-      const submissions: { [bountyId: string]: any } = {};
+      const submissions: { [bountyId: string]: { status: string; submission: string } } = {};
       
       for (const bounty of bounties) {
         try {
@@ -311,32 +311,11 @@ export default function BountiesGrid({
                     </Badge>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <textarea
-                      placeholder="Describe your submission or paste a link..."
-                      value={submissionText[bounty.id] || ''}
-                      onChange={(e) => setSubmissionText(prev => ({
-                        ...prev,
-                        [bounty.id]: e.target.value
-                      }))}
-                      className="w-full p-2 text-sm border border-gray-300 rounded-md resize-none break-words overflow-wrap-anywhere bg-white text-gray-900 placeholder:text-gray-500 focus:text-gray-900 focus:bg-white"
-                      rows={2}
-                    />
-                    <Button
-                      onClick={() => handleSubmitBounty(bounty.id)}
-                      disabled={!submissionText[bounty.id]?.trim() || submittingBounty === bounty.id}
-                      className="w-full bg-cyan-600 hover:bg-cyan-700 text-white text-sm"
-                    >
-                      {submittingBounty === bounty.id ? (
-                        'Submitting...'
-                      ) : (
-                        <>
-                          <Send className="w-3 h-3 mr-1" />
-                          Submit Bounty
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  <BountySubmissionCard 
+                    bounty={bounty}
+                    onSubmit={handleSubmitBounty}
+                    isSubmitting={submittingBounty === bounty.id}
+                  />
                 )}
               </div>
             )}
@@ -357,6 +336,223 @@ export default function BountiesGrid({
           </CardContent>
         </Card>
       ))}
+    </div>
+  );
+}
+
+// Bounty Submission Card Component
+interface BountySubmissionCardProps {
+  bounty: DBBounty;
+  onSubmit: (bountyId: string) => void;
+  isSubmitting: boolean;
+}
+
+function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissionCardProps) {
+  const [submissionText, setSubmissionText] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  // Check if bounty requires image
+  const requiresImage = bounty.image_required || bounty.submission_type === 'image' || bounty.submission_type === 'both';
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setUploadError('');
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      // Auto-upload the image
+      await uploadImage(file);
+    }
+  };
+
+  const uploadImage = async (file: File) => {
+    setIsUploading(true);
+    setUploadError('');
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('walletAddress', 'user-wallet'); // This would come from auth context
+      formData.append('context', 'bounty_submission');
+      
+      const response = await fetch('/api/upload/moderated-image', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload image');
+      }
+      
+      const result = await response.json();
+      console.log('✅ Image uploaded successfully:', result);
+      
+    } catch (error) {
+      console.error('❌ Error uploading image:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload image');
+      setSelectedFile(null);
+      setImagePreview(null);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        setSelectedFile(file);
+        setUploadError('');
+        
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImagePreview(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+        
+        // Auto-upload the image
+        await uploadImage(file);
+      } else {
+        setUploadError('Please drop an image file');
+      }
+    }
+  };
+
+  const canSubmit = submissionText.trim() && (!requiresImage || selectedFile);
+
+  return (
+    <div className="space-y-3">
+      {/* Text Submission */}
+      <textarea
+        placeholder="Describe your submission or paste a link..."
+        value={submissionText}
+        onChange={(e) => setSubmissionText(e.target.value)}
+        className="w-full p-2 text-sm border border-gray-300 rounded-md resize-none break-words overflow-wrap-anywhere bg-white text-gray-900 placeholder:text-gray-500 focus:text-gray-900 focus:bg-white"
+        rows={2}
+      />
+
+      {/* Image Upload Section */}
+      {requiresImage && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-700">
+            {bounty.image_required ? 'Upload Image *' : 'Upload Image (Optional)'}
+          </label>
+          
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`
+              relative border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 cursor-pointer
+              ${isDragOver 
+                ? 'border-cyan-500 bg-cyan-500/10' 
+                : isUploading 
+                  ? 'border-blue-500 bg-blue-500/10' 
+                  : selectedFile 
+                    ? 'border-green-500 bg-green-500/10' 
+                    : 'border-purple-500 bg-purple-500/10 hover:border-purple-400 hover:bg-purple-500/20'
+              }
+            `}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              required={bounty.image_required}
+              disabled={isUploading}
+            />
+            
+            {isUploading ? (
+              <div className="flex items-center justify-center gap-2 text-blue-600">
+                <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-sm">Uploading...</span>
+              </div>
+            ) : selectedFile ? (
+              <div className="flex items-center justify-center gap-2 text-green-600">
+                <ImageIcon className="w-4 h-4" />
+                <span className="text-sm">Image Selected - Click to Change</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2 text-purple-600">
+                <Upload className="w-4 h-4" />
+                <span className="text-sm">Click to Upload or Drag & Drop</span>
+              </div>
+            )}
+            
+            {isDragOver && (
+              <div className="absolute inset-0 bg-cyan-500/20 rounded-lg flex items-center justify-center">
+                <div className="text-cyan-600 font-medium text-sm">Drop your image here</div>
+              </div>
+            )}
+          </div>
+
+          {/* Upload Status */}
+          {uploadError && (
+            <div className="flex items-center gap-2 text-sm text-red-600">
+              <AlertCircle className="w-3 h-3" />
+              <span>{uploadError}</span>
+            </div>
+          )}
+
+          {/* Image Preview */}
+          {imagePreview && (
+            <div className="relative">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-full h-24 object-cover rounded-lg border border-gray-300"
+              />
+              <div className="absolute top-1 right-1 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                ✓ Uploaded
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Submit Button */}
+      <Button
+        onClick={() => onSubmit(bounty.id)}
+        disabled={!canSubmit || isSubmitting}
+        className="w-full bg-cyan-600 hover:bg-cyan-700 text-white text-sm"
+      >
+        {isSubmitting ? (
+          'Submitting...'
+        ) : (
+          <>
+            <Send className="w-3 h-3 mr-1" />
+            Submit Bounty
+          </>
+        )}
+      </Button>
     </div>
   );
 }

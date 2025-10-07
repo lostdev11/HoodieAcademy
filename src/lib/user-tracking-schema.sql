@@ -1,330 +1,530 @@
--- User Tracking Schema for Hoodie Academy
--- This schema provides comprehensive user tracking based on wallet connections and squad placement
+-- Comprehensive User Tracking Schema for Hoodie Academy
+-- This creates all tables, indexes, RLS policies, and triggers for wallet-based user tracking
 
 -- =====================================================
--- 1. USERS TABLE (Enhanced)
+-- 1. PROFILES TABLE (extends auth.users)
 -- =====================================================
-
-CREATE TABLE IF NOT EXISTS users (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  wallet_address TEXT UNIQUE NOT NULL,
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  handle TEXT UNIQUE,
   display_name TEXT,
-  squad TEXT,
-  profile_completed BOOLEAN DEFAULT false,
-  squad_test_completed BOOLEAN DEFAULT false,
-  placement_test_completed BOOLEAN DEFAULT false,
-  is_admin BOOLEAN DEFAULT false,
-  last_active TIMESTAMPTZ,
-  last_seen TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  avatar_url TEXT,
+  primary_wallet TEXT, -- base58 wallet address
+  last_active_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create indexes for users
-CREATE INDEX IF NOT EXISTS idx_users_wallet_address ON users(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_users_squad ON users(squad);
-CREATE INDEX IF NOT EXISTS idx_users_is_admin ON users(is_admin);
-CREATE INDEX IF NOT EXISTS idx_users_last_active ON users(last_active);
-
--- Enable RLS for users
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-
--- Create policies for users
-CREATE POLICY "Users can view all user profiles" ON users
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can update their own profile" ON users
-  FOR UPDATE USING (auth.jwt() ->> 'wallet_address' = wallet_address);
-
-CREATE POLICY "Users can insert their own profile" ON users
-  FOR INSERT WITH CHECK (auth.jwt() ->> 'wallet_address' = wallet_address);
+CREATE INDEX IF NOT EXISTS profiles_primary_wallet_idx ON public.profiles(primary_wallet);
+CREATE INDEX IF NOT EXISTS profiles_last_active_idx ON public.profiles(last_active_at);
 
 -- =====================================================
--- 2. USER XP TABLE
+-- 2. WALLETS TABLE (1:N per user)
 -- =====================================================
-
-CREATE TABLE IF NOT EXISTS user_xp (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  wallet_address TEXT UNIQUE NOT NULL,
-  total_xp INTEGER DEFAULT 0,
-  bounty_xp INTEGER DEFAULT 0,
-  course_xp INTEGER DEFAULT 0,
-  streak_xp INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.wallets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  address TEXT NOT NULL,
+  label TEXT,
+  is_primary BOOLEAN NOT NULL DEFAULT false,
+  connected_first_at TIMESTAMPTZ,
+  connected_last_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create indexes for user_xp
-CREATE INDEX IF NOT EXISTS idx_user_xp_wallet ON user_xp(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_user_xp_total ON user_xp(total_xp);
-
--- Enable RLS for user_xp
-ALTER TABLE user_xp ENABLE ROW LEVEL SECURITY;
-
--- Create policies for user_xp
-CREATE POLICY "Users can view all XP data" ON user_xp
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can update their own XP" ON user_xp
-  FOR UPDATE USING (auth.jwt() ->> 'wallet_address' = wallet_address);
-
-CREATE POLICY "Users can insert their own XP" ON user_xp
-  FOR INSERT WITH CHECK (auth.jwt() ->> 'wallet_address' = wallet_address);
+CREATE UNIQUE INDEX IF NOT EXISTS wallets_user_address_uniq ON public.wallets(user_id, address);
+CREATE INDEX IF NOT EXISTS wallets_primary_idx ON public.wallets(is_primary);
+CREATE INDEX IF NOT EXISTS wallets_address_idx ON public.wallets(address);
 
 -- =====================================================
--- 3. USER ACTIVITY TABLE
+-- 3. SESSIONS TABLE (heartbeats and session tracking)
 -- =====================================================
-
-CREATE TABLE IF NOT EXISTS user_activity (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  wallet_address TEXT NOT NULL,
-  activity_type TEXT NOT NULL,
-  metadata JSONB DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  wallet_address TEXT,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  last_heartbeat_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  ended_at TIMESTAMPTZ,
+  user_agent TEXT,
+  ip INET,
+  is_active BOOLEAN DEFAULT true
 );
 
--- Create indexes for user_activity
-CREATE INDEX IF NOT EXISTS idx_user_activity_wallet ON user_activity(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_user_activity_type ON user_activity(activity_type);
-CREATE INDEX IF NOT EXISTS idx_user_activity_created ON user_activity(created_at);
-
--- Enable RLS for user_activity
-ALTER TABLE user_activity ENABLE ROW LEVEL SECURITY;
-
--- Create policies for user_activity
-CREATE POLICY "Users can view all activity" ON user_activity
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert their own activity" ON user_activity
-  FOR INSERT WITH CHECK (auth.jwt() ->> 'wallet_address' = wallet_address);
+CREATE INDEX IF NOT EXISTS sessions_user_idx ON public.sessions(user_id);
+CREATE INDEX IF NOT EXISTS sessions_heartbeat_idx ON public.sessions(last_heartbeat_at);
+CREATE INDEX IF NOT EXISTS sessions_active_idx ON public.sessions(is_active);
 
 -- =====================================================
--- 4. PLACEMENT TESTS TABLE
+-- 4. EVENT LOG TABLE (immutable append-only)
 -- =====================================================
+DO $$ BEGIN
+    CREATE TYPE public.event_kind AS ENUM (
+      'wallet_connect',
+      'wallet_disconnect',
+      'page_view',
+      'course_start',
+      'course_complete',
+      'lesson_start',
+      'lesson_complete',
+      'exam_started',
+      'exam_submitted',
+      'exam_approved',
+      'exam_rejected',
+      'placement_started',
+      'placement_completed',
+      'custom'
+    );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
-CREATE TABLE IF NOT EXISTS placement_tests (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  wallet_address TEXT NOT NULL,
-  squad TEXT NOT NULL,
-  score INTEGER,
-  completed_at TIMESTAMPTZ DEFAULT NOW(),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.event_log (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  session_id UUID REFERENCES public.sessions(id) ON DELETE SET NULL,
+  wallet_address TEXT,
+  kind public.event_kind NOT NULL,
+  path TEXT, -- for page_view
+  referrer TEXT,
+  course_id TEXT,
+  lesson_id TEXT,
+  exam_id TEXT,
+  payload JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create indexes for placement_tests
-CREATE INDEX IF NOT EXISTS idx_placement_tests_wallet ON placement_tests(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_placement_tests_squad ON placement_tests(squad);
-CREATE INDEX IF NOT EXISTS idx_placement_tests_completed ON placement_tests(completed_at);
-
--- Enable RLS for placement_tests
-ALTER TABLE placement_tests ENABLE ROW LEVEL SECURITY;
-
--- Create policies for placement_tests
-CREATE POLICY "Users can view all placement tests" ON placement_tests
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert their own placement tests" ON placement_tests
-  FOR INSERT WITH CHECK (auth.jwt() ->> 'wallet_address' = wallet_address);
+CREATE INDEX IF NOT EXISTS event_log_user_time_idx ON public.event_log(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS event_log_kind_time_idx ON public.event_log(kind, created_at DESC);
+CREATE INDEX IF NOT EXISTS event_log_path_idx ON public.event_log(path);
+CREATE INDEX IF NOT EXISTS event_log_session_idx ON public.event_log(session_id);
+CREATE INDEX IF NOT EXISTS event_log_wallet_idx ON public.event_log(wallet_address);
 
 -- =====================================================
--- 5. SUBMISSIONS TABLE (Enhanced)
+-- 5. COURSE PROGRESS TABLE (coarse state)
 -- =====================================================
-
-CREATE TABLE IF NOT EXISTS submissions (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  squad TEXT,
-  course_ref TEXT,
-  bounty_id TEXT,
-  wallet_address TEXT NOT NULL,
-  image_url TEXT,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-  upvotes JSONB DEFAULT '{}',
-  total_upvotes INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Create indexes for submissions
-CREATE INDEX IF NOT EXISTS idx_submissions_wallet_address ON submissions(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_submissions_bounty_id ON submissions(bounty_id);
-CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
-CREATE INDEX IF NOT EXISTS idx_submissions_created_at ON submissions(created_at);
-CREATE INDEX IF NOT EXISTS idx_submissions_squad ON submissions(squad);
-
--- Enable RLS for submissions
-ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
-
--- Create policies for submissions
-CREATE POLICY "Users can view all submissions" ON submissions
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert their own submissions" ON submissions
-  FOR INSERT WITH CHECK (auth.jwt() ->> 'wallet_address' = wallet_address);
-
-CREATE POLICY "Users can update their own submissions" ON submissions
-  FOR UPDATE USING (auth.jwt() ->> 'wallet_address' = wallet_address);
-
--- =====================================================
--- 6. BOUNTY SUBMISSIONS TABLE
--- =====================================================
-
-CREATE TABLE IF NOT EXISTS bounty_submissions (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  wallet_address TEXT NOT NULL,
-  bounty_id TEXT NOT NULL,
-  submission_id TEXT NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
-  xp_awarded INTEGER DEFAULT 0,
-  placement TEXT CHECK (placement IN ('first', 'second', 'third')),
-  sol_prize DECIMAL(10, 8) DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(wallet_address, bounty_id, submission_id)
-);
-
--- Create indexes for bounty_submissions
-CREATE INDEX IF NOT EXISTS idx_bounty_submissions_wallet ON bounty_submissions(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_bounty_submissions_bounty ON bounty_submissions(bounty_id);
-CREATE INDEX IF NOT EXISTS idx_bounty_submissions_placement ON bounty_submissions(placement);
-CREATE INDEX IF NOT EXISTS idx_bounty_submissions_created ON bounty_submissions(created_at);
-
--- Enable RLS for bounty_submissions
-ALTER TABLE bounty_submissions ENABLE ROW LEVEL SECURITY;
-
--- Create policies for bounty_submissions
-CREATE POLICY "Users can view all bounty submissions" ON bounty_submissions
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert their own bounty submissions" ON bounty_submissions
-  FOR INSERT WITH CHECK (auth.jwt() ->> 'wallet_address' = wallet_address);
-
-CREATE POLICY "Admins can update bounty submissions" ON bounty_submissions
-  FOR UPDATE USING (auth.jwt() ->> 'is_admin' = 'true');
-
--- =====================================================
--- 7. COURSE COMPLETIONS TABLE
--- =====================================================
-
-CREATE TABLE IF NOT EXISTS course_completions (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  wallet_address TEXT NOT NULL,
+CREATE TABLE IF NOT EXISTS public.course_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   course_id TEXT NOT NULL,
-  course_title TEXT,
-  completed_at TIMESTAMPTZ DEFAULT NOW(),
-  xp_awarded INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  started_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  last_event_at TIMESTAMPTZ,
+  progress_percent NUMERIC(5,2) NOT NULL DEFAULT 0,
+  UNIQUE (user_id, course_id)
 );
 
--- Create indexes for course_completions
-CREATE INDEX IF NOT EXISTS idx_course_completions_wallet ON course_completions(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_course_completions_course ON course_completions(course_id);
-CREATE INDEX IF NOT EXISTS idx_course_completions_completed ON course_completions(completed_at);
-
--- Enable RLS for course_completions
-ALTER TABLE course_completions ENABLE ROW LEVEL SECURITY;
-
--- Create policies for course_completions
-CREATE POLICY "Users can view all course completions" ON course_completions
-  FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert their own course completions" ON course_completions
-  FOR INSERT WITH CHECK (auth.jwt() ->> 'wallet_address' = wallet_address);
+CREATE INDEX IF NOT EXISTS course_progress_user_idx ON public.course_progress(user_id);
+CREATE INDEX IF NOT EXISTS course_progress_course_idx ON public.course_progress(course_id);
 
 -- =====================================================
--- 8. TRIGGERS FOR UPDATED_AT
+-- 6. PLACEMENT PROGRESS TABLE
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.placement_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  status TEXT CHECK (status IN ('not_started','in_progress','submitted','approved','rejected')) NOT NULL DEFAULT 'not_started',
+  started_at TIMESTAMPTZ,
+  submitted_at TIMESTAMPTZ,
+  decided_at TIMESTAMPTZ,
+  decided_by UUID REFERENCES auth.users(id),
+  score NUMERIC(5,2),
+  notes TEXT
+);
+
+CREATE INDEX IF NOT EXISTS placement_progress_user_idx ON public.placement_progress(user_id);
+CREATE INDEX IF NOT EXISTS placement_progress_status_idx ON public.placement_progress(status);
+
+-- =====================================================
+-- 7. ADMIN APPROVALS TABLE (audit for exam approvals)
+-- =====================================================
+CREATE TABLE IF NOT EXISTS public.admin_approvals (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id UUID NOT NULL REFERENCES auth.users(id),
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  resource_kind TEXT NOT NULL CHECK (resource_kind IN ('exam','placement')),
+  resource_id TEXT NOT NULL,
+  action TEXT NOT NULL CHECK (action IN ('approved','rejected')),
+  reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS admin_approvals_user_idx ON public.admin_approvals(user_id);
+CREATE INDEX IF NOT EXISTS admin_approvals_admin_idx ON public.admin_approvals(admin_id);
+
+-- =====================================================
+-- 8. MATERIALIZED VIEWS FOR ANALYTICS
+-- =====================================================
+
+-- Daily Active Users (DAU)
+DROP MATERIALIZED VIEW IF EXISTS public.activity_daily;
+CREATE MATERIALIZED VIEW public.activity_daily AS
+SELECT 
+  DATE_TRUNC('day', created_at) as day, 
+  COUNT(DISTINCT user_id) as dau,
+  COUNT(DISTINCT wallet_address) as unique_wallets,
+  COUNT(*) as total_events
+FROM public.event_log
+WHERE kind IN ('page_view','lesson_start','lesson_complete','course_start','course_complete','exam_started','exam_submitted','placement_started','placement_completed','wallet_connect')
+GROUP BY 1
+WITH NO DATA;
+
+CREATE UNIQUE INDEX activity_daily_day_idx ON public.activity_daily(day);
+
+-- Weekly Active Users (WAU) - rolling 7 days
+DROP MATERIALIZED VIEW IF EXISTS public.activity_weekly;
+CREATE MATERIALIZED VIEW public.activity_weekly AS
+SELECT 
+  DATE_TRUNC('week', created_at) as week, 
+  COUNT(DISTINCT user_id) as wau,
+  COUNT(DISTINCT wallet_address) as unique_wallets,
+  COUNT(*) as total_events
+FROM public.event_log
+WHERE kind IN ('page_view','lesson_start','lesson_complete','course_start','course_complete','exam_started','exam_submitted','placement_started','placement_completed','wallet_connect')
+GROUP BY 1
+WITH NO DATA;
+
+CREATE UNIQUE INDEX activity_weekly_week_idx ON public.activity_weekly(week);
+
+-- Monthly Active Users (MAU) - rolling 30 days
+DROP MATERIALIZED VIEW IF EXISTS public.activity_monthly;
+CREATE MATERIALIZED VIEW public.activity_monthly AS
+SELECT 
+  DATE_TRUNC('month', created_at) as month, 
+  COUNT(DISTINCT user_id) as mau,
+  COUNT(DISTINCT wallet_address) as unique_wallets,
+  COUNT(*) as total_events
+FROM public.event_log
+WHERE kind IN ('page_view','lesson_start','lesson_complete','course_start','course_complete','exam_started','exam_submitted','placement_started','placement_completed','wallet_connect')
+GROUP BY 1
+WITH NO DATA;
+
+CREATE UNIQUE INDEX activity_monthly_month_idx ON public.activity_monthly(month);
+
+-- =====================================================
+-- 9. HELPER VIEWS
+-- =====================================================
+
+-- Inactive users (no events in last 7 days)
+CREATE OR REPLACE VIEW public.inactive_users_7d AS
+SELECT 
+  p.id as user_id, 
+  p.primary_wallet, 
+  p.display_name,
+  p.last_active_at,
+  COALESCE(le.last_evt, p.created_at) as last_event_at
+FROM public.profiles p
+LEFT JOIN LATERAL (
+  SELECT MAX(created_at) as last_evt
+  FROM public.event_log e
+  WHERE e.user_id = p.id
+) le ON true
+WHERE COALESCE(le.last_evt, p.created_at) < NOW() - INTERVAL '7 days';
+
+-- Live users (active in last 5 minutes)
+CREATE OR REPLACE VIEW public.live_users AS
+SELECT 
+  s.user_id,
+  s.wallet_address,
+  p.display_name,
+  s.last_heartbeat_at,
+  s.started_at,
+  EXTRACT(EPOCH FROM (NOW() - s.last_heartbeat_at))/60 as minutes_since_last_heartbeat
+FROM public.sessions s
+LEFT JOIN public.profiles p ON p.id = s.user_id
+WHERE s.is_active = true 
+  AND s.last_heartbeat_at > NOW() - INTERVAL '5 minutes'
+ORDER BY s.last_heartbeat_at DESC;
+
+-- Top courses by active users (7 days)
+CREATE OR REPLACE VIEW public.top_courses_7d AS
+SELECT 
+  course_id,
+  COUNT(DISTINCT user_id) as active_users,
+  COUNT(*) as total_events,
+  MIN(created_at) as first_activity,
+  MAX(created_at) as last_activity
+FROM public.event_log
+WHERE course_id IS NOT NULL 
+  AND created_at > NOW() - INTERVAL '7 days'
+  AND kind IN ('course_start', 'lesson_start', 'lesson_complete', 'course_complete')
+GROUP BY course_id
+ORDER BY active_users DESC;
+
+-- =====================================================
+-- 10. ROW LEVEL SECURITY POLICIES
+-- =====================================================
+
+-- Enable RLS on all tables
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.event_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.course_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.placement_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_approvals ENABLE ROW LEVEL SECURITY;
+
+-- Profiles policies
+CREATE POLICY "profile_self_read" ON public.profiles 
+  FOR SELECT USING (id = auth.uid());
+
+CREATE POLICY "profile_self_update" ON public.profiles 
+  FOR UPDATE USING (id = auth.uid());
+
+CREATE POLICY "profile_self_insert" ON public.profiles 
+  FOR INSERT WITH CHECK (id = auth.uid());
+
+-- Wallets policies
+CREATE POLICY "wallets_self_all" ON public.wallets 
+  FOR ALL USING (user_id = auth.uid()) 
+  WITH CHECK (user_id = auth.uid());
+
+-- Sessions policies
+CREATE POLICY "sessions_self_read" ON public.sessions 
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "sessions_self_insert" ON public.sessions 
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "sessions_self_update" ON public.sessions 
+  FOR UPDATE USING (user_id = auth.uid());
+
+-- Event log policies
+CREATE POLICY "events_self_read" ON public.event_log 
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "events_self_insert" ON public.event_log 
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+-- Course progress policies
+CREATE POLICY "course_prog_self_read" ON public.course_progress 
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "course_prog_self_insert" ON public.course_progress 
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "course_prog_self_update" ON public.course_progress 
+  FOR UPDATE USING (user_id = auth.uid());
+
+-- Placement progress policies
+CREATE POLICY "placement_prog_self_read" ON public.placement_progress 
+  FOR SELECT USING (user_id = auth.uid());
+
+-- Admin approvals policies
+CREATE POLICY "admin_approvals_self_read" ON public.admin_approvals 
+  FOR SELECT USING (user_id = auth.uid() OR admin_id = auth.uid());
+
+-- Admin policies (for users with admin role in JWT)
+CREATE POLICY "admin_read_all_profiles" ON public.profiles 
+  FOR SELECT USING (auth.jwt() ->> 'role' = 'admin');
+
+CREATE POLICY "admin_read_all_events" ON public.event_log 
+  FOR SELECT USING (auth.jwt() ->> 'role' = 'admin');
+
+CREATE POLICY "admin_read_all_sessions" ON public.sessions 
+  FOR SELECT USING (auth.jwt() ->> 'role' = 'admin');
+
+CREATE POLICY "admin_read_all_progress" ON public.course_progress 
+  FOR SELECT USING (auth.jwt() ->> 'role' = 'admin');
+
+CREATE POLICY "admin_read_all_placement" ON public.placement_progress 
+  FOR SELECT USING (auth.jwt() ->> 'role' = 'admin');
+
+CREATE POLICY "admin_read_all_approvals" ON public.admin_approvals 
+  FOR SELECT USING (auth.jwt() ->> 'role' = 'admin');
+
+-- =====================================================
+-- 11. TRIGGERS AND FUNCTIONS
 -- =====================================================
 
 -- Function to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION public.touch_updated_at() 
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
-END;
-$$ language 'plpgsql';
+END $$;
 
--- Create triggers for all tables with updated_at
-CREATE TRIGGER update_users_updated_at 
-    BEFORE UPDATE ON users 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+-- Trigger for profiles updated_at
+CREATE TRIGGER profiles_touch 
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at();
 
-CREATE TRIGGER update_user_xp_updated_at 
-    BEFORE UPDATE ON user_xp 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+-- Function to bump last_active_at when events are logged
+CREATE OR REPLACE FUNCTION public.bump_last_active() 
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE public.profiles 
+  SET last_active_at = NOW() 
+  WHERE id = NEW.user_id;
+  RETURN NEW;
+END $$;
 
-CREATE TRIGGER update_submissions_updated_at 
-    BEFORE UPDATE ON submissions 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+-- Trigger to update last_active_at on event_log insert
+CREATE TRIGGER event_log_bump 
+  AFTER INSERT ON public.event_log
+  FOR EACH ROW EXECUTE FUNCTION public.bump_last_active();
 
-CREATE TRIGGER update_bounty_submissions_updated_at 
-    BEFORE UPDATE ON bounty_submissions 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+-- Function to ensure single primary wallet per user
+CREATE OR REPLACE FUNCTION public.ensure_single_primary_wallet() 
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.is_primary THEN
+    -- Unset all other primary wallets for this user
+    UPDATE public.wallets 
+    SET is_primary = false 
+    WHERE user_id = NEW.user_id AND id <> NEW.id;
+    
+    -- Update the profile's primary_wallet
+    UPDATE public.profiles 
+    SET primary_wallet = NEW.address 
+    WHERE id = NEW.user_id;
+  END IF;
+  RETURN NEW;
+END $$;
+
+-- Trigger for wallets primary wallet management
+CREATE TRIGGER wallets_primary 
+  BEFORE INSERT OR UPDATE ON public.wallets
+  FOR EACH ROW EXECUTE FUNCTION public.ensure_single_primary_wallet();
+
+-- Function to update wallet connection timestamps
+CREATE OR REPLACE FUNCTION public.update_wallet_timestamps() 
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  -- Update connected_last_at for wallet events
+  IF NEW.kind IN ('wallet_connect', 'wallet_disconnect') AND NEW.wallet_address IS NOT NULL THEN
+    UPDATE public.wallets 
+    SET connected_last_at = NOW() 
+    WHERE address = NEW.wallet_address;
+    
+    -- Set connected_first_at if this is the first connection
+    UPDATE public.wallets 
+    SET connected_first_at = COALESCE(connected_first_at, NOW()) 
+    WHERE address = NEW.wallet_address AND connected_first_at IS NULL;
+  END IF;
+  
+  RETURN NEW;
+END $$;
+
+-- Trigger to update wallet timestamps
+CREATE TRIGGER update_wallet_timestamps 
+  AFTER INSERT ON public.event_log
+  FOR EACH ROW EXECUTE FUNCTION public.update_wallet_timestamps();
 
 -- =====================================================
--- 9. FUNCTIONS FOR XP MANAGEMENT
+-- 12. REFRESH FUNCTIONS FOR MATERIALIZED VIEWS
 -- =====================================================
 
--- Function to award bounty XP
-CREATE OR REPLACE FUNCTION award_bounty_xp(
-  p_wallet_address TEXT,
-  p_bounty_id TEXT,
-  p_submission_id TEXT,
-  p_xp_amount INTEGER
-)
-RETURNS JSON AS $$
+-- Function to refresh all activity views
+CREATE OR REPLACE FUNCTION public.refresh_activity_views() 
+RETURNS VOID LANGUAGE plpgsql AS $$
+BEGIN
+  REFRESH MATERIALIZED VIEW CONCURRENTLY public.activity_daily;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY public.activity_weekly;
+  REFRESH MATERIALIZED VIEW CONCURRENTLY public.activity_monthly;
+END $$;
+
+-- =====================================================
+-- 13. UTILITY FUNCTIONS
+-- =====================================================
+
+-- Function to get user stats
+CREATE OR REPLACE FUNCTION public.get_user_stats(target_user_id UUID DEFAULT NULL)
+RETURNS TABLE (
+  total_events BIGINT,
+  unique_sessions BIGINT,
+  first_activity TIMESTAMPTZ,
+  last_activity TIMESTAMPTZ,
+  courses_started BIGINT,
+  courses_completed BIGINT,
+  total_page_views BIGINT
+) LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    COUNT(el.*) as total_events,
+    COUNT(DISTINCT el.session_id) as unique_sessions,
+    MIN(el.created_at) as first_activity,
+    MAX(el.created_at) as last_activity,
+    COUNT(CASE WHEN el.kind = 'course_start' THEN 1 END) as courses_started,
+    COUNT(CASE WHEN el.kind = 'course_complete' THEN 1 END) as courses_completed,
+    COUNT(CASE WHEN el.kind = 'page_view' THEN 1 END) as total_page_views
+  FROM public.event_log el
+  WHERE el.user_id = COALESCE(target_user_id, auth.uid())
+  GROUP BY el.user_id;
+END $$;
+
+-- Function to end stale sessions
+CREATE OR REPLACE FUNCTION public.end_stale_sessions()
+RETURNS INTEGER LANGUAGE plpgsql AS $$
 DECLARE
-  result JSON;
+  updated_count INTEGER;
 BEGIN
-  -- Insert or update bounty submission
-  INSERT INTO bounty_submissions (wallet_address, bounty_id, submission_id, xp_awarded)
-  VALUES (p_wallet_address, p_bounty_id, p_submission_id, p_xp_amount)
-  ON CONFLICT (wallet_address, bounty_id, submission_id) 
-  DO UPDATE SET 
-    xp_awarded = EXCLUDED.xp_awarded,
-    updated_at = NOW();
-
-  -- Update user XP
-  INSERT INTO user_xp (wallet_address, bounty_xp, total_xp)
-  VALUES (p_wallet_address, p_xp_amount, p_xp_amount)
-  ON CONFLICT (wallet_address)
-  DO UPDATE SET 
-    bounty_xp = user_xp.bounty_xp + p_xp_amount,
-    total_xp = user_xp.total_xp + p_xp_amount,
-    updated_at = NOW();
-
-  -- Return success
-  result := json_build_object('success', true, 'xp_awarded', p_xp_amount);
-  RETURN result;
-END;
-$$ LANGUAGE plpgsql;
-
--- Function to check if wallet is admin
-CREATE OR REPLACE FUNCTION is_wallet_admin(wallet TEXT)
-RETURNS BOOLEAN AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM users 
-    WHERE wallet_address = wallet 
-    AND is_admin = true
-  );
-END;
-$$ LANGUAGE plpgsql;
+  UPDATE public.sessions 
+  SET is_active = false, ended_at = NOW()
+  WHERE is_active = true 
+    AND last_heartbeat_at < NOW() - INTERVAL '1 hour';
+  
+  GET DIAGNOSTICS updated_count = ROW_COUNT;
+  RETURN updated_count;
+END $$;
 
 -- =====================================================
--- 10. SAMPLE DATA (Optional)
+-- 14. INITIAL DATA POPULATION
 -- =====================================================
 
--- Insert sample admin user
-INSERT INTO users (wallet_address, display_name, squad, profile_completed, squad_test_completed, placement_test_completed, is_admin)
-VALUES ('JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU', 'Admin User', 'Creators', true, true, true, true)
-ON CONFLICT (wallet_address) DO NOTHING;
+-- Create profiles for existing users if they don't exist
+INSERT INTO public.profiles (id, primary_wallet, display_name, last_active_at)
+SELECT 
+  u.id,
+  u.wallet_address,
+  COALESCE(u.display_name, 'User ' || LEFT(u.wallet_address, 6)),
+  COALESCE(u.last_active::timestamptz, u.created_at)
+FROM auth.users u
+WHERE u.id NOT IN (SELECT id FROM public.profiles)
+ON CONFLICT (id) DO NOTHING;
 
--- Insert sample user XP
-INSERT INTO user_xp (wallet_address, total_xp, bounty_xp, course_xp, streak_xp)
-VALUES ('JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU', 100, 50, 30, 20)
-ON CONFLICT (wallet_address) DO NOTHING;
+-- Migrate existing wallet data to wallets table
+INSERT INTO public.wallets (user_id, address, is_primary, connected_first_at, connected_last_at)
+SELECT 
+  p.id,
+  p.primary_wallet,
+  true,
+  p.created_at,
+  p.last_active_at
+FROM public.profiles p
+WHERE p.primary_wallet IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM public.wallets w 
+    WHERE w.user_id = p.id AND w.address = p.primary_wallet
+  )
+ON CONFLICT (user_id, address) DO NOTHING;
+
+-- =====================================================
+-- 15. GRANTS AND PERMISSIONS
+-- =====================================================
+
+-- Grant necessary permissions to authenticated users
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO authenticated;
+
+-- Grant select permissions on views
+GRANT SELECT ON public.inactive_users_7d TO authenticated;
+GRANT SELECT ON public.live_users TO authenticated;
+GRANT SELECT ON public.top_courses_7d TO authenticated;
+
+-- Grant select permissions on materialized views
+GRANT SELECT ON public.activity_daily TO authenticated;
+GRANT SELECT ON public.activity_weekly TO authenticated;
+GRANT SELECT ON public.activity_monthly TO authenticated;
+
+COMMENT ON TABLE public.profiles IS 'User profiles extending auth.users with wallet information';
+COMMENT ON TABLE public.wallets IS 'Wallet addresses associated with users (1:N relationship)';
+COMMENT ON TABLE public.sessions IS 'User sessions with heartbeat tracking for live user monitoring';
+COMMENT ON TABLE public.event_log IS 'Immutable event log for all user activities and interactions';
+COMMENT ON TABLE public.course_progress IS 'Course progress tracking with completion status';
+COMMENT ON TABLE public.placement_progress IS 'Placement test progress and approval workflow';
+COMMENT ON TABLE public.admin_approvals IS 'Audit log for admin actions on exams and placements';

@@ -1,109 +1,105 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const dynamic = 'force-dynamic';
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
     const { targetWallet, xpAmount, reason, awardedBy } = await request.json();
 
     if (!targetWallet || !xpAmount || !reason || !awardedBy) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: targetWallet, xpAmount, reason, awardedBy' 
-      }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing required parameters' },
+        { status: 400 }
+      );
     }
 
-    if (xpAmount <= 0) {
-      return NextResponse.json({ 
-        error: 'XP amount must be positive' 
-      }, { status: 400 });
-    }
-
-    // Check if awarding wallet is admin
-    const { data: isAdmin, error: adminError } = await supabase.rpc('is_wallet_admin', { 
-      wallet: awardedBy 
-    });
-
-    if (adminError) {
-      console.error('[ADMIN CHECK ERROR]', adminError);
-      return NextResponse.json({ error: 'Failed to verify admin status' }, { status: 500 });
-    }
-
-    if (!isAdmin) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
-    }
-
-    // Get current user XP
-    const { data: user, error: userError } = await supabase
+    // Verify admin access
+    const { data: adminUser, error: adminError } = await supabase
       .from('users')
-      .select('total_xp')
+      .select('is_admin')
+      .eq('wallet_address', awardedBy)
+      .single();
+
+    if (adminError || !adminUser?.is_admin) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Get current user data
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('total_xp, level')
       .eq('wallet_address', targetWallet)
       .single();
 
-    if (userError && userError.code !== 'PGRST116') {
-      console.error('[FETCH USER ERROR]', userError);
-      return NextResponse.json({ error: 'Failed to fetch user' }, { status: 500 });
+    if (userError || !currentUser) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
     }
 
-    const currentXP = user?.total_xp || 0;
-    const newXP = currentXP + xpAmount;
+    // Calculate new XP and level
+    const newTotalXP = (currentUser.total_xp || 0) + xpAmount;
+    const newLevel = Math.floor(newTotalXP / 1000) + 1; // 1000 XP per level
 
-    // Update user XP
-    const { data: updatedUser, error: updateError } = await supabase
+    // Update user XP and level
+    const { data, error } = await supabase
       .from('users')
-      .upsert({
-        wallet_address: targetWallet,
-        total_xp: newXP,
-        last_active: new Date().toISOString()
-      }, {
-        onConflict: 'wallet_address'
+      .update({
+        total_xp: newTotalXP,
+        level: newLevel,
+        updated_at: new Date().toISOString()
       })
+      .eq('wallet_address', targetWallet)
       .select()
       .single();
 
-    if (updateError) {
-      console.error('[UPDATE USER XP ERROR]', updateError);
-      return NextResponse.json({ error: 'Failed to update user XP' }, { status: 500 });
+    if (error) {
+      console.error('Error updating user XP:', error);
+      return NextResponse.json(
+        { error: 'Failed to award XP' },
+        { status: 500 }
+      );
     }
 
     // Log the XP award activity
-    try {
-      await supabase
-        .from('user_activity')
-        .insert({
-          wallet_address: targetWallet,
-          activity_type: 'xp_awarded',
-          activity_data: {
-            xp_awarded: xpAmount,
-            reason: reason,
-            awarded_by: awardedBy,
-            previous_xp: currentXP,
-            new_xp: newXP
-          }
-        });
-    } catch (logError) {
-      console.warn('Failed to log XP award activity:', logError);
-      // Don't fail the operation for logging errors
-    }
+    await supabase
+      .from('user_activity')
+      .insert({
+        wallet_address: targetWallet,
+        activity_type: 'xp_awarded',
+        activity_data: {
+          xp_amount: xpAmount,
+          reason: reason,
+          awarded_by: awardedBy,
+          previous_xp: currentUser.total_xp || 0,
+          new_total_xp: newTotalXP,
+          level_up: newLevel > (currentUser.level || 1)
+        },
+        created_at: new Date().toISOString()
+      });
 
     return NextResponse.json({
       success: true,
-      user: updatedUser,
+      user: data,
       xpAwarded: xpAmount,
-      previousXP: currentXP,
-      newXP: newXP
+      newTotalXP: newTotalXP,
+      levelUp: newLevel > (currentUser.level || 1),
+      message: `Successfully awarded ${xpAmount} XP to user`
     });
 
   } catch (error) {
-    console.error('[ADMIN XP AWARD API ERROR]', error);
-    return NextResponse.json({ 
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error('Error in XP award API:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

@@ -44,92 +44,41 @@ export interface CourseProgress {
   started: boolean; // New field to track if user has started the course
 }
 
-// Real data functions - get data from localStorage
-export const getRealLeaderboardData = (): LeaderboardUser[] => {
-  const userProgress = localStorage.getItem('userProgress');
-  const userProfiles = localStorage.getItem('userProfiles');
-  
-  if (!userProgress) return [];
-  
+// API-based data functions - get data from API endpoints
+export const getRealLeaderboardData = async (): Promise<LeaderboardUser[]> => {
   try {
-    const progress = JSON.parse(userProgress);
-    const profiles = userProfiles ? JSON.parse(userProfiles) : {};
+    const response = await fetch('/api/leaderboard');
     
-    const users = Object.entries(progress).map(([walletAddress, userData]: [string, any]) => {
-      const profile = profiles[walletAddress] || {};
-      const courses = userData.courses || {};
-      
-      // Calculate stats from real data
-      const completedCourses = Object.values(courses).filter((course: any) => 
-        course.progress && course.progress.every((p: string) => p === 'completed')
-      ).length;
-      
-      const totalLessons = Object.values(courses).reduce((total: number, course: any) => 
-        total + (course.progress?.length || 0), 0
-      );
-      
-      const totalQuizzes = Object.values(courses).filter((course: any) => 
-        course.finalExam?.taken
-      ).length;
-      
-      const quizScores = Object.values(courses)
-        .filter((course: any) => course.finalExam?.score)
-        .map((course: any) => course.finalExam.score);
-      
-      const averageQuizScore = quizScores.length > 0 
-        ? quizScores.reduce((sum, score) => sum + score, 0) / quizScores.length 
-        : 0;
-      
-      const courseProgress = Object.entries(courses).map(([courseId, courseData]: [string, any]) => ({
-        courseId,
-        courseName: courseId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        progress: courseData.progress ? (courseData.progress.filter((p: string) => p === 'completed').length / courseData.progress.length) * 100 : 0,
-        score: courseData.finalExam?.score || 0,
-        completed: courseData.progress ? courseData.progress.every((p: string) => p === 'completed') : false,
-        completedDate: courseData.finalExam?.submittedAt,
-        lessonsCompleted: courseData.progress ? courseData.progress.filter((p: string) => p === 'completed').length : 0,
-        totalLessons: courseData.progress?.length || 0,
-        quizzesPassed: courseData.finalExam?.passed ? 1 : 0,
-        totalQuizzes: courseData.finalExam?.taken ? 1 : 0,
-        started: courseData.progress && courseData.progress.length > 0 // User has started if they have any progress
-      }));
-      
-      // Calculate completion-based metrics
-      const coursesStarted = courseProgress.filter(course => course.started).length;
-      const totalLessonsCompleted = courseProgress.reduce((total, course) => total + course.lessonsCompleted, 0);
-      const totalLessonsAvailable = courseProgress.reduce((total, course) => total + course.totalLessons, 0);
-      
-      // Calculate overall completion percentage
-      const overallCompletionPercentage = totalLessonsAvailable > 0 
-        ? (totalLessonsCompleted / totalLessonsAvailable) * 100 
-        : 0;
-      
-      return {
-        walletAddress,
-        displayName: profile.displayName || `User ${walletAddress.slice(0, 6)}...`,
-        rank: 0, // Will be calculated by sorting
-        totalScore: 0, // Will be calculated
-        coursesCompleted: completedCourses,
-        totalLessons,
-        totalQuizzes,
-        averageQuizScore,
-        badgesEarned: 0, // Would be calculated based on achievements
-        joinDate: profile.createdAt || new Date().toISOString(),
-        lastActive: profile.lastActive || new Date().toISOString(),
-        squad: profile.squad || 'Unassigned',
-        achievements: [], // Would be calculated based on user actions
-        courseProgress,
-        coursesStarted,
-        overallCompletionPercentage,
-        totalLessonsCompleted,
-        totalLessonsAvailable
-      };
-    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch leaderboard data: ${response.status}`);
+    }
     
-    // Filter to only include users who have started at least one course
-    return users.filter(user => user.coursesStarted > 0);
+    const data = await response.json();
+    
+    // Transform API data to match the expected interface
+    return data.map((user: any) => ({
+      walletAddress: user.walletAddress,
+      displayName: user.displayName,
+      rank: user.rank,
+      totalScore: user.totalScore,
+      coursesCompleted: user.coursesCompleted,
+      totalLessons: user.totalLessons,
+      totalLessonsAvailable: user.totalLessonsAvailable,
+      totalQuizzes: user.coursesCompleted, // Assuming each completed course has a quiz
+      averageQuizScore: user.averageQuizScore,
+      badgesEarned: 0, // Would be calculated based on achievements
+      joinDate: user.joinDate,
+      lastActive: user.lastActive,
+      profileImage: user.profileImage,
+      squad: user.squad,
+      achievements: [], // Would be calculated based on user actions
+      courseProgress: user.courseProgress,
+      coursesStarted: user.coursesCompleted, // Assuming started = completed for now
+      overallCompletionPercentage: user.completionPercentage,
+      totalLessonsCompleted: user.totalLessons
+    }));
   } catch (error) {
-    console.error('Error parsing leaderboard data:', error);
+    console.error('Error fetching leaderboard data from API:', error);
     return [];
   }
 };
@@ -165,8 +114,8 @@ export const calculateUserScore = (user: LeaderboardUser): number => {
 };
 
 // Helper function to get user rank based on completion percentage
-export const getUserRank = (walletAddress: string): number => {
-  const users = getRealLeaderboardData();
+export const getUserRank = async (walletAddress: string): Promise<number> => {
+  const users = await getRealLeaderboardData();
   
   // Sort by completion percentage (descending)
   users.sort((a, b) => b.overallCompletionPercentage - a.overallCompletionPercentage);
@@ -177,61 +126,64 @@ export const getUserRank = (walletAddress: string): number => {
 };
 
 // Helper function to get user score
-export const getUserScore = (walletAddress: string): number => {
-  const users = getRealLeaderboardData();
+export const getUserScore = async (walletAddress: string): Promise<number> => {
+  const users = await getRealLeaderboardData();
   const user = users.find(u => u.walletAddress === walletAddress);
   return user ? calculateUserScore(user) : 0;
 };
 
 // Helper function to get top 20 users based on completion percentage
-export const getTop20Users = (): LeaderboardUser[] => {
-  const users = getRealLeaderboardData();
-  
-  // Sort by completion percentage (descending) and assign ranks
-  users.sort((a, b) => b.overallCompletionPercentage - a.overallCompletionPercentage);
-  
-  return users.slice(0, 20).map((user, index) => ({
-    ...user,
-    rank: index + 1
-  }));
+export const getTop20Users = async (): Promise<LeaderboardUser[]> => {
+  try {
+    const response = await fetch('/api/leaderboard?limit=20');
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch top 20 users: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Transform API data to match the expected interface
+    return data.map((user: any) => ({
+      walletAddress: user.walletAddress,
+      displayName: user.displayName,
+      rank: user.rank,
+      totalScore: user.totalScore,
+      coursesCompleted: user.coursesCompleted,
+      totalLessons: user.totalLessons,
+      totalLessonsAvailable: user.totalLessonsAvailable,
+      totalQuizzes: user.coursesCompleted,
+      averageQuizScore: user.averageQuizScore,
+      badgesEarned: 0,
+      joinDate: user.joinDate,
+      lastActive: user.lastActive,
+      profileImage: user.profileImage,
+      squad: user.squad,
+      achievements: [],
+      courseProgress: user.courseProgress,
+      coursesStarted: user.coursesCompleted,
+      overallCompletionPercentage: user.completionPercentage,
+      totalLessonsCompleted: user.totalLessons
+    }));
+  } catch (error) {
+    console.error('Error fetching top 20 users:', error);
+    return [];
+  }
 };
 
 // Helper function to update user progress (for when courses are completed)
-export const updateUserProgress = (
+// This function now triggers a refresh of leaderboard data rather than updating local state
+export const updateUserProgress = async (
   walletAddress: string, 
   courseId: string, 
   progress: number, 
   score: number,
   completed: boolean
-): void => {
-  const userIndex = getRealLeaderboardData().findIndex(u => u.walletAddress === walletAddress);
+): Promise<void> => {
+  // The leaderboard data is now managed by the API, so we don't need to update local state
+  // The API will automatically reflect the updated data on the next fetch
+  console.log(`User progress updated: ${walletAddress} - ${courseId} - ${progress}% - Score: ${score} - Completed: ${completed}`);
   
-  if (userIndex !== -1) {
-    const user = getRealLeaderboardData()[userIndex];
-    const courseIndex = user.courseProgress.findIndex(c => c.courseId === courseId);
-    
-    if (courseIndex !== -1) {
-      user.courseProgress[courseIndex] = {
-        ...user.courseProgress[courseIndex],
-        progress,
-        score,
-        completed,
-        completedDate: completed ? new Date().toISOString() : undefined
-      };
-      
-      // Recalculate user stats
-      user.coursesCompleted = user.courseProgress.filter(c => c.completed).length;
-      user.totalLessons = user.courseProgress.reduce((acc, c) => acc + c.lessonsCompleted, 0);
-      user.totalQuizzes = user.courseProgress.reduce((acc, c) => acc + c.quizzesPassed, 0);
-      user.averageQuizScore = user.courseProgress
-        .filter(c => c.score > 0)
-        .reduce((acc, c) => acc + c.score, 0) / Math.max(user.courseProgress.filter(c => c.score > 0).length, 1);
-      
-      // Recalculate total score
-      user.totalScore = calculateUserScore(user);
-      
-      // Update last active
-      user.lastActive = new Date().toISOString();
-    }
-  }
+  // Optionally, we could trigger a cache invalidation or refresh here
+  // For now, the data will be fresh on the next API call
 }; 

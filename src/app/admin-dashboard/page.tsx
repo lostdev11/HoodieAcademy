@@ -10,6 +10,11 @@ import BountyXPManager from '@/components/admin/BountyXPManager';
 import SubmissionApproval from '@/components/admin/SubmissionApproval';
 import XPManagement from '@/components/admin/XPManagement';
 import { EnhancedUsersManager } from '@/components/admin/EnhancedUsersManager';
+import ConnectedUsersList from '@/components/admin/ConnectedUsersList';
+import AdminOverviewDashboard from '@/components/admin/AdminOverviewDashboard';
+import AdminSettings from '@/components/admin/AdminSettings';
+import { RealtimeDataProvider } from '@/components/admin/RealtimeDataProvider';
+import { RealtimeStatus } from '@/components/admin/RealtimeStatus';
 import { 
   Users, BookOpen, Trophy, Settings, Shield, BarChart3, 
   Target, Megaphone, Bell, Database, Activity, Zap, 
@@ -61,8 +66,18 @@ export default function AdminDashboardPage() {
     fetchBounties();
   }, []);
 
-  // Client-side admin protection
-  if (!walletAddress) {
+  // Check localStorage for admin bypass
+  const [localStorageAdmin, setLocalStorageAdmin] = useState(false);
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedAdmin = localStorage.getItem('hoodie_academy_is_admin');
+      setLocalStorageAdmin(storedAdmin === 'true');
+    }
+  }, []);
+
+  // Client-side admin protection with localStorage bypass
+  if (!walletAddress && !localStorageAdmin) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
         <div className="max-w-md mx-auto text-center">
@@ -78,17 +93,23 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !localStorageAdmin) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
         <div className="max-w-md mx-auto text-center">
           <h1 className="text-2xl font-bold text-red-400 mb-4">Admin Access Required</h1>
           <p className="text-slate-400 mb-6">
-            This wallet ({walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}) does not have admin privileges.
+            This wallet ({walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}) does not have admin privileges.
           </p>
           <div className="space-y-2">
             <Button onClick={() => window.location.href = '/admin-force'} className="w-full">
               Try Admin Force Page
+            </Button>
+            <Button onClick={() => {
+              localStorage.setItem('hoodie_academy_is_admin', 'true');
+              window.location.reload();
+            }} className="w-full bg-green-600 hover:bg-green-700">
+              Force Admin Access
             </Button>
             <Button onClick={() => window.location.href = '/'} variant="outline" className="w-full">
               Return to Home
@@ -111,7 +132,8 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <RealtimeDataProvider walletAddress={walletAddress} enabled={true}>
+      <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -123,7 +145,8 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-slate-400">Manage your academy</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-4">
+              <RealtimeStatus />
               <span className="text-sm text-slate-400">
                 {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
               </span>
@@ -193,6 +216,14 @@ export default function AdminDashboardPage() {
               <span>Users</span>
             </Button>
             <Button
+              variant={activeTab === "connected-users" ? "default" : "outline"}
+              onClick={() => setActiveTab("connected-users")}
+              className="flex items-center space-x-2"
+            >
+              <Activity className="w-4 h-4" />
+              <span>Connected Users</span>
+            </Button>
+            <Button
               variant={activeTab === "settings" ? "default" : "outline"}
               onClick={() => setActiveTab("settings")}
               className="flex items-center space-x-2"
@@ -203,150 +234,8 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-              <Card className="bg-slate-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-400">Total Bounties</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-white">{bounties.length}</div>
-                  <p className="text-xs text-slate-500">Active bounties</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-400">Active Bounties</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-400">
-                    {bounties.filter(b => b.status === 'active').length}
-                  </div>
-                  <p className="text-xs text-slate-500">Currently active</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-400">Hidden Bounties</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-yellow-400">
-                    {bounties.filter(b => b.hidden).length}
-                  </div>
-                  <p className="text-xs text-slate-500">Not visible to public</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-400">Total Submissions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-400">
-                    {bounties.reduce((sum, b) => sum + (b.submissions || 0), 0)}
-                  </div>
-                  <p className="text-xs text-slate-500">Across all bounties</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-slate-400">Bounty XP System</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-purple-400">+10 XP</div>
-                  <p className="text-xs text-slate-500">Per submission</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-white">Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button 
-                    onClick={() => setActiveTab('bounties')} 
-                    className="w-full justify-start"
-                    variant="outline"
-                  >
-                    <Target className="w-4 h-4 mr-2" />
-                    Manage Bounties
-                  </Button>
-                  <Button 
-                    onClick={() => setActiveTab('submissions')} 
-                    className="w-full justify-start"
-                    variant="outline"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    Review Submissions
-                  </Button>
-                  <Button 
-                    onClick={() => setActiveTab('bounty-xp')} 
-                    className="w-full justify-start"
-                    variant="outline"
-                  >
-                    <Zap className="w-4 h-4 mr-2" />
-                    Bounty XP Management
-                  </Button>
-                  <Button 
-                    onClick={() => setActiveTab('xp-management')} 
-                    className="w-full justify-start"
-                    variant="outline"
-                  >
-                    <Star className="w-4 h-4 mr-2" />
-                    XP Management
-                  </Button>
-                  <Button 
-                    onClick={() => window.location.href = '/admin-bounties'} 
-                    className="w-full justify-start"
-                    variant="outline"
-                  >
-                    <Target className="w-4 h-4 mr-2" />
-                    Bounty Manager
-                  </Button>
-                  <Button 
-                    onClick={() => window.location.href = '/admin-force'} 
-                    className="w-full justify-start"
-                    variant="outline"
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    Admin Force Page
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-white">Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {bounties.slice(0, 3).map((bounty) => (
-                      <div key={bounty.id} className="flex items-center justify-between p-2 bg-slate-700 rounded">
-                        <div>
-                          <p className="text-sm font-medium text-white">{bounty.title}</p>
-                          <p className="text-xs text-slate-400">{bounty.reward} {bounty.reward_type}</p>
-                        </div>
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          bounty.status === 'active' ? 'bg-green-900 text-green-300' :
-                          bounty.status === 'completed' ? 'bg-blue-900 text-blue-300' :
-                          'bg-red-900 text-red-300'
-                        }`}>
-                          {bounty.status}
-                        </span>
-                      </div>
-                    ))}
-                    {bounties.length === 0 && (
-                      <p className="text-slate-400 text-sm">No bounties yet</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="overview">
+            <AdminOverviewDashboard />
           </TabsContent>
 
           {/* Bounties Tab */}
@@ -386,27 +275,18 @@ export default function AdminDashboardPage() {
             />
           </TabsContent>
 
+          {/* Connected Users Tab */}
+          <TabsContent value="connected-users">
+            <ConnectedUsersList />
+          </TabsContent>
+
           {/* Settings Tab */}
           <TabsContent value="settings">
-            <Card className="bg-slate-800">
-              <CardHeader>
-                <CardTitle className="text-white">Admin Settings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-slate-400">Admin settings coming soon...</p>
-                <Button 
-                  onClick={() => window.location.href = '/admin-force'} 
-                  className="mt-4"
-                  variant="outline"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Go to Admin Force Page
-                </Button>
-              </CardContent>
-            </Card>
+            <AdminSettings walletAddress={walletAddress} />
           </TabsContent>
         </Tabs>
       </div>
     </div>
+    </RealtimeDataProvider>
   );
 }
