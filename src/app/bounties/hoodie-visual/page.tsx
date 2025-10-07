@@ -81,10 +81,43 @@ export default function HoodieVisualBountyPage() {
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const { user } = useAuth();
 
-  const handleSubmit = (data: BountySubmissionData) => {
+  const handleSubmit = async (data: BountySubmissionData) => {
     console.log('Submitting to hoodie visual bounty:', data);
-    setShowSubmissionForm(false);
-    // Handle submission logic here
+    
+    if (!data.walletAddress) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/bounties/hoodie-visual/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submission: data.description,
+          walletAddress: data.walletAddress,
+          submissionType: data.imageUrl ? 'image' : 'text',
+          title: data.title,
+          description: data.description,
+          imageUrl: data.imageUrl,
+          squad: data.squad,
+          courseRef: data.courseRef
+        })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert('✅ Bounty submitted successfully! Go to the admin dashboard to review it.');
+        setShowSubmissionForm(false);
+        window.location.reload(); // Reload to show updated count
+      } else {
+        alert(`❌ ${result.error || 'Failed to submit bounty'}`);
+      }
+    } catch (error) {
+      console.error('Error submitting bounty:', error);
+      alert('❌ Failed to submit bounty. Please try again.');
+    }
   };
 
   const getSquadColor = (squad: string) => {

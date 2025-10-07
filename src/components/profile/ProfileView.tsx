@@ -78,6 +78,9 @@ export function ProfileView() {
   const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSubmittingBounty, setIsSubmittingBounty] = useState(false);
+  const [selectedBountyId, setSelectedBountyId] = useState<string>('');
+  const [availableBounties, setAvailableBounties] = useState<any[]>([]);
   const [saveProgress, setSaveProgress] = useState<string>('');
   const [saveError, setSaveError] = useState<string>('');
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -102,6 +105,18 @@ export function ProfileView() {
     loading: bountyLoading,
     error: bountyError
   } = useUserBounties(wallet);
+
+  // Handle bounty submission from profile page
+  const handleBountySubmit = async (data: BountySubmissionData) => {
+    if (!wallet) {
+      alert('Please connect your wallet first');
+      return;
+    }
+
+    // For profile page submissions, redirect to bounties page  
+    alert('To submit to a specific bounty, please go to the Bounties page and click Submit Entry on the bounty you want to submit to.');
+    window.location.href = '/bounties';
+  };
 
   // Save profile function
   const saveProfile = async () => {
@@ -635,11 +650,25 @@ export function ProfileView() {
           <CardContent>
             <div className="flex flex-col md:flex-row gap-8">
               <div className="flex-1 space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-400">Display Name:</span>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm font-medium">Display Name</span>
+                      {!editMode && (
+                        <Button 
+                          onClick={() => setEditMode(true)}
+                          size="sm"
+                          variant="outline"
+                          className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                        >
+                          <Pencil className="w-3 h-3 mr-1" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                    
                     {editMode ? (
-                      <div className="flex items-center gap-2">
+                      <div className="space-y-3">
                         <div className="relative">
                           <Input 
                             value={displayName} 
@@ -651,7 +680,7 @@ export function ProfileView() {
                                 cancelEdit();
                               }
                             }}
-                            className="w-48 bg-slate-700/50 border-cyan-500/30 text-white pr-8" 
+                            className="w-full bg-slate-700/50 border-cyan-500/30 text-white pr-8" 
                             disabled={isSaving}
                             placeholder="Enter your display name"
                             autoFocus
@@ -662,37 +691,30 @@ export function ProfileView() {
                             </div>
                           )}
                         </div>
-                        <Button 
-                          onClick={saveProfile}
-                          disabled={isSaving || displayName.trim() === originalDisplayName}
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <Save className="w-3 h-3 mr-1" />
-                          Save
-                        </Button>
-                        <Button 
-                          onClick={cancelEdit}
-                          disabled={isSaving}
-                          size="sm"
-                          variant="outline"
-                          className="border-gray-500 text-gray-400 hover:bg-gray-700"
-                        >
-                          Cancel
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            onClick={saveProfile}
+                            disabled={isSaving || displayName.trim() === originalDisplayName}
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <Save className="w-3 h-3 mr-1" />
+                            Save
+                          </Button>
+                          <Button 
+                            onClick={cancelEdit}
+                            disabled={isSaving}
+                            size="sm"
+                            variant="outline"
+                            className="border-gray-500 text-gray-400 hover:bg-gray-700"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-cyan-300 font-semibold">{displayName}</span>
-                        <Button 
-                          onClick={() => setEditMode(true)}
-                          size="sm"
-                          variant="outline"
-                          className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
-                        >
-                          <Pencil className="w-3 h-3 mr-1" />
-                          Edit
-                        </Button>
+                      <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                        <span className="text-cyan-300 font-semibold text-lg">{displayName}</span>
                       </div>
                     )}
                   </div>
@@ -725,29 +747,33 @@ export function ProfileView() {
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Squad:</span>
-                  {editMode ? (
-                    <Select value={squad} onValueChange={setSquad} disabled={isSaving}>
-                      <SelectTrigger className="w-40 bg-slate-700/50 border-cyan-500/30 text-white">
-                        <SelectValue placeholder="Select a squad" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {squadTracks.map(track => (
-                          <SelectItem key={track.id} value={track.id}>
-                            {track.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <span className="text-yellow-400 font-semibold">
-                      {getSquadDisplayName()}
-                    </span>
-                  )}
+                <div className="space-y-2">
+                  <span className="text-gray-400 text-sm font-medium">Squad</span>
+                    {editMode ? (
+                      <Select value={squad} onValueChange={setSquad} disabled={isSaving}>
+                        <SelectTrigger className="w-40 bg-slate-700/50 border-cyan-500/30 text-white">
+                          <SelectValue placeholder="Select a squad" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {squadTracks.map(track => (
+                            <SelectItem key={track.id} value={track.id}>
+                              {track.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                        <span className="text-yellow-400 font-semibold">
+                          {getSquadDisplayName()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Wallet:</span>
+                <div className="space-y-2">
+                  <span className="text-gray-400 text-sm font-medium">Wallet</span>
+                  <div className="flex items-center gap-2">
                   {editMode ? (
                     <div className="flex items-center gap-2">
                       <Input 
@@ -808,13 +834,17 @@ export function ProfileView() {
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Joined:</span>
-                  <span className="text-cyan-400 font-mono">{userData?.joined || 'Unknown'}</span>
+                <div className="space-y-2">
+                  <span className="text-gray-400 text-sm font-medium">Joined</span>
+                  <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                    <span className="text-cyan-400 font-mono">{userData?.joined || 'Unknown'}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400">Rank:</span>
-                  <span className="text-pink-400 font-semibold">{userData?.rank || 'Scholar'}</span>
+                <div className="space-y-2">
+                  <span className="text-gray-400 text-sm font-medium">Rank</span>
+                  <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                    <span className="text-pink-400 font-semibold">{userData?.rank || 'Scholar'}</span>
+                  </div>
                 </div>
                 <div className="mt-4">
                   {editMode ? (
@@ -1401,11 +1431,7 @@ export function ProfileView() {
                   </Button>
                 </div>
                 <BountySubmissionForm 
-                  onSubmit={(data: BountySubmissionData) => {
-                    console.log('Submitting bounty from profile:', data);
-                    // Handle submission logic here
-                    // In real app, this would save to database and update UI
-                  }} 
+                  onSubmit={handleBountySubmit} 
                   className="max-w-none"
                 />
               </div>
