@@ -11,7 +11,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="admin-layout">
+    <div className="admin-layout w-full max-w-full overflow-x-hidden">
       {/* Additional security note - this layout is protected by middleware */}
       {children}
     </div>

@@ -25,6 +25,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#0ea5e9' },
     { media: '(prefers-color-scheme: dark)',  color: '#06b6d4' },
@@ -87,8 +91,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   }
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
+    <html lang="en" suppressHydrationWarning className="h-full">
+      <body className="h-full m-0 p-0">
         <AppProvider
           initialAnnouncements={announcements ?? []}
           initialGlobalSettings={globalSettings ?? {}}

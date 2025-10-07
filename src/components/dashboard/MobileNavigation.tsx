@@ -196,7 +196,7 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
 
       {/* Mobile Navigation Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 sm:hidden">
+        <div className="fixed inset-0 z-50 sm:hidden overflow-hidden">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -204,7 +204,7 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
           />
           
           {/* Navigation Panel */}
-          <div className="absolute top-0 left-0 w-80 h-full bg-slate-900/95 border-r border-cyan-500/30 backdrop-blur-sm">
+          <div className="absolute top-0 left-0 w-[min(80vw,320px)] max-w-full h-full bg-slate-900/95 border-r border-cyan-500/30 backdrop-blur-sm overflow-y-auto">
             {/* Header */}
             <div className="p-4 border-b border-cyan-500/20">
               <div className="flex items-center justify-between">

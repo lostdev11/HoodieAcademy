@@ -82,11 +82,11 @@ export default function GlobalAnnouncementBanner({
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg w-full overflow-hidden">
       {activeAnnouncements.map((announcement) => (
         <div
           key={announcement.id}
-          className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto"
+          className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto w-full"
         >
           <div className="flex items-center gap-3 flex-1">
             <Megaphone className="w-5 h-5 flex-shrink-0" />

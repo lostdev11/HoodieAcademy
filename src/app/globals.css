@@ -91,13 +91,31 @@
 }
 
 @layer base {
-  * {
+  *,
+  *::before,
+  *::after {
     @apply border-border;
+    box-sizing: border-box;
   }
+  
+  html {
+    overflow-x: hidden;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-inter), sans-serif; /* Using Inter font from layout */
+    overflow-x: hidden;
+    width: 100%;
+    min-height: 100vh;
+    position: relative;
+    margin: 0;
+    padding: 0;
   }
+  
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold; /* Ensure headers are bold */
   }
@@ -189,6 +207,111 @@
     padding-bottom: max(16px, env(safe-area-inset-bottom));
     padding-left: max(16px, env(safe-area-inset-left));
     padding-right: max(16px, env(safe-area-inset-right));
+  }
+
+  /* Prevent horizontal overflow - mobile fix */
+  .no-overflow-x {
+    overflow-x: hidden;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  /* Full width background coverage */
+  .full-width-bg {
+    width: 100%;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+  }
+
+  /* Container max width with proper mobile handling */
+  .container-safe {
+    max-width: 100%;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  @media (min-width: 640px) {
+    .container-safe {
+      max-width: 640px;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .container-safe {
+      max-width: 768px;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .container-safe {
+      max-width: 1024px;
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .container-safe {
+      max-width: 1280px;
+    }
+  }
+
+  /* Mobile-specific overflow prevention */
+  @media (max-width: 640px) {
+    .mobile-safe {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    
+    /* Ensure cards don't overflow on mobile */
+    .card-mobile-safe {
+      max-width: calc(100vw - 2rem);
+    }
+    
+    /* Fix flex containers on mobile */
+    .flex.min-h-screen {
+      overflow-x: hidden;
+      max-width: 100%;
+    }
+    
+    /* Ensure main content areas respect width on mobile */
+    main, .main-content {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+  }
+
+  /* Prevent any element from causing horizontal scroll */
+  img, video, iframe, embed, object {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Prevent tables from causing overflow on mobile */
+  table {
+    max-width: 100%;
+  }
+
+  /* Ensure flex and grid items don't overflow */
+  .flex > *, .grid > * {
+    min-width: 0;
+  }
+
+  /* Mobile-friendly table wrapper */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure pre and code blocks don't overflow */
+  pre, code {
+    max-width: 100%;
+    overflow-x: auto;
   }
 }
 

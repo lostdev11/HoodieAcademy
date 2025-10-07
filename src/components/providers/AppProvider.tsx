@@ -30,8 +30,10 @@ export default function AppProvider({
       initialGlobalSettings={initialGlobalSettings}
       initialFeatureFlags={featureFlags}
     >
-      <GlobalAnnouncementBanner initialAnnouncements={initialAnnouncements} />
-      {children}
+      <div className="min-h-screen w-full overflow-x-hidden">
+        <GlobalAnnouncementBanner initialAnnouncements={initialAnnouncements} />
+        {children}
+      </div>
     </SettingsProvider>
   );
 }
