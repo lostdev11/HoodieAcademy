@@ -39,6 +39,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -71,6 +72,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
     if (file) {
       setSelectedFile(file);
       setUploadError('');
+      setUploadSuccess(false);
       
       // Create preview
       const reader = new FileReader();
@@ -87,6 +89,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
   const uploadImage = async (file: File) => {
     setIsUploading(true);
     setUploadError('');
+    setUploadSuccess(false);
     
     try {
       console.log('🔄 Starting image upload:', {
@@ -122,9 +125,14 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
       // Store the uploaded image URL in form data
       setFormData(prev => ({ ...prev, imageUrl: result.url }));
       
+      // Mark upload as successful
+      setUploadSuccess(true);
+      setUploadError(''); // Explicitly clear any errors
+      
     } catch (error) {
       console.error('❌ Error uploading image:', error);
       setUploadError(error instanceof Error ? error.message : 'Failed to upload image');
+      setUploadSuccess(false);
       setSelectedFile(null);
       setImagePreview(null);
     } finally {
@@ -152,6 +160,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
       if (file.type.startsWith('image/')) {
         setSelectedFile(file);
         setUploadError('');
+        setUploadSuccess(false);
         
         // Create preview
         const reader = new FileReader();
@@ -164,6 +173,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
         await uploadImage(file);
       } else {
         setUploadError('Please drop an image file');
+        setUploadSuccess(false);
       }
     }
   };
@@ -197,6 +207,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
     setSelectedFile(null);
     setImagePreview(null);
     setUploadError('');
+    setUploadSuccess(false);
   };
 
   return (
@@ -497,14 +508,23 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
             
             {/* Upload Status - Mobile Optimized */}
             {isUploading && (
-              <div className="mt-3 flex items-center justify-center gap-2 text-sm sm:text-base text-blue-400 p-3 bg-blue-500/10 rounded-lg">
+              <div className="mt-3 flex items-center justify-center gap-2 text-sm sm:text-base text-blue-400 p-3 bg-blue-500/10 rounded-lg border border-blue-500/30">
                 <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
                 <span>Uploading image...</span>
               </div>
             )}
             
-            {uploadError && (
-              <div className="mt-3 flex items-center gap-2 text-sm sm:text-base text-red-400 p-3 bg-red-500/10 rounded-lg">
+            {!isUploading && uploadSuccess && selectedFile && (
+              <div className="mt-3 flex items-center gap-2 text-sm sm:text-base text-green-400 p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                <div className="w-5 h-5 flex items-center justify-center">
+                  <span className="text-lg">✓</span>
+                </div>
+                <span className="break-words">Image uploaded successfully! Pending admin review.</span>
+              </div>
+            )}
+            
+            {!isUploading && uploadError && !uploadSuccess && (
+              <div className="mt-3 flex items-center gap-2 text-sm sm:text-base text-red-400 p-3 bg-red-500/10 rounded-lg border border-red-500/30">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                 <span className="break-words">{uploadError}</span>
               </div>
@@ -538,6 +558,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
                       setImagePreview(null);
                       setFormData(prev => ({ ...prev, imageUrl: '' }));
                       setUploadError('');
+                      setUploadSuccess(false);
                     }}
                     className="absolute top-2 left-2 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity touch-manipulation min-h-[32px] min-w-[64px]"
                   >

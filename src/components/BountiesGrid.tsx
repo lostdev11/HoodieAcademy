@@ -353,6 +353,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
 
   // Check if bounty requires image
@@ -363,6 +364,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
     if (file) {
       setSelectedFile(file);
       setUploadError('');
+      setUploadSuccess(false);
       
       // Create preview
       const reader = new FileReader();
@@ -379,6 +381,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
   const uploadImage = async (file: File) => {
     setIsUploading(true);
     setUploadError('');
+    setUploadSuccess(false);
     
     try {
       const formData = new FormData();
@@ -399,9 +402,14 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
       const result = await response.json();
       console.log('✅ Image uploaded successfully:', result);
       
+      // Mark upload as successful
+      setUploadSuccess(true);
+      setUploadError(''); // Explicitly clear any errors
+      
     } catch (error) {
       console.error('❌ Error uploading image:', error);
       setUploadError(error instanceof Error ? error.message : 'Failed to upload image');
+      setUploadSuccess(false);
       setSelectedFile(null);
       setImagePreview(null);
     } finally {
@@ -429,6 +437,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
       if (file.type.startsWith('image/')) {
         setSelectedFile(file);
         setUploadError('');
+        setUploadSuccess(false);
         
         // Create preview
         const reader = new FileReader();
@@ -441,6 +450,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
         await uploadImage(file);
       } else {
         setUploadError('Please drop an image file');
+        setUploadSuccess(false);
       }
     }
   };
@@ -515,7 +525,16 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
           </div>
 
           {/* Upload Status */}
-          {uploadError && (
+          {!isUploading && uploadSuccess && selectedFile && (
+            <div className="flex items-center gap-2 text-sm text-green-600">
+              <div className="w-3 h-3 flex items-center justify-center">
+                <span>✓</span>
+              </div>
+              <span>Image uploaded successfully! Pending admin review.</span>
+            </div>
+          )}
+          
+          {!isUploading && uploadError && !uploadSuccess && (
             <div className="flex items-center gap-2 text-sm text-red-600">
               <AlertCircle className="w-3 h-3" />
               <span>{uploadError}</span>
