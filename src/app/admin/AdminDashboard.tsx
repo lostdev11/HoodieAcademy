@@ -13,7 +13,7 @@ import {
   RefreshCw, Download, Upload, Eye, EyeOff, CheckCircle, XCircle, AlertTriangle,
   Info, User, Award, Target, TrendingUp, BarChart3, Megaphone, Bell, Clock,
   FileText, CheckSquare, XSquare, ArrowLeft, LogOut, Shield, AlertCircle, Lock, Key, CalendarDays,
-  Database, Activity, Zap, Globe, X
+  Database, Activity, Zap, Globe, X, Image as ImageIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -48,6 +48,7 @@ import { Course } from '@/types/course';
 import { SubmissionsManager } from '@/components/admin/SubmissionsManager';
 import { UsersManager } from '@/components/admin/UsersManager';
 import { EnhancedUsersManager } from '@/components/admin/EnhancedUsersManager';
+import { ImageModerationPanel } from '@/components/admin/ImageModerationPanel';
 import { simpleUserSync } from '@/lib/simple-user-sync';
 import { robustUserSync } from '@/lib/robust-user-sync';
 import WalletUserInsights from '@/components/admin/WalletUserInsights';
@@ -1024,6 +1025,10 @@ export default function AdminDashboard({
               <FileText className="w-4 h-4" />
               Submissions
             </TabsTrigger>
+            <TabsTrigger value="images" className="flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Images
+            </TabsTrigger>
             <TabsTrigger value="announcements" className="flex items-center gap-2">
               <Megaphone className="w-4 h-4" />
               Announcements
@@ -1990,6 +1995,24 @@ export default function AdminDashboard({
           {/* Submissions Tab */}
           <TabsContent value="submissions" className="space-y-6">
             <SubmissionsManager />
+          </TabsContent>
+
+          {/* Image Moderation Tab */}
+          <TabsContent value="images" className="space-y-6">
+            <Card className="bg-slate-800/50 border-cyan-500/30">
+              <CardHeader>
+                <CardTitle className="text-cyan-400 flex items-center gap-2">
+                  <ImageIcon className="w-6 h-6" />
+                  Image Moderation Dashboard
+                </CardTitle>
+                <p className="text-gray-400 text-sm mt-2">
+                  Review, approve, reject, or delete images uploaded by users for bounty submissions
+                </p>
+              </CardHeader>
+              <CardContent>
+                <ImageModerationPanel />
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Announcements Tab */}

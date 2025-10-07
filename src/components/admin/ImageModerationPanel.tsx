@@ -14,7 +14,8 @@ import {
   User, 
   Calendar,
   AlertTriangle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Download
 } from 'lucide-react';
 
 interface ModeratedImage {
@@ -124,6 +125,24 @@ export const ImageModerationPanel = ({ className = '' }: ImageModerationPanelPro
     return new Date(dateString).toLocaleString();
   };
 
+  const downloadImage = async (image: ModeratedImage) => {
+    try {
+      const response = await fetch(image.public_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = image.original_name || image.filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      alert('Failed to download image');
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending_review':
@@ -227,8 +246,8 @@ export const ImageModerationPanel = ({ className = '' }: ImageModerationPanelPro
                       </div>
 
                       {/* Action Buttons */}
-                      {image.status === 'pending_review' && (
-                        <div className="flex space-x-2">
+                      <div className="flex space-x-2">
+                        {image.status === 'pending_review' && (
                           <Button
                             size="sm"
                             onClick={() => setSelectedImage(image)}
@@ -237,8 +256,16 @@ export const ImageModerationPanel = ({ className = '' }: ImageModerationPanelPro
                             <Eye className="w-3 h-3 mr-1" />
                             Review
                           </Button>
-                        </div>
-                      )}
+                        )}
+                        <Button
+                          size="sm"
+                          onClick={() => downloadImage(image)}
+                          variant="outline"
+                          className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -260,12 +287,21 @@ export const ImageModerationPanel = ({ className = '' }: ImageModerationPanelPro
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Image Preview */}
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center space-y-2">
                 <img
                   src={selectedImage.public_url}
                   alt={selectedImage.original_name}
                   className="max-w-full max-h-64 object-contain rounded-lg"
                 />
+                <Button
+                  onClick={() => downloadImage(selectedImage)}
+                  variant="outline"
+                  size="sm"
+                  className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Image
+                </Button>
               </div>
 
               {/* Image Details */}
