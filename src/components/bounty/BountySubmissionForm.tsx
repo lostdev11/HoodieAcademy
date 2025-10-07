@@ -89,18 +89,30 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
     setUploadError('');
     
     try {
+      console.log('🔄 Starting image upload:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        wallet: wallet
+      });
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('walletAddress', wallet || '');
       formData.append('context', 'bounty_submission');
+      
+      console.log('📤 Sending upload request...');
       
       const response = await fetch('/api/upload/moderated-image', {
         method: 'POST',
         body: formData,
       });
       
+      console.log('📥 Upload response status:', response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ Upload failed:', errorData);
         throw new Error(errorData.error || 'Failed to upload image');
       }
       
@@ -417,7 +429,6 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
                 className="hidden"
                 required={bountyData?.image_required}
                 disabled={isUploading}
-                capture="environment"
               />
               <div
                 onDragOver={handleDragOver}
@@ -464,7 +475,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
                       <Upload className="w-8 h-8 sm:w-6 sm:h-6" />
                       <span className="text-base sm:text-lg font-medium text-center">
                         <span className="hidden sm:inline">Click to Upload or Drag & Drop</span>
-                        <span className="sm:hidden">Tap to Upload or Take Photo</span>
+                        <span className="sm:hidden">Tap to Upload Image</span>
                       </span>
                     </>
                   )}

@@ -74,6 +74,8 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
+    console.log('Database insert result:', { imageRecord, dbError });
+
     if (dbError) {
       console.error('Error saving image record:', dbError);
       // Clean up the file if database save fails
