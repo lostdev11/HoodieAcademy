@@ -6,9 +6,11 @@ import { userDataSync } from '@/lib/user-data-sync';
 import { simpleUserSync } from '@/lib/simple-user-sync';
 import { robustUserSync } from '@/lib/robust-user-sync';
 import { simpleUserTracker } from '@/lib/simple-user-tracker';
+import { useDevice } from './use-device';
 
 
 export function useWalletSupabase() {
+  const { isMobile, isPhantomInApp } = useDevice();
   const [wallet, setWallet] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
@@ -75,9 +77,22 @@ export function useWalletSupabase() {
     setError(null);
     
     try {
+      // Handle mobile: redirect to Phantom if not already in Phantom's in-app browser
+      if (isMobile && !isPhantomInApp) {
+        const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+        const phantomUrl = `https://phantom.app/ul/browse/${encodeURIComponent(currentUrl)}`;
+        console.log('📱 Mobile detected, redirecting to Phantom app...');
+        window.location.href = phantomUrl;
+        setLoading(false);
+        return;
+      }
+
       const provider = typeof window !== 'undefined' ? window.solana : undefined;
       if (!provider) {
-        throw new Error('Phantom wallet not found');
+        const errorMsg = isMobile 
+          ? 'Please open this page in the Phantom app browser' 
+          : 'Phantom wallet not found. Please install Phantom extension.';
+        throw new Error(errorMsg);
       }
 
       console.log('📱 Phantom wallet found, checking connection status...');

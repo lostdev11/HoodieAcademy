@@ -8,6 +8,7 @@ import { Wallet, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { logUserActivity, logWalletConnection, logNftVerification } from '@/lib/activity-logger';
 import { hasSolflare, getSolflareProvider } from '@/lib/walletChecks';
+import { useDevice } from '@/hooks/use-device';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,7 @@ const VERIFICATION_SESSION_KEY = 'wifhoodie_verification';
 
 export default function TokenGate({ children }: TokenGateProps) {
   const router = useRouter()
+  const { isMobile, isPhantomInApp } = useDevice();
   const [isConnecting, setIsConnecting] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
   const [walletAddress, setWalletAddress] = useState<string | null>(null)
@@ -320,6 +322,15 @@ export default function TokenGate({ children }: TokenGateProps) {
       return;
     }
     
+    // Handle mobile: redirect to Phantom if not already in Phantom's in-app browser
+    if (providerName === 'phantom' && isMobile && !isPhantomInApp) {
+      const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+      const phantomUrl = `https://phantom.app/ul/browse/${encodeURIComponent(currentUrl)}`;
+      console.log('📱 Mobile detected, redirecting to Phantom app...');
+      window.location.href = phantomUrl;
+      return;
+    }
+    
     setIsConnecting(true);
     
     console.log("🔌 Debug: Starting wallet connection for provider:", providerName);
@@ -330,7 +341,9 @@ export default function TokenGate({ children }: TokenGateProps) {
         provider = window.solana;
         console.log("✅ Debug: Phantom wallet found and available");
       } else {
-        const errorMsg = "Phantom wallet is not installed. Please install Phantom wallet extension first.";
+        const errorMsg = isMobile 
+          ? "Please open this page in the Phantom app browser"
+          : "Phantom wallet is not installed. Please install Phantom wallet extension first.";
         console.error("❌ Debug:", errorMsg);
         setError(errorMsg);
         setIsConnecting(false);
@@ -342,7 +355,9 @@ export default function TokenGate({ children }: TokenGateProps) {
         provider = solflareProvider;
         console.log("✅ Debug: Solflare wallet found and available");
       } else {
-        const errorMsg = "Solflare wallet is not installed. Please install Solflare wallet extension first.";
+        const errorMsg = isMobile 
+          ? "Solflare is not available on mobile. Please use Phantom instead."
+          : "Solflare wallet is not installed. Please install Solflare wallet extension first.";
         console.warn("⚠️ Solflare not found");
         console.error("❌ Debug:", errorMsg);
         setError(errorMsg);
