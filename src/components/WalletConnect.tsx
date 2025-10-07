@@ -159,18 +159,20 @@ export default function WalletConnect() {
 
   if (isConnected && walletAddress) {
     return (
-      <div className="flex items-center space-x-2">
-        <span className="text-sm text-gray-300">
-          {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
-        </span>
-        <span className="text-xs text-amber-400">
-          {currentWallet ? wallets[currentWallet]?.icon : '🔗'}
-        </span>
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2">
+          <span className="text-xs sm:text-sm text-gray-300 font-mono">
+            {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+          </span>
+          <span className="text-base sm:text-xs text-amber-400">
+            {currentWallet ? wallets[currentWallet]?.icon : '🔗'}
+          </span>
+        </div>
         <Button
           variant="outline"
           size="sm"
           onClick={disconnectWallet}
-          className="border-amber-500/50 text-amber-300 hover:bg-amber-500/20"
+          className="border-amber-500/50 text-amber-300 hover:bg-amber-500/20 w-full sm:w-auto min-h-[44px] sm:min-h-[36px] touch-manipulation"
         >
           Disconnect
         </Button>
@@ -179,7 +181,7 @@ export default function WalletConnect() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 w-full">
       {/* Debug info - remove this in production */}
       {debugInfo && (
         <div className="text-xs text-gray-500 mb-2">
@@ -187,35 +189,59 @@ export default function WalletConnect() {
         </div>
       )}
       
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      {/* Mobile: Show buttons directly, Desktop: Use dropdown */}
+      <div className="sm:hidden space-y-2">
+        {/* Mobile view - Full width buttons */}
+        {Object.entries(wallets).map(([key, wallet]) => (
           <Button
+            key={key}
+            onClick={() => connectWallet(key)}
+            disabled={isConnecting || !wallet.isInstalled()}
+            className="w-full min-h-[56px] border-amber-500/50 text-amber-300 hover:bg-amber-500/20 bg-gray-800 touch-manipulation text-base font-medium"
             variant="outline"
-            size="sm"
-            disabled={isConnecting}
-            className="border-amber-500/50 text-amber-300 hover:bg-amber-500/20"
           >
-            <Wallet className="w-4 h-4 mr-2" />
-            {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-            <ChevronDown className="w-4 h-4 ml-2" />
+            <span className="mr-3 text-xl">{wallet.icon}</span>
+            <span className="flex-1 text-left">{wallet.name}</span>
+            {!wallet.isInstalled() && (
+              <span className="text-xs text-gray-400">(Not installed)</span>
+            )}
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-gray-800 border-gray-700">
-          {Object.entries(wallets).map(([key, wallet]) => (
-            <DropdownMenuItem
-              key={key}
-              onClick={() => connectWallet(key)}
-              className="text-gray-200 hover:bg-gray-700 cursor-pointer"
+        ))}
+      </div>
+      
+      {/* Desktop view - Dropdown */}
+      <div className="hidden sm:block">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isConnecting}
+              className="border-amber-500/50 text-amber-300 hover:bg-amber-500/20"
             >
-              <span className="mr-2">{wallet.icon}</span>
-              <span>{wallet.name}</span>
-              {!wallet.isInstalled() && (
-                <span className="ml-2 text-xs text-gray-400">(Not installed)</span>
-              )}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+              <Wallet className="w-4 h-4 mr-2" />
+              {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+              <ChevronDown className="w-4 h-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="bg-gray-800 border-gray-700 min-w-[200px]">
+            {Object.entries(wallets).map(([key, wallet]) => (
+              <DropdownMenuItem
+                key={key}
+                onClick={() => connectWallet(key)}
+                disabled={!wallet.isInstalled()}
+                className="text-gray-200 hover:bg-gray-700 cursor-pointer py-3"
+              >
+                <span className="mr-2 text-lg">{wallet.icon}</span>
+                <span>{wallet.name}</span>
+                {!wallet.isInstalled() && (
+                  <span className="ml-2 text-xs text-gray-400">(Not installed)</span>
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 }

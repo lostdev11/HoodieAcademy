@@ -195,13 +195,13 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
       </h2>
 
       {/* Wallet Connection Section */}
-      <div className="mb-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Wallet className="w-5 h-5 text-purple-400" />
-            <div>
-              <h3 className="text-white font-medium">Wallet Connection</h3>
-              <p className="text-sm text-gray-400">
+      <div className="mb-6 p-4 sm:p-4 bg-gray-800 rounded-lg border border-gray-700">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <Wallet className="w-5 h-5 text-purple-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-white font-medium text-sm sm:text-base">Wallet Connection</h3>
+              <p className="text-xs sm:text-sm text-gray-400 truncate">
                 {wallet ? `Connected: ${wallet.slice(0, 6)}...${wallet.slice(-4)}` : 'Connect your wallet to submit'}
               </p>
             </div>
@@ -211,7 +211,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
               onClick={disconnectWallet}
               variant="outline"
               size="sm"
-              className="text-red-400 border-red-400 hover:bg-red-400/10"
+              className="text-red-400 border-red-400 hover:bg-red-400/10 w-full sm:w-auto min-h-[44px] sm:min-h-[36px] touch-manipulation"
             >
               Disconnect
             </Button>
@@ -219,7 +219,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
             <Button
               onClick={handleWalletConnect}
               disabled={walletLoading}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto min-h-[48px] sm:min-h-[40px] touch-manipulation text-sm sm:text-base"
             >
               {walletLoading ? 'Connecting...' : 'Connect Wallet'}
             </Button>
