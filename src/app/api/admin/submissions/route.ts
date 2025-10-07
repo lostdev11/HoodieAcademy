@@ -5,13 +5,6 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const walletAddress = searchParams.get('wallet');
-
-    if (!walletAddress) {
-      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
-    }
-
     console.log('[ADMIN SUBMISSIONS API] Fetching all submissions for admin review...');
 
     const supabase = createClient(
@@ -59,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[ADMIN SUBMISSIONS API] Returning', allSubmissions.length, 'submissions');
 
-    return NextResponse.json(allSubmissions);
+    return NextResponse.json({ submissions: allSubmissions });
 
   } catch (error) {
     console.error('[ADMIN SUBMISSIONS API ERROR]', error);

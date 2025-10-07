@@ -47,25 +47,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
     }
 
-    // Get course completion counts for each user
+    // Get course completion counts for each user (handle missing table gracefully)
     const { data: courseCompletions, error: courseError } = await supabase
       .from('course_completions')
       .select('wallet_address, course_id')
       .not('completed_at', 'is', null);
 
     if (courseError) {
-      console.error('[FETCH COURSE COMPLETIONS ERROR]', courseError);
-      return NextResponse.json({ error: 'Failed to fetch course completions' }, { status: 500 });
+      console.warn('[FETCH COURSE COMPLETIONS WARNING]', courseError.message);
+      // Continue with empty data if table doesn't exist
     }
 
-    // Get bounty submission counts for each user
+    // Get bounty submission counts for each user (handle missing table gracefully)
     const { data: bountySubmissions, error: bountyError } = await supabase
       .from('bounty_submissions')
       .select('wallet_address, placement');
 
     if (bountyError) {
-      console.error('[FETCH BOUNTY SUBMISSIONS ERROR]', bountyError);
-      return NextResponse.json({ error: 'Failed to fetch bounty submissions' }, { status: 500 });
+      console.warn('[FETCH BOUNTY SUBMISSIONS WARNING]', bountyError.message);
+      // Continue with empty data if table doesn't exist
     }
 
     // Calculate stats for each user
