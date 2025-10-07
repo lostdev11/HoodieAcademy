@@ -81,6 +81,22 @@ export function ProfileView() {
   const [isSubmittingBounty, setIsSubmittingBounty] = useState(false);
   const [selectedBountyId, setSelectedBountyId] = useState<string>('');
   const [availableBounties, setAvailableBounties] = useState<any[]>([]);
+
+  // Fetch available bounties for profile page
+  useEffect(() => {
+    const fetchBounties = async () => {
+      try {
+        const response = await fetch('/api/bounties');
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableBounties(data.bounties || data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching bounties:', error);
+      }
+    };
+    fetchBounties();
+  }, []);
   const [saveProgress, setSaveProgress] = useState<string>('');
   const [saveError, setSaveError] = useState<string>('');
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -113,9 +129,40 @@ export function ProfileView() {
       return;
     }
 
-    // For profile page submissions, redirect to bounties page  
-    alert('To submit to a specific bounty, please go to the Bounties page and click Submit Entry on the bounty you want to submit to.');
-    window.location.href = '/bounties';
+    if (!data.bountyId) {
+      alert('Please select a bounty to submit to. Go to the Bounties page and click Submit Entry on a specific bounty.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/bounties/${data.bountyId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submission: data.description,
+          walletAddress: wallet,
+          submissionType: data.imageUrl ? 'image' : 'text',
+          title: data.title,
+          description: data.description,
+          imageUrl: data.imageUrl,
+          squad: data.squad,
+          courseRef: data.courseRef
+        })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert('✅ Bounty submitted successfully! Go to the admin dashboard to review it.');
+        // Reload to show updated submissions
+        window.location.reload();
+      } else {
+        alert(`❌ ${result.error || 'Failed to submit bounty'}`);
+      }
+    } catch (error) {
+      console.error('Error submitting bounty:', error);
+      alert('❌ Failed to submit bounty. Please try again.');
+    }
   };
 
   // Save profile function
@@ -1430,10 +1477,30 @@ export function ProfileView() {
                     </Link>
                   </Button>
                 </div>
-                <BountySubmissionForm 
-                  onSubmit={handleBountySubmit} 
-                  className="max-w-none"
-                />
+                <div className="space-y-4">
+                  {/* Bounty Selection */}
+                  <div className="space-y-2">
+                    <span className="text-gray-400 text-sm font-medium">Select Bounty</span>
+                    <Select value={selectedBountyId} onValueChange={setSelectedBountyId}>
+                      <SelectTrigger className="bg-slate-700/50 border-slate-600/30 text-white">
+                        <SelectValue placeholder="Choose a bounty to submit to..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        {availableBounties.map((bounty) => (
+                          <SelectItem key={bounty.id} value={bounty.id}>
+                            {bounty.title} - {bounty.squad_tag || 'All Squads'}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Submission Form */}
+                  <BountySubmissionForm 
+                    onSubmit={(data) => handleBountySubmit({ ...data, bountyId: selectedBountyId })} 
+                    className="max-w-none"
+                  />
+                </div>
               </div>
             </div>
           </CardContent>
