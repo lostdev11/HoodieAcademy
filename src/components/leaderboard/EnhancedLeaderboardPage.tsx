@@ -20,7 +20,9 @@ import {
   Award,
   Crown,
   Star,
-  Zap
+  Zap,
+  Home,
+  ArrowLeft
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import TokenGate from '@/components/TokenGate';
@@ -179,13 +181,24 @@ export default function EnhancedLeaderboardPage() {
         <div className="flex-1 flex flex-col">
           {/* Header */}
           <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-cyan-400 flex items-center gap-2">
-                  <Trophy className="w-8 h-8" />
-                  Hoodie Academy Leaderboard
-                </h1>
-                <p className="text-gray-300">Live rankings based on 100-level course completion and engagement</p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={() => window.location.href = '/'}
+                  variant="outline"
+                  size="sm"
+                  className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Home
+                </Button>
+                <div>
+                  <h1 className="text-3xl font-bold text-cyan-400 flex items-center gap-2">
+                    <Trophy className="w-8 h-8" />
+                    Hoodie Academy Leaderboard
+                  </h1>
+                  <p className="text-gray-300">Live rankings based on 100-level course completion and engagement</p>
+                </div>
               </div>
               <div className="text-right">
                 <div className="text-sm text-gray-400">Last Updated</div>

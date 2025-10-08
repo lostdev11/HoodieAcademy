@@ -140,7 +140,7 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between h-auto sm:h-16 py-4 sm:py-0 gap-4 sm:gap-0">
             <div className="flex items-center space-x-3">
               <Shield className="w-8 h-8 text-blue-400" />
               <div>
@@ -148,19 +148,21 @@ export default function AdminDashboardPage() {
                 <p className="text-sm text-slate-400">Manage your academy</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
               <RealtimeStatus />
-              <span className="text-sm text-slate-400">
-                {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
-              </span>
-              <Button 
-                onClick={() => window.location.href = '/'} 
-                variant="outline" 
-                size="sm"
-                className="border-slate-600 text-slate-300"
-              >
-                Back to Home
-              </Button>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-slate-400">
+                  {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
+                </span>
+                <Button 
+                  onClick={() => window.location.href = '/'} 
+                  variant="outline" 
+                  size="sm"
+                  className="border-slate-600 text-slate-300"
+                >
+                  Back to Home
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -169,7 +171,7 @@ export default function AdminDashboardPage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto">
             <Button
               variant={activeTab === "overview" ? "default" : "outline"}
               onClick={() => setActiveTab("overview")}

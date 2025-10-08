@@ -32,6 +32,9 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
     priority: 'normal' as CouncilNotice['priority'],
     expires_at: ''
   });
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetchNotices();
@@ -53,11 +56,20 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitLoading(true);
+    setError(null);
+    setSuccess(null);
+    
     try {
-      const endpoint = editing ? '/api/council-notices' : '/api/council-notices';
       const method = editing ? 'PUT' : 'POST';
       
-      const response = await fetch(endpoint, {
+      console.log('Submitting council notice:', {
+        ...(editing && { id: editing }),
+        ...formData,
+        created_by: walletAddress
+      });
+      
+      const response = await fetch('/api/council-notices', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -67,12 +79,22 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
         })
       });
 
+      const result = await response.json();
+      console.log('Council notice response:', result);
+
       if (response.ok) {
+        setSuccess(editing ? 'Council notice updated successfully!' : 'Council notice created successfully!');
         fetchNotices();
         resetForm();
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError(result.error || 'Failed to save council notice');
       }
     } catch (error) {
-      console.error('Error saving notice:', error);
+      console.error('Error saving council notice:', error);
+      setError('Network error occurred. Please try again.');
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
@@ -133,6 +155,8 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
     });
     setEditing(null);
     setShowForm(false);
+    setError(null);
+    setSuccess(null);
   };
 
   const getPriorityColor = (priority: string) => {
@@ -176,6 +200,16 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
         <CardContent>
           {showForm && (
             <form onSubmit={handleSubmit} className="mb-6 p-4 bg-slate-700/50 rounded-lg border border-blue-500/30 space-y-4">
+              {error && (
+                <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+              {success && (
+                <div className="p-3 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 text-sm">
+                  {success}
+                </div>
+              )}
               <div>
                 <Label htmlFor="title" className="text-white">Notice Title</Label>
                 <Input
@@ -240,9 +274,13 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                <Button 
+                  type="submit" 
+                  className="bg-green-600 hover:bg-green-700"
+                  disabled={submitLoading}
+                >
                   <Save className="w-4 h-4 mr-2" />
-                  {editing ? 'Update' : 'Create'} Notice
+                  {submitLoading ? 'Saving...' : (editing ? 'Update' : 'Create')} Notice
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm} className="border-slate-600">
                   <X className="w-4 h-4 mr-2" />
