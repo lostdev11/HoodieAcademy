@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { storeSquad } from '@/utils/squad-storage';
+import { storeSquad, getSquad, isSquadLocked, getRemainingLockDays } from '@/utils/squad-storage';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Target, Users, Trophy, CheckCircle, ArrowRight, Clock, AlertTriangle, Lock } from 'lucide-react';
@@ -116,7 +116,31 @@ const squads: SquadInfo[] = [
 export default function ChooseYourSquadPage() {
   const [selectedSquad, setSelectedSquad] = useState<SquadInfo | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [currentSquad, setCurrentSquad] = useState<SquadInfo | null>(null);
+  const [isLocked, setIsLocked] = useState(false);
+  const [remainingDays, setRemainingDays] = useState(0);
   const router = useRouter();
+
+  useEffect(() => {
+    // Check if user already has a squad
+    const existingSquad = getSquad();
+    if (existingSquad) {
+      // Find the matching squad info
+      const squadInfo = squads.find(s => s.id === existingSquad.id || s.name === existingSquad.name);
+      if (squadInfo) {
+        setCurrentSquad(squadInfo);
+      }
+      
+      // Check if squad is locked
+      const locked = isSquadLocked();
+      setIsLocked(locked);
+      
+      if (locked) {
+        const days = getRemainingLockDays();
+        setRemainingDays(days);
+      }
+    }
+  }, []);
 
   const handleSquadSelection = (squad: SquadInfo) => {
     if (squad.locked) {
@@ -124,6 +148,13 @@ export default function ChooseYourSquadPage() {
       alert('Hoodie Rangers is locked! Complete all 4 core squad tracks to unlock this elite path.');
       return;
     }
+    
+    // Check if user has a locked squad
+    if (isLocked && currentSquad && currentSquad.id !== squad.id) {
+      alert(`You are currently locked into ${currentSquad.name} for ${remainingDays} more days. You can change your squad after the lock period expires.`);
+      return;
+    }
+    
     setSelectedSquad(squad);
     setShowConfirmation(true);
   };
@@ -136,7 +167,11 @@ export default function ChooseYourSquadPage() {
     lockEndDate.setDate(lockEndDate.getDate() + 30);
     
     // Save squad assignment with lock info
-    storeSquad({ name: selectedSquad.name, id: selectedSquad.id });
+    storeSquad({ 
+      name: selectedSquad.name, 
+      id: selectedSquad.id,
+      lockEndDate: lockEndDate.toISOString()
+    });
     localStorage.setItem('placementTestCompleted', 'true');
     
     // Redirect to home page
@@ -162,9 +197,48 @@ export default function ChooseYourSquadPage() {
           </div>
         </div>
 
+        {/* Current Squad Status */}
+        {currentSquad && (
+          <Card className="mb-8 bg-cyan-500/10 border-cyan-500/30">
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl ${currentSquad.bgColor}`}>
+                    {currentSquad.emoji}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-cyan-400">Current Squad: {currentSquad.name}</h3>
+                    <p className="text-gray-300 text-sm">{currentSquad.description}</p>
+                  </div>
+                </div>
+                {isLocked && (
+                  <div className="flex items-center gap-3 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                    <Lock className="w-5 h-5 text-orange-400" />
+                    <div className="text-center">
+                      <p className="font-semibold text-orange-400">Squad Locked</p>
+                      <p className="text-sm text-gray-300">{remainingDays} days remaining</p>
+                    </div>
+                  </div>
+                )}
+                {!isLocked && (
+                  <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                    <div className="text-center">
+                      <p className="font-semibold text-green-400">Squad Unlocked</p>
+                      <p className="text-sm text-gray-300">You can change squads now</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Introduction */}
         <div className="text-center mb-12">
-          <h2 className="text-2xl font-bold text-white mb-4">Discover Your Path in Hoodie Academy</h2>
+          <h2 className="text-2xl font-bold text-white mb-4">
+            {currentSquad ? 'Change Your Squad' : 'Discover Your Path in Hoodie Academy'}
+          </h2>
           <p className="text-gray-300 max-w-3xl mx-auto text-lg">
             Each squad represents a unique role in the Hoodie Academy ecosystem. Choose the path that aligns with your skills, 
             interests, and goals. Your squad will determine your learning track, community focus, and specialized challenges.

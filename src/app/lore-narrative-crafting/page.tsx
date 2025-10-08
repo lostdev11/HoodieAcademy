@@ -996,9 +996,9 @@ export default function LoreNarrativeCraftingPage() {
                   asChild
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 >
-                  <Link href="/placement/squad-test">
+                  <Link href="/choose-your-squad">
                     <Target className="w-4 h-4 mr-2" />
-                    Take Squad Placement Test
+                    Choose Your Squad
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Link>
                 </Button>

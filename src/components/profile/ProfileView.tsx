@@ -1186,9 +1186,9 @@ export function ProfileView() {
                     variant="outline"
                     className="border-orange-500/30 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
                   >
-                    <Link href="/placement/squad-test">
+                    <Link href="/choose-your-squad">
                       <Users className="w-4 h-4 mr-2" />
-                      Retake Placement Test
+                      Change Squad
                     </Link>
                   </Button>
                 </div>
@@ -1208,15 +1208,15 @@ export function ProfileView() {
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-gray-300 mb-4">
-                You haven't taken the squad placement test yet. Take the test to get assigned to a squad and unlock personalized course recommendations.
+                You haven't chosen your squad yet. Select your squad to unlock personalized course recommendations and join your community.
               </p>
               <Button
                 asChild
                 className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
               >
-                <Link href="/placement/squad-test">
+                <Link href="/choose-your-squad">
                   <Users className="w-4 h-4 mr-2" />
-                  Take Placement Test
+                  Choose Your Squad
                 </Link>
               </Button>
             </CardContent>

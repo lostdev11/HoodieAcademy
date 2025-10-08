@@ -3,6 +3,7 @@
 export interface SquadData {
   name: string;
   id: string;
+  lockEndDate?: string; // ISO date string for when the 30-day lock expires
 }
 
 /**
@@ -75,5 +76,46 @@ export const clearSquad = (): void => {
     localStorage.removeItem('userSquad');
   } catch (error) {
     console.error('Error clearing squad data:', error);
+  }
+};
+
+/**
+ * Check if the squad is currently locked (within 30-day period)
+ */
+export const isSquadLocked = (): boolean => {
+  try {
+    const squad = getSquad();
+    if (!squad || !squad.lockEndDate) return false;
+    
+    const lockEndDate = new Date(squad.lockEndDate);
+    const now = new Date();
+    
+    return now < lockEndDate;
+  } catch (error) {
+    console.error('Error checking squad lock status:', error);
+    return false;
+  }
+};
+
+/**
+ * Get the remaining days in the squad lock period
+ */
+export const getRemainingLockDays = (): number => {
+  try {
+    const squad = getSquad();
+    if (!squad || !squad.lockEndDate) return 0;
+    
+    const lockEndDate = new Date(squad.lockEndDate);
+    const now = new Date();
+    
+    if (now >= lockEndDate) return 0;
+    
+    const diffTime = lockEndDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+  } catch (error) {
+    console.error('Error calculating remaining lock days:', error);
+    return 0;
   }
 };

@@ -94,14 +94,14 @@ export default function OnboardingFlow() {
     },
     {
       id: 'squad',
-      title: 'Find Your Squad',
-      description: 'Take our personality test to discover your perfect squad',
+      title: 'Choose Your Squad',
+      description: 'Select the squad that matches your skills and interests',
       component: (
         <div className="space-y-6">
           <div className="text-center mb-6">
             <Users className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-purple-400 mb-2">Discover Your Squad</h2>
-            <p className="text-gray-300">Take our personality test to find the squad that matches your skills and interests.</p>
+            <h2 className="text-2xl font-bold text-purple-400 mb-2">Choose Your Squad</h2>
+            <p className="text-gray-300">Select the squad that matches your skills, interests, and goals in the Hoodie Academy.</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -126,8 +126,8 @@ export default function OnboardingFlow() {
             asChild
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
           >
-            <Link href="/placement/squad-test">
-              Take Squad Placement Test
+            <Link href="/choose-your-squad">
+              Choose Your Squad
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>
           </Button>

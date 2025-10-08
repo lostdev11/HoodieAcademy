@@ -298,7 +298,7 @@ export default function SquadChatClient({ params }: PageProps) {
           }
         } else {
           // No squad assigned, show helpful error message
-          setError(`No squad assignment found. Please complete the placement test to access squad chats.`);
+          setError(`No squad assignment found. Please choose your squad to access squad chats.`);
           setHasAccess(false);
           console.log('No squad found for user, showing error message');
         }
@@ -392,8 +392,8 @@ export default function SquadChatClient({ params }: PageProps) {
                   variant="outline"
                   className="border-cyan-500/30 text-cyan-400 hover:text-cyan-300"
                 >
-                  <Link href="/placement/squad-test">
-                    {userSquad ? 'Retake Squad Test' : 'Take Squad Test'}
+                  <Link href="/choose-your-squad">
+                    {userSquad ? 'Change Squad' : 'Choose Squad'}
                   </Link>
                 </Button>
               </div>
@@ -483,8 +483,8 @@ export default function SquadChatClient({ params }: PageProps) {
                 </Button>
                 
                 <Button asChild variant="outline" className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20">
-                  <Link href="/placement/squad-test">
-                    Take Squad Placement Test
+                  <Link href="/choose-your-squad">
+                    Choose Your Squad
                   </Link>
                 </Button>
               </div>
