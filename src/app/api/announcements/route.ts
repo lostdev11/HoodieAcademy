@@ -7,10 +7,14 @@ const supabase = createClient(
 );
 
 export async function GET(request: NextRequest) {
+  console.log('🔍 [ANNOUNCEMENTS API] GET request received');
+  
   try {
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('includeInactive') === 'true';
     const category = searchParams.get('category');
+
+    console.log('🔍 [ANNOUNCEMENTS API] Query params:', { includeInactive, category });
 
     let query = supabase
       .from('academy_announcements')
@@ -25,29 +29,38 @@ export async function GET(request: NextRequest) {
       query = query.eq('category', category);
     }
 
+    console.log('🔍 [ANNOUNCEMENTS API] Executing query...');
     const { data, error } = await query;
+    console.log('🔍 [ANNOUNCEMENTS API] Query result:', { dataCount: data?.length, error });
 
     if (error) {
-      console.error('Error fetching announcements:', error);
+      console.error('❌ [ANNOUNCEMENTS API] Error fetching announcements:', error);
       return NextResponse.json({ error: 'Failed to fetch announcements' }, { status: 500 });
     }
 
+    console.log('✅ [ANNOUNCEMENTS API] Returning success response');
     return NextResponse.json({ success: true, announcements: data || [] });
   } catch (error) {
-    console.error('Error in announcements GET:', error);
+    console.error('❌ [ANNOUNCEMENTS API] Error in GET:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
+  console.log('🔍 [ANNOUNCEMENTS API] POST request received');
+  
   try {
     const body = await request.json();
     const { title, content, category, is_expandable, expires_at, created_by } = body;
 
+    console.log('🔍 [ANNOUNCEMENTS API] Request body:', { title, content, category, is_expandable, expires_at, created_by });
+
     if (!title || !content) {
+      console.log('❌ [ANNOUNCEMENTS API] Missing required fields');
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
     }
 
+    console.log('🔍 [ANNOUNCEMENTS API] Inserting announcement...');
     const { data, error } = await supabase
       .from('academy_announcements')
       .insert({
@@ -63,14 +76,17 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
+    console.log('🔍 [ANNOUNCEMENTS API] Insert result:', { data, error });
+
     if (error) {
-      console.error('Error creating announcement:', error);
+      console.error('❌ [ANNOUNCEMENTS API] Error creating announcement:', error);
       return NextResponse.json({ error: 'Failed to create announcement' }, { status: 500 });
     }
 
+    console.log('✅ [ANNOUNCEMENTS API] Announcement created successfully');
     return NextResponse.json({ success: true, announcement: data });
   } catch (error) {
-    console.error('Error in announcements POST:', error);
+    console.error('❌ [ANNOUNCEMENTS API] Error in POST:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
