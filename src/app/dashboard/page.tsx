@@ -387,16 +387,16 @@ export default function HoodieAcademy() {
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full sm:w-auto">
                   {error && (
-                    <div className="w-full sm:w-auto mb-2 sm:mb-0">
+                    <div className="w-full sm:w-auto">
                       <p className="text-red-400 text-sm">{error}</p>
                     </div>
                   )}
                   {walletAddress && (
-                    <div className="flex flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30 w-full sm:w-auto">
-                      <User className="w-4 h-4 text-cyan-400" />
-                      <span className="text-sm text-cyan-400 font-mono">
+                    <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30 w-full sm:w-auto min-w-0 flex-shrink-0">
+                      <User className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                      <span className="text-sm text-cyan-400 font-mono truncate">
                         {isLoadingSns ? (
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
@@ -436,7 +436,7 @@ export default function HoodieAcademy() {
                       )}
                     </div>
                   )}
-                  <Link href={isAdmin ? "/admin-dashboard" : "#"}>
+                  <Link href={isAdmin ? "/admin-dashboard" : "#"} className="flex-shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
@@ -461,14 +461,14 @@ export default function HoodieAcademy() {
                     onClick={handleDisconnect}
                     variant="outline"
                     size="sm"
-                    className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300 w-full sm:w-auto min-h-[44px]"
+                    className="text-red-400 border-red-500/30 hover:bg-red-500/10 hover:text-red-300 w-full sm:w-auto min-h-[44px] flex-shrink-0"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
                     Disconnect
                   </Button>
-                  <div className="text-right w-full sm:w-auto">
-                    <div className="text-sm text-gray-400">Current Time</div>
-                    <div className="text-lg text-cyan-400 font-mono">{currentTime}</div>
+                  <div className="hidden lg:flex flex-col text-right flex-shrink-0">
+                    <div className="text-xs text-gray-400">Current Time</div>
+                    <div className="text-sm text-cyan-400 font-mono">{currentTime}</div>
                   </div>
                 </div>
               </div>
