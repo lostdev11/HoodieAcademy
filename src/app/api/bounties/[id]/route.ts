@@ -20,7 +20,8 @@ const BountyUpdate = z.object({
   max_submissions: z.number().int().positive().optional(),
   allow_multiple_submissions: z.boolean().optional(),
   image_required: z.boolean().optional(),
-  submission_type: z.enum(['text', 'image', 'both']).optional()
+  submission_type: z.enum(['text', 'image', 'both']).optional(),
+  hidden: z.boolean().optional()  // ← Added hidden field
 });
 
 export const runtime = 'edge';
@@ -85,6 +86,15 @@ export async function PATCH(
     console.error('Error updating bounty:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+// Add PUT method to handle legacy calls
+export async function PUT(
+  req: NextRequest, 
+  { params }: { params: { id: string } }
+) {
+  // Just forward to PATCH
+  return PATCH(req, { params });
 }
 
 export async function DELETE(
