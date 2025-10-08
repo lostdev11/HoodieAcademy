@@ -22,7 +22,7 @@ const BountyUpdate = z.object({
   image_required: z.boolean().optional(),
   submission_type: z.enum(['text', 'image', 'both']).optional(),
   hidden: z.boolean().optional()  // ← Added hidden field
-});
+}).strip();  // ← Strip unknown fields instead of rejecting them
 
 export const runtime = 'edge';
 
@@ -54,21 +54,31 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('🔍 [BOUNTY UPDATE] PATCH request for bounty:', params.id);
+    
     // Check admin permissions
     const admin = await isAdminForUser(supabase);
     if (!admin) {
+      console.log('❌ [BOUNTY UPDATE] Admin check failed');
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     
+    console.log('✅ [BOUNTY UPDATE] Admin check passed');
+    
     // Parse request body
     const body = await req.json();
+    console.log('📦 [BOUNTY UPDATE] Request body:', JSON.stringify(body, null, 2));
+    
     const parsed = BountyUpdate.safeParse(body);
     if (!parsed.success) {
+      console.error('❌ [BOUNTY UPDATE] Validation failed:', parsed.error.flatten());
       return NextResponse.json({ 
         error: 'Invalid request data', 
         details: parsed.error.flatten() 
       }, { status: 400 });
     }
+    
+    console.log('✅ [BOUNTY UPDATE] Validation passed. Updating fields:', Object.keys(parsed.data));
     
     const { data, error } = await supabase
       .from('bounties')
@@ -78,13 +88,18 @@ export async function PATCH(
       .single();
     
     if (error) {
+      console.error('❌ [BOUNTY UPDATE] Database error:', error);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
     
+    console.log('✅ [BOUNTY UPDATE] Bounty updated successfully');
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error updating bounty:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('💥 [BOUNTY UPDATE] Unexpected error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 

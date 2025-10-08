@@ -184,25 +184,34 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
 
   const handleToggleHidden = async (bounty: Bounty) => {
     setLoading(true);
+    setError('');
+    
     try {
+      console.log('🔄 Toggling bounty visibility:', bounty.id, 'from', bounty.hidden, 'to', !bounty.hidden);
+      
       const response = await fetch(`/api/bounties/${bounty.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          ...bounty, 
-          hidden: !bounty.hidden,
-          walletAddress 
+          hidden: !bounty.hidden  // ← Only send the field we want to update
         })
       });
 
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to update bounty');
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+        throw new Error(errorData.error || errorData.details || 'Failed to update bounty');
       }
 
       const responseData = await response.json();
+      console.log('✅ Bounty updated:', responseData);
+      
       const updatedBounty = responseData.bounty || responseData;
       onBountiesChange(bounties.map(b => b.id === bounty.id ? updatedBounty : b));
     } catch (err) {
+      console.error('❌ Error toggling bounty visibility:', err);
       setError(err instanceof Error ? err.message : 'Failed to update bounty');
     } finally {
       setLoading(false);
