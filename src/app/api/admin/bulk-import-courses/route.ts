@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 import { verifyAdminAccess } from '@/lib/admin-utils';
 
+export async function GET(request: NextRequest) {
+  return NextResponse.json({ 
+    message: 'Bulk import courses endpoint',
+    usage: 'POST with courses array and walletAddress'
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!getSupabaseAdmin()) {
