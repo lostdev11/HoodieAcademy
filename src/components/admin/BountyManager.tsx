@@ -188,10 +188,14 @@ export default function BountyManager({ bounties, onBountiesChange, walletAddres
     
     try {
       console.log('🔄 Toggling bounty visibility:', bounty.id, 'from', bounty.hidden, 'to', !bounty.hidden);
+      console.log('🔑 Using wallet address:', walletAddress);
       
       const response = await fetch(`/api/bounties/${bounty.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Wallet-Address': walletAddress  // ← Send wallet address for admin check
+        },
         body: JSON.stringify({ 
           hidden: !bounty.hidden  // ← Only send the field we want to update
         })

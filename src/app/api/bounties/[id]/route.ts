@@ -56,11 +56,36 @@ export async function PATCH(
   try {
     console.log('🔍 [BOUNTY UPDATE] PATCH request for bounty:', params.id);
     
-    // Check admin permissions
-    const admin = await isAdminForUser(supabase);
-    if (!admin) {
-      console.log('❌ [BOUNTY UPDATE] Admin check failed');
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    // Get wallet address from request header or body for wallet-based auth
+    const walletAddress = req.headers.get('x-wallet-address');
+    console.log('🔍 [BOUNTY UPDATE] Wallet address from header:', walletAddress);
+    
+    // Check admin permissions - either via Supabase Auth or wallet-based
+    let isAdmin = false;
+    
+    // Try auth-based check first
+    try {
+      isAdmin = await isAdminForUser(supabase);
+      console.log('✅ [BOUNTY UPDATE] Auth-based admin check:', isAdmin);
+    } catch (authError) {
+      console.log('⚠️ [BOUNTY UPDATE] Auth-based check failed, trying wallet check');
+    }
+    
+    // If auth failed, try wallet-based check
+    if (!isAdmin && walletAddress) {
+      const { data: adminUser } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('wallet_address', walletAddress)
+        .single();
+      
+      isAdmin = adminUser?.is_admin || false;
+      console.log('✅ [BOUNTY UPDATE] Wallet-based admin check:', isAdmin);
+    }
+    
+    if (!isAdmin) {
+      console.log('❌ [BOUNTY UPDATE] Admin check failed - not authorized');
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
     
     console.log('✅ [BOUNTY UPDATE] Admin check passed');
