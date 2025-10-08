@@ -14,8 +14,6 @@ import { EnhancedUsersManager } from '@/components/admin/EnhancedUsersManager';
 import ConnectedUsersList from '@/components/admin/ConnectedUsersList';
 import AdminOverviewDashboard from '@/components/admin/AdminOverviewDashboard';
 import AdminSettings from '@/components/admin/AdminSettings';
-import { RealtimeDataProvider } from '@/components/admin/RealtimeDataProvider';
-import { RealtimeStatus } from '@/components/admin/RealtimeStatus';
 import { 
   Users, BookOpen, Trophy, Settings, Shield, BarChart3, 
   Target, Megaphone, Bell, Database, Activity, Zap, 
@@ -153,7 +151,6 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <RealtimeDataProvider walletAddress={walletAddress} enabled={true}>
       <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700">
@@ -167,7 +164,6 @@ export default function AdminDashboardPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-              <RealtimeStatus />
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-slate-400">
                   {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
@@ -442,6 +438,5 @@ export default function AdminDashboardPage() {
         </Tabs>
       </div>
     </div>
-    </RealtimeDataProvider>
   );
 }
