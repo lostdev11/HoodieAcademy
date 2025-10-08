@@ -60,27 +60,42 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
     setError(null);
     setSuccess(null);
     
+    // Check if wallet address is available
+    if (!walletAddress) {
+      setError('Wallet address not found. Please connect your wallet.');
+      setSubmitLoading(false);
+      return;
+    }
+    
+    // Validate required fields
+    if (!formData.title.trim() || !formData.content.trim()) {
+      setError('Title and content are required.');
+      setSubmitLoading(false);
+      return;
+    }
+    
     try {
       const method = editing ? 'PUT' : 'POST';
       
-      console.log('Submitting council notice:', {
+      const payload = {
         ...(editing && { id: editing }),
         ...formData,
         created_by: walletAddress
-      });
+      };
+      
+      console.log('🔍 [COUNCIL NOTICE] Submitting:', payload);
+      console.log('🔍 [COUNCIL NOTICE] Method:', method);
+      console.log('🔍 [COUNCIL NOTICE] Wallet:', walletAddress);
       
       const response = await fetch('/api/council-notices', {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...(editing && { id: editing }),
-          ...formData,
-          created_by: walletAddress
-        })
+        body: JSON.stringify(payload)
       });
 
       const result = await response.json();
-      console.log('Council notice response:', result);
+      console.log('🔍 [COUNCIL NOTICE] Response status:', response.status);
+      console.log('🔍 [COUNCIL NOTICE] Response data:', result);
 
       if (response.ok) {
         setSuccess(editing ? 'Council notice updated successfully!' : 'Council notice created successfully!');
@@ -88,10 +103,10 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
         resetForm();
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError(result.error || 'Failed to save council notice');
+        setError(result.error || `Failed to save council notice (${response.status})`);
       }
     } catch (error) {
-      console.error('Error saving council notice:', error);
+      console.error('❌ [COUNCIL NOTICE] Error saving:', error);
       setError('Network error occurred. Please try again.');
     } finally {
       setSubmitLoading(false);
@@ -183,14 +198,14 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
     <div className="space-y-6">
       <Card className="bg-slate-800/50 border-blue-500/30">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <CardTitle className="text-blue-400 flex items-center gap-2">
               <Bell className="w-6 h-6" />
               Council Notices Management
             </CardTitle>
             <Button
               onClick={() => setShowForm(!showForm)}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4 mr-2" />
               New Notice
@@ -199,7 +214,7 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
         </CardHeader>
         <CardContent>
           {showForm && (
-            <form onSubmit={handleSubmit} className="mb-6 p-4 bg-slate-700/50 rounded-lg border border-blue-500/30 space-y-4">
+            <form onSubmit={handleSubmit} className="mb-6 p-4 bg-slate-700/50 rounded-lg border border-blue-500/30 space-y-4 w-full">
               {error && (
                 <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
                   {error}
@@ -234,7 +249,7 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="directive_date" className="text-white">Directive Date</Label>
                   <Input
@@ -273,16 +288,16 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
                 </div>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button 
                   type="submit" 
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                   disabled={submitLoading}
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {submitLoading ? 'Saving...' : (editing ? 'Update' : 'Create')} Notice
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm} className="border-slate-600">
+                <Button type="button" variant="outline" onClick={resetForm} className="border-slate-600 w-full sm:w-auto">
                   <X className="w-4 h-4 mr-2" />
                   Cancel
                 </Button>
