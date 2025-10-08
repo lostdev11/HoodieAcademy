@@ -83,9 +83,10 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
         created_by: walletAddress
       };
       
-      console.log('🔍 [COUNCIL NOTICE] Submitting:', payload);
+      console.log('🔍 [COUNCIL NOTICE] Submitting:', JSON.stringify(payload, null, 2));
       console.log('🔍 [COUNCIL NOTICE] Method:', method);
       console.log('🔍 [COUNCIL NOTICE] Wallet:', walletAddress);
+      console.log('🔍 [COUNCIL NOTICE] FormData:', JSON.stringify(formData, null, 2));
       
       const response = await fetch('/api/council-notices', {
         method,

@@ -56,7 +56,7 @@ export function useAdminStatus(): UseAdminStatusReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [lastChecked]);
+  }, []);
 
   const refetch = useCallback(() => checkAdminStatus(true), [checkAdminStatus]);
 
