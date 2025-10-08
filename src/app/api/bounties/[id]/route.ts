@@ -59,6 +59,7 @@ export async function PATCH(
     // Get wallet address from request header or body for wallet-based auth
     const walletAddress = req.headers.get('x-wallet-address');
     console.log('🔍 [BOUNTY UPDATE] Wallet address from header:', walletAddress);
+    console.log('🔍 [BOUNTY UPDATE] All headers:', Object.fromEntries(req.headers.entries()));
     
     // Check admin permissions - either via Supabase Auth or wallet-based
     let isAdmin = false;
@@ -68,24 +69,39 @@ export async function PATCH(
       isAdmin = await isAdminForUser(supabase);
       console.log('✅ [BOUNTY UPDATE] Auth-based admin check:', isAdmin);
     } catch (authError) {
-      console.log('⚠️ [BOUNTY UPDATE] Auth-based check failed, trying wallet check');
+      console.log('⚠️ [BOUNTY UPDATE] Auth-based check failed:', authError);
     }
     
     // If auth failed, try wallet-based check
     if (!isAdmin && walletAddress) {
-      const { data: adminUser } = await supabase
+      console.log('🔍 [BOUNTY UPDATE] Querying users table for wallet:', walletAddress);
+      
+      const { data: adminUser, error: walletError } = await supabase
         .from('users')
-        .select('is_admin')
+        .select('wallet_address, display_name, is_admin')
         .eq('wallet_address', walletAddress)
         .single();
       
+      console.log('📊 [BOUNTY UPDATE] User query result:', { adminUser, walletError });
+      
       isAdmin = adminUser?.is_admin || false;
       console.log('✅ [BOUNTY UPDATE] Wallet-based admin check:', isAdmin);
+    } else if (!walletAddress) {
+      console.log('⚠️ [BOUNTY UPDATE] No wallet address provided in header');
     }
     
     if (!isAdmin) {
       console.log('❌ [BOUNTY UPDATE] Admin check failed - not authorized');
-      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+      console.log('   Auth check:', false);
+      console.log('   Wallet provided:', !!walletAddress);
+      console.log('   Wallet check result:', isAdmin);
+      return NextResponse.json({ 
+        error: 'Forbidden - Admin access required',
+        debug: {
+          walletProvided: !!walletAddress,
+          wallet: walletAddress ? `${walletAddress.slice(0, 8)}...` : 'none'
+        }
+      }, { status: 403 });
     }
     
     console.log('✅ [BOUNTY UPDATE] Admin check passed');
