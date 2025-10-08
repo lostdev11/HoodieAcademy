@@ -35,14 +35,20 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('🔍 [COUNCIL NOTICES API] POST request received');
+  
   try {
     const body = await request.json();
     const { title, content, directive_date, priority, expires_at, created_by } = body;
 
+    console.log('🔍 [COUNCIL NOTICES API] Request body:', { title, content, directive_date, priority, expires_at, created_by });
+
     if (!title || !content) {
+      console.log('❌ [COUNCIL NOTICES API] Missing required fields');
       return NextResponse.json({ error: 'Title and content are required' }, { status: 400 });
     }
 
+    console.log('🔍 [COUNCIL NOTICES API] Inserting council notice...');
     const { data, error } = await supabase
       .from('council_notices')
       .insert({
@@ -57,14 +63,17 @@ export async function POST(request: NextRequest) {
       .select()
       .single();
 
+    console.log('🔍 [COUNCIL NOTICES API] Insert result:', { data, error });
+
     if (error) {
-      console.error('Error creating council notice:', error);
+      console.error('❌ [COUNCIL NOTICES API] Error creating council notice:', error);
       return NextResponse.json({ error: 'Failed to create council notice' }, { status: 500 });
     }
 
+    console.log('✅ [COUNCIL NOTICES API] Council notice created successfully');
     return NextResponse.json({ success: true, notice: data });
   } catch (error) {
-    console.error('Error in council notices POST:', error);
+    console.error('❌ [COUNCIL NOTICES API] Error in POST:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

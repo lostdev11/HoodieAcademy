@@ -171,93 +171,93 @@ export default function AdminDashboardPage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className="flex flex-wrap gap-2 mb-6 overflow-x-auto">
+          <div className="flex flex-wrap gap-1 sm:gap-2 mb-6 overflow-x-auto pb-2">
             <Button
               variant={activeTab === "overview" ? "default" : "outline"}
               onClick={() => setActiveTab("overview")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <BarChart3 className="w-4 h-4" />
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Overview</span>
             </Button>
             <Button
               variant={activeTab === "bounties" ? "default" : "outline"}
               onClick={() => setActiveTab("bounties")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <Target className="w-4 h-4" />
+              <Target className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Bounties</span>
             </Button>
             <Button
               variant={activeTab === "submissions" ? "default" : "outline"}
               onClick={() => setActiveTab("submissions")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Submissions</span>
             </Button>
             <Button
               variant={activeTab === "bounty-xp" ? "default" : "outline"}
               onClick={() => setActiveTab("bounty-xp")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <Zap className="w-4 h-4" />
+              <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Bounty XP</span>
             </Button>
             <Button
               variant={activeTab === "xp-management" ? "default" : "outline"}
               onClick={() => setActiveTab("xp-management")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <Star className="w-4 h-4" />
+              <Star className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>XP Management</span>
             </Button>
             <Button
               variant={activeTab === "users" ? "default" : "outline"}
               onClick={() => setActiveTab("users")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <Users className="w-4 h-4" />
+              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Users</span>
             </Button>
             <Button
               variant={activeTab === "connected-users" ? "default" : "outline"}
               onClick={() => setActiveTab("connected-users")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <Activity className="w-4 h-4" />
+              <Activity className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Connected Users</span>
             </Button>
             <Button
               variant={activeTab === "settings" ? "default" : "outline"}
               onClick={() => setActiveTab("settings")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Settings</span>
             </Button>
             <Button
               variant={activeTab === "council-notices" ? "default" : "outline"}
               onClick={() => setActiveTab("council-notices")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Council Notices</span>
             </Button>
             <Button
               variant={activeTab === "announcements" ? "default" : "outline"}
               onClick={() => setActiveTab("announcements")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <Megaphone className="w-4 h-4" />
+              <Megaphone className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Announcements</span>
             </Button>
             <Button
               variant={activeTab === "spotlight" ? "default" : "outline"}
               onClick={() => setActiveTab("spotlight")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>Spotlight</span>
             </Button>
           </div>
