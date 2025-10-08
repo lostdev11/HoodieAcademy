@@ -41,6 +41,7 @@ import { MobileNavigation } from "@/components/dashboard/MobileNavigation"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
 import AnnouncementsDisplay from "@/components/AnnouncementsDisplay"
+import AcademyInfo from "@/components/home/AcademyInfo"
 import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet } from '@/lib/utils'
 import { getSquadName } from '@/utils/squad-storage'
 import Image from 'next/image'
@@ -474,66 +475,8 @@ export default function HoodieAcademy() {
               </Card>
             )}
 
-            {/* Top Council Notice */}
-            <Card className="border-l-4 border-amber-400 bg-slate-800/50">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-3">
-                  <Shield className="w-6 h-6 text-amber-400 mt-1" />
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold text-amber-400 mb-2">🛡️ Council Notice</h2>
-                    <p className="text-sm leading-relaxed text-gray-300">
-                      <strong>Hoodie Scholar Council Directive (January 28, 2025):</strong><br />
-                      Phase 3 rollout is live. Squad leaders must submit their launch assignment by Friday. 
-                      Students, complete your weekly missions to earn badge upgrades. New lore entries are being 
-                      added to the Hall of Records daily.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Announcements Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Megaphone className="w-6 h-6 text-cyan-400" />
-                <h2 className="text-xl font-semibold text-cyan-400">📢 Academy Announcements</h2>
-              </div>
-              <AnnouncementsDisplay />
-            </div>
-
-            {/* Academy Spotlight */}
-            <Card className="bg-slate-800/50 border-purple-500/30">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className="p-3 bg-purple-500/20 rounded-full">
-                    <Sparkles className="w-6 h-6 text-purple-400" />
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold text-purple-400 mb-3">🧿 Academy Spotlight</h2>
-                    <blockquote className="italic text-lg text-gray-300 mb-3 leading-relaxed">
-                      "{academySpotlights[currentSpotlightIndex].quote}"
-                    </blockquote>
-                    <div className="flex items-center space-x-3">
-                      <Image
-                        src={academySpotlights[currentSpotlightIndex].avatar}
-                        alt="Spotlight Avatar"
-                        width={32}
-                        height={32}
-                        className="rounded-full"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-purple-400">
-                          – {academySpotlights[currentSpotlightIndex].author}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {academySpotlights[currentSpotlightIndex].role}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Academy Information - Council Notice, Announcements, and Spotlight */}
+            <AcademyInfo />
 
             {/* Student of the Week */}
             <Card className="bg-slate-800/50 border-yellow-500/30">

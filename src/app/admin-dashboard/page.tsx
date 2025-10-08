@@ -18,8 +18,11 @@ import { RealtimeStatus } from '@/components/admin/RealtimeStatus';
 import { 
   Users, BookOpen, Trophy, Settings, Shield, BarChart3, 
   Target, Megaphone, Bell, Database, Activity, Zap, 
-  FileText, Star, CheckCircle
+  FileText, Star, CheckCircle, Sparkles
 } from 'lucide-react';
+import CouncilNoticesManager from '@/components/admin/CouncilNoticesManager';
+import AnnouncementsManager from '@/components/admin/AnnouncementsManager';
+import SpotlightManager from '@/components/admin/SpotlightManager';
 
 interface Bounty {
   id?: string;
@@ -231,6 +234,30 @@ export default function AdminDashboardPage() {
               <Settings className="w-4 h-4" />
               <span>Settings</span>
             </Button>
+            <Button
+              variant={activeTab === "council-notices" ? "default" : "outline"}
+              onClick={() => setActiveTab("council-notices")}
+              className="flex items-center space-x-2"
+            >
+              <Bell className="w-4 h-4" />
+              <span>Council Notices</span>
+            </Button>
+            <Button
+              variant={activeTab === "announcements" ? "default" : "outline"}
+              onClick={() => setActiveTab("announcements")}
+              className="flex items-center space-x-2"
+            >
+              <Megaphone className="w-4 h-4" />
+              <span>Announcements</span>
+            </Button>
+            <Button
+              variant={activeTab === "spotlight" ? "default" : "outline"}
+              onClick={() => setActiveTab("spotlight")}
+              className="flex items-center space-x-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Spotlight</span>
+            </Button>
           </div>
 
           {/* Overview Tab */}
@@ -283,6 +310,21 @@ export default function AdminDashboardPage() {
           {/* Settings Tab */}
           <TabsContent value="settings">
             <AdminSettings walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Council Notices Tab */}
+          <TabsContent value="council-notices">
+            <CouncilNoticesManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Announcements Tab */}
+          <TabsContent value="announcements">
+            <AnnouncementsManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Spotlight Tab */}
+          <TabsContent value="spotlight">
+            <SpotlightManager walletAddress={walletAddress} />
           </TabsContent>
         </Tabs>
       </div>
