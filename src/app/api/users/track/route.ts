@@ -30,12 +30,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
     }
 
-    // Get user XP data
-    const { data: userXP, error: xpError } = await supabase
-      .from('user_xp')
-      .select('*')
-      .eq('wallet_address', walletAddress)
-      .single();
+    // XP data is now stored directly in the users table
 
     // Get bounty submissions
     const { data: bountySubmissions, error: bountyError } = await supabase
@@ -103,11 +98,11 @@ export async function GET(request: NextRequest) {
       placementTestCompleted: user?.placement_test_completed || false,
       isAdmin: user?.is_admin || false,
       
-      // XP stats
-      totalXP: userXP?.total_xp || 0,
-      bountyXP: userXP?.bounty_xp || 0,
-      courseXP: userXP?.course_xp || 0,
-      streakXP: userXP?.streak_xp || 0,
+      // XP stats (now stored in users table)
+      totalXP: user?.total_xp || 0,
+      bountyXP: 0, // TODO: Implement separate bounty XP tracking
+      courseXP: 0, // TODO: Implement separate course XP tracking
+      streakXP: 0, // TODO: Implement streak XP tracking
       
       // Activity stats
       totalSubmissions: bountySubmissions?.length || 0,

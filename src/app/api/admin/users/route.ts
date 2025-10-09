@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
         display_name,
         squad,
         is_admin,
+        total_xp,
+        level,
         created_at,
         updated_at
       `)
@@ -100,8 +102,9 @@ export async function GET(request: NextRequest) {
         display_name: user.display_name,
         username: user.display_name, // Use display_name as username for now
         squad: user.squad,
-        total_xp: 0, // Default to 0 since XP table doesn't exist yet
-        level: 1, // Default to level 1
+        is_admin: user.is_admin || false, // Use actual admin status from database
+        total_xp: user.total_xp || 0, // Use actual XP from database
+        level: user.level || 1, // Use actual level from database
         profile_picture: null, // TODO: Add profile picture support
         bio: null, // TODO: Add bio support
         created_at: user.created_at,
