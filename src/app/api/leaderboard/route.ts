@@ -25,17 +25,10 @@ export async function GET(request: NextRequest) {
         squad,
         created_at,
         last_active,
-        profile_image_url,
-        user_xp!inner(
-          total_xp,
-          course_xp,
-          bounty_xp,
-          streak_xp
-        ),
-        course_completions(count),
-        bounty_submissions(count)
-      `)
-      .not('user_xp', 'is', null);
+        total_xp,
+        level,
+        is_admin
+      `);
 
     // Apply squad filter if provided
     if (squad && squad !== 'all') {
@@ -87,6 +80,10 @@ export async function GET(request: NextRequest) {
         const totalLessonsAvailable = courseCompletions?.reduce((sum, comp) => sum + (comp.total_lessons || 0), 0) || 0;
         const totalBountyXP = bountySubmissions?.reduce((sum, sub) => sum + (sub.xp_earned || 0), 0) || 0;
         const totalBountySOL = bountySubmissions?.reduce((sum, sub) => sum + (sub.sol_earned || 0), 0) || 0;
+        
+        // Get XP from users table (primary source)
+        const totalXP = user.total_xp || 0;
+        const userLevel = user.level || 1;
 
         // Calculate completion percentage
         const completionPercentage = totalLessonsAvailable > 0 
@@ -105,7 +102,8 @@ export async function GET(request: NextRequest) {
           displayName: user.display_name || `User ${user.wallet_address.slice(0, 6)}...`,
           squad: user.squad || 'Unassigned',
           rank: 0, // Will be calculated after sorting
-          totalScore: user.user_xp?.total_xp || 0,
+          totalScore: totalXP,
+          level: userLevel,
           coursesCompleted: completedCourses,
           totalLessons: totalLessonsCompleted,
           totalLessonsAvailable,
@@ -116,7 +114,7 @@ export async function GET(request: NextRequest) {
           bountySubmissions: bountySubmissions?.length || 0,
           joinDate: user.created_at,
           lastActive: user.last_active || user.created_at,
-          profileImage: user.profile_image_url,
+          profileImage: null, // TODO: Add profile image support
           courseProgress: courseCompletions?.map(comp => ({
             courseId: comp.course_id,
             completed: true,

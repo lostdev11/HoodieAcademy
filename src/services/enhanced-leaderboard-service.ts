@@ -120,16 +120,16 @@ export class EnhancedLeaderboardService {
       const { data: users, error } = await supabase
         .from('users')
         .select(`
-          wallet_id,
+          wallet_address,
           display_name,
           squad,
           created_at,
           last_active,
-          course_completions:course_completions(wallet_id, course_id, completed_at),
-          quiz_results:quiz_results(score, passed),
-          badges:badges(badge_id)
+          total_xp,
+          level,
+          is_admin
         `)
-        .not('wallet_id', 'is', null);
+        .not('wallet_address', 'is', null);
 
       if (error) {
         console.error('❌ Error fetching users:', error);
@@ -140,7 +140,7 @@ export class EnhancedLeaderboardService {
 
       // Transform data and compute derived fields
       const leaderboardUsers: LeaderboardUser[] = (users || [])
-        .filter((user: any) => user.wallet_id)
+        .filter((user: any) => user.wallet_address)
         .map((user: any) => {
           // Count completed courses
           const coursesCompleted = user.course_completions?.length || 0;
@@ -180,13 +180,14 @@ export class EnhancedLeaderboardService {
           }));
 
           return {
-            walletAddress: user.wallet_id,
-            displayName: user.display_name || `@${user.wallet_id.slice(0, 6)}...`,
+            walletAddress: user.wallet_address,
+            displayName: user.display_name || `@${user.wallet_address.slice(0, 6)}...`,
             squad: user.squad || 'Unassigned',
             rank: 0, // Will be calculated after sorting
-            level,
+            level: user.level || 1, // Use actual level from database
             completion: completionPct,
             courses: coursesCompleted,
+            totalXP: user.total_xp || 0, // Use actual XP from database
             quizzes: quizzesPassed,
             badges: badgeCount,
             lastActive: user.last_active || user.created_at,
