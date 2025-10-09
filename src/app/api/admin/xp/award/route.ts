@@ -54,18 +54,27 @@ export async function POST(request: NextRequest) {
     console.log('✅ [XP AWARD] Admin access verified');
 
     // Get current user data
+    console.log('🔍 [XP AWARD] Looking up user:', targetWallet);
     const { data: currentUser, error: userError } = await supabase
       .from('users')
-      .select('total_xp, level')
+      .select('wallet_address, display_name, total_xp, level, is_admin')
       .eq('wallet_address', targetWallet)
       .single();
 
     if (userError || !currentUser) {
+      console.error('❌ [XP AWARD] User lookup failed:', { userError, currentUser });
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
+    
+    console.log('✅ [XP AWARD] User found:', { 
+      wallet: currentUser.wallet_address, 
+      displayName: currentUser.display_name,
+      currentXP: currentUser.total_xp || 0,
+      currentLevel: currentUser.level || 1
+    });
 
     // Calculate new XP and level
     const newTotalXP = (currentUser.total_xp || 0) + xpAmount;
