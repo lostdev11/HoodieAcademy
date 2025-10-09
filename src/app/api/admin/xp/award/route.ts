@@ -1,16 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase client with service role for admin operations
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('❌ Missing Supabase environment variables');
+    throw new Error('Supabase configuration missing');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🎯 [XP AWARD] Request received');
+    const supabase = getSupabaseClient();
+    
     const { targetWallet, xpAmount, reason, awardedBy } = await request.json();
+    console.log('📦 [XP AWARD] Request data:', { targetWallet, xpAmount, reason, awardedBy });
 
     if (!targetWallet || !xpAmount || !reason || !awardedBy) {
+      console.error('❌ [XP AWARD] Missing required parameters');
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400 }
@@ -18,6 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify admin access
+    console.log('🔍 [XP AWARD] Verifying admin access for:', awardedBy);
     const { data: adminUser, error: adminError } = await supabase
       .from('users')
       .select('is_admin')
@@ -25,11 +44,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (adminError || !adminUser?.is_admin) {
+      console.error('❌ [XP AWARD] Admin check failed:', { adminError, adminUser });
       return NextResponse.json(
         { error: 'Unauthorized: Admin access required' },
         { status: 403 }
       );
     }
+    
+    console.log('✅ [XP AWARD] Admin access verified');
 
     // Get current user data
     const { data: currentUser, error: userError } = await supabase
