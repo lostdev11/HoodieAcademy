@@ -278,15 +278,21 @@ export default function AdminDashboardFixed() {
 
   const handleToggleHidden = async (bounty: DBBounty) => {
     try {
+      console.log('🔄 [BOUNTY TOGGLE] Toggling bounty visibility:', bounty.id, 'from', bounty.hidden, 'to', !bounty.hidden);
+      console.log('🔑 [BOUNTY TOGGLE] Using wallet address:', walletAddress);
+      
       const response = await fetch(`/api/bounties/${bounty.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Wallet-Address': walletAddress  // ← Send wallet address for admin check
+        },
         body: JSON.stringify({ 
-          ...bounty, 
-          hidden: !bounty.hidden,
-          walletAddress 
+          hidden: !bounty.hidden  // ← Only send the field we want to update
         })
       });
+      
+      console.log('📊 [BOUNTY TOGGLE] Response status:', response.status);
 
       if (!response.ok) {
         throw new Error('Failed to update bounty');
