@@ -307,8 +307,22 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
           
           {/* Profile Section */}
           <div className="flex items-center space-x-3 p-3 bg-slate-800/50 rounded-lg border border-cyan-500/20">
-            <div className="w-10 h-10 bg-gradient-to-r from-cyan-400 to-pink-400 rounded-lg flex items-center justify-center text-xl">
-              {userProfileImage}
+            <div className="w-10 h-10 bg-gradient-to-r from-cyan-400 to-pink-400 rounded-lg flex items-center justify-center text-xl overflow-hidden">
+              {userProfileImage.startsWith('http') || userProfileImage.startsWith('https') ? (
+                // If it's a URL, show the image
+                <img 
+                  src={userProfileImage} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover rounded-lg"
+                  onError={() => {
+                    // If image fails to load, fall back to emoji
+                    setUserProfileImage('🧑‍🎓');
+                  }}
+                />
+              ) : (
+                // If it's not a URL, show as emoji/text
+                <span className="text-xl">{userProfileImage}</span>
+              )}
             </div>
             <div className="flex-1">
               <p className="text-white font-medium">{userDisplayName}</p>

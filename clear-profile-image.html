@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Profile Image</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1e293b;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            background: #06b6d4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #0891b2;
+        }
+        .info {
+            background: #334155;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Clear Profile Image</h1>
+    
+    <div class="info">
+        <h3>Current Profile Image:</h3>
+        <p id="currentImage">Loading...</p>
+    </div>
+    
+    <button onclick="clearProfileImage()">Clear Profile Image</button>
+    <button onclick="resetToDefault()">Reset to Default Emoji</button>
+    <button onclick="checkProfileImage()">Refresh</button>
+    
+    <div class="info">
+        <h3>Instructions:</h3>
+        <p>1. Click "Clear Profile Image" to remove the Arweave URL</p>
+        <p>2. Click "Reset to Default Emoji" to set it back to 🧑‍🎓</p>
+        <p>3. Refresh your Hoodie Academy page</p>
+    </div>
+
+    <script>
+        function checkProfileImage() {
+            const currentImage = localStorage.getItem('userProfileImage') || 'None';
+            document.getElementById('currentImage').textContent = currentImage;
+        }
+        
+        function clearProfileImage() {
+            localStorage.removeItem('userProfileImage');
+            alert('Profile image cleared! Refresh your Hoodie Academy page.');
+            checkProfileImage();
+        }
+        
+        function resetToDefault() {
+            localStorage.setItem('userProfileImage', '🧑‍🎓');
+            alert('Profile image reset to default emoji! Refresh your Hoodie Academy page.');
+            checkProfileImage();
+        }
+        
+        // Check on page load
+        checkProfileImage();
+    </script>
+</body>
+</html>

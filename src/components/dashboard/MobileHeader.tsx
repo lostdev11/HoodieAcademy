@@ -28,7 +28,15 @@ export function MobileHeader({ onOpenSidebar, profileImage = "🧑‍🎓", titl
     // Load saved profile image
     const savedProfileImage = typeof window !== 'undefined' ? localStorage.getItem('userProfileImage') : null;
     if (savedProfileImage) {
-      setUserProfileImage(savedProfileImage);
+      // Check if it's a valid URL (image) or just an emoji/text
+      const isUrl = savedProfileImage.startsWith('http') || savedProfileImage.startsWith('https');
+      if (isUrl) {
+        // If it's a URL, we'll handle it in the render
+        setUserProfileImage(savedProfileImage);
+      } else {
+        // If it's not a URL, use it as-is (emoji or text)
+        setUserProfileImage(savedProfileImage);
+      }
     }
   }, []);
 
@@ -67,8 +75,22 @@ export function MobileHeader({ onOpenSidebar, profileImage = "🧑‍🎓", titl
           onClick={onOpenSidebar}
           className="p-2 hover:bg-slate-700/50 transition-colors"
         >
-          <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-pink-400 rounded-lg flex items-center justify-center text-sm font-medium">
-            {userProfileImage}
+          <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-pink-400 rounded-lg flex items-center justify-center text-sm font-medium overflow-hidden">
+            {userProfileImage.startsWith('http') || userProfileImage.startsWith('https') ? (
+              // If it's a URL, show the image
+              <img 
+                src={userProfileImage} 
+                alt="Profile" 
+                className="w-full h-full object-cover rounded-lg"
+                onError={() => {
+                  // If image fails to load, fall back to emoji
+                  setUserProfileImage('🧑‍🎓');
+                }}
+              />
+            ) : (
+              // If it's not a URL, show as emoji/text
+              <span className="text-sm">{userProfileImage}</span>
+            )}
           </div>
         </Button>
       </div>
