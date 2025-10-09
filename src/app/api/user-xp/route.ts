@@ -17,41 +17,59 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
     }
 
-    // Get user XP data
-    const { data: userXP, error: xpError } = await supabase
-      .from('user_xp')
-      .select('*')
+    // Get user data (XP is now stored in users table)
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('wallet_address, total_xp, level')
       .eq('wallet_address', walletAddress)
       .single();
 
-    if (xpError && xpError.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('[FETCH USER XP ERROR]', xpError);
-      return NextResponse.json({ error: 'Failed to fetch user XP' }, { status: 500 });
+    if (userError && userError.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('[FETCH USER ERROR]', userError);
+      return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
     }
 
-    // Get bounty submissions for this user
-    const { data: bountySubmissions, error: bountyError } = await supabase
-      .from('bounty_submissions')
-      .select('*')
-      .eq('wallet_address', walletAddress)
-      .order('created_at', { ascending: false });
+    // Get bounty submissions for this user (optional - table might not exist)
+    let bountySubmissions = [];
+    try {
+      const { data: bountyData, error: bountyError } = await supabase
+        .from('bounty_submissions')
+        .select('*')
+        .eq('wallet_address', walletAddress)
+        .order('created_at', { ascending: false });
 
-    if (bountyError) {
-      console.error('[FETCH BOUNTY SUBMISSIONS ERROR]', bountyError);
-      return NextResponse.json({ error: 'Failed to fetch bounty submissions' }, { status: 500 });
+      if (bountyError && bountyError.code !== 'PGRST116') {
+        console.warn('[FETCH BOUNTY SUBMISSIONS WARNING]', bountyError);
+        // Don't fail the request if bounty submissions table doesn't exist
+      } else {
+        bountySubmissions = bountyData || [];
+      }
+    } catch (error) {
+      console.warn('[BOUNTY SUBMISSIONS TABLE NOT FOUND]', error);
+      // Table doesn't exist, that's fine
+      bountySubmissions = [];
     }
 
-    // Get XP transaction history
-    const { data: transactions, error: transactionError } = await supabase
-      .from('xp_transactions')
-      .select('*')
-      .eq('wallet_address', walletAddress)
-      .order('created_at', { ascending: false })
-      .limit(50); // Limit to last 50 transactions
+    // Get XP transaction history (optional - table might not exist)
+    let transactions = [];
+    try {
+      const { data: transactionData, error: transactionError } = await supabase
+        .from('xp_transactions')
+        .select('*')
+        .eq('wallet_address', walletAddress)
+        .order('created_at', { ascending: false })
+        .limit(50); // Limit to last 50 transactions
 
-    if (transactionError) {
-      console.error('[FETCH XP TRANSACTIONS ERROR]', transactionError);
-      return NextResponse.json({ error: 'Failed to fetch XP transactions' }, { status: 500 });
+      if (transactionError && transactionError.code !== 'PGRST116') {
+        console.warn('[FETCH XP TRANSACTIONS WARNING]', transactionError);
+        // Don't fail the request if transactions table doesn't exist
+      } else {
+        transactions = transactionData || [];
+      }
+    } catch (error) {
+      console.warn('[XP TRANSACTIONS TABLE NOT FOUND]', error);
+      // Table doesn't exist, that's fine
+      transactions = [];
     }
 
     // Calculate XP breakdown
@@ -70,12 +88,10 @@ export async function GET(request: NextRequest) {
 
     const response = {
       walletAddress,
-      xp: userXP || {
+      xp: user || {
         wallet_address: walletAddress,
         total_xp: 0,
-        bounty_xp: 0,
-        course_xp: 0,
-        streak_xp: 0
+        level: 1
       },
       bountySubmissions: bountySubmissions || [],
       transactions: transactions || [],
