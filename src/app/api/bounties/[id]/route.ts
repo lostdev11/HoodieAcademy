@@ -3,10 +3,23 @@ import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import { isAdminForUser } from '@/lib/admin';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Initialize Supabase client with service role for admin operations
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('❌ Missing Supabase environment variables');
+    throw new Error('Supabase configuration missing');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
 
 const BountyUpdate = z.object({
   title: z.string().min(3).optional(),
@@ -21,17 +34,24 @@ const BountyUpdate = z.object({
   allow_multiple_submissions: z.boolean().optional(),
   image_required: z.boolean().optional(),
   submission_type: z.enum(['text', 'image', 'both']).optional(),
-  hidden: z.boolean().optional()  // ← Added hidden field
-}).strip();  // ← Strip unknown fields instead of rejecting them
+  hidden: z.boolean().optional()
+}).strip();
 
-export const runtime = 'edge';
+// Remove edge runtime to ensure proper environment variable access
+// export const runtime = 'edge';
 
 export async function GET(
   _: NextRequest, 
   { params }: { params: { id: string } }
 ) {
+  console.log('🔍 [BOUNTY GET] Request received for bounty ID:', params.id);
+  
   try {
+    console.log('🔍 [BOUNTY GET] Creating Supabase client...');
+    const supabase = getSupabaseClient();
+    console.log('✅ [BOUNTY GET] Supabase client created');
     
+    console.log('🔍 [BOUNTY GET] Querying database...');
     const { data, error } = await supabase
       .from('bounties')
       .select('*')
@@ -39,13 +59,18 @@ export async function GET(
       .single();
     
     if (error) {
-      return NextResponse.json({ error: 'Bounty not found' }, { status: 404 });
+      console.error('❌ [BOUNTY GET] Database error:', error);
+      return NextResponse.json({ error: 'Bounty not found', details: error.message }, { status: 404 });
     }
     
+    console.log('✅ [BOUNTY GET] Bounty found:', data?.title || data?.id);
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching bounty:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('💥 [BOUNTY GET] Unexpected error:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
@@ -54,6 +79,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const supabase = getSupabaseClient();
     console.log('🔍 [BOUNTY UPDATE] PATCH request for bounty:', params.id);
     
     // Get wallet address from request header or body for wallet-based auth
@@ -158,6 +184,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const supabase = getSupabaseClient();
+    
     // Check admin permissions
     const admin = await isAdminForUser(supabase);
     if (!admin) {
@@ -176,6 +204,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting bounty:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
