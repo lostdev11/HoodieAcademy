@@ -14,6 +14,7 @@ export interface LeaderboardUser {
   joinDate: string;
   achievements: Achievement[];
   courseProgress: CourseProgress[];
+  totalXP?: number; // Add totalXP field for display
 }
 
 export interface Achievement {
@@ -97,7 +98,8 @@ export class EnhancedLeaderboardService {
           lastActive: user.last_active,
           joinDate: user.created_at,
           achievements: [], // Will be populated from badges table
-          courseProgress: [] // Simplified for RPC version
+          courseProgress: [], // Simplified for RPC version
+          totalXP: user.total_xp || 0 // Add totalXP from RPC data
         }));
 
         console.log(`🏆 Leaderboard generated with ${leaderboardUsers.length} users (RPC)`);
@@ -187,17 +189,24 @@ export class EnhancedLeaderboardService {
             level: user.level || 1, // Use actual level from database
             completion: completionPct,
             courses: coursesCompleted,
-            totalXP: user.total_xp || 0, // Use actual XP from database
             quizzes: quizzesPassed,
             badges: badgeCount,
             lastActive: user.last_active || user.created_at,
             joinDate: user.created_at,
             achievements: [], // Will be populated from badges table
-            courseProgress
+            courseProgress,
+            totalXP: user.total_xp || 0 // Add totalXP for sorting
           };
         })
-        .filter((user: any) => user.completion > 0) // Only include users with some completion
-        .sort((a: any, b: any) => b.completion - a.completion) // Sort by completion percentage
+        // Include ALL users, not just those with course completions
+        .sort((a: any, b: any) => {
+          // Primary sort: Total XP (since completion might be 0 for new users)
+          if (b.totalXP !== a.totalXP) return b.totalXP - a.totalXP;
+          // Secondary sort: Completion percentage
+          if (b.completion !== a.completion) return b.completion - a.completion;
+          // Tertiary sort: Number of courses
+          return b.courses - a.courses;
+        })
         .map((user: any, index: number) => ({
           ...user,
           rank: index + 1

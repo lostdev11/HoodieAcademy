@@ -68,8 +68,19 @@ export function useUserBounties(walletAddress?: string) {
       try {
         console.log('🔄 useUserBounties: Fetching bounties for wallet:', walletAddress?.slice(0, 8) + '...');
         
-        // Fetch user tracking data which includes bounty submissions
-        const response = await fetch(`/api/users/track?wallet=${walletAddress}`);
+                // Fetch user tracking data with aggressive cache-busting
+                const timestamp = Date.now();
+                const response = await fetch(
+                  `/api/users/track?wallet=${walletAddress}&t=${timestamp}&refresh=${Math.random()}`,
+                  { 
+                    cache: 'no-store',
+                    headers: {
+                      'Cache-Control': 'no-cache, no-store, must-revalidate',
+                      'Pragma': 'no-cache',
+                      'Expires': '0'
+                    }
+                  }
+                );
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -120,6 +131,50 @@ export function useUserBounties(walletAddress?: string) {
     };
 
     fetchUserBounties();
+  }, [walletAddress]);
+
+  // Auto-refresh bounties every 30 seconds
+  useEffect(() => {
+    if (!walletAddress) return;
+
+    const interval = setInterval(() => {
+      console.log('⏰ [useUserBounties] Auto-refreshing...');
+      const fetchUserBounties = async () => {
+        try {
+                  const timestamp = Date.now();
+                  const response = await fetch(
+                    `/api/users/track?wallet=${walletAddress}&t=${timestamp}&refresh=${Math.random()}`,
+                    { 
+                      cache: 'no-store',
+                      headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                      }
+                    }
+                  );
+          if (response.ok) {
+            const data = await response.json();
+            const bountySubmissions = data.submissions || [];
+            const bountyCompletions = data.bountyCompletions || [];
+            
+            const totalSubmissions = bountySubmissions.length;
+            const totalXP = bountyCompletions.reduce((sum: number, completion: any) => sum + (completion.xp_awarded || 0), 0);
+            const totalSOL = bountyCompletions.reduce((sum: number, completion: any) => sum + (completion.sol_prize || 0), 0);
+            const wins = bountyCompletions.length;
+            const pendingSubmissions = bountySubmissions.filter((sub: any) => sub.status === 'pending').length;
+            
+            setSubmissions(bountySubmissions);
+            setStats({ totalSubmissions, totalXP, totalSOL, wins, pendingSubmissions });
+          }
+        } catch (err) {
+          console.error('Error auto-refreshing bounties:', err);
+        }
+      };
+      fetchUserBounties();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
   }, [walletAddress]);
 
   return {

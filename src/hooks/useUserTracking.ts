@@ -57,16 +57,32 @@ export function useUserTracking(walletAddress?: string) {
     setError(null);
 
     try {
-      const response = await fetch(`/api/users/track?wallet=${walletAddress}`);
+      // Add aggressive cache-busting
+      const timestamp = Date.now();
+      const response = await fetch(
+        `/api/users/track?wallet=${walletAddress}&t=${timestamp}&refresh=${Math.random()}`,
+        { 
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        }
+      );
       
       if (!response.ok) {
         throw new Error(`Failed to fetch user data: ${response.status}`);
       }
 
       const userData = await response.json();
+      console.log('🔄 [useUserTracking] Loaded fresh data:', {
+        wallet: walletAddress.slice(0, 8) + '...',
+        totalXP: userData.stats?.totalXP
+      });
       setData(userData);
     } catch (err) {
-      console.error('Error fetching user tracking data:', err);
+      console.error('❌ [useUserTracking] Error fetching user tracking data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch user data');
     } finally {
       setLoading(false);
@@ -222,6 +238,18 @@ export function useUserTracking(walletAddress?: string) {
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
+
+  // Auto-refresh tracking data every 30 seconds
+  useEffect(() => {
+    if (!walletAddress) return;
+
+    const interval = setInterval(() => {
+      console.log('⏰ [useUserTracking] Auto-refreshing...');
+      fetchUserData();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [walletAddress, fetchUserData]);
 
   return {
     data,

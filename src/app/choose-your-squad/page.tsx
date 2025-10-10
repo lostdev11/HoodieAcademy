@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { storeSquad, getSquad, isSquadLocked, getRemainingLockDays } from '@/utils/squad-storage';
+import { fetchUserSquad, updateUserSquad } from '@/utils/squad-api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Target, Users, Trophy, CheckCircle, ArrowRight, Clock, AlertTriangle, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,28 +120,42 @@ export default function ChooseYourSquadPage() {
   const [currentSquad, setCurrentSquad] = useState<SquadInfo | null>(null);
   const [isLocked, setIsLocked] = useState(false);
   const [remainingDays, setRemainingDays] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [renewing, setRenewing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [renewSuccess, setRenewSuccess] = useState(false);
   const router = useRouter();
+  const { wallet: walletAddress } = useWalletSupabase();
 
   useEffect(() => {
-    // Check if user already has a squad
-    const existingSquad = getSquad();
-    if (existingSquad) {
-      // Find the matching squad info
-      const squadInfo = squads.find(s => s.id === existingSquad.id || s.name === existingSquad.name);
-      if (squadInfo) {
-        setCurrentSquad(squadInfo);
-      }
+    // Fetch user's squad from database
+    const loadSquadData = async () => {
+      if (!walletAddress) return;
       
-      // Check if squad is locked
-      const locked = isSquadLocked();
-      setIsLocked(locked);
-      
-      if (locked) {
-        const days = getRemainingLockDays();
-        setRemainingDays(days);
+      try {
+        const squadData = await fetchUserSquad(walletAddress);
+        
+        if (squadData && squadData.hasSquad && squadData.squad) {
+          // Find the matching squad info
+          const squadInfo = squads.find(s => 
+            s.id === squadData.squad?.id || s.name === squadData.squad?.name
+          );
+          
+          if (squadInfo) {
+            setCurrentSquad(squadInfo);
+          }
+          
+          // Set lock status from API
+          setIsLocked(squadData.isLocked);
+          setRemainingDays(squadData.remainingDays);
+        }
+      } catch (error) {
+        console.error('Error loading squad data:', error);
       }
-    }
-  }, []);
+    };
+    
+    loadSquadData();
+  }, [walletAddress]);
 
   const handleSquadSelection = (squad: SquadInfo) => {
     if (squad.locked) {
@@ -159,23 +174,69 @@ export default function ChooseYourSquadPage() {
     setShowConfirmation(true);
   };
 
-  const handleConfirmAssignment = () => {
-    if (!selectedSquad) return;
+  const handleRenewSquad = async () => {
+    if (!currentSquad || !walletAddress) return;
     
-    // Calculate lock end date (30 days from now)
-    const lockEndDate = new Date();
-    lockEndDate.setDate(lockEndDate.getDate() + 30);
+    setRenewing(true);
+    setError(null);
+    setRenewSuccess(false);
     
-    // Save squad assignment with lock info
-    storeSquad({ 
-      name: selectedSquad.name, 
-      id: selectedSquad.id,
-      lockEndDate: lockEndDate.toISOString()
-    });
-    localStorage.setItem('placementTestCompleted', 'true');
+    try {
+      const result = await updateUserSquad(
+        walletAddress,
+        currentSquad.name,
+        currentSquad.id,
+        true // renew flag
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to renew squad');
+      }
+
+      // Update state
+      setIsLocked(true);
+      setRemainingDays(30);
+      setRenewSuccess(true);
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setRenewSuccess(false), 5000);
+      
+    } catch (err) {
+      console.error('Error renewing squad:', err);
+      setError(err instanceof Error ? err.message : 'Failed to renew squad');
+    } finally {
+      setRenewing(false);
+    }
+  };
+
+  const handleConfirmAssignment = async () => {
+    if (!selectedSquad || !walletAddress) return;
     
-    // Redirect to home page
-    router.push('/');
+    setSaving(true);
+    setError(null);
+    
+    try {
+      const result = await updateUserSquad(
+        walletAddress,
+        selectedSquad.name,
+        selectedSquad.id,
+        false // not a renewal
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save squad');
+      }
+
+      localStorage.setItem('placementTestCompleted', 'true');
+      
+      // Redirect to home page
+      router.push('/');
+      
+    } catch (err) {
+      console.error('Error saving squad:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save squad selection');
+      setSaving(false);
+    }
   };
 
   return (
@@ -211,25 +272,61 @@ export default function ChooseYourSquadPage() {
                     <p className="text-gray-300 text-sm">{currentSquad.description}</p>
                   </div>
                 </div>
-                {isLocked && (
-                  <div className="flex items-center gap-3 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                    <Lock className="w-5 h-5 text-orange-400" />
-                    <div className="text-center">
-                      <p className="font-semibold text-orange-400">Squad Locked</p>
-                      <p className="text-sm text-gray-300">{remainingDays} days remaining</p>
+                <div className="flex flex-col md:flex-row items-center gap-3">
+                  {isLocked && (
+                    <div className="flex items-center gap-3 p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                      <Lock className="w-5 h-5 text-orange-400" />
+                      <div className="text-center">
+                        <p className="font-semibold text-orange-400">Squad Locked</p>
+                        <p className="text-sm text-gray-300">{remainingDays} days remaining</p>
+                      </div>
                     </div>
-                  </div>
-                )}
-                {!isLocked && (
-                  <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
-                    <CheckCircle className="w-5 h-5 text-green-400" />
-                    <div className="text-center">
-                      <p className="font-semibold text-green-400">Squad Unlocked</p>
-                      <p className="text-sm text-gray-300">You can change squads now</p>
+                  )}
+                  {!isLocked && (
+                    <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <div className="text-center">
+                        <p className="font-semibold text-green-400">Squad Unlocked</p>
+                        <p className="text-sm text-gray-300">You can change squads now</p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                  {walletAddress && (
+                    <Button
+                      onClick={handleRenewSquad}
+                      disabled={renewing}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50"
+                    >
+                      {renewing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Renewing...
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-4 h-4 mr-2" />
+                          Renew for 30 Days
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
               </div>
+              
+              {renewSuccess && (
+                <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <p className="text-sm text-green-400 flex items-center">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Squad renewed! Your commitment has been extended for another 30 days.
+                  </p>
+                </div>
+              )}
+              
+              {error && (
+                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                  <p className="text-sm text-red-400">{error}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -257,15 +354,21 @@ export default function ChooseYourSquadPage() {
 
         {/* Squad Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {squads.map((squad) => (
+          {squads.map((squad) => {
+            // Check if this squad is locked due to user's current squad lock
+            const isLockedDueToUserSquad = isLocked && currentSquad && currentSquad.id !== squad.id;
+            const isCurrentSquad = currentSquad?.id === squad.id;
+            const isRangersLocked = squad.locked;
+            
+            return (
             <Card 
               key={squad.id}
-              className={`${squad.bgColor} ${squad.borderColor} border-2 transition-all duration-300 ${
-                squad.locked 
+              className={`relative ${squad.bgColor} ${squad.borderColor} border-2 transition-all duration-300 ${
+                isRangersLocked || isLockedDueToUserSquad
                   ? 'opacity-60 cursor-not-allowed' 
                   : 'hover:scale-105 cursor-pointer'
-              }`}
-              onClick={() => handleSquadSelection(squad)}
+              } ${isCurrentSquad ? 'ring-2 ring-green-500' : ''}`}
+              onClick={() => !isLockedDueToUserSquad && handleSquadSelection(squad)}
             >
               <CardContent className="p-8">
                 {/* Header */}
@@ -279,14 +382,27 @@ export default function ChooseYourSquadPage() {
                       <p className="text-gray-400 text-sm">{squad.role}</p>
                     </div>
                   </div>
-                  {squad.locked ? (
-                    <div className="flex items-center gap-2">
-                      <Lock className="w-6 h-6 text-gray-500" />
-                      <span className="text-sm text-gray-500">LOCKED</span>
-                    </div>
-                  ) : (
-                    <ArrowRight className={`w-6 h-6 ${squad.color} opacity-50`} />
-                  )}
+                  <div className="flex flex-col gap-2 items-end">
+                    {isCurrentSquad && (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/50">
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Current
+                      </Badge>
+                    )}
+                    {isLockedDueToUserSquad ? (
+                      <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50">
+                        <Lock className="w-4 h-4 mr-1" />
+                        {remainingDays}d left
+                      </Badge>
+                    ) : isRangersLocked ? (
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-6 h-6 text-gray-500" />
+                        <span className="text-sm text-gray-500">ELITE</span>
+                      </div>
+                    ) : (
+                      <ArrowRight className={`w-6 h-6 ${squad.color} opacity-50`} />
+                    )}
+                  </div>
                 </div>
 
                 {/* Description */}
@@ -364,8 +480,21 @@ export default function ChooseYourSquadPage() {
                   </div>
                 </div>
               </CardContent>
+
+              {/* Lock Overlay for Locked Squads */}
+              {isLockedDueToUserSquad && (
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center pointer-events-none rounded-lg">
+                  <div className="text-center p-6">
+                    <Lock className="w-16 h-16 text-orange-400 mx-auto mb-3 animate-pulse" />
+                    <p className="text-orange-400 font-bold text-xl mb-1">Locked</p>
+                    <p className="text-orange-300 text-lg font-semibold mb-2">{remainingDays} days remaining</p>
+                    <p className="text-gray-300 text-sm">Complete your {currentSquad?.name} track first</p>
+                  </div>
+                </div>
+              )}
             </Card>
-          ))}
+            );
+          })}
         </div>
 
         {/* Additional Info */}
@@ -427,18 +556,35 @@ export default function ChooseYourSquadPage() {
                     <p>• You can participate in squad competitions and events</p>
                     <p>• After 30 days, you can request a squad change</p>
                   </div>
+
+                  {error && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                      <p className="text-sm text-red-400">{error}</p>
+                    </div>
+                  )}
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="border-gray-500/30 text-gray-300 hover:text-gray-200 hover:bg-gray-500/10">
+              <AlertDialogCancel 
+                disabled={saving}
+                className="border-gray-500/30 text-gray-300 hover:text-gray-200 hover:bg-gray-500/10 disabled:opacity-50"
+              >
                 Cancel
               </AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleConfirmAssignment}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                disabled={saving}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirm Assignment
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline-block"></div>
+                    Saving...
+                  </>
+                ) : (
+                  'Confirm Assignment'
+                )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

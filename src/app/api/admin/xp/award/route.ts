@@ -93,20 +93,27 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error updating user XP:', error);
+      console.error('❌ [XP AWARD] Error updating user XP:', error);
       return NextResponse.json(
-        { error: 'Failed to award XP' },
+        { error: 'Failed to award XP', details: error.message },
         { status: 500 }
       );
     }
 
+    console.log('✅ [XP AWARD] Successfully updated user XP:', {
+      previousXP: currentUser.total_xp,
+      newXP: newTotalXP,
+      previousLevel: currentUser.level,
+      newLevel: newLevel
+    });
+
     // Log the XP award activity
-    await supabase
+    const { error: activityError } = await supabase
       .from('user_activity')
       .insert({
         wallet_address: targetWallet,
         activity_type: 'xp_awarded',
-        activity_data: {
+        metadata: {
           xp_amount: xpAmount,
           reason: reason,
           awarded_by: awardedBy,
@@ -117,13 +124,26 @@ export async function POST(request: NextRequest) {
         created_at: new Date().toISOString()
       });
 
+    if (activityError) {
+      console.error('⚠️  Failed to log activity (non-critical):', activityError);
+    }
+
+    // Trigger leaderboard refresh (this will be handled by the frontend)
+    console.log('🔄 [XP AWARD] XP awarded, leaderboard should refresh automatically');
+
     return NextResponse.json({
       success: true,
       user: data,
       xpAwarded: xpAmount,
       newTotalXP: newTotalXP,
       levelUp: newLevel > (currentUser.level || 1),
-      message: `Successfully awarded ${xpAmount} XP to user`
+      message: `Successfully awarded ${xpAmount} XP to user`,
+      // Include data that frontend can use to trigger refresh
+      refreshLeaderboard: true,
+      targetWallet,
+      newTotalXP,
+      xpAwarded: xpAmount,
+      reason
     });
 
   } catch (error) {

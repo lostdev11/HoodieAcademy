@@ -8,6 +8,8 @@ import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useSwipeable } from 'react-swipeable';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
+import { fetchCourseProgress, updateCourseProgress, getCachedLessonStatus, LessonStatus } from '@/utils/course-progress-api';
+import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -120,11 +122,12 @@ const lessonsData: Lesson[] = [
 ];
 
 const PASSING_PERCENTAGE = 0.75;
-const LOCAL_STORAGE_KEY = 'memeCoinManiaProgress';
+const COURSE_SLUG = 'meme-coin-mania';
 
 const MemeCoinManiaPage = () => {
+  const { wallet: walletAddress } = useWalletSupabase();
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [lessonStatus, setLessonStatus] = useState<Array<'locked' | 'unlocked' | 'completed'>>(
+  const [lessonStatus, setLessonStatus] = useState<LessonStatus[]>(
     lessonsData.map(() => 'unlocked' as const) // Initialize all lessons as unlocked with proper type
   );
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
@@ -150,30 +153,55 @@ const MemeCoinManiaPage = () => {
   const allLessonsCompleted = lessonStatus.every(status => status === 'completed');
   
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedStatus = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedStatus) {
-        const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
-        // Ensure all lessons are unlocked while preserving completion status
-        const updatedStatus = parsedStatus.map(status => 
-          status === 'completed' ? 'completed' as const : 'unlocked' as const
-        );
-        setLessonStatus(updatedStatus);
-        const lastCompletedIndex = updatedStatus.lastIndexOf('completed');
-        const newCurrentIndex = updatedStatus.findIndex(status => status === 'unlocked');
-        setCurrentLessonIndex(newCurrentIndex !== -1 ? newCurrentIndex : (lastCompletedIndex + 1 < lessonsData.length ? lastCompletedIndex + 1 : lastCompletedIndex));
-      } else {
-        // Initialize all lessons as unlocked
+    const loadProgress = async () => {
+      if (!walletAddress) {
         const initialStatus = lessonsData.map(() => 'unlocked' as const);
         setLessonStatus(initialStatus);
-        saveProgress(initialStatus);
+        return;
       }
-    }
-  }, []);
 
-  const saveProgress = (newStatus: Array<'locked' | 'unlocked' | 'completed'>) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newStatus));
+      // Show cached immediately
+      const cached = getCachedLessonStatus(COURSE_SLUG, lessonsData.length);
+      if (cached.length > 0) {
+        setLessonStatus(cached);
+      }
+
+      // Fetch from API
+      try {
+        const progress = await fetchCourseProgress(walletAddress, COURSE_SLUG);
+        
+        if (progress && progress.lesson_data) {
+          const statusArray: LessonStatus[] = Array(lessonsData.length).fill('unlocked');
+          
+          progress.lesson_data.forEach((lesson: any) => {
+            if (lesson.index < lessonsData.length) {
+              statusArray[lesson.index] = lesson.status;
+            }
+          });
+          
+          setLessonStatus(statusArray);
+          
+          const newCurrentIndex = statusArray.findIndex(status => status !== 'completed');
+          if (newCurrentIndex !== -1) {
+            setCurrentLessonIndex(newCurrentIndex);
+          }
+        } else {
+          const initialStatus = lessonsData.map(() => 'unlocked' as const);
+          setLessonStatus(initialStatus);
+        }
+      } catch (error) {
+        console.error('Error loading progress:', error);
+      }
+    };
+
+    loadProgress();
+  }, [walletAddress]);
+
+  const saveProgress = async (newStatus: LessonStatus[]) => {
+    setLessonStatus(newStatus);
+    
+    if (walletAddress) {
+      await updateCourseProgress(walletAddress, COURSE_SLUG, newStatus);
     }
   };
   

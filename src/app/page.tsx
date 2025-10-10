@@ -42,6 +42,7 @@ import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
 import AnnouncementsDisplay from "@/components/AnnouncementsDisplay"
 import AcademyInfo from "@/components/home/AcademyInfo"
+import FeedbackTrackerWidget from "@/components/feedback/FeedbackTrackerWidget"
 import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet } from '@/lib/utils'
 import { getSquadName } from '@/utils/squad-storage'
 import Image from 'next/image'
@@ -477,6 +478,9 @@ export default function HoodieAcademy() {
 
             {/* Academy Information - Council Notice, Announcements, and Spotlight */}
             <AcademyInfo />
+
+            {/* Feedback Tracker - You Asked, We Fixed */}
+            <FeedbackTrackerWidget limit={5} showTitle={true} />
 
             {/* Student of the Week */}
             <Card className="bg-slate-800/50 border-yellow-500/30">

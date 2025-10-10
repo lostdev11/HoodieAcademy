@@ -17,11 +17,12 @@ import AdminSettings from '@/components/admin/AdminSettings';
 import { 
   Users, BookOpen, Trophy, Settings, Shield, BarChart3, 
   Target, Megaphone, Bell, Database, Activity, Zap, 
-  FileText, Star, CheckCircle, Sparkles
+  FileText, Star, CheckCircle, Sparkles, MessageSquare
 } from 'lucide-react';
 import CouncilNoticesManager from '@/components/admin/CouncilNoticesManager';
 import AnnouncementsManager from '@/components/admin/AnnouncementsManager';
 import SpotlightManager from '@/components/admin/SpotlightManager';
+import UserFeedbackManager from '@/components/admin/UserFeedbackManager';
 
 interface Bounty {
   id?: string;
@@ -57,7 +58,8 @@ export default function AdminDashboardPage() {
       'settings': 'Settings',
       'council-notices': 'Council Notices',
       'announcements': 'Announcements',
-      'spotlight': 'Spotlight'
+      'spotlight': 'Spotlight',
+      'feedback': 'User Feedback'
     };
     return tabNames[tab] || 'Select a section...';
   };
@@ -367,6 +369,14 @@ export default function AdminDashboardPage() {
               <Sparkles className="w-4 h-4" />
               <span>Spotlight</span>
             </Button>
+            <Button
+              variant={activeTab === "feedback" ? "default" : "outline"}
+              onClick={() => setActiveTab("feedback")}
+              className="flex items-center space-x-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>User Feedback</span>
+            </Button>
           </div>
 
           {/* Overview Tab */}
@@ -434,6 +444,11 @@ export default function AdminDashboardPage() {
           {/* Spotlight Tab */}
           <TabsContent value="spotlight">
             <SpotlightManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* User Feedback Tab */}
+          <TabsContent value="feedback">
+            <UserFeedbackManager walletAddress={walletAddress} />
           </TabsContent>
         </Tabs>
       </div>

@@ -8,6 +8,8 @@ import { useSwipeable } from 'react-swipeable';
 import { motion } from 'framer-motion';
 import { PixelHoodieIcon } from "@/components/icons/PixelHoodieIcon";
 import { ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, Wallet, ChevronDown, ChevronUp, Lock, Unlock } from 'lucide-react';
+import { fetchCourseProgress, updateCourseProgress, getCachedLessonStatus, LessonStatus } from '@/utils/course-progress-api';
+import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { updateScoreForQuizCompletion } from '@/lib/utils';
 import {
   AlertDialog,
@@ -523,8 +525,9 @@ const lessonsData: Lesson[] = [
 ];
 
 export default function NftTradingPsychologyPage() {
+  const { wallet: userWallet } = useWalletSupabase();
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [lessonStatus, setLessonStatus] = useState<Array<'locked' | 'unlocked' | 'completed'>>(
+  const [lessonStatus, setLessonStatus] = useState<LessonStatus[]>(
     new Array(lessonsData.length).fill('locked')
   );
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
@@ -538,11 +541,11 @@ export default function NftTradingPsychologyPage() {
   const [adminPassword, setAdminPassword] = useState('');
   const [progress, setProgress] = useState(0);
 
-  const localStorageKey = 'nftTradingPsychologyProgress';
+  const COURSE_SLUG = 'nft-trading-psychology';
 
-  const saveProgress = (newStatus: Array<'locked' | 'unlocked' | 'completed'>) => {
-    localStorage.setItem(localStorageKey, JSON.stringify(newStatus));
+  const saveProgress = async (newStatus: LessonStatus[]) => {
     setLessonStatus(newStatus);
+    if (userWallet) await updateCourseProgress(userWallet, COURSE_SLUG, newStatus);
   };
 
   const resetWalletState = () => {

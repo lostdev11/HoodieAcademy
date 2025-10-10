@@ -32,8 +32,8 @@ import {
   LeaderboardStats 
 } from '@/services/enhanced-leaderboard-service';
 
-type SortOption = 'completion' | 'courses' | 'quizzes' | 'badges' | 'level';
-type SquadFilter = 'all' | 'decoder' | 'creator' | 'speaker' | 'raider' | 'ranger';
+type SortOption = 'completion' | 'courses' | 'quizzes' | 'badges' | 'level' | 'xp';
+type SquadFilter = 'all' | 'creators' | 'coders' | 'strategists' | 'connectors' | 'rangers';
 
 export default function EnhancedLeaderboardPage() {
   const [users, setUsers] = useState<LeaderboardUser[]>([]);
@@ -66,7 +66,53 @@ export default function EnhancedLeaderboardPage() {
     // Set up real-time updates (polling every 30 seconds)
     const interval = setInterval(loadLeaderboardData, 30000);
 
-    return () => clearInterval(interval);
+    // Set up comprehensive refresh system
+    const componentId = 'leaderboard-page';
+    
+    // 1. Register for global refresh (if available)
+    try {
+      const { registerForRefresh, unregisterFromRefresh } = require('@/utils/globalRefresh');
+      registerForRefresh(componentId, () => {
+        console.log('🔄 [Leaderboard] Global refresh triggered');
+        loadLeaderboardData();
+      });
+    } catch (error) {
+      console.log('Global refresh system not available');
+    }
+
+    // 2. Set up force refresh listener
+    const { setupXpRefreshListener, checkForXpRefresh } = require('@/utils/forceRefresh');
+    
+    // Check if refresh is needed on mount
+    if (checkForXpRefresh()) {
+      console.log('🔄 [Leaderboard] XP refresh required on mount');
+      loadLeaderboardData();
+    }
+    
+    // Set up listener for future refreshes
+    const cleanup = setupXpRefreshListener(() => {
+      console.log('🔄 [Leaderboard] Force refresh triggered');
+      loadLeaderboardData();
+    });
+
+    // 3. Register for leaderboard-specific refresh
+    const { registerLeaderboardRefresh } = require('@/utils/leaderboardRefresh');
+    const leaderboardCleanup = registerLeaderboardRefresh(() => {
+      console.log('🔄 [Leaderboard] Leaderboard-specific refresh triggered');
+      loadLeaderboardData();
+    });
+
+    return () => {
+      clearInterval(interval);
+      try {
+        const { unregisterFromRefresh } = require('@/utils/globalRefresh');
+        unregisterFromRefresh(componentId);
+      } catch (error) {
+        // Ignore if global refresh not available
+      }
+      cleanup();
+      leaderboardCleanup();
+    };
   }, []);
 
   const loadLeaderboardData = async () => {
@@ -105,7 +151,10 @@ export default function EnhancedLeaderboardPage() {
     // Apply squad filter
     if (squadFilter !== 'all') {
       filtered = filtered.filter(user => 
-        user.squad.toLowerCase() === squadFilter.toLowerCase()
+        user.squad && (
+          user.squad.toLowerCase().includes(squadFilter.toLowerCase()) ||
+          user.squad.toLowerCase() === squadFilter.toLowerCase()
+        )
       );
     }
 
@@ -122,6 +171,8 @@ export default function EnhancedLeaderboardPage() {
           return b.badges - a.badges;
         case 'level':
           return b.level - a.level;
+        case 'xp':
+          return (b.totalXP || 0) - (a.totalXP || 0);
         default:
           return b.completion - a.completion;
       }
@@ -326,11 +377,11 @@ export default function EnhancedLeaderboardPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Squads</SelectItem>
-                    <SelectItem value="decoder">Decoders</SelectItem>
-                    <SelectItem value="creator">Creators</SelectItem>
-                    <SelectItem value="speaker">Speakers</SelectItem>
-                    <SelectItem value="raider">Raiders</SelectItem>
-                    <SelectItem value="ranger">Rangers</SelectItem>
+                    <SelectItem value="creators">🎨 Creators</SelectItem>
+                    <SelectItem value="coders">💻 Coders</SelectItem>
+                    <SelectItem value="strategists">📊 Strategists</SelectItem>
+                    <SelectItem value="connectors">🤝 Connectors</SelectItem>
+                    <SelectItem value="rangers">🦅 Rangers</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -340,6 +391,7 @@ export default function EnhancedLeaderboardPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="completion">% Completion</SelectItem>
+                    <SelectItem value="xp">Total XP</SelectItem>
                     <SelectItem value="courses">Courses</SelectItem>
                     <SelectItem value="quizzes">Quizzes</SelectItem>
                     <SelectItem value="badges">Badges</SelectItem>
@@ -383,6 +435,7 @@ export default function EnhancedLeaderboardPage() {
                       <th className="px-4 py-3">Name</th>
                       <th className="px-4 py-3">Squad</th>
                       <th className="px-4 py-3">Level</th>
+                      <th className="px-4 py-3">XP</th>
                       <th className="px-4 py-3">Completion</th>
                       <th className="px-4 py-3">Courses</th>
                       <th className="px-4 py-3">Quizzes</th>
@@ -433,6 +486,14 @@ export default function EnhancedLeaderboardPage() {
                           <div className="flex items-center gap-1">
                             <Star className="w-4 h-4 text-yellow-400" />
                             <span className="font-medium">{user.level}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1">
+                            <Zap className="w-4 h-4 text-cyan-400" />
+                            <span className="font-medium text-cyan-400">
+                              {user.totalXP?.toLocaleString() || '0'}
+                            </span>
                           </div>
                         </td>
                         <td className="px-4 py-3">

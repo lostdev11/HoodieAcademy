@@ -18,10 +18,11 @@ import {
   BarChart3,
   Video,
   MessageCircle,
-  Target
+  Target,
+  Sparkles
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
-import { getSquadName } from '@/utils/squad-storage';
+import { getSquadNameFromCache, fetchUserSquad } from '@/utils/squad-api';
 // Use canonical wallet types
 
 interface SidebarItem {
@@ -119,11 +120,26 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
 
   // Load user's squad
   useEffect(() => {
-    const userSquadName = getSquadName();
-    if (userSquadName) {
-      setUserSquad(userSquadName);
-      setSquadChatUrl(getSquadChatUrl(userSquadName));
-    }
+    const loadSquad = async () => {
+      // Show cached squad immediately
+      const cachedSquad = getSquadNameFromCache();
+      if (cachedSquad) {
+        setUserSquad(cachedSquad);
+        setSquadChatUrl(getSquadChatUrl(cachedSquad));
+      }
+      
+      // Fetch from API for accuracy
+      const walletAddress = localStorage.getItem('walletAddress');
+      if (walletAddress) {
+        const squadData = await fetchUserSquad(walletAddress);
+        if (squadData && squadData.hasSquad && squadData.squad) {
+          setUserSquad(squadData.squad.name);
+          setSquadChatUrl(getSquadChatUrl(squadData.squad.name));
+        }
+      }
+    };
+    
+    loadSquad();
   }, []);
 
   // Admin status is now managed by useAdminStatus hook
@@ -158,6 +174,18 @@ const sidebarItems: SidebarItem[] = [
     label: 'Bounties',
     icon: <Target className="w-5 h-5" />,
     href: '/bounties'
+  },
+  {
+    id: 'feedback',
+    label: 'Feedback',
+    icon: <Sparkles className="w-5 h-5" />,
+    href: '/feedback'
+  },
+  {
+    id: 'squads',
+    label: 'My Squad',
+    icon: <Trophy className="w-5 h-5" />,
+    href: '/choose-your-squad'
   },
     {
       id: 'squad-chat',

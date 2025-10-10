@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { ArrowLeft, CheckCircle, XCircle, Lock, Unlock, Shield, AlertTriangle, Wallet, Eye, EyeOff } from 'lucide-react';
+import { fetchCourseProgress, updateCourseProgress, getCachedLessonStatus, LessonStatus } from '@/utils/course-progress-api';
+import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { updateScoreForQuizCompletion } from '@/lib/utils';
 import {
   AlertDialog,
@@ -515,8 +517,9 @@ const lessonsData: Lesson[] = [
 ];
 
 export default function CybersecurityWalletPracticesPage() {
+  const { wallet: userWallet } = useWalletSupabase();
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [lessonStatus, setLessonStatus] = useState<Array<'locked' | 'unlocked' | 'completed'>>(
+  const [lessonStatus, setLessonStatus] = useState<LessonStatus[]>(
     new Array(lessonsData.length).fill('locked')
   );
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
@@ -529,11 +532,11 @@ export default function CybersecurityWalletPracticesPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const localStorageKey = 'cybersecurityWalletPracticesProgress';
+  const COURSE_SLUG = 'cybersecurity-wallet-practices';
 
-  const saveProgress = (newStatus: Array<'locked' | 'unlocked' | 'completed'>) => {
-    localStorage.setItem(localStorageKey, JSON.stringify(newStatus));
+  const saveProgress = async (newStatus: LessonStatus[]) => {
     setLessonStatus(newStatus);
+    if (userWallet) await updateCourseProgress(userWallet, COURSE_SLUG, newStatus);
   };
 
   const handleWalletConnection = async () => {

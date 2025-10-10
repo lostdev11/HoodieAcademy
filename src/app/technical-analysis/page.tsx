@@ -8,6 +8,8 @@ import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { useSwipeable } from 'react-swipeable';
 import { motion } from 'framer-motion';
 import { LineChart, ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
+import { fetchCourseProgress, updateCourseProgress, getCachedLessonStatus, LessonStatus } from '@/utils/course-progress-api';
+import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,9 +121,10 @@ const lessonsData: Lesson[] = [
 ];
 
 const PASSING_PERCENTAGE = 0.75;
-const LOCAL_STORAGE_KEY = 'technicalAnalysisProgress';
+const COURSE_SLUG = 'technical-analysis';
 
 export default function TechnicalAnalysisPage() {
+  const { wallet: walletAddress } = useWalletSupabase();
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [lessonStatus, setLessonStatus] = useState<Array<'locked' | 'unlocked' | 'completed'>>(
     lessonsData.map((_, index) => (index === 0 ? 'unlocked' : 'locked'))
@@ -149,22 +152,34 @@ export default function TechnicalAnalysisPage() {
   const allLessonsCompleted = lessonStatus.every(status => status === 'completed');
   
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedStatus = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedStatus) {
-        const parsedStatus: Array<'locked' | 'unlocked' | 'completed'> = JSON.parse(savedStatus);
-        setLessonStatus(parsedStatus);
-        const lastCompletedIndex = parsedStatus.lastIndexOf('completed');
-        const newCurrentIndex = parsedStatus.findIndex(status => status === 'unlocked');
-        setCurrentLessonIndex(newCurrentIndex !== -1 ? newCurrentIndex : (lastCompletedIndex + 1 < lessonsData.length ? lastCompletedIndex + 1 : lastCompletedIndex));
-      }
-    }
-  }, []);
+    const loadProgress = async () => {
+      if (!walletAddress) return;
 
-  const saveProgress = (newStatus: Array<'locked' | 'unlocked' | 'completed'>) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newStatus));
-    }
+      const cached = getCachedLessonStatus(COURSE_SLUG, lessonsData.length);
+      if (cached.length > 0) setLessonStatus(cached);
+
+      try {
+        const progress = await fetchCourseProgress(walletAddress, COURSE_SLUG);
+        if (progress && progress.lesson_data) {
+          const statusArray: LessonStatus[] = Array(lessonsData.length).fill('locked');
+          statusArray[0] = 'unlocked';
+          progress.lesson_data.forEach((lesson: any) => {
+            if (lesson.index < lessonsData.length) statusArray[lesson.index] = lesson.status;
+          });
+          setLessonStatus(statusArray);
+          const newCurrentIndex = statusArray.findIndex(status => status === 'unlocked');
+          if (newCurrentIndex !== -1) setCurrentLessonIndex(newCurrentIndex);
+        }
+      } catch (error) {
+        console.error('Error loading progress:', error);
+      }
+    };
+    loadProgress();
+  }, [walletAddress]);
+
+  const saveProgress = async (newStatus: LessonStatus[]) => {
+    setLessonStatus(newStatus);
+    if (walletAddress) await updateCourseProgress(walletAddress, COURSE_SLUG, newStatus);
   };
   
   const progressPercentage = (lessonStatus.filter(s => s === 'completed').length / lessonsData.length) * 100;

@@ -16,9 +16,11 @@ import {
   BarChart3,
   Video,
   MessageCircle,
-  Target
+  Target,
+  Sparkles
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
+import { getSquadNameFromCache, fetchUserSquad } from '@/utils/squad-api';
 
 interface MobileNavItem {
   id: string;
@@ -141,6 +143,18 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
       label: 'Bounties',
       icon: <Target className="w-5 h-5" />,
       href: '/bounties'
+    },
+    {
+      id: 'feedback',
+      label: 'Feedback',
+      icon: <Sparkles className="w-5 h-5" />,
+      href: '/feedback'
+    },
+    {
+      id: 'my-squad',
+      label: 'My Squad',
+      icon: <Trophy className="w-5 h-5" />,
+      href: '/choose-your-squad'
     },
     {
       id: 'squad-chat',

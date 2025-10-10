@@ -10,6 +10,8 @@ export interface RobustUserProfile {
   created_at?: string;
   updated_at?: string;
   is_admin?: boolean;
+  total_xp?: number;
+  level?: number;
 }
 
 export class RobustUserSync {
@@ -66,7 +68,9 @@ export class RobustUserSync {
         last_active: new Date().toISOString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        is_admin: false
+        is_admin: false,
+        total_xp: 0,
+        level: 1
       };
     }
   }
@@ -122,7 +126,9 @@ export class RobustUserSync {
         last_active: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
-        is_admin: additionalData?.is_admin || false
+        is_admin: additionalData?.is_admin || false,
+        total_xp: 0,
+        level: 1
       };
 
       const { data: user, error } = await serviceClient
@@ -208,7 +214,9 @@ export class RobustUserSync {
       last_active: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      is_admin: additionalData?.is_admin || false
+      is_admin: additionalData?.is_admin || false,
+      total_xp: 0,
+      level: 1
     };
 
     // Try to store in localStorage as backup

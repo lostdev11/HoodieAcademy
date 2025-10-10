@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { ArrowLeft, CheckCircle, XCircle, Lock, Unlock, BookOpen, AlertTriangle, Wallet, PenTool, Users, Target, Trophy, ArrowRight } from 'lucide-react';
+import { fetchCourseProgress, updateCourseProgress, getCachedLessonStatus, LessonStatus } from '@/utils/course-progress-api';
+import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { updateScoreForQuizCompletion } from '@/lib/utils';
 import {
   AlertDialog,
@@ -515,8 +517,9 @@ const lessonsData: Lesson[] = [
 ];
 
 export default function LoreNarrativeCraftingPage() {
+  const { wallet: userWallet } = useWalletSupabase();
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [lessonStatus, setLessonStatus] = useState<Array<'locked' | 'unlocked' | 'completed'>>(
+  const [lessonStatus, setLessonStatus] = useState<LessonStatus[]>(
     new Array(lessonsData.length).fill('locked')
   );
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
@@ -529,11 +532,11 @@ export default function LoreNarrativeCraftingPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const localStorageKey = 'loreNarrativeCraftingProgress';
+  const COURSE_SLUG = 'lore-narrative-crafting';
 
-  const saveProgress = (newStatus: Array<'locked' | 'unlocked' | 'completed'>) => {
-    localStorage.setItem(localStorageKey, JSON.stringify(newStatus));
+  const saveProgress = async (newStatus: LessonStatus[]) => {
     setLessonStatus(newStatus);
+    if (userWallet) await updateCourseProgress(userWallet, COURSE_SLUG, newStatus);
   };
 
   const handleWalletConnection = async () => {
@@ -658,16 +661,35 @@ export default function LoreNarrativeCraftingPage() {
   };
 
   useEffect(() => {
-    const savedProgress = localStorage.getItem(localStorageKey);
-    if (savedProgress) {
-      const parsedProgress = JSON.parse(savedProgress);
-      setLessonStatus(parsedProgress);
-    } else {
-      const initialStatus = new Array(lessonsData.length).fill('locked');
-      initialStatus[0] = 'unlocked';
-      saveProgress(initialStatus);
-    }
-  }, []);
+    const loadProgress = async () => {
+      if (!userWallet) {
+        const initialStatus = new Array(lessonsData.length).fill('locked');
+        initialStatus[0] = 'unlocked';
+        setLessonStatus(initialStatus);
+        return;
+      }
+      const cached = getCachedLessonStatus(COURSE_SLUG, lessonsData.length);
+      if (cached.length > 0) setLessonStatus(cached);
+      try {
+        const progress = await fetchCourseProgress(userWallet, COURSE_SLUG);
+        if (progress && progress.lesson_data) {
+          const statusArray: LessonStatus[] = new Array(lessonsData.length).fill('locked');
+          statusArray[0] = 'unlocked';
+          progress.lesson_data.forEach((lesson: any) => {
+            if (lesson.index < lessonsData.length) statusArray[lesson.index] = lesson.status;
+          });
+          setLessonStatus(statusArray);
+        } else {
+          const initialStatus = new Array(lessonsData.length).fill('locked');
+          initialStatus[0] = 'unlocked';
+          setLessonStatus(initialStatus);
+        }
+      } catch (error) {
+        console.error('Error loading progress:', error);
+      }
+    };
+    loadProgress();
+  }, [userWallet]);
 
   useEffect(() => {
     const completedCount = lessonStatus.filter(status => status === 'completed').length;

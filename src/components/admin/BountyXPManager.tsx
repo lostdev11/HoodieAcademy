@@ -78,33 +78,104 @@ export default function BountyXPManager({ walletAddress }: BountyXPManagerProps)
     setSuccess(null);
 
     try {
-      const response = await fetch('/api/admin/xp/award', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          targetWallet: selectedUser,
-          xpAmount: parseInt(xpAmount),
-          reason: reason,
-          awardedBy: walletAddress
-        })
+      // Use the new XP bounty service
+      const { xpBountyService } = await import('@/services/xp-bounty-service');
+      
+      const result = await xpBountyService.awardXP({
+        targetWallet: selectedUser,
+        xpAmount: parseInt(xpAmount),
+        reason: reason,
+        awardedBy: walletAddress,
+        bountyType: 'admin',
+        metadata: {
+          adminAward: true,
+          timestamp: new Date().toISOString()
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to award XP');
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to award XP');
       }
 
-      // Refresh users data
-      const usersResponse = await fetch(`/api/admin/users?wallet=${walletAddress}`);
+      console.log('✅ XP Award successful:', result);
+
+      // Add a small delay to ensure DB has fully committed
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Refresh users data with cache-busting
+      const usersResponse = await fetch(
+        `/api/admin/users?wallet=${walletAddress}&t=${Date.now()}`,
+        { cache: 'no-store' }
+      );
       const usersData = await usersResponse.json();
       setUsers(usersData.users || []);
+
+      // Also register this component for global refresh (in case other admins award XP)
+      const componentId = `admin-xp-manager-${walletAddress}`;
+      const { registerForRefresh } = await import('@/utils/globalRefresh');
+      registerForRefresh(componentId, async () => {
+        console.log('🔄 [AdminXPManager] Global refresh triggered');
+        const refreshResponse = await fetch(
+          `/api/admin/users?wallet=${walletAddress}&t=${Date.now()}`,
+          { cache: 'no-store' }
+        );
+        const refreshData = await refreshResponse.json();
+        setUsers(refreshData.users || []);
+      });
 
       // Reset form
       setSelectedUser(null);
       setXpAmount('');
       setReason('');
-      setSuccess(`Successfully awarded ${xpAmount} XP to user!`);
+      setSuccess(`Successfully awarded ${xpAmount} XP! New total: ${result.newTotalXP} XP (Level ${result.user?.level || 'N/A'})`);
+
+      // Force refresh all components with multiple approaches
+      
+      // 1. Use the direct force refresh system
+      const { forceRefreshAllXpComponents } = await import('@/utils/forceRefresh');
+      forceRefreshAllXpComponents();
+
+      // 2. Trigger global refresh system (if available)
+      try {
+        const { triggerXpRefresh } = await import('@/utils/globalRefresh');
+        triggerXpRefresh({
+          targetWallet: selectedUser,
+          newTotalXP: result.newTotalXP,
+          xpAwarded: xpAmount,
+          awardedBy: walletAddress,
+          reason: reason
+        });
+      } catch (error) {
+        console.log('Global refresh system not available');
+      }
+
+      // 3. Trigger leaderboard refresh
+      try {
+        const { triggerLeaderboardRefresh } = await import('@/utils/leaderboardRefresh');
+        triggerLeaderboardRefresh();
+        console.log('🔄 [BountyXPManager] Leaderboard refresh triggered');
+      } catch (error) {
+        console.log('Leaderboard refresh system not available');
+      }
+
+      // 3. Show immediate feedback and offer refresh
+      setTimeout(() => {
+        const refreshAll = window.confirm(
+          `🎉 XP Awarded Successfully!\n\n` +
+          `User: ${selectedUser.slice(0, 8)}...\n` +
+          `Amount: ${xpAmount} XP\n` +
+          `New Total: ${result.newTotalXP} XP\n\n` +
+          `Refresh all pages to see the updates?`
+        );
+        
+        if (refreshAll) {
+          // Refresh current page
+          window.location.reload();
+        }
+      }, 1000);
 
     } catch (err) {
+      console.error('❌ XP Award failed:', err);
       setError(err instanceof Error ? err.message : 'Failed to award XP');
     } finally {
       setLoading(false);

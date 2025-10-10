@@ -16,7 +16,8 @@ import {
   Award,
   User,
   Shield,
-  Menu
+  Menu,
+  Sparkles
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -47,6 +48,8 @@ const navigationGroups: NavigationGroup[] = [
       { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" />, href: '/dashboard' },
       { key: 'courses', label: 'Courses', icon: <GraduationCap className="h-4 w-4" />, href: '/courses' },
       { key: 'bounties', label: 'Bounties', icon: <Target className="h-4 w-4" />, href: '/bounties' },
+      { key: 'feedback', label: 'Feedback', icon: <Sparkles className="h-4 w-4" />, href: '/feedback' },
+      { key: 'my-squad', label: 'My Squad', icon: <Trophy className="h-4 w-4" />, href: '/choose-your-squad' },
     ]
   },
   {
