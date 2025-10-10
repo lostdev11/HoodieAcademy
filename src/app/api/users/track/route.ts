@@ -160,17 +160,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
     }
 
-    // Upsert user record
+    console.log('[USER TRACKING] Processing request for wallet:', walletAddress.slice(0, 8) + '...');
+
+    // Prepare user data with only the fields that exist in the schema
+    const userData = {
+      wallet_address: walletAddress,
+      display_name: displayName || `User ${walletAddress.slice(0, 6)}...`,
+      squad: squad || null,
+      profile_completed: !!displayName,
+      last_active: new Date().toISOString(),
+      last_seen: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString() // Ensure created_at is set for new users
+    };
+
+    console.log('[USER TRACKING] User data to upsert:', userData);
+
+    // First, check if user exists to preserve created_at for existing users
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('created_at')
+      .eq('wallet_address', walletAddress)
+      .single();
+
+    // If user exists, preserve their original created_at date
+    if (existingUser?.created_at) {
+      userData.created_at = existingUser.created_at;
+    }
+
+    // Upsert user record with better error handling
     const { data: user, error: userError } = await supabase
       .from('users')
-      .upsert({
-        wallet_address: walletAddress,
-        display_name: displayName || `User ${walletAddress.slice(0, 6)}...`,
-        squad: squad || null,
-        profile_completed: !!displayName,
-        last_active: new Date().toISOString(),
-        last_seen: new Date().toISOString()
-      }, {
+      .upsert(userData, {
         onConflict: 'wallet_address'
       })
       .select()
@@ -178,22 +199,52 @@ export async function POST(request: NextRequest) {
 
     if (userError) {
       console.error('[UPSERT USER ERROR]', userError);
-      return NextResponse.json({ error: 'Failed to update user data' }, { status: 500 });
+      console.error('[UPSERT USER ERROR DETAILS]', {
+        code: userError.code,
+        message: userError.message,
+        details: userError.details,
+        hint: userError.hint
+      });
+      
+      // Try to provide more specific error messages
+      let errorMessage = 'Failed to update user data';
+      if (userError.code === '23505') {
+        errorMessage = 'User already exists with this wallet address';
+      } else if (userError.code === '42P01') {
+        errorMessage = 'Users table does not exist - please run database setup';
+      } else if (userError.code === '42703') {
+        errorMessage = 'Database schema mismatch - please run database migration';
+      }
+      
+      return NextResponse.json({ 
+        error: errorMessage,
+        details: userError.message,
+        code: userError.code
+      }, { status: 500 });
     }
 
-    // Log user activity
-    const { error: activityError } = await supabase
-      .from('user_activity')
-      .insert({
-        wallet_address: walletAddress,
-        activity_type: activityType,
-        metadata: metadata,
-        created_at: new Date().toISOString()
-      });
+    console.log('[USER TRACKING] User upsert successful:', user);
 
-    if (activityError) {
-      console.error('[LOG ACTIVITY ERROR]', activityError);
-      // Don't fail the request if activity logging fails
+    // Log user activity (don't fail if this fails)
+    try {
+      const { error: activityError } = await supabase
+        .from('user_activity')
+        .insert({
+          wallet_address: walletAddress,
+          activity_type: activityType,
+          metadata: metadata,
+          created_at: new Date().toISOString()
+        });
+
+      if (activityError) {
+        console.error('[LOG ACTIVITY ERROR]', activityError);
+        // Don't fail the request if activity logging fails
+      } else {
+        console.log('[USER TRACKING] Activity logged successfully');
+      }
+    } catch (activityErr) {
+      console.error('[LOG ACTIVITY EXCEPTION]', activityErr);
+      // Continue - activity logging is not critical
     }
 
     return NextResponse.json({
@@ -204,9 +255,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('[USER TRACKING POST ERROR]', error);
+    console.error('[USER TRACKING POST ERROR STACK]', error instanceof Error ? error.stack : 'No stack trace');
+    
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      type: error instanceof Error ? error.constructor.name : 'Unknown'
     }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useDisplayNameReadOnly } from '@/hooks/use-display-name';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -42,9 +43,11 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [squadChatUrl, setSquadChatUrl] = useState<string>('/squads/hoodie-creators/chat');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [userDisplayName, setUserDisplayName] = useState<string>("Hoodie Scholar");
   const [userProfileImage, setUserProfileImage] = useState<string>(profileImage);
   const [currentTime, setCurrentTime] = useState<string>("");
+
+  // Use the global display name hook
+  const { displayName: userDisplayName } = useDisplayNameReadOnly();
 
   // Helper function to get squad chat URL
   const getSquadChatUrl = (squadName: string): string => {
@@ -129,27 +132,7 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
           setSquadChatUrl(getSquadChatUrl(userSquadName));
         }
 
-        // Load user display name and SNS domain
-        const savedDisplayName = localStorage.getItem('userDisplayName');
-        if (savedDisplayName) {
-          setUserDisplayName(savedDisplayName);
-        } else {
-          // Try to resolve SNS domain if no display name is set
-          const storedWallet = localStorage.getItem('walletAddress');
-          if (storedWallet) {
-            try {
-              // const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
-              // const resolvedName = await getDisplayNameWithSNS(storedWallet);
-              const resolvedName = storedWallet;
-              console.log('MobileSidebar: Resolved SNS name:', resolvedName);
-              setUserDisplayName(resolvedName);
-            } catch (error) {
-              console.error('MobileSidebar: Error resolving SNS domain:', error);
-              // Fallback to default name
-              setUserDisplayName('Hoodie Scholar');
-            }
-          }
-        }
+        // Display name is now handled by the global hook
 
         // Load saved profile image
         const savedProfileImage = localStorage.getItem('userProfileImage');

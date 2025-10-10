@@ -19,7 +19,9 @@ import { BountySubmissionForm, BountySubmissionData } from '@/components/bounty'
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { useUserXP } from '@/hooks/useUserXP';
 import { useUserBounties } from '@/hooks/useUserBounties';
+import { useDisplayName } from '@/hooks/use-display-name';
 import { UserDataDebug } from '@/components/debug/UserDataDebug';
+import { DisplayNameSyncTest } from '@/components/debug/DisplayNameSyncTest';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -60,14 +62,8 @@ const getRealUserData = (walletAddress: string) => {
 
 export function ProfileView() {
   const [editMode, setEditMode] = useState(false);
-  const [displayName, setDisplayName] = useState(() => {
-    // Get display name from localStorage
-    return localStorage.getItem('userDisplayName') || 'Hoodie Scholar';
-  });
-  const [originalDisplayName, setOriginalDisplayName] = useState(() => {
-    // Store original value for cancel functionality
-    return localStorage.getItem('userDisplayName') || 'Hoodie Scholar';
-  });
+  const [displayName, setDisplayName] = useState('');
+  const [originalDisplayName, setOriginalDisplayName] = useState('');
   const [squad, setSquad] = useState('Unassigned');
   const [wallet, setWallet] = useState<string>('');
   const [copied, setCopied] = useState(false);
@@ -100,6 +96,17 @@ export function ProfileView() {
   const [saveProgress, setSaveProgress] = useState<string>('');
   const [saveError, setSaveError] = useState<string>('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Use the global display name hook
+  const { displayName: globalDisplayName, updateDisplayName, refreshDisplayName } = useDisplayName();
+
+  // Initialize local display name state with global value
+  useEffect(() => {
+    if (globalDisplayName) {
+      setDisplayName(globalDisplayName);
+      setOriginalDisplayName(globalDisplayName);
+    }
+  }, [globalDisplayName]);
 
   // Wallet connection
   const { connectWallet, disconnectWallet: disconnectWalletHook } = useWalletSupabase();
@@ -210,8 +217,8 @@ export function ProfileView() {
       const result = await response.json();
       console.log('✅ Profile saved successfully:', result);
 
-      // Update localStorage
-      localStorage.setItem('userDisplayName', displayName.trim());
+      // Update global display name (this will update localStorage and trigger updates everywhere)
+      updateDisplayName(displayName.trim());
       setOriginalDisplayName(displayName.trim());
       setSaveSuccess(true);
       setSaveProgress('Profile saved successfully!');
@@ -349,129 +356,6 @@ export function ProfileView() {
     return () => clearTimeout(timeout);
   }, [isInitializing]);
 
-  const handleSave = async () => {
-    if (displayName.trim()) {
-      const trimmedName = displayName.trim();
-      
-      // Set loading state
-      setIsSaving(true);
-      
-      // Global timeout protection for the entire save operation
-      const saveTimeout = setTimeout(() => {
-        console.warn('Save operation timed out, forcing completion');
-        setSaveProgress('Operation timed out after 15 seconds - local changes saved');
-        alert('Save operation took longer than expected (15+ seconds). Your changes have been saved locally. This might be due to a slow internet connection or server issues. Please check your connection and try again later if you need to sync with the server.');
-        setIsSaving(false);
-        setEditMode(false);
-      }, 15000); // 15 second global timeout
-      
-      try {
-        // Save to database immediately for better UX
-        setSaveProgress('Saving to database...');
-        setOriginalDisplayName(trimmedName);
-        setSaveProgress('Database saved successfully!');
-        
-        // Sync with Supabase if configured
-        if (wallet) {
-          try {
-            // Check if Supabase is properly configured
-            if (isSupabaseConfigured) {
-              setSaveProgress('Connecting to server...');
-              // Add timeout protection for the Supabase operation
-              let supabase;
-              try {
-                const supabaseModule = await import('@/lib/supabase');
-                supabase = supabaseModule.supabase;
-                setSaveProgress('Server connected successfully!');
-              } catch (importError) {
-                console.error('Failed to import Supabase module:', importError);
-                setSaveProgress('Server connection failed, database changes saved');
-                throw new Error('Failed to connect to server');
-              }
-              
-              setSaveProgress('Syncing with server... (1/3)');
-              // Try the operation with a retry mechanism
-              let retries = 2;
-              let lastError;
-              
-              while (retries > 0) {
-                try {
-                  setSaveProgress(`Syncing with server... (${3 - retries}/3)`);
-                  const { data, error } = await supabase
-                    .from('users')
-                    .upsert([
-                      {
-                        wallet_address: wallet,
-                        display_name: trimmedName,
-                        last_active: new Date().toISOString(),
-                      }
-                    ], {
-                      onConflict: 'wallet_address'
-                    });
-                  
-                  if (error) {
-                    throw error;
-                  } else {
-                    console.log('Successfully updated display name in Supabase');
-                    setSaveProgress('Server sync completed successfully!');
-                    break; // Success, exit retry loop
-                  }
-                } catch (error) {
-                  lastError = error;
-                  retries--;
-                  if (retries > 0) {
-                    setSaveProgress(`Sync failed, retrying in 1 second... (${retries} attempts left)`);
-                    console.log(`Supabase operation failed, retrying... (${retries} attempts left)`);
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
-                  }
-                }
-              }
-              
-              if (retries === 0 && lastError) {
-                console.error('Error updating display name in Supabase after retries:', lastError);
-                setSaveProgress('Server sync failed after retries, but database changes saved');
-              }
-            } else {
-              console.log('Supabase not configured - changes saved to database only');
-              setSaveProgress('Database only - server not configured');
-            }
-          } catch (error) {
-            console.error('Error syncing display name with Supabase:', error);
-            console.log('Changes saved to database only');
-            setSaveProgress('Server sync failed, but database changes saved');
-          }
-        } else {
-          setSaveProgress('Database only - no wallet connected for server sync');
-        }
-        
-        // Exit edit mode
-        setEditMode(false);
-        
-        // Show success message
-        console.log('Profile updated successfully!');
-        setSaveProgress('Profile updated successfully! All changes saved.');
-        
-        // Clear success message after a short delay
-        setTimeout(() => {
-          setSaveProgress('');
-        }, 2000);
-        
-      } catch (error) {
-        console.error('Error during save operation:', error);
-        // Keep user in edit mode if there was an error
-        setSaveProgress(`Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
-        alert('There was an error saving your changes. Please try again. If the problem persists, check your internet connection.');
-      } finally {
-        // Clear timeout and loading state
-        clearTimeout(saveTimeout);
-        setIsSaving(false);
-        setSaveProgress('');
-      }
-    } else {
-      // Don't save if display name is empty
-      alert('Display name cannot be empty');
-    }
-  };
 
   const getSquadName = (squadId: string) => {
     const squad = squadTracks.find(s => s.id === squadId);
@@ -514,6 +398,24 @@ export function ProfileView() {
     } else {
       return [];
     }
+  };
+
+  const getSquadLockInfo = () => {
+    // Mock data for now - in real implementation, this would come from the database
+    const squadSelectedAt = userData?.squad_selected_at || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days ago
+    const lockEndDate = new Date(new Date(squadSelectedAt).getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from selection
+    const now = new Date();
+    const timeRemaining = Math.max(0, lockEndDate.getTime() - now.getTime());
+    const daysRemaining = Math.ceil(timeRemaining / (24 * 60 * 60 * 1000));
+    const progressPercent = Math.max(0, Math.min(100, ((30 - daysRemaining) / 30) * 100));
+    
+    return {
+      isLocked: timeRemaining > 0,
+      daysRemaining,
+      progressPercent,
+      lockEndDate: lockEndDate.toLocaleDateString(),
+      squadSelectedAt: new Date(squadSelectedAt).toLocaleDateString()
+    };
   };
 
   const handleCopyWallet = async () => {
@@ -684,10 +586,11 @@ export function ProfileView() {
           </Card>
         )}
 
-        {/* Debug Component - Remove this in production */}
+        {/* Debug Components - Remove these in production */}
         <UserDataDebug />
+        <DisplayNameSyncTest />
 
-        <Card className="w-full max-w-2xl bg-slate-800/60 border-cyan-500/30 mb-8">
+        <Card className="w-full max-w-4xl bg-slate-800/60 border-cyan-500/30 mb-8">
           <CardHeader>
             <CardTitle className="text-cyan-400 flex items-center gap-2">
               <User className="w-6 h-6" />
@@ -695,12 +598,14 @@ export function ProfileView() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row gap-8">
-              <div className="flex-1 space-y-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
+            <div className="flex flex-col xl:flex-row gap-8">
+              <div className="flex-1 space-y-6">
+                {/* Profile Information Section */}
+                <div className="space-y-6">
+                  {/* Display Name Section */}
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-400 text-sm font-medium">Display Name</span>
+                      <h3 className="text-gray-300 text-sm font-semibold uppercase tracking-wide">Display Name</h3>
                       {!editMode && (
                         <Button 
                           onClick={() => setEditMode(true)}
@@ -760,103 +665,66 @@ export function ProfileView() {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
                         <span className="text-cyan-300 font-semibold text-lg">{displayName}</span>
                       </div>
                     )}
-                  </div>
-                  
-                  {/* Save Status Messages */}
-                  {editMode && !saveProgress && !saveSuccess && !saveError && (
-                    <div className="text-xs text-gray-500">
-                      Press Enter to save, Escape to cancel
-                    </div>
-                  )}
-                  
-                  {saveProgress && (
-                    <div className="text-sm text-blue-400 flex items-center gap-2">
-                      <div className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                      {saveProgress}
-                    </div>
-                  )}
-                  
-                  {saveSuccess && (
-                    <div className="text-sm text-green-400 flex items-center gap-2">
-                      <CheckCircle className="w-3 h-3" />
-                      Profile saved successfully!
-                    </div>
-                  )}
-                  
-                  {saveError && (
-                    <div className="text-sm text-red-400 flex items-center gap-2">
-                      <AlertCircle className="w-3 h-3" />
-                      {saveError}
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <span className="text-gray-400 text-sm font-medium">Squad</span>
-                    {editMode ? (
-                      <Select value={squad} onValueChange={setSquad} disabled={isSaving}>
-                        <SelectTrigger className="w-40 bg-slate-700/50 border-cyan-500/30 text-white">
-                          <SelectValue placeholder="Select a squad" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {squadTracks.map(track => (
-                            <SelectItem key={track.id} value={track.id}>
-                              {track.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                        <span className="text-yellow-400 font-semibold">
-                          {getSquadDisplayName()}
-                        </span>
+                    
+                    {/* Save Status Messages */}
+                    {editMode && !saveProgress && !saveSuccess && !saveError && (
+                      <div className="text-xs text-gray-500">
+                        Press Enter to save, Escape to cancel
+                      </div>
+                    )}
+                    
+                    {saveProgress && (
+                      <div className="text-sm text-blue-400 flex items-center gap-2">
+                        <div className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                        {saveProgress}
+                      </div>
+                    )}
+                    
+                    {saveSuccess && (
+                      <div className="text-sm text-green-400 flex items-center gap-2">
+                        <CheckCircle className="w-3 h-3" />
+                        Profile saved successfully!
+                      </div>
+                    )}
+                    
+                    {saveError && (
+                      <div className="text-sm text-red-400 flex items-center gap-2">
+                        <AlertCircle className="w-3 h-3" />
+                        {saveError}
                       </div>
                     )}
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-gray-400 text-sm font-medium">Wallet</span>
-                  <div className="flex items-center gap-2">
-                  {editMode ? (
-                    <div className="flex items-center gap-2">
-                      <Input 
-                        value={wallet} 
-                        onChange={e => setWallet(e.target.value)} 
-                        className="w-40 bg-slate-700/50 border-cyan-500/30 text-white" 
-                        disabled={isSaving}
-                      />
-                      <Button
-                        size="sm"
-                        onClick={handleWalletConnect}
-                        className="bg-purple-600 hover:bg-purple-700 text-white"
-                        disabled={isSaving}
-                      >
-                        Connect Wallet
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        {getWalletDisplay()}
+
+                  {/* Wallet Section - Read Only */}
+                  <div className="space-y-3">
+                    <h3 className="text-gray-300 text-sm font-semibold uppercase tracking-wide">Connected Wallet</h3>
+                    <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                          <span className="text-green-400 font-mono text-sm">
+                            {formatWalletAddress(wallet)}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-1">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={handleCopyWallet}
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-green-400 hover:bg-green-500/10"
+                            className="h-8 w-8 p-0 text-gray-400 hover:text-green-400 hover:bg-green-500/10"
                             title="Copy wallet address"
                           >
-                            {copied ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                            {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             asChild
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10"
+                            className="h-8 w-8 p-0 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10"
                             title="View on Solscan"
                           >
                             <a 
@@ -864,54 +732,128 @@ export function ProfileView() {
                               target="_blank" 
                               rel="noopener noreferrer"
                             >
-                              <ExternalLink className="w-3 h-3" />
+                              <ExternalLink className="w-4 h-4" />
                             </a>
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={handleDisconnectWallet}
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-400 hover:bg-red-500/10"
-                            title="Disconnect wallet"
-                          >
-                            <Wallet className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <span className="text-gray-400 text-sm font-medium">Joined</span>
-                  <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                    <span className="text-cyan-400 font-mono">{userData?.joined || 'Unknown'}</span>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-gray-400 text-sm font-medium">Rank</span>
-                  <div className="p-3 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                    <span className="text-pink-400 font-semibold">{userData?.rank || 'Scholar'}</span>
+
+                  {/* Squad Section - Current Squad with Lock Info */}
+                  <div className="space-y-3">
+                    <h3 className="text-gray-300 text-sm font-semibold uppercase tracking-wide">Current Squad</h3>
+                    <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <SquadBadge squad={getSquadForBadge()} />
+                            <div>
+                              <p className="text-yellow-400 font-semibold text-lg">
+                                {getSquadDisplayName()}
+                              </p>
+                              <p className="text-gray-400 text-sm">
+                                {getSquadDescription()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Squad Lock Status */}
+                        {(() => {
+                          const lockInfo = getSquadLockInfo();
+                          return (
+                            <div className="pt-3 border-t border-slate-600/30">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-2 h-2 rounded-full ${lockInfo.isLocked ? 'bg-blue-400' : 'bg-green-400'}`}></div>
+                                  <span className="text-blue-400 text-sm font-medium">Squad Lock Status</span>
+                                </div>
+                                <div className="text-right">
+                                  <p className={`text-sm font-semibold ${lockInfo.isLocked ? 'text-blue-400' : 'text-green-400'}`}>
+                                    {lockInfo.isLocked ? 'Locked' : 'Unlocked'}
+                                  </p>
+                                  {lockInfo.isLocked ? (
+                                    <p className="text-gray-400 text-xs">{lockInfo.daysRemaining} days remaining</p>
+                                  ) : (
+                                    <p className="text-gray-400 text-xs">Can change squad</p>
+                                  )}
+                                </div>
+                              </div>
+                              {lockInfo.isLocked && (
+                                <>
+                                  <div className="mt-2 w-full bg-slate-600 rounded-full h-2">
+                                    <div 
+                                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                                      style={{ width: `${lockInfo.progressPercent}%` }}
+                                    ></div>
+                                  </div>
+                                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                    <span>Selected: {lockInfo.squadSelectedAt}</span>
+                                    <span>Unlocks: {lockInfo.lockEndDate}</span>
+                                  </div>
+                                </>
+                              )}
+                              <p className="text-gray-400 text-xs mt-1">
+                                Squad changes are locked for 30 days from selection
+                              </p>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="mt-4">
-                  {editMode ? (
+
+                  {/* Account Info Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <div className="flex gap-2">
-                        <Button onClick={handleSave} className="bg-cyan-600 hover:bg-cyan-700 text-white" disabled={isSaving}>
+                      <h3 className="text-gray-300 text-sm font-semibold uppercase tracking-wide">Joined</h3>
+                      <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                        <span className="text-cyan-400 font-mono text-sm">
+                          {userData?.created_at 
+                            ? new Date(userData.created_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })
+                            : 'Unknown'
+                          }
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="text-gray-300 text-sm font-semibold uppercase tracking-wide">Rank</h3>
+                      <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                        <span className="text-pink-400 font-semibold">{userData?.rank || 'Scholar'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Edit Actions Section */}
+                <div className="pt-6 border-t border-slate-600/30">
+                  {editMode ? (
+                    <div className="space-y-4">
+                      <div className="flex gap-3">
+                        <Button 
+                          onClick={saveProfile}
+                          disabled={isSaving || displayName.trim() === originalDisplayName}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
                           {isSaving ? (
-                            <div className="w-4 h-4 mr-1 animate-spin">
+                            <div className="w-4 h-4 mr-2 animate-spin">
                               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.58 20 4 16.42 4 12C4 7.58 7.58 4 12 4C16.42 4 20 7.58 20 12C20 16.42 16.42 20 12 20Z" fill="currentColor"/>
                               </svg>
                             </div>
                           ) : (
-                            <Save className="w-4 h-4 mr-1" />
-                          )} Save
+                            <Save className="w-4 h-4 mr-2" />
+                          )} 
+                          Save Changes
                         </Button>
                         <Button 
                           onClick={() => {
                             setEditMode(false);
-                            // Reset display name to original value
                             setDisplayName(originalDisplayName);
                           }} 
                           variant="outline" 
@@ -922,7 +864,7 @@ export function ProfileView() {
                         </Button>
                       </div>
                       {isSaving && saveProgress && (
-                        <div className="text-sm text-cyan-400 bg-slate-700/30 p-2 rounded border border-cyan-500/30">
+                        <div className="text-sm text-cyan-400 bg-slate-700/30 p-3 rounded-lg border border-cyan-500/30">
                           {saveProgress}
                         </div>
                       )}
@@ -930,20 +872,25 @@ export function ProfileView() {
                   ) : (
                     <Button 
                       onClick={() => {
-                        if (isSaving) return; // Prevent editing while saving
+                        if (isSaving) return;
                         setOriginalDisplayName(displayName);
                         setEditMode(true);
                       }} 
                       variant="outline" 
-                      className="text-cyan-400 border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10"
+                      className="w-full text-cyan-400 border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10"
                       disabled={isSaving}
                     >
-                      <Pencil className="w-4 h-4 mr-1" /> Edit
+                      <Pencil className="w-4 h-4 mr-2" /> 
+                      Edit Profile
                     </Button>
                   )}
                 </div>
               </div>
-              <div className="flex flex-col items-center gap-4">
+
+              {/* Right Side - Profile Picture and Badges */}
+              <div className="xl:w-80 w-full space-y-6">
+                {/* Profile Picture Section */}
+                <div className="text-center space-y-4">
                   <PfpPicker 
                     selectedPfpUrl={profileImage !== '🧑‍🎓' ? profileImage : undefined}
                     onChange={(url) => handleProfileImageChange(url || '🧑‍🎓')}
@@ -951,16 +898,16 @@ export function ProfileView() {
                   />
                   
                   {/* Emoji Picker Fallback */}
-                  <div className="text-center">
-                    <p className="text-xs text-gray-400 mb-2">Or choose an emoji:</p>
-                    <div className="flex gap-2 flex-wrap justify-center">
+                  <div>
+                    <p className="text-sm text-gray-400 mb-3">Or choose an emoji:</p>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                       {['🧑‍🎓', '🎨', '🧠', '🎤', '⚔️', '🦅', '🏦', '👨‍💻', '👩‍💻', '🤖', '🎭', '🎪'].map((emoji) => (
                         <button
                           key={emoji}
                           onClick={() => handleProfileImageChange(emoji)}
-                          className={`w-8 h-8 text-lg rounded-full border-2 transition-all ${
+                          className={`w-10 h-10 text-lg rounded-full border-2 transition-all hover:scale-110 ${
                             profileImage === emoji 
-                              ? 'border-cyan-400 bg-cyan-400/20' 
+                              ? 'border-cyan-400 bg-cyan-400/20 shadow-lg shadow-cyan-400/20' 
                               : 'border-gray-600 hover:border-cyan-300 hover:bg-cyan-400/10'
                           }`}
                         >
@@ -969,12 +916,13 @@ export function ProfileView() {
                       ))}
                     </div>
                   </div>
-                
-                {/* Squad Badge */}
+                </div>
+
+                {/* Squad Information */}
                 {userSquad && (
-                  <div className="text-center space-y-3">
+                  <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30 text-center space-y-3">
                     <SquadBadge squad={getSquadForBadge()} />
-                    <div className="text-xs text-gray-400">
+                    <div className="text-sm text-gray-300">
                       {getSquadDisplayName()}
                     </div>
                     <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
@@ -984,43 +932,58 @@ export function ProfileView() {
                   </div>
                 )}
                 
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {badges.filter(b => b.unlocked).length > 0 ? (
-                    badges.filter(b => b.unlocked).slice(0, 4).map((badge) => (
-                      <Badge key={badge.id} className="flex items-center gap-1 px-3 py-1 border border-cyan-500/30 bg-slate-900/60 text-cyan-300">
-                        {badge.icon} {badge.name}
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-gray-400 text-sm">No badges earned yet</p>
-                  )}
-                  {badges.filter(b => b.unlocked).length > 4 && (
-                    <Badge className="bg-slate-600/50 text-gray-300 border-gray-500/30">
-                      +{badges.filter(b => b.unlocked).length - 4} more
-                    </Badge>
-                  )}
+                {/* Badges Section */}
+                <div className="space-y-3">
+                  <h3 className="text-gray-300 text-sm font-semibold uppercase tracking-wide text-center">Achievements</h3>
+                  <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                    {badges.filter(b => b.unlocked).length > 0 ? (
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          {badges.filter(b => b.unlocked).slice(0, 6).map((badge) => (
+                            <Badge key={badge.id} className="flex items-center gap-1 px-2 py-1 text-xs border border-cyan-500/30 bg-slate-900/60 text-cyan-300">
+                              {badge.icon} {badge.name}
+                            </Badge>
+                          ))}
+                        </div>
+                        {badges.filter(b => b.unlocked).length > 6 && (
+                          <div className="text-center">
+                            <Badge className="bg-slate-600/50 text-gray-300 border-gray-500/30">
+                              +{badges.filter(b => b.unlocked).length - 6} more badges
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 text-sm text-center">No badges earned yet</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* NFT Profile Information */}
                 {selectedNFT && (
-                  <div className="text-center space-y-2 p-3 bg-slate-700/30 rounded-lg border border-purple-500/30">
-                    <h4 className="font-semibold text-purple-400 text-sm">Profile NFT</h4>
-                    <p className="text-white text-sm">{selectedNFT.name}</p>
-                    {selectedNFT.collection && (
-                      <p className="text-gray-400 text-xs">{selectedNFT.collection}</p>
-                    )}
+                  <div className="p-4 bg-slate-700/30 rounded-lg border border-purple-500/30 space-y-3">
+                    <h4 className="font-semibold text-purple-400 text-sm text-center">Profile NFT</h4>
+                    <div className="text-center space-y-2">
+                      <p className="text-white text-sm font-medium">{selectedNFT.name}</p>
+                      {selectedNFT.collection && (
+                        <p className="text-gray-400 text-xs">{selectedNFT.collection}</p>
+                      )}
+                    </div>
                     {selectedNFT.attributes && selectedNFT.attributes.length > 0 && (
-                      <div className="flex flex-wrap gap-1 justify-center">
-                        {selectedNFT.attributes.slice(0, 3).map((attr, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs bg-slate-600/50 border-purple-500/30 text-purple-300">
-                            {attr.trait_type}: {attr.value}
-                          </Badge>
-                        ))}
-                        {selectedNFT.attributes.length > 3 && (
-                          <Badge variant="outline" className="text-xs bg-slate-600/50 border-gray-500/30 text-gray-300">
-                            +{selectedNFT.attributes.length - 3} more
-                          </Badge>
-                        )}
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-400 text-center">Attributes</p>
+                        <div className="flex flex-wrap gap-1 justify-center">
+                          {selectedNFT.attributes.slice(0, 3).map((attr, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs bg-slate-600/50 border-purple-500/30 text-purple-300">
+                              {attr.trait_type}: {attr.value}
+                            </Badge>
+                          ))}
+                          {selectedNFT.attributes.length > 3 && (
+                            <Badge variant="outline" className="text-xs bg-slate-600/50 border-gray-500/30 text-gray-300">
+                              +{selectedNFT.attributes.length - 3} more
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1031,7 +994,7 @@ export function ProfileView() {
         </Card>
 
         {/* XP System Card */}
-        <Card className="w-full max-w-2xl bg-slate-800/60 border-purple-500/30 mb-8">
+        <Card className="w-full max-w-4xl bg-slate-800/60 border-purple-500/30 mb-8">
           <CardHeader>
             <CardTitle className="text-purple-400 flex items-center gap-2">
               <Zap className="w-6 h-6" />
@@ -1079,7 +1042,7 @@ export function ProfileView() {
               </div>
 
               {/* XP Breakdown */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="text-center p-3 bg-slate-700/30 rounded-lg">
                   <BookOpen className="w-6 h-6 text-cyan-400 mx-auto mb-2" />
                   <p className="text-cyan-400 font-semibold">{completedCourses.length}</p>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useDisplayNameReadOnly } from '@/hooks/use-display-name';
 import { supabase, Message, NewMessage } from '@/lib/supabase';
 import MessageBubble from './MessageBubble';
 import { Button } from '@/components/ui/button';
@@ -18,9 +19,11 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [currentUser, setCurrentUser] = useState<string>('');
-  const [currentUserDisplayName, setCurrentUserDisplayName] = useState<string>('');
   const [resolvedNames, setResolvedNames] = useState<Record<string, string>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Use the global display name hook
+  const { displayName: currentUserDisplayName } = useDisplayNameReadOnly();
 
   // Get current user's wallet address and display name from database
   useEffect(() => {
@@ -33,19 +36,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         
         if (walletAddress) {
           setCurrentUser(walletAddress);
-          
-          // Get user data from database
-          const response = await fetch(`/api/users/?walletAddress=${walletAddress}`);
-          if (response.ok) {
-            const userData = await response.json();
-            if (userData) {
-              setCurrentUserDisplayName(userData.display_name || `User ${walletAddress.slice(0, 6)}...`);
-            } else {
-              setCurrentUserDisplayName(`User ${walletAddress.slice(0, 6)}...`);
-            }
-          } else {
-            setCurrentUserDisplayName(`User ${walletAddress.slice(0, 6)}...`);
-          }
+          // Display name is now handled by the global hook
         }
       } catch (error) {
         console.error('Error loading user data:', error);

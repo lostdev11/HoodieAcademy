@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useDisplayNameReadOnly } from '@/hooks/use-display-name'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -155,7 +156,8 @@ export default function HoodieAcademy() {
   const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
   const [snsDomain, setSnsDomain] = useState<string | null>(null);
   const [isLoadingSns, setIsLoadingSns] = useState(false);
-  const [userDisplayName, setUserDisplayName] = useState<string | null>(null);
+  // Use the global display name hook
+  const { displayName: userDisplayName } = useDisplayNameReadOnly();
 
   useEffect(() => {
     // Get wallet address from localStorage
@@ -173,11 +175,7 @@ export default function HoodieAcademy() {
           console.log('Main page: Resolved SNS name:', resolvedName);
           setSnsDomain(resolvedName);
           
-          // Also set user display name if not already set
-          const customDisplayName = localStorage.getItem('userDisplayName');
-          if (!customDisplayName && resolvedName) {
-            setUserDisplayName(resolvedName);
-          }
+          // Display name is now handled by the global hook
         } catch (error) {
           console.error('Main page: Error resolving SNS domain:', error);
           setSnsDomain(null);

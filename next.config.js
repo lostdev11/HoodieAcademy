@@ -13,7 +13,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['images.unsplash.com', 'via.placeholder.com'],
+    domains: ['images.unsplash.com', 'via.placeholder.com', 'arweave.net'],
   },
   experimental: {
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
