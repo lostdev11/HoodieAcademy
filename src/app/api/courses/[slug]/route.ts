@@ -11,41 +11,98 @@ export async function GET(
 ) {
   try {
     const { slug } = params;
+    const { searchParams } = new URL(request.url);
+    const walletAddress = searchParams.get('wallet_address');
     console.log('API: Loading course:', slug);
     
-    // First try to get from database
+    // Create Supabase client - use service key if wallet_address is provided (admin mode)
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      walletAddress ? process.env.SUPABASE_SERVICE_ROLE_KEY! : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
-    const { data: { user } } = await supabase.auth.getUser();
-    let isAdmin = false;
     
-    if (user) {
-      const { data: userData } = await supabase
+    let isAdmin = false;
+    let userSquad = null;
+    
+    // Get user info if wallet address provided
+    if (walletAddress) {
+      const { data: user, error: userError } = await supabase
         .from('users')
-        .select('is_admin')
-        .eq('id', user.id)
+        .select('squad_id, is_admin')
+        .eq('wallet_address', walletAddress)
         .single();
-      
-      isAdmin = userData?.is_admin || false;
+
+      if (user && !userError) {
+        userSquad = user.squad_id;
+        isAdmin = user.is_admin || false;
+      }
+    } else {
+      // Try auth-based user lookup
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_admin, squad_id')
+          .eq('id', user.id)
+          .single();
+        
+        isAdmin = userData?.is_admin || false;
+        userSquad = userData?.squad_id;
+      }
     }
 
-    // Try database first
+    // Try to fetch by ID first (if slug looks like a UUID), then by slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+    
     let query = supabase
       .from('courses')
-      .select('*')
-      .eq('slug', slug);
-
-    if (!isAdmin) {
-      query = query.eq('is_published', true);
+      .select(`
+        *,
+        course_sections (
+          id,
+          title,
+          description,
+          content,
+          order_index,
+          estimated_duration,
+          is_required
+        )
+      `);
+    
+    if (isUUID) {
+      query = query.eq('id', slug);
+    } else {
+      query = query.eq('slug', slug);
     }
 
     const { data: dbCourse, error: dbError } = await query.single();
 
     if (dbCourse && !dbError) {
+      // Check access permissions
+      if (!isAdmin) {
+        // Check if course is published and not hidden
+        if (!dbCourse.is_published || dbCourse.is_hidden) {
+          return NextResponse.json(
+            { error: 'Course not available' },
+            { status: 403 }
+          );
+        }
+
+        // Check squad access
+        if (dbCourse.squad_id !== userSquad && dbCourse.squad_id !== 'all') {
+          return NextResponse.json(
+            { error: 'Access denied: Course not available for your squad' },
+            { status: 403 }
+          );
+        }
+      }
+
       console.log('API: Course loaded from database:', dbCourse.title);
-      return NextResponse.json(dbCourse);
+      return NextResponse.json({
+        course: dbCourse,
+        userSquad,
+        isAdmin
+      });
     }
 
     // Fallback to file-based loading
@@ -87,6 +144,104 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { slug: string } }
+) {
+  try {
+    const body = await request.json();
+    const { 
+      title, 
+      description, 
+      content, 
+      squad_id, 
+      squad_name, 
+      difficulty_level, 
+      estimated_duration, 
+      xp_reward, 
+      tags, 
+      prerequisites,
+      is_published,
+      is_hidden,
+      updated_by 
+    } = body;
+
+    if (!updated_by) {
+      return NextResponse.json(
+        { error: 'Updated_by is required' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // Check if user is admin
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('wallet_address', updated_by)
+      .single();
+
+    if (userError || !user?.is_admin) {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Update course
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (content !== undefined) updateData.content = content;
+    if (squad_id !== undefined) updateData.squad_id = squad_id;
+    if (squad_name !== undefined) updateData.squad_name = squad_name;
+    if (difficulty_level !== undefined) updateData.difficulty_level = difficulty_level;
+    if (estimated_duration !== undefined) updateData.estimated_duration = estimated_duration;
+    if (xp_reward !== undefined) updateData.xp_reward = xp_reward;
+    if (tags !== undefined) updateData.tags = tags;
+    if (prerequisites !== undefined) updateData.prerequisites = prerequisites;
+    if (is_published !== undefined) updateData.is_published = is_published;
+    if (is_hidden !== undefined) updateData.is_hidden = is_hidden;
+
+    // Check if slug is UUID (ID) or actual slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.slug);
+    
+    const { data: course, error } = await supabase
+      .from('courses')
+      .update(updateData)
+      .eq(isUUID ? 'id' : 'slug', params.slug)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating course:', error);
+      return NextResponse.json(
+        { error: 'Failed to update course' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      course
+    });
+
+  } catch (error) {
+    console.error('Error in PUT /api/courses/[slug]:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { slug: string } }
@@ -115,6 +270,9 @@ export async function PATCH(
 
     const body = await request.json();
     
+    // Check if slug is UUID (ID) or actual slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.slug);
+    
     // Handle both database updates and file-based updates
     if (body.slug) {
       // Database update
@@ -123,7 +281,7 @@ export async function PATCH(
       const { data: course, error } = await supabase
         .from('courses')
         .update(validatedData)
-        .eq('slug', params.slug)
+        .eq(isUUID ? 'id' : 'slug', params.slug)
         .select()
         .single();
 
@@ -161,7 +319,7 @@ export async function PATCH(
       const { error } = await supabase
         .from("courses")
         .update(patch)
-        .eq("slug", params.slug);
+        .eq(isUUID ? 'id' : 'slug', params.slug);
 
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ ok: true });
@@ -181,44 +339,65 @@ export async function DELETE(
   { params }: { params: { slug: string } }
 ) {
   try {
+    const { searchParams } = new URL(request.url);
+    const deletedBy = searchParams.get('deleted_by');
+
+    if (!deletedBy) {
+      return NextResponse.json(
+        { error: 'Deleted_by is required' },
+        { status: 400 }
+      );
+    }
+
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
-    
-    // Check if user is admin
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
-    const { data: userData } = await supabase
+    // Check if user is admin
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('is_admin')
-      .eq('id', user.id)
+      .eq('wallet_address', deletedBy)
       .single();
 
-    if (!userData?.is_admin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    if (userError || !user?.is_admin) {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
     }
 
-    // Delete course from database (this will cascade to course_progress due to foreign key)
+    // Check if slug is UUID (ID) or actual slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.slug);
+
+    // Delete course (cascade will handle related records)
     const { error } = await supabase
       .from('courses')
       .delete()
-      .eq('slug', params.slug);
+      .eq(isUUID ? 'id' : 'slug', params.slug);
 
     if (error) {
       console.error('Error deleting course:', error);
-      return NextResponse.json({ error: 'Failed to delete course' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to delete course' },
+        { status: 500 }
+      );
     }
 
     // Revalidate courses cache
     revalidateTag('courses');
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      message: 'Course deleted successfully'
+    });
+
   } catch (error) {
-    console.error('Error in course DELETE:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error in DELETE /api/courses/[slug]:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
