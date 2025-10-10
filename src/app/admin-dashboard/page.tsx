@@ -23,6 +23,7 @@ import CouncilNoticesManager from '@/components/admin/CouncilNoticesManager';
 import AnnouncementsManager from '@/components/admin/AnnouncementsManager';
 import SpotlightManager from '@/components/admin/SpotlightManager';
 import UserFeedbackManager from '@/components/admin/UserFeedbackManager';
+import ExamApprovalManager from '@/components/admin/ExamApprovalManager';
 
 interface Bounty {
   id?: string;
@@ -51,6 +52,7 @@ export default function AdminDashboardPage() {
       'overview': 'Overview',
       'bounties': 'Bounties',
       'submissions': 'Submissions',
+      'exams': 'Exam Approval',
       'bounty-xp': 'Bounty XP',
       'xp-management': 'XP Management',
       'users': 'Users',
@@ -196,6 +198,7 @@ export default function AdminDashboardPage() {
                     {activeTab === 'overview' && <BarChart3 className="w-4 h-4" />}
                     {activeTab === 'bounties' && <Target className="w-4 h-4" />}
                     {activeTab === 'submissions' && <FileText className="w-4 h-4" />}
+                    {activeTab === 'exams' && <Trophy className="w-4 h-4" />}
                     {activeTab === 'bounty-xp' && <Zap className="w-4 h-4" />}
                     {activeTab === 'xp-management' && <Star className="w-4 h-4" />}
                     {activeTab === 'users' && <Users className="w-4 h-4" />}
@@ -225,6 +228,12 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center space-x-2">
                     <FileText className="w-4 h-4" />
                     <span>Submissions</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="exams">
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="w-4 h-4" />
+                    <span>Exam Approval</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="bounty-xp">
@@ -396,6 +405,10 @@ export default function AdminDashboardPage() {
           {/* Submissions Tab */}
           <TabsContent value="submissions">
             <SubmissionApproval walletAddress={walletAddress} />
+          </TabsContent>
+
+          <TabsContent value="exams">
+            <ExamApprovalManager adminWallet={walletAddress || ''} />
           </TabsContent>
 
           {/* Bounty XP Tab */}

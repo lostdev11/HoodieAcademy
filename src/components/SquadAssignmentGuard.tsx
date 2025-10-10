@@ -36,50 +36,86 @@ export default function SquadAssignmentGuard({ children }: SquadAssignmentGuardP
         return;
       }
 
+      console.log('[SQUAD GUARD] Checking squad for wallet:', walletAddress);
+
       // Show cached squad immediately for UX
+      const cachedSquad = getSquadNameFromCache();
+      if (cachedSquad) {
+        console.log('[SQUAD GUARD] Found cached squad:', cachedSquad);
+        setUserSquad(cachedSquad);
+        setIsLoading(false); // Don't wait for DB if we have cache
+      }
+      
+      // Always fetch from database (source of truth)
+      try {
+        console.log('[SQUAD GUARD] Fetching squad from database...');
+        const squadData = await fetchUserSquad(walletAddress);
+        
+        console.log('[SQUAD GUARD] Database response:', squadData);
+        
+        if (squadData && squadData.hasSquad && squadData.squad) {
+          console.log('[SQUAD GUARD] User has squad:', squadData.squad.name);
+          setUserSquad(squadData.squad.name);
+          setHasCheckedDatabase(true);
+          setIsLoading(false);
+        } else {
+          // No squad in database
+          console.log('[SQUAD GUARD] No squad found in database');
+          setUserSquad(null);
+          setHasCheckedDatabase(true);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('[SQUAD GUARD] Error checking squad status:', error);
+        // Fall back to cached data if available
+        if (!cachedSquad) {
+          setUserSquad(null);
+        }
+        setHasCheckedDatabase(true);
+        setIsLoading(false);
+      }
+    };
+
+    checkSquadStatus();
+    
+    // Listen for storage changes (when squad is updated in another tab or by choose-your-squad page)
+    const handleStorageChange = () => {
+      console.log('[SQUAD GUARD] Storage changed, refreshing squad...');
       const cachedSquad = getSquadNameFromCache();
       if (cachedSquad) {
         setUserSquad(cachedSquad);
       }
-      
-      // Fetch from database (source of truth)
-      if (!hasCheckedDatabase) {
-        try {
-          const squadData = await fetchUserSquad(walletAddress);
-          
-          if (squadData && squadData.hasSquad && squadData.squad) {
-            setUserSquad(squadData.squad.name);
-          } else {
-            // No squad in database
-            setUserSquad(null);
-          }
-        } catch (error) {
-          console.error('Error checking squad status:', error);
-          // Fall back to cached data if available
-          if (!cachedSquad) {
-            setUserSquad(null);
-          }
-        }
-        setHasCheckedDatabase(true);
-      }
-
-      setIsLoading(false);
     };
-
-    checkSquadStatus();
-  }, [walletAddress, hasCheckedDatabase]);
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [walletAddress]);
 
   useEffect(() => {
     // Normalize pathname to handle trailing slashes
     const normalizedPathname = pathname.replace(/\/$/, '');
     
+    console.log('[SQUAD GUARD] Path check:', {
+      pathname: normalizedPathname,
+      walletAddress: !!walletAddress,
+      userSquad,
+      isLoading,
+      hasCheckedDatabase,
+      isAllowedPath: allowedPaths.includes(normalizedPathname)
+    });
+    
     // If user has wallet but no squad and is trying to access ANY page except allowed paths
-    if (walletAddress && !userSquad && !isLoading && !allowedPaths.includes(normalizedPathname)) {
+    // AND we've finished checking the database
+    if (walletAddress && !userSquad && !isLoading && hasCheckedDatabase && !allowedPaths.includes(normalizedPathname)) {
+      console.log('[SQUAD GUARD] Showing squad assignment prompt');
       setShowSquadAssignment(true);
     } else {
       setShowSquadAssignment(false);
     }
-  }, [pathname, userSquad, isLoading, walletAddress]);
+  }, [pathname, userSquad, isLoading, walletAddress, hasCheckedDatabase]);
 
   if (isLoading) {
     return (

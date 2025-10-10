@@ -229,6 +229,16 @@ export default function ChooseYourSquadPage() {
 
       localStorage.setItem('placementTestCompleted', 'true');
       
+      // Update localStorage cache for immediate effect
+      localStorage.setItem('userSquad', JSON.stringify({
+        name: selectedSquad.name,
+        id: selectedSquad.id,
+        selectedAt: new Date().toISOString()
+      }));
+      
+      // Trigger storage event for other tabs/components
+      window.dispatchEvent(new Event('storage'));
+      
       // Redirect to home page
       router.push('/');
       
