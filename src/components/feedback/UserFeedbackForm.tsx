@@ -140,23 +140,36 @@ export default function UserFeedbackForm({ walletAddress, className = "" }: User
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {CATEGORY_OPTIONS.map((option) => {
                   const Icon = option.icon;
+                  console.log('🔄 Rendering button for:', option.value);
                   return (
-                  <button
+                  <div
                     key={option.value}
-                    type="button"
                     onClick={(e) => {
-                      console.log('🔘 Category button clicked:', option.value);
+                      console.log('🔘 DIV clicked:', option.value);
                       e.preventDefault();
                       e.stopPropagation();
                       setCategory(option.value);
+                    }}
+                    onMouseDown={(e) => {
+                      console.log('🖱️ MOUSE DOWN on:', option.value);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        console.log('⌨️ KEYBOARD pressed:', option.value);
+                        e.preventDefault();
+                        setCategory(option.value);
+                      }
                     }}
                     className={`p-4 rounded-lg border-2 transition-all duration-200 text-left cursor-pointer ${
                       category === option.value
                         ? 'border-blue-500 bg-blue-500/10'
                         : 'border-slate-600 bg-slate-700/30 hover:border-slate-500'
                     }`}
+                    style={{ position: 'relative', zIndex: 10, pointerEvents: 'auto' }}
                   >
-                      <div className="flex items-start space-x-3">
+                      <div className="flex items-start space-x-3 pointer-events-none">
                         <Icon className={`w-5 h-5 mt-0.5 ${
                           category === option.value ? 'text-blue-400' : 'text-gray-400'
                         }`} />
@@ -171,7 +184,7 @@ export default function UserFeedbackForm({ walletAddress, className = "" }: User
                           </p>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
