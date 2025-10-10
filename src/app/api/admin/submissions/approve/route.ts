@@ -33,41 +33,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Try to get the submission from both tables
-    let submission = null;
-    let submissionError = null;
-    let submissionTable = 'submissions';
-
-    // First try the submissions table
-    const { data: regularSubmission, error: regularError } = await supabase
-      .from('submissions')
+    // Get the submission from bounty_submissions table
+    const { data: submission, error: submissionError } = await supabase
+      .from('bounty_submissions')
       .select('*')
       .eq('id', submissionId)
       .single();
-
-    if (regularSubmission) {
-      submission = regularSubmission;
-      submissionTable = 'submissions';
-    } else {
-      // If not found in submissions, try bounty_submissions table
-      const { data: bountySubmission, error: bountyError } = await supabase
-        .from('bounty_submissions')
-        .select('*')
-        .eq('id', submissionId)
-        .single();
-
-      if (bountySubmission) {
-        submission = bountySubmission;
-        submissionTable = 'bounty_submissions';
-      } else {
-        submissionError = bountyError || regularError;
-      }
-    }
 
     if (submissionError || !submission) {
       console.error('[FETCH SUBMISSION ERROR]', submissionError);
       return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
     }
+
+    const submissionTable = 'bounty_submissions';
 
     if (action === 'approve') {
       // Update the submission status to approved in the correct table
