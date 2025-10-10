@@ -57,11 +57,17 @@ export async function POST(request: NextRequest) {
 
     if (todayActivity) {
       console.log('⚠️ [DAILY LOGIN] User already received daily bonus today');
+      
+      // Calculate next available time (midnight UTC of next day)
+      const tomorrow = new Date(today);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+      tomorrow.setUTCHours(0, 0, 0, 0);
+      
       return NextResponse.json({
         success: false,
         message: 'Daily login bonus already claimed today',
         alreadyClaimed: true,
-        nextAvailable: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        nextAvailable: tomorrow.toISOString()
       });
     }
 
@@ -168,8 +174,10 @@ export async function POST(request: NextRequest) {
       levelUp
     });
 
-    // Calculate next available time (24 hours from now)
-    const nextAvailable = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Calculate next available time (midnight UTC of next day)
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    tomorrow.setUTCHours(0, 0, 0, 0);
 
     return NextResponse.json({
       success: true,
@@ -178,7 +186,7 @@ export async function POST(request: NextRequest) {
       newTotalXP: newTotalXP,
       levelUp: levelUp,
       message: `Daily login bonus: +${DAILY_LOGIN_XP} XP!`,
-      nextAvailable: nextAvailable.toISOString(),
+      nextAvailable: tomorrow.toISOString(),
       // Include data for real-time updates
       refreshLeaderboard: true,
       targetWallet: walletAddress,
@@ -225,12 +233,17 @@ export async function GET(request: NextRequest) {
 
     const alreadyClaimed = !activityError && todayActivity;
 
+    // Calculate next available time (midnight UTC of next day)
+    const tomorrow = new Date(today);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    tomorrow.setUTCHours(0, 0, 0, 0);
+
     return NextResponse.json({
       walletAddress,
       today: today,
       alreadyClaimed: alreadyClaimed,
       lastClaimed: alreadyClaimed ? todayActivity.created_at : null,
-      nextAvailable: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      nextAvailable: tomorrow.toISOString(),
       dailyBonusXP: 5
     });
 
