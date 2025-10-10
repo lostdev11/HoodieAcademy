@@ -211,26 +211,26 @@ export default function BountiesGrid({
       {visibleBounties.map((bounty) => (
         <Card 
           key={bounty.id} 
-          className={`group hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 overflow-hidden bg-white border-2 ${
-            bounty.hidden ? 'opacity-60 border-dashed' : 'border-gray-200 hover:border-purple-400'
+          className={`group hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] hover:-translate-y-2 transition-all duration-300 overflow-hidden bg-slate-800/50 border ${
+            bounty.hidden ? 'opacity-60 border-dashed border-gray-500' : 'border-cyan-500/30 hover:border-cyan-500/60'
           }`}
         >
-          <CardHeader className="pb-3 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 group-hover:from-purple-500/20 group-hover:to-cyan-500/20 transition-all duration-300">
+          <CardHeader className="pb-3 bg-gradient-to-r from-purple-900/30 to-cyan-900/30 group-hover:from-purple-900/50 group-hover:to-cyan-900/50 transition-all duration-300 border-b border-cyan-500/20">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <CardTitle className="text-xl font-bold mb-2 flex items-center gap-2 text-gray-800 group-hover:text-purple-600 transition-colors">
+                <CardTitle className="text-xl font-bold mb-2 flex items-center gap-2 text-cyan-400 group-hover:text-cyan-300 transition-colors">
                   <span className="truncate">{bounty.title}</span>
                   {bounty.hidden && (
                     <EyeOff className="w-4 h-4 text-gray-500 flex-shrink-0" />
                   )}
                 </CardTitle>
-                <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                  <Target className="w-4 h-4 flex-shrink-0 text-purple-500" />
+                <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                  <Target className="w-4 h-4 flex-shrink-0 text-purple-400" />
                   <span className="capitalize truncate font-medium">{bounty.squad_tag || 'All Squads'}</span>
                 </div>
               </div>
               <Badge 
-                className={`${getStatusColor(bounty.status)} text-white capitalize flex-shrink-0 shadow-md px-3 py-1`}
+                className={`${getStatusColor(bounty.status)} text-white capitalize flex-shrink-0 shadow-lg px-3 py-1`}
               >
                 {bounty.status}
               </Badge>
@@ -238,34 +238,34 @@ export default function BountiesGrid({
           </CardHeader>
           
           <CardContent className="overflow-hidden">
-            <p className="text-gray-700 mb-6 line-clamp-3 break-words leading-relaxed">
+            <p className="text-gray-300 mb-6 line-clamp-3 break-words leading-relaxed">
               {bounty.short_desc}
             </p>
             
             <div className="space-y-3 mb-6">
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Award className="w-5 h-5 text-green-600" />
+              <div className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                <div className="flex items-center gap-2 text-sm text-green-300">
+                  <Award className="w-5 h-5 text-green-400" />
                   <span className="font-medium">Reward</span>
                 </div>
-                <span className="font-bold text-green-600 text-lg">{bounty.reward}</span>
+                <span className="font-bold text-green-400 text-lg">{bounty.reward}</span>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Users className="w-5 h-5 text-blue-600" />
+              <div className="flex items-center justify-between p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/30">
+                <div className="flex items-center gap-2 text-sm text-cyan-300">
+                  <Users className="w-5 h-5 text-cyan-400" />
                   <span className="font-medium">Submissions</span>
                 </div>
-                <span className="font-bold text-blue-600">{bounty.submissions}</span>
+                <span className="font-bold text-cyan-400">{bounty.submissions}</span>
               </div>
               
-              <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-200">
-                <div className="flex items-center gap-2 text-sm text-gray-700">
-                  <Clock className="w-5 h-5 text-orange-600" />
+              <div className="flex items-center justify-between p-3 bg-orange-500/10 rounded-lg border border-orange-500/30">
+                <div className="flex items-center gap-2 text-sm text-orange-300">
+                  <Clock className="w-5 h-5 text-orange-400" />
                   <span className="font-medium">Deadline</span>
                 </div>
                 <span className={`font-bold ${
-                  isDeadlineNear(bounty.deadline) ? 'text-red-600 animate-pulse' : 'text-gray-700'
+                  isDeadlineNear(bounty.deadline) ? 'text-red-400 animate-pulse' : 'text-orange-400'
                 }`}>
                   {formatDeadline(bounty.deadline)}
                 </span>
@@ -276,8 +276,8 @@ export default function BountiesGrid({
             {bounty.status === 'active' && (
               <div className="mt-6 space-y-3">
                 {!walletAddress ? (
-                  <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-cyan-50 rounded-lg border-2 border-purple-200">
-                    <p className="text-sm text-gray-700 mb-3 font-medium">🔒 Connect your wallet to submit</p>
+                  <div className="text-center p-4 bg-slate-700/50 rounded-lg border border-purple-500/30">
+                    <p className="text-sm text-gray-300 mb-3 font-medium">🔒 Connect your wallet to submit</p>
                     <Button 
                       size="sm"
                       onClick={() => {
@@ -286,14 +286,14 @@ export default function BountiesGrid({
                           window.solana.connect();
                         }
                       }}
-                      className="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white font-semibold shadow-md"
+                      className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold shadow-[0_0_20px_rgba(6,182,212,0.3)]"
                     >
                       Connect Wallet
                     </Button>
                   </div>
                 ) : userSubmissions[bounty.id] ? (
-                  <div className="text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-300">
-                    <div className="flex items-center justify-center gap-2 text-green-700 mb-3">
+                  <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+                    <div className="flex items-center justify-center gap-2 text-green-400 mb-3">
                       <CheckCircle className="w-5 h-5" />
                       <span className="text-sm font-bold">Submission Submitted! ✨</span>
                     </div>
@@ -301,10 +301,10 @@ export default function BountiesGrid({
                       variant="outline" 
                       className={`text-sm font-semibold px-4 py-1 ${
                         userSubmissions[bounty.id].status === 'approved' 
-                          ? 'border-green-500 text-green-700 bg-green-100' 
+                          ? 'border-green-500/50 text-green-400 bg-green-500/20' 
                           : userSubmissions[bounty.id].status === 'rejected'
-                          ? 'border-red-500 text-red-700 bg-red-100'
-                          : 'border-yellow-500 text-yellow-700 bg-yellow-100'
+                          ? 'border-red-500/50 text-red-400 bg-red-500/20'
+                          : 'border-yellow-500/50 text-yellow-400 bg-yellow-500/20'
                       }`}
                     >
                       {userSubmissions[bounty.id].status.toUpperCase()}
@@ -323,14 +323,14 @@ export default function BountiesGrid({
             {bounty.link_to && (
               <Button 
                 variant="outline" 
-                className="w-full mt-4 border-purple-300 text-purple-600 hover:bg-purple-50 hover:border-purple-400 font-medium"
+                className="w-full mt-4 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/60 font-medium"
                 onClick={() => window.open(bounty.link_to!, '_blank')}
               >
                 View Details →
               </Button>
             )}
             
-            <div className="text-xs text-gray-500 mt-4 text-center border-t pt-3 border-gray-200">
+            <div className="text-xs text-gray-500 mt-4 text-center border-t pt-3 border-slate-700/50">
               Created {new Date(bounty.created_at).toLocaleDateString()}
             </div>
           </CardContent>
@@ -468,15 +468,15 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
   const canSubmit = submissionText.trim() && (!requiresImage || selectedFile);
 
   return (
-    <div className="space-y-4 p-4 bg-gradient-to-br from-gray-50 to-white rounded-lg border-2 border-gray-200">
+    <div className="space-y-4 p-4 bg-slate-700/30 rounded-lg border border-cyan-500/20">
       {/* Text Submission */}
       <div>
-        <label className="text-xs font-semibold text-gray-700 mb-2 block">📝 Your Submission</label>
+        <label className="text-xs font-semibold text-cyan-400 mb-2 block">📝 Your Submission</label>
         <textarea
           placeholder="Describe your submission or paste a link..."
           value={submissionText}
           onChange={(e) => setSubmissionText(e.target.value)}
-          className="w-full p-3 text-sm border-2 border-gray-300 rounded-lg resize-none break-words overflow-wrap-anywhere bg-white text-gray-900 placeholder:text-gray-500 focus:text-gray-900 focus:bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200 transition-all"
+          className="w-full p-3 text-sm border border-slate-600 rounded-lg resize-none break-words overflow-wrap-anywhere bg-slate-800/50 text-gray-200 placeholder:text-gray-500 focus:text-gray-100 focus:bg-slate-800 focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 transition-all"
           rows={3}
         />
       </div>
@@ -484,8 +484,8 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
       {/* Image Upload Section */}
       {requiresImage && (
         <div className="space-y-3">
-          <label className="text-xs font-semibold text-gray-700 flex items-center gap-2">
-            <ImageIcon className="w-4 h-4 text-purple-600" />
+          <label className="text-xs font-semibold text-cyan-400 flex items-center gap-2">
+            <ImageIcon className="w-4 h-4 text-cyan-400" />
             {bounty.image_required ? '📷 Upload Image (Required)' : '📷 Upload Image (Optional)'}
           </label>
           
@@ -496,12 +496,12 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
             className={`
               relative border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 cursor-pointer
               ${isDragOver 
-                ? 'border-cyan-500 bg-gradient-to-br from-cyan-500/20 to-cyan-400/20 scale-105' 
+                ? 'border-cyan-500 bg-cyan-500/20 scale-105' 
                 : isUploading 
-                  ? 'border-blue-500 bg-gradient-to-br from-blue-500/20 to-blue-400/20' 
+                  ? 'border-blue-500 bg-blue-500/10' 
                   : selectedFile 
-                    ? 'border-green-500 bg-gradient-to-br from-green-500/20 to-emerald-400/20' 
-                    : 'border-purple-400 bg-gradient-to-br from-purple-500/10 to-pink-500/10 hover:border-purple-500 hover:from-purple-500/20 hover:to-pink-500/20 hover:scale-105'
+                    ? 'border-green-500 bg-green-500/10' 
+                    : 'border-purple-500/50 bg-purple-500/5 hover:border-purple-500 hover:bg-purple-500/10 hover:scale-105'
               }
             `}
           >
@@ -517,36 +517,36 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
             
             <label htmlFor={`file-upload-${bounty.id}`} className="cursor-pointer block">
               {isUploading ? (
-                <div className="flex flex-col items-center gap-3 text-blue-600">
-                  <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="flex flex-col items-center gap-3 text-blue-400">
+                  <div className="w-10 h-10 border-3 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
                   <span className="text-sm font-semibold">Uploading Image...</span>
-                  <span className="text-xs text-blue-500">Please wait</span>
+                  <span className="text-xs text-blue-300">Please wait</span>
                 </div>
               ) : selectedFile ? (
-                <div className="flex flex-col items-center gap-2 text-green-600">
+                <div className="flex flex-col items-center gap-2 text-green-400">
                   <ImageIcon className="w-8 h-8" />
                   <span className="text-sm font-bold">✅ Image Ready!</span>
-                  <span className="text-xs text-green-600 opacity-80">Click to change</span>
+                  <span className="text-xs text-green-300 opacity-80">Click to change</span>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2 text-purple-600">
+                <div className="flex flex-col items-center gap-2 text-purple-400">
                   <Upload className="w-8 h-8" />
                   <span className="text-sm font-bold">Upload Image</span>
-                  <span className="text-xs text-purple-500">Click or drag & drop</span>
+                  <span className="text-xs text-purple-300">Click or drag & drop</span>
                 </div>
               )}
             </label>
             
             {isDragOver && (
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/30 to-cyan-400/30 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <div className="text-cyan-700 font-bold text-sm">📥 Drop your image here!</div>
+              <div className="absolute inset-0 bg-cyan-500/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <div className="text-cyan-300 font-bold text-sm">📥 Drop your image here!</div>
               </div>
             )}
           </div>
 
           {/* Upload Status */}
           {!isUploading && uploadSuccess && selectedFile && (
-            <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 p-3 rounded-lg border border-green-200">
+            <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 p-3 rounded-lg border border-green-500/30">
               <div className="w-5 h-5 flex items-center justify-center bg-green-500 rounded-full text-white font-bold">
                 <span className="text-xs">✓</span>
               </div>
@@ -555,7 +555,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
           )}
           
           {!isUploading && uploadError && !uploadSuccess && (
-            <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 p-3 rounded-lg border border-red-200">
+            <div className="flex items-center gap-2 text-sm text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/30">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span className="font-medium">{uploadError}</span>
             </div>
@@ -563,7 +563,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
 
           {/* Image Preview */}
           {imagePreview && (
-            <div className="relative rounded-lg overflow-hidden border-2 border-green-300 shadow-md">
+            <div className="relative rounded-lg overflow-hidden border-2 border-green-500/50 shadow-md">
               <img
                 src={imagePreview}
                 alt="Preview"
@@ -582,7 +582,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
       <Button
         onClick={() => onSubmit(bounty.id, uploadedImageUrl)}
         disabled={!canSubmit || isSubmitting}
-        className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white font-bold py-3 text-sm shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 text-sm shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? (
           <div className="flex items-center justify-center gap-2">
