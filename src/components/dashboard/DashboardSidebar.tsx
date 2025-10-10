@@ -278,7 +278,11 @@ const sidebarItems: SidebarItem[] = [
         {sidebarItems.map((item) => {
           const isActive = pathname === item.href || (item.dynamic && pathname.includes('/squads/') && pathname.includes('/chat'));
           return (
-            <Link key={item.id} href={item.href}>
+            <Link 
+              key={item.id} 
+              href={item.href}
+              onClick={() => console.log(`🔗 DashboardSidebar: Navigating to ${item.href} (${item.label})`)}
+            >
               <Button
                 variant={isActive ? 'default' : 'ghost'}
                 className={`w-full justify-start transition-all duration-200 ${

@@ -254,7 +254,14 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
               {navItems.map((item) => {
                 const isActive = pathname === item.href || (item.dynamic && pathname.includes('/squads/') && pathname.includes('/chat'));
                 return (
-                  <Link key={item.id} href={item.href} onClick={() => setIsOpen(false)}>
+                  <Link 
+                    key={item.id} 
+                    href={item.href} 
+                    onClick={() => {
+                      console.log(`📱 MobileNavigation: Navigating to ${item.href} (${item.label})`);
+                      setIsOpen(false);
+                    }}
+                  >
                     <Button
                       variant={isActive ? 'default' : 'ghost'}
                       className={`w-full justify-start transition-all duration-200 ${
