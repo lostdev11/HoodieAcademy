@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -357,21 +357,32 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
       {/* Main Dashboard Tabs */}
       <Tabs defaultValue="bounties" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
-          <TabsTrigger value="bounties" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+          <TabsTrigger 
+            value="bounties" 
+            className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400 cursor-pointer transition-all hover:bg-cyan-500/10"
+          >
             <Target className="w-4 h-4 mr-2" />
             Bounties
+            {bountiesLoading && <RefreshCw className="w-3 h-3 ml-2 animate-spin" />}
           </TabsTrigger>
-          <TabsTrigger value="squad" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
+          <TabsTrigger 
+            value="squad" 
+            className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400 cursor-pointer transition-all hover:bg-purple-500/10"
+          >
             <Users className="w-4 h-4 mr-2" />
             Squad
           </TabsTrigger>
-          <TabsTrigger value="xp" className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400">
+          <TabsTrigger 
+            value="xp" 
+            className="data-[state=active]:bg-yellow-500/20 data-[state=active]:text-yellow-400 cursor-pointer transition-all hover:bg-yellow-500/10"
+          >
             <TrendingUp className="w-4 h-4 mr-2" />
             XP & Progress
+            {xpLoading && <RefreshCw className="w-3 h-3 ml-2 animate-spin" />}
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="bounties" className="space-y-4">
+        <TabsContent value="bounties" className="space-y-4" forceMount={false}>
           <BountiesSection 
             submissions={bountySubmissions}
             stats={bountyStats}
@@ -379,7 +390,7 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
           />
         </TabsContent>
 
-        <TabsContent value="squad" className="space-y-4">
+        <TabsContent value="squad" className="space-y-4" forceMount={false}>
           <SquadSection 
             userSquad={userSquad}
             stats={stats}
@@ -387,7 +398,7 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
           />
         </TabsContent>
 
-        <TabsContent value="xp" className="space-y-4">
+        <TabsContent value="xp" className="space-y-4" forceMount={false}>
           <XPSection 
             profile={xpProfile}
             badges={badges}
@@ -402,7 +413,7 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
 }
 
 // Bounties Section Component
-function BountiesSection({ submissions, stats, walletAddress }: {
+const BountiesSection = memo(function BountiesSection({ submissions, stats, walletAddress }: {
   submissions: any[];
   stats: any;
   walletAddress: string;
@@ -496,10 +507,10 @@ function BountiesSection({ submissions, stats, walletAddress }: {
       </Card>
     </div>
   );
-}
+});
 
 // Squad Section Component
-function SquadSection({ userSquad, stats, walletAddress }: {
+const SquadSection = memo(function SquadSection({ userSquad, stats, walletAddress }: {
   userSquad: string | null;
   stats: DashboardStats;
   walletAddress: string;
@@ -596,10 +607,10 @@ function SquadSection({ userSquad, stats, walletAddress }: {
       </Card>
     </div>
   );
-}
+});
 
 // XP Section Component
-function XPSection({ profile, badges, stats, walletAddress, refreshXP }: {
+const XPSection = memo(function XPSection({ profile, badges, stats, walletAddress, refreshXP }: {
   profile: any;
   badges: any[];
   stats: DashboardStats;
@@ -715,5 +726,4 @@ function XPSection({ profile, badges, stats, walletAddress, refreshXP }: {
       </Card>
     </div>
   );
-}
-
+});
