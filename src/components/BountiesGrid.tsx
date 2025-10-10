@@ -104,24 +104,44 @@ export default function BountiesGrid({
   }, [walletAddress, bounties]);
 
   const handleSubmitBounty = async (bountyId: string, imageUrl?: string) => {
-    if (!walletAddress || !submissionText[bountyId]?.trim()) return;
+    if (!walletAddress || !submissionText[bountyId]?.trim()) {
+      console.error('❌ Cannot submit - missing wallet or text:', {
+        walletAddress,
+        submissionText: submissionText[bountyId]
+      });
+      return;
+    }
 
     setSubmittingBounty(bountyId);
+    
+    const requestData = {
+      submission: submissionText[bountyId],
+      walletAddress,
+      submissionType: imageUrl ? 'both' : 'text',
+      imageUrl: imageUrl || undefined
+    };
+    
+    console.log('📤 Submitting bounty to API:', {
+      bountyId,
+      url: `/api/bounties/${bountyId}/submit/`,
+      data: requestData
+    });
+    
     try {
       const response = await fetch(`/api/bounties/${bountyId}/submit/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          submission: submissionText[bountyId],
-          walletAddress,
-          submissionType: imageUrl ? 'both' : 'text',
-          imageUrl: imageUrl || undefined
-        })
+        body: JSON.stringify(requestData)
       });
 
+      console.log('📥 API Response status:', response.status);
+
       const result = await response.json();
+      console.log('📥 API Response data:', result);
       
       if (response.ok) {
+        console.log('✅ Bounty submitted successfully!');
+        
         // Update user submissions
         setUserSubmissions(prev => ({
           ...prev,
@@ -141,13 +161,14 @@ export default function BountiesGrid({
             : bounty
         ));
         
-        alert('Bounty submitted successfully!');
+        alert('✅ Bounty submitted successfully!');
       } else {
-        alert(result.error || 'Failed to submit bounty');
+        console.error('❌ API returned error:', result);
+        alert(`❌ ${result.error || 'Failed to submit bounty'}`);
       }
     } catch (error) {
-      console.error('Error submitting bounty:', error);
-      alert('Failed to submit bounty');
+      console.error('❌ Network error submitting bounty:', error);
+      alert(`❌ Failed to submit bounty: ${error instanceof Error ? error.message : 'Network error'}`);
     } finally {
       setSubmittingBounty(null);
     }
