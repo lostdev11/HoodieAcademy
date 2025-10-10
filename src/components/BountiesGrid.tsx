@@ -465,7 +465,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
     }
   };
 
-  const canSubmit = submissionText.trim() && (!bounty.image_required || selectedFile);
+  const canSubmit = submissionText.trim() && (!bounty.image_required || (selectedFile && uploadSuccess));
 
   return (
     <div className="space-y-4 p-4 bg-slate-700/30 rounded-lg border border-cyan-500/20">
@@ -596,7 +596,18 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
 
       {/* Submit Button */}
       <Button
-        onClick={() => onSubmit(bounty.id, uploadedImageUrl)}
+        onClick={() => {
+          console.log('🚀 Submitting bounty:', {
+            bountyId: bounty.id,
+            submissionText: submissionText,
+            uploadedImageUrl: uploadedImageUrl,
+            canSubmit: canSubmit,
+            imageRequired: bounty.image_required,
+            selectedFile: selectedFile,
+            uploadSuccess: uploadSuccess
+          });
+          onSubmit(bounty.id, uploadedImageUrl);
+        }}
         disabled={!canSubmit || isSubmitting}
         className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 text-sm shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
@@ -612,6 +623,17 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
           </div>
         )}
       </Button>
+      
+      {/* Debug Info - Remove in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-2 p-2 bg-slate-800/50 rounded text-xs text-gray-400">
+          <div>Text: {submissionText.trim() ? '✅' : '❌'}</div>
+          <div>Image Required: {bounty.image_required ? 'Yes' : 'No'}</div>
+          <div>File Selected: {selectedFile ? '✅' : '❌'}</div>
+          <div>Upload Success: {uploadSuccess ? '✅' : '❌'}</div>
+          <div>Can Submit: {canSubmit ? '✅' : '❌'}</div>
+        </div>
+      )}
     </div>
   );
 }
