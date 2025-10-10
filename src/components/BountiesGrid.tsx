@@ -20,7 +20,6 @@ export default function BountiesGrid({
   const [bounties, setBounties] = useState<DBBounty[]>(initialBounties);
   const [userSubmissions, setUserSubmissions] = useState<{ [bountyId: string]: { status: string; submission: string } }>({});
   const [submittingBounty, setSubmittingBounty] = useState<string | null>(null);
-  const [submissionText, setSubmissionText] = useState<{ [bountyId: string]: string }>({});
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   useEffect(() => {
@@ -103,11 +102,11 @@ export default function BountiesGrid({
     fetchUserSubmissions();
   }, [walletAddress, bounties]);
 
-  const handleSubmitBounty = async (bountyId: string, imageUrl?: string) => {
-    if (!walletAddress || !submissionText[bountyId]?.trim()) {
+  const handleSubmitBounty = async (bountyId: string, submissionText: string, imageUrl?: string) => {
+    if (!walletAddress || !submissionText?.trim()) {
       console.error('❌ Cannot submit - missing wallet or text:', {
         walletAddress,
-        submissionText: submissionText[bountyId]
+        submissionText: submissionText
       });
       return;
     }
@@ -115,7 +114,7 @@ export default function BountiesGrid({
     setSubmittingBounty(bountyId);
     
     const requestData = {
-      submission: submissionText[bountyId],
+      submission: submissionText,
       walletAddress,
       submissionType: imageUrl ? 'both' : 'text',
       imageUrl: imageUrl || undefined
@@ -146,12 +145,6 @@ export default function BountiesGrid({
         setUserSubmissions(prev => ({
           ...prev,
           [bountyId]: result.submission
-        }));
-        
-        // Clear submission text
-        setSubmissionText(prev => ({
-          ...prev,
-          [bountyId]: ''
         }));
         
         // Update bounty submissions count
@@ -364,7 +357,7 @@ export default function BountiesGrid({
 // Bounty Submission Card Component
 interface BountySubmissionCardProps {
   bounty: DBBounty;
-  onSubmit: (bountyId: string, imageUrl?: string) => void;
+  onSubmit: (bountyId: string, submissionText: string, imageUrl?: string) => void;
   isSubmitting: boolean;
 }
 
@@ -627,7 +620,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
             selectedFile: selectedFile,
             uploadSuccess: uploadSuccess
           });
-          onSubmit(bounty.id, uploadedImageUrl);
+          onSubmit(bounty.id, submissionText, uploadedImageUrl);
         }}
         disabled={!canSubmit || isSubmitting}
         className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3 text-sm shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
