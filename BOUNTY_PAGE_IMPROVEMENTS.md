@@ -2,42 +2,48 @@
 
 ## ✅ Completed Improvements
 
-Your Hoodie Academy bounty page has been completely redesigned with a modern, professional look and fully integrated image upload functionality!
+Your Hoodie Academy bounty page has been completely redesigned to match your app's dark theme with neon glow effects and fully integrated image upload functionality!
 
 ---
 
-## 🎨 Visual Improvements
+## 🎨 Visual Improvements - Dark Theme
 
 ### 1. **Hero Section with Stats**
-- **Gradient Badge**: Shows active bounty count with purple-to-cyan gradient
-- **Animated Stats Cards**: Three eye-catching cards displaying:
-  - 🎯 Total Bounties
-  - 💰 Total Rewards (calculated from all bounties)
-  - 👥 Total Submissions
-- **Hover Effects**: Cards scale up on hover for better interactivity
+- **Dark Background**: `slate-900` via `purple-900` gradient with animated pulse effects
+- **Neon Badge**: Shows active bounty count with cyan glow (`shadow-[0_0_20px_rgba(6,182,212,0.3)]`)
+- **Animated Stats Cards**: Three eye-catching cards with neon borders:
+  - 🎯 Total Bounties (purple border with glow)
+  - 💰 Total Rewards (cyan border with glow)
+  - 👥 Total Submissions (pink border with glow)
+- **Hover Effects**: Cards scale up with enhanced glow on hover
 
 ### 2. **Enhanced Bounty Cards**
-- **Gradient Headers**: Purple-to-cyan gradient backgrounds
-- **Hover Animations**: Cards lift up with shadow effects
-- **Color-Coded Info Boxes**:
-  - 💚 Green for Rewards
-  - 💙 Blue for Submissions
-  - 🧡 Orange for Deadlines (with pulse animation when deadline is near)
-- **Better Typography**: Larger, bolder titles with smooth color transitions
-- **Improved Spacing**: More breathing room between elements
+- **Dark Card Background**: `bg-slate-800/50` with `border-cyan-500/30`
+- **Gradient Headers**: Dark purple-to-cyan gradient (`from-purple-900/30 to-cyan-900/30`)
+- **Hover Animations**: Cards lift up with purple neon glow effect
+- **Color-Coded Info Boxes** (Dark Theme):
+  - 💚 Green backgrounds with green borders (`bg-green-500/10 border-green-500/30`)
+  - 💙 Cyan backgrounds with cyan borders (`bg-cyan-500/10 border-cyan-500/30`)
+  - 🧡 Orange backgrounds with orange borders (pulse animation when deadline is near)
+- **Cyan Typography**: Titles in `text-cyan-400` that transition to `text-cyan-300` on hover
+- **Neon Border Effects**: Cyan borders that glow brighter on hover
 
-### 3. **Modern Submission Form**
-- **Gradient Container**: Subtle gray-to-white gradient background
+### 3. **Modern Submission Form (Dark)**
+- **Dark Container**: `bg-slate-700/30` with `border-cyan-500/20`
 - **Enhanced Text Area**: 
-  - Purple focus ring for better visibility
-  - Larger padding for easier typing
-  - Better placeholder text
-- **Styled Labels**: Small, bold labels with emojis for clarity
+  - Dark slate background (`bg-slate-800/50`)
+  - Cyan focus ring (`focus:border-cyan-500/50 focus:ring-cyan-500/30`)
+  - Gray text with better contrast
+  - Cyan labels
+- **Styled Labels**: Cyan-colored labels with emojis for clarity
 
-### 4. **Better Status Indicators**
-- **Connect Wallet**: Purple-to-cyan gradient button with lock icon
-- **Submitted**: Green gradient background with checkmark
-- **Status Badge**: Color-coded badges (green=approved, red=rejected, yellow=pending)
+### 4. **Better Status Indicators (Dark)**
+- **Connect Wallet**: Cyan button with neon glow effect
+- **Submitted**: Green background with green border in dark theme
+- **Status Badge**: Color-coded badges with semi-transparent backgrounds
+  - Approved: `bg-green-500/20 border-green-500/50 text-green-400`
+  - Rejected: `bg-red-500/20 border-red-500/50 text-red-400`
+  - Pending: `bg-yellow-500/20 border-yellow-500/50 text-yellow-400`
 
 ---
 
@@ -161,17 +167,21 @@ All improvements are fully responsive:
 
 ---
 
-## 🎨 Color Palette
+## 🎨 Color Palette (Dark Theme)
 
-The new design uses a consistent, modern color scheme:
+The design matches your app's dark theme with neon accents:
 
-- **Primary**: Purple (`#9333ea`) to Cyan (`#06b6d4`)
-- **Success**: Green (`#10b981`)
-- **Warning**: Orange (`#f97316`)
-- **Error**: Red (`#ef4444`)
-- **Info**: Blue (`#3b82f6`)
+- **Background**: Slate-900 (`#0f172a`) via Purple-900 (`#581c87`) gradient
+- **Card Backgrounds**: Slate-800/50 (`rgba(30, 41, 59, 0.5)`)
+- **Primary Accent**: Cyan-400 (`#22d3ee`) and Cyan-500 (`#06b6d4`)
+- **Secondary Accent**: Purple-400 (`#c084fc`) and Purple-500 (`#a855f7`)
+- **Success**: Green-400 (`#4ade80`) with green glow
+- **Warning**: Orange-400 (`#fb923c`) with orange glow
+- **Error**: Red-400 (`#f87171`) with red glow
+- **Neon Glow**: `shadow-[0_0_20px_rgba(6,182,212,0.3)]` for cyan
+- **Neon Glow (Hover)**: `shadow-[0_0_30px_rgba(6,182,212,0.5)]`
 
-All colors have matching gradients and hover states for a cohesive look!
+All colors use semi-transparent overlays (`/10`, `/20`, `/30`, `/50`) for depth and the signature neon glow effects!
 
 ---
 
