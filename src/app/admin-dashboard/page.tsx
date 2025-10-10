@@ -17,13 +17,17 @@ import AdminSettings from '@/components/admin/AdminSettings';
 import { 
   Users, BookOpen, Trophy, Settings, Shield, BarChart3, 
   Target, Megaphone, Bell, Database, Activity, Zap, 
-  FileText, Star, CheckCircle, Sparkles, MessageSquare
+  FileText, Star, CheckCircle, Sparkles, MessageSquare,
+  Crown, ScrollText, Flag
 } from 'lucide-react';
 import CouncilNoticesManager from '@/components/admin/CouncilNoticesManager';
 import AnnouncementsManager from '@/components/admin/AnnouncementsManager';
 import SpotlightManager from '@/components/admin/SpotlightManager';
 import UserFeedbackManager from '@/components/admin/UserFeedbackManager';
 import ExamApprovalManager from '@/components/admin/ExamApprovalManager';
+import CommunityManagement from '@/components/admin/CommunityManagement';
+import LoreLogManager from '@/components/admin/LoreLogManager';
+import AcademyMilestonesManager from '@/components/admin/AcademyMilestonesManager';
 
 interface Bounty {
   id?: string;
@@ -61,7 +65,10 @@ export default function AdminDashboardPage() {
       'council-notices': 'Council Notices',
       'announcements': 'Announcements',
       'spotlight': 'Spotlight',
-      'feedback': 'User Feedback'
+      'feedback': 'User Feedback',
+      'community': 'Community',
+      'lore': 'Lore Log',
+      'milestones': 'Milestones'
     };
     return tabNames[tab] || 'Select a section...';
   };
@@ -207,6 +214,10 @@ export default function AdminDashboardPage() {
                     {activeTab === 'council-notices' && <Bell className="w-4 h-4" />}
                     {activeTab === 'announcements' && <Megaphone className="w-4 h-4" />}
                     {activeTab === 'spotlight' && <Sparkles className="w-4 h-4" />}
+                    {activeTab === 'feedback' && <MessageSquare className="w-4 h-4" />}
+                    {activeTab === 'community' && <Crown className="w-4 h-4" />}
+                    {activeTab === 'lore' && <ScrollText className="w-4 h-4" />}
+                    {activeTab === 'milestones' && <Flag className="w-4 h-4" />}
                     <span>{getTabDisplayName(activeTab)}</span>
                   </div>
                 </SelectValue>
@@ -282,6 +293,30 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-4 h-4" />
                     <span>Spotlight</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="feedback">
+                  <div className="flex items-center space-x-2">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>User Feedback</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="community">
+                  <div className="flex items-center space-x-2">
+                    <Crown className="w-4 h-4" />
+                    <span>Community</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="lore">
+                  <div className="flex items-center space-x-2">
+                    <ScrollText className="w-4 h-4" />
+                    <span>Lore Log</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="milestones">
+                  <div className="flex items-center space-x-2">
+                    <Flag className="w-4 h-4" />
+                    <span>Milestones</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -386,6 +421,30 @@ export default function AdminDashboardPage() {
               <MessageSquare className="w-4 h-4" />
               <span>User Feedback</span>
             </Button>
+            <Button
+              variant={activeTab === "community" ? "default" : "outline"}
+              onClick={() => setActiveTab("community")}
+              className="flex items-center space-x-2"
+            >
+              <Crown className="w-4 h-4" />
+              <span>Community</span>
+            </Button>
+            <Button
+              variant={activeTab === "lore" ? "default" : "outline"}
+              onClick={() => setActiveTab("lore")}
+              className="flex items-center space-x-2"
+            >
+              <ScrollText className="w-4 h-4" />
+              <span>Lore Log</span>
+            </Button>
+            <Button
+              variant={activeTab === "milestones" ? "default" : "outline"}
+              onClick={() => setActiveTab("milestones")}
+              className="flex items-center space-x-2"
+            >
+              <Flag className="w-4 h-4" />
+              <span>Milestones</span>
+            </Button>
           </div>
 
           {/* Overview Tab */}
@@ -462,6 +521,21 @@ export default function AdminDashboardPage() {
           {/* User Feedback Tab */}
           <TabsContent value="feedback">
             <UserFeedbackManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Community Management Tab */}
+          <TabsContent value="community">
+            <CommunityManagement walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Lore Log Tab */}
+          <TabsContent value="lore">
+            <LoreLogManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Academy Milestones Tab */}
+          <TabsContent value="milestones">
+            <AcademyMilestonesManager walletAddress={walletAddress} />
           </TabsContent>
         </Tabs>
       </div>
