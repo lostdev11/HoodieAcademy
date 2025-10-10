@@ -1,87 +1,191 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { revalidateTag } from 'next/cache';
-import { CourseCreateSchema } from '@/types/course';
 
-export async function GET() {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+/**
+ * GET /api/courses
+ * Get courses with squad-based access control
+ */
+export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    
-    // Try to fetch courses with minimal fields first
-    const { data: courses, error } = await supabase
+    const { searchParams } = new URL(request.url);
+    const walletAddress = searchParams.get('wallet_address');
+    const squadId = searchParams.get('squad_id');
+    const includeHidden = searchParams.get('include_hidden') === 'true';
+    const isAdmin = searchParams.get('is_admin') === 'true';
+
+    if (!walletAddress) {
+      return NextResponse.json(
+        { error: 'Wallet address is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get user's squad
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('squad_id, is_admin')
+      .eq('wallet_address', walletAddress)
+      .single();
+
+    if (userError && userError.code !== 'PGRST116') {
+      console.error('Error fetching user:', userError);
+      return NextResponse.json(
+        { error: 'Failed to fetch user data' },
+        { status: 500 }
+      );
+    }
+
+    const userSquad = user?.squad_id;
+    const userIsAdmin = user?.is_admin || false;
+
+    // Build query
+    let query = supabase
       .from('courses')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select(`
+        *,
+        course_sections (
+          id,
+          title,
+          description,
+          order_index,
+          estimated_duration,
+          is_required
+        )
+      `)
+      .eq('is_published', true)
+      .order('squad_id', { ascending: true })
+      .order('order_index', { ascending: true });
+
+    // Filter by squad if specified
+    if (squadId) {
+      query = query.eq('squad_id', squadId);
+    }
+
+    // Include hidden courses only for admins
+    if (!includeHidden || !userIsAdmin) {
+      query = query.eq('is_hidden', false);
+    }
+
+    const { data: courses, error } = await query;
 
     if (error) {
       console.error('Error fetching courses:', error);
-      // Return empty array instead of error to prevent dashboard from failing
-      return NextResponse.json([]);
+      return NextResponse.json(
+        { error: 'Failed to fetch courses' },
+        { status: 500 }
+      );
     }
 
-    // Filter for published and visible courses if those fields exist
-    const filteredCourses = courses?.filter(course => {
-      const isPublished = course.is_published === undefined || course.is_published;
-      const isVisible = course.is_visible === undefined || course.is_visible;
-      return isPublished && isVisible;
+    // Filter courses based on user's squad access
+    const accessibleCourses = courses?.filter(course => {
+      // Admins can see all courses
+      if (userIsAdmin) return true;
+      
+      // Users can only see courses for their squad or 'all' squad courses
+      return course.squad_id === userSquad || course.squad_id === 'all';
     }) || [];
 
-    return NextResponse.json(filteredCourses);
+    return NextResponse.json({
+      courses: accessibleCourses,
+      userSquad,
+      isAdmin: userIsAdmin
+    });
+
   } catch (error) {
-    console.error('Error in courses GET:', error);
-    // Return empty array instead of error to prevent dashboard from failing
-    return NextResponse.json([]);
+    console.error('Error in GET /api/courses:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
+/**
+ * POST /api/courses
+ * Create a new course (admin only)
+ */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    
     const body = await request.json();
-    
-    // Validate input
-    const validatedData = CourseCreateSchema.parse(body);
+    const { 
+      title, 
+      description, 
+      content, 
+      squad_id, 
+      squad_name, 
+      difficulty_level, 
+      estimated_duration, 
+      xp_reward, 
+      tags, 
+      prerequisites,
+      created_by 
+    } = body;
 
-    // Check if slug already exists
-    const { data: existingCourse } = await supabase
-      .from('courses')
-      .select('id')
-      .eq('slug', validatedData.slug)
-      .single();
-
-    if (existingCourse) {
-      return NextResponse.json({ error: 'Course with this slug already exists' }, { status: 400 });
+    // Validate required fields
+    if (!title || !squad_id || !squad_name || !created_by) {
+      return NextResponse.json(
+        { error: 'Title, squad_id, squad_name, and created_by are required' },
+        { status: 400 }
+      );
     }
 
-    // Insert new course
+    // Check if user is admin
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('wallet_address', created_by)
+      .single();
+
+    if (userError || !user?.is_admin) {
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
+    }
+
+    // Create course
     const { data: course, error } = await supabase
       .from('courses')
-      .insert([validatedData])
+      .insert({
+        title,
+        description,
+        content,
+        squad_id,
+        squad_name,
+        difficulty_level: difficulty_level || 'beginner',
+        estimated_duration: estimated_duration || 0,
+        xp_reward: xp_reward || 0,
+        tags: tags || [],
+        prerequisites: prerequisites || [],
+        created_by,
+        published_at: new Date().toISOString()
+      })
       .select()
       .single();
 
     if (error) {
       console.error('Error creating course:', error);
-      return NextResponse.json({ error: 'Failed to create course' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to create course' },
+        { status: 500 }
+      );
     }
 
-    // Revalidate courses cache
-    revalidateTag('courses');
+    return NextResponse.json({
+      success: true,
+      course
+    });
 
-    return NextResponse.json(course, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('ZodError')) {
-      return NextResponse.json({ error: 'Invalid input data' }, { status: 400 });
-    }
-    
-    console.error('Error in courses POST:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error in POST /api/courses:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
