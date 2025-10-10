@@ -33,6 +33,7 @@ import { useUserBounties } from "@/hooks/useUserBounties";
 import { useUserXP } from "@/hooks/useUserXP";
 import { useUserTracking } from "@/hooks/useUserTracking";
 import { useAutoDailyLogin } from "@/hooks/useAutoDailyLogin";
+import { useDisplayNameReadOnly } from "@/hooks/use-display-name";
 import { getSquadName } from "@/utils/squad-storage";
 import SquadBadge from "@/components/SquadBadge";
 import FeedbackTrackerWidget from "@/components/feedback/FeedbackTrackerWidget";
@@ -75,6 +76,9 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
   const { submissions: bountySubmissions, stats: bountyStats, loading: bountiesLoading } = useUserBounties(walletAddress);
   const { profile: xpProfile, badges, loading: xpLoading, refresh: refreshXP } = useUserXP(walletAddress);
   const { data: trackingData, loading: trackingLoading } = useUserTracking(walletAddress);
+  
+  // Display name hook
+  const { displayName } = useDisplayNameReadOnly();
   
   // Auto daily login bonus
   useAutoDailyLogin(walletAddress);
@@ -267,7 +271,7 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-blue-400 mb-1">
-                  Welcome back, Scholar!
+                  Welcome back, {displayName || 'Scholar'}!
                 </h1>
                 <p className="text-gray-300">
                   Ready to continue your Web3 journey?

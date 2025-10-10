@@ -21,7 +21,6 @@ import { useUserXP } from '@/hooks/useUserXP';
 import { useUserBounties } from '@/hooks/useUserBounties';
 import { useDisplayName } from '@/hooks/use-display-name';
 import { UserDataDebug } from '@/components/debug/UserDataDebug';
-import { DisplayNameSyncTest } from '@/components/debug/DisplayNameSyncTest';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -586,9 +585,8 @@ export function ProfileView() {
           </Card>
         )}
 
-        {/* Debug Components - Remove these in production */}
+        {/* Debug Component - Remove this in production */}
         <UserDataDebug />
-        <DisplayNameSyncTest />
 
         <Card className="w-full max-w-4xl bg-slate-800/60 border-cyan-500/30 mb-8">
           <CardHeader>
