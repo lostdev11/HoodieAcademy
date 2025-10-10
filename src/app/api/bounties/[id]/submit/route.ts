@@ -26,6 +26,13 @@ export async function POST(
   try {
     const supabase = getSupabaseClient();
     const body = await request.json();
+    
+    console.log('🎯 Bounty submission request:', {
+      bountyId: params.id,
+      body: body,
+      timestamp: new Date().toISOString()
+    });
+    
     const { 
       submission, 
       walletAddress, 
@@ -66,28 +73,34 @@ export async function POST(
     }
 
     // Create submission
+    const submissionData = {
+      bounty_id: params.id,
+      wallet_address: walletAddress,
+      submission_content: submission,
+      submission_type: submissionType,
+      title: title || null,
+      description: description || null,
+      image_url: imageUrl || null,
+      squad: squad || null,
+      course_ref: courseRef || null,
+      status: 'pending',
+      created_at: new Date().toISOString()
+    };
+    
+    console.log('📝 Inserting submission data:', submissionData);
+    
     const { data: newSubmission, error: submitError } = await supabase
       .from('bounty_submissions')
-      .insert([{
-        bounty_id: params.id,
-        wallet_address: walletAddress,
-        submission_content: submission,
-        submission_type: submissionType,
-        title: title || null,
-        description: description || null,
-        image_url: imageUrl || null,
-        squad: squad || null,
-        course_ref: courseRef || null,
-        status: 'pending',
-        created_at: new Date().toISOString()
-      }])
+      .insert([submissionData])
       .select()
       .single();
 
     if (submitError) {
-      console.error('Error creating bounty submission:', submitError);
-      return NextResponse.json({ error: 'Failed to submit bounty' }, { status: 500 });
+      console.error('❌ Error creating bounty submission:', submitError);
+      return NextResponse.json({ error: 'Failed to submit bounty', details: submitError }, { status: 500 });
     }
+    
+    console.log('✅ Bounty submission created successfully:', newSubmission);
 
     // Update bounty submission count
     const { error: updateError } = await supabase
