@@ -2,7 +2,13 @@
 
 ## ✅ Completed Improvements
 
-Your Hoodie Academy bounty page has been completely redesigned to match your app's dark theme with neon glow effects and fully integrated image upload functionality!
+Your Hoodie Academy bounty page has been completely redesigned to match your app's dark theme with neon glow effects, fully integrated image upload functionality, and a full-screen layout!
+
+### Full-Screen Layout
+- **Fills Entire Viewport**: Background and effects span the full screen
+- **No Width Constraints**: Removed PageLayout wrapper that limited content width
+- **Consistent Structure**: Matches leaderboard and profile page layouts
+- **TokenGate Protected**: Content is gated behind wallet authentication
 
 ---
 
