@@ -36,38 +36,16 @@ export default function UserFeedbackForm({ walletAddress, className = "" }: User
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Debug: Log when component mounts
-  React.useEffect(() => {
-    console.log('🎨 UserFeedbackForm mounted', {
-      hasWallet: !!walletAddress,
-      wallet: walletAddress?.slice(0, 8) + '...'
-    });
-  }, [walletAddress]);
-
-  // Debug: Log category changes
-  React.useEffect(() => {
-    console.log('📁 Category changed to:', category);
-  }, [category]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('📝 Form submit triggered:', {
-      title: title.slice(0, 20) + '...',
-      description: description.slice(0, 30) + '...',
-      category,
-      hasWallet: !!walletAddress
-    });
-    
     if (!title.trim() || !description.trim() || !category) {
-      console.log('❌ Validation failed');
       setError('Please fill in all fields');
       return;
     }
 
     setSubmitting(true);
     setError(null);
-    console.log('✅ Validation passed, submitting to API...');
 
     try {
       const response = await fetch('/api/user-feedback', {
@@ -140,34 +118,23 @@ export default function UserFeedbackForm({ walletAddress, className = "" }: User
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {CATEGORY_OPTIONS.map((option) => {
                   const Icon = option.icon;
-                  console.log('🔄 Rendering button for:', option.value);
                   return (
                   <div
                     key={option.value}
-                    onClick={(e) => {
-                      console.log('🔘 DIV clicked:', option.value);
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setCategory(option.value);
-                    }}
-                    onMouseDown={(e) => {
-                      console.log('🖱️ MOUSE DOWN on:', option.value);
-                    }}
-                    role="button"
-                    tabIndex={0}
+                    onClick={() => setCategory(option.value)}
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
-                        console.log('⌨️ KEYBOARD pressed:', option.value);
                         e.preventDefault();
                         setCategory(option.value);
                       }
                     }}
+                    role="button"
+                    tabIndex={0}
                     className={`p-4 rounded-lg border-2 transition-all duration-200 text-left cursor-pointer ${
                       category === option.value
                         ? 'border-blue-500 bg-blue-500/10'
                         : 'border-slate-600 bg-slate-700/30 hover:border-slate-500'
                     }`}
-                    style={{ position: 'relative', zIndex: 10, pointerEvents: 'auto' }}
                   >
                       <div className="flex items-start space-x-3 pointer-events-none">
                         <Icon className={`w-5 h-5 mt-0.5 ${

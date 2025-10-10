@@ -236,10 +236,7 @@ export default function BottomNavigation() {
                                 ? 'bg-blue-600 text-white'
                                 : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                             }`}
-                            onClick={() => {
-                              console.log(`📲 BottomNavigation: Navigating to ${item.href} (${item.label})`);
-                              setActiveGroup(null);
-                            }}
+                            onClick={() => setActiveGroup(null)}
                           >
                             {item.icon}
                             <span>{item.label}</span>

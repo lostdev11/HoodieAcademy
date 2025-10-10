@@ -281,7 +281,6 @@ const sidebarItems: SidebarItem[] = [
             <Link 
               key={item.id} 
               href={item.href}
-              onClick={() => console.log(`🔗 DashboardSidebar: Navigating to ${item.href} (${item.label})`)}
             >
               <Button
                 variant={isActive ? 'default' : 'ghost'}

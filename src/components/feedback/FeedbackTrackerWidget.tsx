@@ -267,14 +267,8 @@ export default function FeedbackTrackerWidget({
             <div className="flex items-center justify-between text-xs text-gray-400">
               <span>Showing {updates.length} recent update{updates.length !== 1 ? 's' : ''}</span>
               <button 
-                onClick={(e) => {
-                  console.log('🎯 FeedbackTrackerWidget "View All" button clicked!');
-                  e.preventDefault();
-                  e.stopPropagation();
-                  router.push('/feedback');
-                }} 
+                onClick={() => router.push('/feedback')} 
                 className="flex items-center space-x-1 hover:text-green-400 transition-colors cursor-pointer"
-                style={{ pointerEvents: 'auto' }}
               >
                 <span>View All</span>
                 <ChevronRight className="w-3 h-3" />

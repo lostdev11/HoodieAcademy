@@ -257,10 +257,7 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
                   <Link 
                     key={item.id} 
                     href={item.href} 
-                    onClick={() => {
-                      console.log(`📱 MobileNavigation: Navigating to ${item.href} (${item.label})`);
-                      setIsOpen(false);
-                    }}
+                    onClick={() => setIsOpen(false)}
                   >
                     <Button
                       variant={isActive ? 'default' : 'ghost'}
