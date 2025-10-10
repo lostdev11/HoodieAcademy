@@ -465,7 +465,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
     }
   };
 
-  const canSubmit = submissionText.trim() && (!requiresImage || selectedFile);
+  const canSubmit = submissionText.trim() && (!bounty.image_required || selectedFile);
 
   return (
     <div className="space-y-4 p-4 bg-slate-700/30 rounded-lg border border-cyan-500/20">
@@ -482,12 +482,11 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
       </div>
 
       {/* Image Upload Section */}
-      {requiresImage && (
-        <div className="space-y-3">
-          <label className="text-xs font-semibold text-cyan-400 flex items-center gap-2">
-            <ImageIcon className="w-4 h-4 text-cyan-400" />
-            {bounty.image_required ? '📷 Upload Image (Required)' : '📷 Upload Image (Optional)'}
-          </label>
+      <div className="space-y-3">
+        <label className="text-xs font-semibold text-cyan-400 flex items-center gap-2">
+          <ImageIcon className="w-4 h-4 text-cyan-400" />
+          {bounty.image_required ? '📷 Upload Image (Required)' : '📷 Upload Image (Optional)'}
+        </label>
           
           <div
             onDragOver={handleDragOver}
@@ -531,8 +530,9 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
               ) : (
                 <div className="flex flex-col items-center gap-2 text-purple-400">
                   <Upload className="w-8 h-8" />
-                  <span className="text-sm font-bold">Upload Image</span>
-                  <span className="text-xs text-purple-300">Click or drag & drop</span>
+                  <span className="text-sm font-bold">📷 Upload Image</span>
+                  <span className="text-xs text-purple-300">Click to browse or drag & drop</span>
+                  <span className="text-xs text-gray-500">JPG, PNG, GIF (Max 10MB)</span>
                 </div>
               )}
             </label>
@@ -575,8 +575,24 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
               </div>
             </div>
           )}
+          
+          {/* Alternative Upload Button */}
+          {!selectedFile && (
+            <div className="mt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById(`file-upload-${bounty.id}`)?.click()}
+                disabled={isUploading}
+                className="w-full border-purple-500/30 text-purple-400 hover:bg-purple-500/10 hover:border-purple-500/50"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {isUploading ? 'Uploading...' : 'Choose Image File'}
+              </Button>
+            </div>
+          )}
         </div>
-      )}
 
       {/* Submit Button */}
       <Button
