@@ -70,16 +70,61 @@ export default async function BountiesPage() {
       backgroundImage={undefined}
       backgroundOverlay={false}
     >
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Available Bounties</h2>
-          <p className="text-gray-600">
-            Take on challenges, showcase your skills, and earn rewards in the Hoodie Academy community. 
-            Complete bounties to gain XP, SOL, and exclusive access to special content.
-          </p>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Hero Section */}
+          <div className="mb-12 text-center">
+            <div className="inline-flex items-center gap-3 mb-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-full shadow-lg">
+              <span className="text-white text-lg font-bold">🏆 Active Bounties</span>
+              <span className="bg-white text-purple-600 px-3 py-1 rounded-full text-sm font-semibold">
+                {bounties.filter(b => !b.hidden && b.status === 'active').length}
+              </span>
+            </div>
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent mb-4">
+              Earn Rewards Through Challenges
+            </h2>
+            <p className="text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed">
+              Take on challenges, showcase your skills, and earn XP, SOL, and exclusive access. 
+              Join the Hoodie Academy community and level up your Web3 journey! 🚀
+            </p>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl transform hover:scale-105 transition-all duration-200">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-3xl">🎯</span>
+                <span className="text-sm font-medium opacity-90">Total Bounties</span>
+              </div>
+              <p className="text-4xl font-bold">{bounties.filter(b => !b.hidden).length}</p>
+            </div>
+            
+            <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl p-6 text-white shadow-xl transform hover:scale-105 transition-all duration-200">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-3xl">💰</span>
+                <span className="text-sm font-medium opacity-90">Total Rewards</span>
+              </div>
+              <p className="text-4xl font-bold">
+                {bounties.filter(b => !b.hidden).reduce((acc, b) => {
+                  const match = b.reward.match(/(\d+)/);
+                  return acc + (match ? parseInt(match[1]) : 0);
+                }, 0)} XP
+              </p>
+            </div>
+            
+            <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl p-6 text-white shadow-xl transform hover:scale-105 transition-all duration-200">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-3xl">👥</span>
+                <span className="text-sm font-medium opacity-90">Total Submissions</span>
+              </div>
+              <p className="text-4xl font-bold">
+                {bounties.filter(b => !b.hidden).reduce((acc, b) => acc + b.submissions, 0)}
+              </p>
+            </div>
+          </div>
+          
+          <BountiesGrid initialBounties={bounties} showHidden={false} />
         </div>
-        
-        <BountiesGrid initialBounties={bounties} showHidden={false} />
       </div>
     </PageLayout>
   );
