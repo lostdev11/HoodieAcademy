@@ -1,10 +1,22 @@
 import { useEffect, useState } from 'react';
+import { xpService, XPData } from '@/services/xp-service';
 
 export interface XPProfile {
   totalXP: number;
   completedCourses: string[];
   streak: number;
   lastLogin: string;
+  level: number;
+  xpInCurrentLevel: number;
+  xpToNextLevel: number;
+  progressToNextLevel: number;
+  breakdown?: {
+    courseXP: number;
+    bountyXP: number;
+    dailyLoginXP: number;
+    adminAwardXP: number;
+    otherXP: number;
+  };
 }
 
 export interface Badge {
@@ -72,58 +84,131 @@ export function useUserXP(walletAddress?: string) {
     totalXP: 0,
     completedCourses: [],
     streak: 0,
-    lastLogin: ''
+    lastLogin: '',
+    level: 1,
+    xpInCurrentLevel: 0,
+    xpToNextLevel: 1000,
+    progressToNextLevel: 0
   });
 
   const [badges, setBadges] = useState<Badge[]>(BADGES);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadUserProfile = async () => {
     if (!walletAddress) {
       setLoading(false);
       return;
     }
 
-    const loadUserProfile = async () => {
-      try {
-        // Fetch user data from the tracking API
-        const response = await fetch(`/api/users/track?wallet=${walletAddress}`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch user data: ${response.status}`);
-        }
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔄 [useUserXP] Fetching XP data from consolidated API...');
+      
+      // Use the new consolidated XP service
+      const xpData: XPData = await xpService.getUserXP(walletAddress, {
+        includeCourses: true,
+        includeHistory: false, // Only fetch history when needed
+        includeBounties: false
+      });
+      
+      console.log('🔄 [useUserXP] Loaded fresh XP data:', {
+        wallet: walletAddress.slice(0, 8) + '...',
+        totalXP: xpData.totalXP,
+        level: xpData.level,
+        exists: xpData.exists
+      });
+      
+      const today = new Date().toISOString().split('T')[0];
+      const completedCourses = xpData.courseCompletions?.map(course => course.course_id) || [];
+      
+      const userProfile: XPProfile = {
+        totalXP: xpData.totalXP,
+        level: xpData.level,
+        completedCourses,
+        streak: 1, // TODO: Implement streak tracking
+        lastLogin: today,
+        xpInCurrentLevel: xpData.xpInCurrentLevel,
+        xpToNextLevel: xpData.xpToNextLevel,
+        progressToNextLevel: xpData.progressToNextLevel,
+        breakdown: xpData.breakdown
+      };
+      
+      console.log('✅ [useUserXP] Setting profile with XP:', xpData.totalXP);
+      setProfile(userProfile);
+    } catch (error) {
+      console.error('❌ [useUserXP] Error loading user profile:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load XP data');
+      
+      // Set default values on error
+      const today = new Date().toISOString().split('T')[0];
+      setProfile({
+        totalXP: 0,
+        completedCourses: [],
+        streak: 1,
+        lastLogin: today,
+        level: 1,
+        xpInCurrentLevel: 0,
+        xpToNextLevel: 1000,
+        progressToNextLevel: 0
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        const data = await response.json();
-        
-        // Extract XP and course data
-        const totalXP = data.stats?.totalXP || 0;
-        const completedCourses = data.courseCompletions?.map((course: any) => course.course_id) || [];
-        const today = new Date().toISOString().split('T')[0];
-        
-        const userProfile: XPProfile = {
-          totalXP,
-          completedCourses,
-          streak: 1, // TODO: Implement streak tracking
-          lastLogin: today
-        };
-        
-        setProfile(userProfile);
-      } catch (error) {
-        console.error('Error loading user profile:', error);
-        // Set default values on error
-        const today = new Date().toISOString().split('T')[0];
-        setProfile({
-          totalXP: 0,
-          completedCourses: [],
-          streak: 1,
-          lastLogin: today
-        });
-      } finally {
-        setLoading(false);
+  useEffect(() => {
+    loadUserProfile();
+  }, [walletAddress, refreshKey]);
+
+  // Auto-refresh XP every 30 seconds
+  useEffect(() => {
+    if (!walletAddress) return;
+
+    const interval = setInterval(() => {
+      console.log('⏰ [useUserXP] Auto-refreshing XP...');
+      loadUserProfile();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [walletAddress]);
+
+  // Listen for XP award events
+  useEffect(() => {
+    if (!walletAddress) return;
+
+    const handleXPAwarded = (event: CustomEvent) => {
+      const { targetWallet } = event.detail;
+      // If XP was awarded to this user, refresh immediately
+      if (targetWallet === walletAddress) {
+        console.log('🎯 [useUserXP] XP awarded to this user, refreshing...');
+        loadUserProfile();
       }
     };
 
-    loadUserProfile();
+    const handleForceRefresh = () => {
+      console.log('🔄 [useUserXP] Force refresh triggered');
+      loadUserProfile();
+    };
+
+    window.addEventListener('xpAwarded', handleXPAwarded as EventListener);
+    window.addEventListener('xpUpdated', handleXPAwarded as EventListener);
+    window.addEventListener('forceXPRefresh', handleForceRefresh as EventListener);
+
+    // Check if refresh is required on mount
+    if (xpService.isRefreshRequired()) {
+      console.log('🔄 [useUserXP] Refresh required on mount');
+      loadUserProfile();
+    }
+
+    return () => {
+      window.removeEventListener('xpAwarded', handleXPAwarded as EventListener);
+      window.removeEventListener('xpUpdated', handleXPAwarded as EventListener);
+      window.removeEventListener('forceXPRefresh', handleForceRefresh as EventListener);
+    };
   }, [walletAddress]);
 
   // Update badges based on current progress
@@ -160,36 +245,61 @@ export function useUserXP(walletAddress?: string) {
     setBadges(updatedBadges);
   }, [profile]);
 
-  const completeCourse = async (slug: string, xp = 100) => {
-    if (profile.completedCourses.includes(slug)) return;
+  const completeCourse = async (slug: string, courseTitle: string, customXP?: number) => {
+    if (!walletAddress) {
+      console.error('❌ [useUserXP] No wallet address provided');
+      return;
+    }
+
+    if (profile.completedCourses.includes(slug)) {
+      console.log('⚠️ [useUserXP] Course already completed:', slug);
+      return;
+    }
     
     try {
-      const updated = {
-        ...profile,
-        totalXP: profile.totalXP + xp,
-        completedCourses: [...profile.completedCourses, slug]
-      };
+      console.log('🎓 [useUserXP] Awarding course completion XP:', { slug, courseTitle, customXP });
       
-      // This should save to your database instead of localStorage
-      // For now, just update the local state
-      setProfile(updated);
-      
-      // TODO: Implement database save here
-      console.log('Course completed, should save to database:', updated);
-      
+      // Use the XP service to award course XP
+      const result = await xpService.awardCourseXP(
+        walletAddress,
+        slug,
+        courseTitle,
+        customXP
+      );
+
+      if (result.success) {
+        console.log('✅ [useUserXP] Course XP awarded successfully');
+        // The loadUserProfile will be triggered by the event listener
+        // but we can also refresh immediately
+        loadUserProfile();
+      }
     } catch (error) {
-      console.error('Error completing course:', error);
+      console.error('❌ [useUserXP] Error completing course:', error);
+      setError(error instanceof Error ? error.message : 'Failed to complete course');
     }
   };
 
-  // Calculate level based on total XP (1000 XP per level)
-  const level = Math.floor(profile.totalXP / 1000) + 1;
+  // Function to manually refresh XP data
+  const refresh = () => {
+    console.log('🔄 [useUserXP] Manual refresh triggered');
+    setRefreshKey(prev => prev + 1);
+  };
+
+  // Function to force global refresh
+  const forceRefresh = () => {
+    console.log('🔄 [useUserXP] Force global refresh triggered');
+    xpService.forceRefresh();
+    setRefreshKey(prev => prev + 1);
+  };
 
   return {
+    profile,
     ...profile,
-    level,
     completeCourse,
     badges,
-    loading
+    loading,
+    error,
+    refresh,
+    forceRefresh
   };
 } 

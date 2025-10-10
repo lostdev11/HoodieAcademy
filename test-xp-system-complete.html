@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XP System Test Suite - Hoodie Academy</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    h1 { color: #60a5fa; }
+    h2 { color: #34d399; margin-top: 30px; }
+    .container { background: #1e293b; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+    .test-section { margin: 20px 0; padding: 15px; background: #334155; border-radius: 6px; }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 14px;
+    }
+    button:hover { background: #2563eb; }
+    button.danger { background: #ef4444; }
+    button.danger:hover { background: #dc2626; }
+    button.success { background: #10b981; }
+    button.success:hover { background: #059669; }
+    input, select {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #475569;
+      background: #1e293b;
+      color: #e2e8f0;
+      margin: 5px;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 10px;
+      background: #0f172a;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .success-msg { color: #10b981; }
+    .error-msg { color: #ef4444; }
+    .info-msg { color: #60a5fa; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 15px 0;
+    }
+    .stat-card {
+      background: #475569;
+      padding: 15px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2em;
+      font-weight: bold;
+      color: #60a5fa;
+    }
+    .stat-label {
+      color: #94a3b8;
+      font-size: 0.9em;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 20px;
+      background: #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #60a5fa);
+      transition: width 0.5s ease;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      margin: 3px;
+    }
+    .badge-success { background: #10b981; color: white; }
+    .badge-warning { background: #f59e0b; color: white; }
+    .badge-info { background: #3b82f6; color: white; }
+    .log {
+      background: #0f172a;
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85em;
+    }
+    .log-entry {
+      padding: 2px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 XP System Test Suite</h1>
+  <p>Comprehensive testing for the Hoodie Academy XP API and Dashboard Integration</p>
+
+  <!-- Configuration -->
+  <div class="container">
+    <h2>⚙️ Configuration</h2>
+    <label>Test Wallet Address:</label>
+    <input type="text" id="testWallet" placeholder="Enter wallet address" value="TestWallet123" style="width: 400px;">
+    <br>
+    <label>Admin Wallet Address:</label>
+    <input type="text" id="adminWallet" placeholder="Enter admin wallet" value="AdminWallet123" style="width: 400px;">
+    <br>
+    <label>API Base URL:</label>
+    <input type="text" id="apiBaseUrl" value="http://localhost:3000" style="width: 400px;">
+    <button onclick="saveConfig()">Save Config</button>
+  </div>
+
+  <!-- User XP Dashboard -->
+  <div class="container">
+    <h2>📊 User XP Dashboard</h2>
+    <button onclick="fetchUserXP()">🔄 Refresh XP Data</button>
+    <button onclick="fetchUserXPFull()">📈 Fetch Full Details</button>
+    
+    <div class="stats" id="xpStats">
+      <div class="stat-card">
+        <div class="stat-value" id="totalXP">0</div>
+        <div class="stat-label">Total XP</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="level">1</div>
+        <div class="stat-label">Level</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="xpToNextLevel">1000</div>
+        <div class="stat-label">XP to Next Level</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="coursesCompleted">0</div>
+        <div class="stat-label">Courses Completed</div>
+      </div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+    </div>
+    <div style="text-align: center; color: #94a3b8; font-size: 0.9em;">
+      <span id="progressText">0% to next level</span>
+    </div>
+
+    <div id="xpBreakdown"></div>
+    <div class="result" id="xpResult"></div>
+  </div>
+
+  <!-- Test: Fetch XP Data -->
+  <div class="container">
+    <h2>1️⃣ Test: Fetch XP Data (GET /api/xp)</h2>
+    <div class="test-section">
+      <button onclick="testGetXP()">Test Basic Fetch</button>
+      <button onclick="testGetXPWithHistory()">Test with History</button>
+      <button onclick="testGetXPFull()">Test Full Data</button>
+      <div class="result" id="result1"></div>
+    </div>
+  </div>
+
+  <!-- Test: Award Course XP -->
+  <div class="container">
+    <h2>2️⃣ Test: Award Course XP (POST /api/xp/course-completion)</h2>
+    <div class="test-section">
+      <label>Course ID:</label>
+      <select id="courseId">
+        <option value="nft-mastery">NFT Mastery</option>
+        <option value="wallet-wizardry">Wallet Wizardry</option>
+        <option value="meme-coin-mania">Meme Coin Mania</option>
+        <option value="technical-analysis">Technical Analysis</option>
+        <option value="ai-automation-curriculum">AI Automation</option>
+      </select>
+      <label>Custom XP:</label>
+      <input type="number" id="courseXP" value="100" style="width: 100px;">
+      <button onclick="testAwardCourseXP()">Award Course XP</button>
+      <div class="result" id="result2"></div>
+    </div>
+  </div>
+
+  <!-- Test: Daily Login Bonus -->
+  <div class="container">
+    <h2>3️⃣ Test: Daily Login Bonus (POST /api/xp/daily-login)</h2>
+    <div class="test-section">
+      <button onclick="testCheckDailyLogin()">Check Status</button>
+      <button onclick="testClaimDailyLogin()">Claim Daily Bonus</button>
+      <button class="danger" onclick="testClaimDailyLoginTwice()">Test Double Claim (Should Fail)</button>
+      <div class="result" id="result3"></div>
+    </div>
+  </div>
+
+  <!-- Test: Award Bounty XP -->
+  <div class="container">
+    <h2>4️⃣ Test: Award Bounty XP (POST /api/xp/bounty)</h2>
+    <div class="test-section">
+      <label>XP Amount:</label>
+      <input type="number" id="bountyXP" value="200" style="width: 100px;">
+      <label>Reason:</label>
+      <input type="text" id="bountyReason" value="Completed design bounty" style="width: 300px;">
+      <button onclick="testAwardBountyXP()">Award Bounty XP</button>
+      <div class="result" id="result4"></div>
+    </div>
+  </div>
+
+  <!-- Test: Admin XP Award -->
+  <div class="container">
+    <h2>5️⃣ Test: Admin XP Award (POST /api/admin/xp/award)</h2>
+    <div class="test-section">
+      <label>XP Amount:</label>
+      <input type="number" id="adminXP" value="500" style="width: 100px;">
+      <label>Reason:</label>
+      <input type="text" id="adminReason" value="Outstanding contribution" style="width: 300px;">
+      <button onclick="testAdminAward()">Admin Award</button>
+      <button class="danger" onclick="testAdminAwardUnauthorized()">Test Unauthorized (Should Fail)</button>
+      <div class="result" id="result5"></div>
+    </div>
+  </div>
+
+  <!-- Test: Generic XP Award -->
+  <div class="container">
+    <h2>6️⃣ Test: Generic XP Award (POST /api/xp)</h2>
+    <div class="test-section">
+      <label>XP Amount:</label>
+      <input type="number" id="genericXP" value="150" style="width: 100px;">
+      <label>Source:</label>
+      <select id="xpSource">
+        <option value="course">Course</option>
+        <option value="bounty">Bounty</option>
+        <option value="daily_login">Daily Login</option>
+        <option value="admin">Admin</option>
+        <option value="other">Other</option>
+      </select>
+      <label>Reason:</label>
+      <input type="text" id="genericReason" value="Test XP award" style="width: 300px;">
+      <button onclick="testGenericXPAward()">Award XP</button>
+      <div class="result" id="result6"></div>
+    </div>
+  </div>
+
+  <!-- Test: Level Up Detection -->
+  <div class="container">
+    <h2>7️⃣ Test: Level Up Detection</h2>
+    <div class="test-section">
+      <p>This will award enough XP to trigger a level up (990 XP to reach exactly 1000 total)</p>
+      <button onclick="testLevelUp()">Test Level Up</button>
+      <button class="success" onclick="awardBulkXP(5000)">Award 5000 XP (Multiple Levels)</button>
+      <div class="result" id="result7"></div>
+    </div>
+  </div>
+
+  <!-- Activity Log -->
+  <div class="container">
+    <h2>📝 Activity Log</h2>
+    <button onclick="clearLog()">Clear Log</button>
+    <div class="log" id="activityLog"></div>
+  </div>
+
+  <!-- Test Results Summary -->
+  <div class="container">
+    <h2>✅ Test Summary</h2>
+    <div id="testSummary">
+      <p>Run tests to see results...</p>
+    </div>
+  </div>
+
+  <script>
+    const log = (message, type = 'info') => {
+      const logDiv = document.getElementById('activityLog');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      const timestamp = new Date().toLocaleTimeString();
+      const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '📝';
+      entry.textContent = `[${timestamp}] ${icon} ${message}`;
+      logDiv.insertBefore(entry, logDiv.firstChild);
+    };
+
+    const saveConfig = () => {
+      localStorage.setItem('testWallet', document.getElementById('testWallet').value);
+      localStorage.setItem('adminWallet', document.getElementById('adminWallet').value);
+      localStorage.setItem('apiBaseUrl', document.getElementById('apiBaseUrl').value);
+      log('Configuration saved', 'success');
+      alert('Configuration saved!');
+    };
+
+    // Load saved config
+    window.onload = () => {
+      const savedWallet = localStorage.getItem('testWallet');
+      const savedAdmin = localStorage.getItem('adminWallet');
+      const savedUrl = localStorage.getItem('apiBaseUrl');
+      if (savedWallet) document.getElementById('testWallet').value = savedWallet;
+      if (savedAdmin) document.getElementById('adminWallet').value = savedAdmin;
+      if (savedUrl) document.getElementById('apiBaseUrl').value = savedUrl;
+      log('Test suite loaded', 'info');
+    };
+
+    const getApiUrl = () => document.getElementById('apiBaseUrl').value;
+    const getTestWallet = () => document.getElementById('testWallet').value;
+    const getAdminWallet = () => document.getElementById('adminWallet').value;
+
+    const displayResult = (elementId, data, success = true) => {
+      const element = document.getElementById(elementId);
+      element.className = `result ${success ? 'success-msg' : 'error-msg'}`;
+      element.textContent = JSON.stringify(data, null, 2);
+    };
+
+    const updateDashboard = (xpData) => {
+      document.getElementById('totalXP').textContent = xpData.totalXP?.toLocaleString() || '0';
+      document.getElementById('level').textContent = xpData.level || '1';
+      document.getElementById('xpToNextLevel').textContent = xpData.xpToNextLevel || '1000';
+      document.getElementById('coursesCompleted').textContent = xpData.totalCoursesCompleted || '0';
+      
+      const progress = xpData.progressToNextLevel || 0;
+      document.getElementById('progressFill').style.width = `${progress}%`;
+      document.getElementById('progressText').textContent = `${progress.toFixed(1)}% to next level`;
+
+      if (xpData.breakdown) {
+        const breakdownHtml = `
+          <div style="margin-top: 15px;">
+            <h3>XP Breakdown:</h3>
+            <div class="stats">
+              <div class="stat-card">
+                <div class="stat-value">${xpData.breakdown.courseXP || 0}</div>
+                <div class="stat-label">Course XP</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${xpData.breakdown.bountyXP || 0}</div>
+                <div class="stat-label">Bounty XP</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${xpData.breakdown.dailyLoginXP || 0}</div>
+                <div class="stat-label">Daily Login XP</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">${xpData.breakdown.adminAwardXP || 0}</div>
+                <div class="stat-label">Admin Award XP</div>
+              </div>
+            </div>
+          </div>
+        `;
+        document.getElementById('xpBreakdown').innerHTML = breakdownHtml;
+      }
+    };
+
+    // Test 1: Fetch XP Data
+    const testGetXP = async () => {
+      log('Testing GET /api/xp (basic)');
+      try {
+        const response = await fetch(`${getApiUrl()}/api/xp?wallet=${getTestWallet()}`);
+        const data = await response.json();
+        displayResult('result1', data, response.ok);
+        if (response.ok) {
+          updateDashboard(data);
+          log('✅ Basic fetch successful', 'success');
+        } else {
+          log('❌ Basic fetch failed', 'error');
+        }
+      } catch (error) {
+        displayResult('result1', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    const testGetXPWithHistory = async () => {
+      log('Testing GET /api/xp (with history)');
+      try {
+        const response = await fetch(`${getApiUrl()}/api/xp?wallet=${getTestWallet()}&includeHistory=true`);
+        const data = await response.json();
+        displayResult('result1', data, response.ok);
+        if (response.ok) {
+          updateDashboard(data);
+          log(`✅ Fetch with history successful (${data.xpHistory?.length || 0} entries)`, 'success');
+        }
+      } catch (error) {
+        displayResult('result1', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    const testGetXPFull = async () => {
+      log('Testing GET /api/xp (full data)');
+      try {
+        const response = await fetch(
+          `${getApiUrl()}/api/xp?wallet=${getTestWallet()}&includeHistory=true&includeCourses=true&includeBounties=true`
+        );
+        const data = await response.json();
+        displayResult('result1', data, response.ok);
+        if (response.ok) {
+          updateDashboard(data);
+          log('✅ Full data fetch successful', 'success');
+        }
+      } catch (error) {
+        displayResult('result1', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    // Test 2: Award Course XP
+    const testAwardCourseXP = async () => {
+      const courseId = document.getElementById('courseId').value;
+      const customXP = parseInt(document.getElementById('courseXP').value);
+      log(`Testing POST /api/xp/course-completion (${courseId})`);
+      
+      try {
+        const response = await fetch(`${getApiUrl()}/api/xp/course-completion`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            walletAddress: getTestWallet(),
+            courseId: courseId,
+            courseTitle: courseId.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+            customXP: customXP
+          })
+        });
+        const data = await response.json();
+        displayResult('result2', data, response.ok);
+        if (response.ok && data.success) {
+          log(`✅ Course XP awarded: +${data.xpAwarded} XP`, 'success');
+          if (data.levelUp) {
+            log(`🎉 LEVEL UP! Now level ${data.newLevel}`, 'success');
+          }
+          setTimeout(fetchUserXP, 500);
+        } else {
+          log(`⚠️ ${data.message || 'Course XP award failed'}`, 'error');
+        }
+      } catch (error) {
+        displayResult('result2', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    // Test 3: Daily Login
+    const testCheckDailyLogin = async () => {
+      log('Testing GET /api/xp/daily-login (check status)');
+      try {
+        const response = await fetch(`${getApiUrl()}/api/xp/daily-login?wallet=${getTestWallet()}`);
+        const data = await response.json();
+        displayResult('result3', data, response.ok);
+        if (response.ok) {
+          log(`✅ Daily login status: ${data.alreadyClaimed ? 'Already claimed' : 'Available'}`, 'success');
+        }
+      } catch (error) {
+        displayResult('result3', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    const testClaimDailyLogin = async () => {
+      log('Testing POST /api/xp/daily-login (claim bonus)');
+      try {
+        const response = await fetch(`${getApiUrl()}/api/xp/daily-login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress: getTestWallet() })
+        });
+        const data = await response.json();
+        displayResult('result3', data, response.ok);
+        if (response.ok && data.success) {
+          log(`✅ Daily bonus claimed: +${data.xpAwarded} XP`, 'success');
+          setTimeout(fetchUserXP, 500);
+        } else {
+          log(`⚠️ ${data.message || 'Already claimed'}`, 'error');
+        }
+      } catch (error) {
+        displayResult('result3', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    const testClaimDailyLoginTwice = async () => {
+      log('Testing double claim (should fail)');
+      await testClaimDailyLogin();
+      setTimeout(testClaimDailyLogin, 1000);
+    };
+
+    // Test 4: Bounty XP
+    const testAwardBountyXP = async () => {
+      const xpAmount = parseInt(document.getElementById('bountyXP').value);
+      const reason = document.getElementById('bountyReason').value;
+      log(`Testing POST /api/xp/bounty (${xpAmount} XP)`);
+      
+      try {
+        const response = await fetch(`${getApiUrl()}/api/xp/bounty`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetWallet: getTestWallet(),
+            xpAmount: xpAmount,
+            reason: reason,
+            bountyType: 'test',
+            awardedBy: getAdminWallet()
+          })
+        });
+        const data = await response.json();
+        displayResult('result4', data, response.ok);
+        if (response.ok && data.success) {
+          log(`✅ Bounty XP awarded: +${data.xpAwarded} XP`, 'success');
+          setTimeout(fetchUserXP, 500);
+        }
+      } catch (error) {
+        displayResult('result4', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    // Test 5: Admin Award
+    const testAdminAward = async () => {
+      const xpAmount = parseInt(document.getElementById('adminXP').value);
+      const reason = document.getElementById('adminReason').value;
+      log(`Testing POST /api/admin/xp/award (${xpAmount} XP)`);
+      
+      try {
+        const response = await fetch(`${getApiUrl()}/api/admin/xp/award`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetWallet: getTestWallet(),
+            xpAmount: xpAmount,
+            reason: reason,
+            awardedBy: getAdminWallet()
+          })
+        });
+        const data = await response.json();
+        displayResult('result5', data, response.ok);
+        if (response.ok && data.success) {
+          log(`✅ Admin XP awarded: +${data.xpAwarded} XP`, 'success');
+          setTimeout(fetchUserXP, 500);
+        } else {
+          log(`⚠️ ${data.error || 'Admin award failed'}`, 'error');
+        }
+      } catch (error) {
+        displayResult('result5', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    const testAdminAwardUnauthorized = async () => {
+      log('Testing unauthorized admin award (should fail)');
+      try {
+        const response = await fetch(`${getApiUrl()}/api/admin/xp/award`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetWallet: getTestWallet(),
+            xpAmount: 100,
+            reason: 'Test',
+            awardedBy: 'UnauthorizedWallet123'
+          })
+        });
+        const data = await response.json();
+        displayResult('result5', data, false);
+        if (!response.ok) {
+          log('✅ Unauthorized request correctly rejected', 'success');
+        }
+      } catch (error) {
+        displayResult('result5', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    // Test 6: Generic XP Award
+    const testGenericXPAward = async () => {
+      const xpAmount = parseInt(document.getElementById('genericXP').value);
+      const source = document.getElementById('xpSource').value;
+      const reason = document.getElementById('genericReason').value;
+      log(`Testing POST /api/xp (source: ${source})`);
+      
+      try {
+        const body = {
+          targetWallet: getTestWallet(),
+          xpAmount: xpAmount,
+          source: source,
+          reason: reason
+        };
+        
+        if (source === 'admin') {
+          body.awardedBy = getAdminWallet();
+        }
+        
+        const response = await fetch(`${getApiUrl()}/api/xp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        displayResult('result6', data, response.ok);
+        if (response.ok && data.success) {
+          log(`✅ XP awarded via generic endpoint: +${data.xpAwarded} XP`, 'success');
+          setTimeout(fetchUserXP, 500);
+        }
+      } catch (error) {
+        displayResult('result6', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    // Test 7: Level Up
+    const testLevelUp = async () => {
+      log('Testing level up detection');
+      try {
+        const response = await fetch(`${getApiUrl()}/api/xp?wallet=${getTestWallet()}`);
+        const currentData = await response.json();
+        const xpNeeded = currentData.xpToNextLevel || 1000;
+        
+        log(`Current XP: ${currentData.totalXP}, Need ${xpNeeded} more for level up`);
+        
+        const awardResponse = await fetch(`${getApiUrl()}/api/xp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetWallet: getTestWallet(),
+            xpAmount: xpNeeded,
+            source: 'other',
+            reason: 'Level up test'
+          })
+        });
+        const data = await awardResponse.json();
+        displayResult('result7', data, awardResponse.ok);
+        
+        if (data.levelUp) {
+          log(`🎉 LEVEL UP! ${data.previousLevel} → ${data.newLevel}`, 'success');
+        } else {
+          log(`XP awarded but no level up yet`, 'info');
+        }
+        setTimeout(fetchUserXP, 500);
+      } catch (error) {
+        displayResult('result7', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    const awardBulkXP = async (amount) => {
+      log(`Awarding ${amount} XP for multi-level test`);
+      try {
+        const response = await fetch(`${getApiUrl()}/api/xp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetWallet: getTestWallet(),
+            xpAmount: amount,
+            source: 'other',
+            reason: 'Bulk XP test'
+          })
+        });
+        const data = await response.json();
+        displayResult('result7', data, response.ok);
+        if (data.levelUp) {
+          log(`🎉 JUMPED LEVELS! ${data.previousLevel} → ${data.newLevel}`, 'success');
+        }
+        setTimeout(fetchUserXP, 500);
+      } catch (error) {
+        displayResult('result7', { error: error.message }, false);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    // Utility functions
+    const fetchUserXP = () => testGetXP();
+    const fetchUserXPFull = () => testGetXPFull();
+    const clearLog = () => {
+      document.getElementById('activityLog').innerHTML = '';
+      log('Log cleared', 'info');
+    };
+  </script>
+</body>
+</html>
+

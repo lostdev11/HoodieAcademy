@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 import {
   Trophy,
   Target,
@@ -24,14 +25,19 @@ import {
   ExternalLink,
   Calendar,
   BarChart3,
-  Activity
+  Activity,
+  BookOpen
 } from "lucide-react";
 import Link from "next/link";
 import { useUserBounties } from "@/hooks/useUserBounties";
 import { useUserXP } from "@/hooks/useUserXP";
 import { useUserTracking } from "@/hooks/useUserTracking";
+import { useAutoDailyLogin } from "@/hooks/useAutoDailyLogin";
 import { getSquadName } from "@/utils/squad-storage";
 import SquadBadge from "@/components/SquadBadge";
+import FeedbackTrackerWidget from "@/components/feedback/FeedbackTrackerWidget";
+import DailyLoginBonus from "@/components/xp/DailyLoginBonus";
+import XPNotification from "@/components/xp/XPNotification";
 
 interface UserDashboardProps {
   walletAddress: string;
@@ -62,11 +68,16 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
     coursesCompleted: 0
   });
   const [loading, setLoading] = useState(true);
+  
+  const { toast } = useToast();
 
   // Hooks for data fetching
   const { submissions: bountySubmissions, stats: bountyStats, loading: bountiesLoading } = useUserBounties(walletAddress);
-  const { profile: xpProfile, badges, loading: xpLoading } = useUserXP(walletAddress);
+  const { profile: xpProfile, badges, loading: xpLoading, refresh: refreshXP } = useUserXP(walletAddress);
   const { data: trackingData, loading: trackingLoading } = useUserTracking(walletAddress);
+  
+  // Auto daily login bonus
+  useAutoDailyLogin(walletAddress);
 
   useEffect(() => {
     const initializeDashboard = async () => {
@@ -130,7 +141,87 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
     }
   }, [walletAddress, xpProfile, bountyStats]);
 
-  if (loading || bountiesLoading || xpLoading || trackingLoading) {
+  // Separate effect to update stats when XP data becomes available
+  useEffect(() => {
+    if (xpProfile && xpProfile.totalXP !== undefined) {
+      console.log('🔄 UserDashboard: Updating stats with XP data:', xpProfile.totalXP);
+      setStats(prevStats => ({
+        ...prevStats,
+        totalXP: xpProfile.totalXP,
+        level: Math.floor(xpProfile.totalXP / 1000) + 1,
+        streak: xpProfile.streak || 0,
+        coursesCompleted: xpProfile.completedCourses?.length || 0
+      }));
+    }
+  }, [xpProfile?.totalXP, xpProfile?.streak, xpProfile?.completedCourses]);
+
+  // Set up comprehensive refresh system
+  useEffect(() => {
+    const componentId = `user-dashboard-${walletAddress}`;
+    
+    // 1. Register for global refresh (if available)
+    try {
+      const { registerForRefresh, unregisterFromRefresh } = require('@/utils/globalRefresh');
+      registerForRefresh(componentId, () => {
+        console.log('🔄 [UserDashboard] Global refresh triggered');
+        refreshXP();
+      });
+    } catch (error) {
+      console.log('Global refresh system not available');
+    }
+
+    // 2. Set up force refresh listener
+    const { setupXpRefreshListener, checkForXpRefresh } = require('@/utils/forceRefresh');
+    
+    // Check if refresh is needed on mount
+    if (checkForXpRefresh()) {
+      console.log('🔄 [UserDashboard] XP refresh required on mount');
+      refreshXP();
+    }
+    
+    // Set up listener for future refreshes
+    const cleanup = setupXpRefreshListener(() => {
+      console.log('🔄 [UserDashboard] Force refresh triggered');
+      refreshXP();
+    });
+
+    // 3. Listen for XP award events for notifications (now handled by XPNotification component)
+    const handleXpAwarded = (event: CustomEvent) => {
+      const { targetWallet } = event.detail;
+      
+      // If XP was awarded to this user, refresh
+      if (targetWallet === walletAddress) {
+        console.log('🎯 [UserDashboard] XP awarded, refreshing...');
+        
+        // Refresh immediately
+        refreshXP();
+      }
+    };
+
+    // Add event listeners
+    window.addEventListener('xpAwarded', handleXpAwarded as EventListener);
+    window.addEventListener('xpUpdated', handleXpAwarded as EventListener);
+    window.addEventListener('forceRefresh', handleXpAwarded as EventListener);
+
+    // Cleanup
+    return () => {
+      try {
+        const { unregisterFromRefresh } = require('@/utils/globalRefresh');
+        unregisterFromRefresh(componentId);
+      } catch (error) {
+        // Ignore if global refresh not available
+      }
+      cleanup();
+      window.removeEventListener('xpAwarded', handleXpAwarded as EventListener);
+      window.removeEventListener('xpUpdated', handleXpAwarded as EventListener);
+      window.removeEventListener('forceRefresh', handleXpAwarded as EventListener);
+    };
+  }, [walletAddress, refreshXP]);
+
+  // Show loading skeleton only on first load, not on subsequent refreshes
+  const isFirstLoad = loading && !stats.totalXP && !bountyStats && !xpProfile;
+  
+  if (isFirstLoad) {
     return (
       <div className={`space-y-6 ${className}`}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -163,6 +254,9 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {/* XP Notification System - Handles all XP toast notifications */}
+      <XPNotification walletAddress={walletAddress} />
+      
       {/* Welcome Header */}
       <Card className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-blue-500/30">
         <CardContent className="p-6">
@@ -250,6 +344,12 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
         </Card>
       </div>
 
+      {/* Daily Login Bonus */}
+      <DailyLoginBonus walletAddress={walletAddress} className="mb-6" />
+
+      {/* Feedback Tracker Widget */}
+      <FeedbackTrackerWidget limit={5} showTitle={true} className="mb-6" />
+
       {/* Main Dashboard Tabs */}
       <Tabs defaultValue="bounties" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
@@ -289,6 +389,7 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
             badges={badges}
             stats={stats}
             walletAddress={walletAddress}
+            refreshXP={refreshXP}
           />
         </TabsContent>
       </Tabs>
@@ -494,32 +595,19 @@ function SquadSection({ userSquad, stats, walletAddress }: {
 }
 
 // XP Section Component
-function XPSection({ profile, badges, stats, walletAddress }: {
+function XPSection({ profile, badges, stats, walletAddress, refreshXP }: {
   profile: any;
   badges: any[];
   stats: DashboardStats;
   walletAddress: string;
+  refreshXP: () => void;
 }) {
-  // Handle undefined profile data
-  if (!profile) {
-    return (
-      <Card className="bg-slate-800/50 border-yellow-500/30">
-        <CardContent className="p-6">
-          <div className="animate-pulse">
-            <div className="h-6 bg-slate-700 rounded mb-4"></div>
-            <div className="space-y-3">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-4 bg-slate-700 rounded"></div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const xpToNextLevel = 1000 - (profile.totalXP % 1000);
-  const progressToNextLevel = ((profile.totalXP % 1000) / 1000) * 100;
+  // Handle undefined or null profile data - use stats as fallback
+  const totalXP = profile?.totalXP || stats.totalXP || 0;
+  const completedCourses = profile?.completedCourses || [];
+  
+  const xpToNextLevel = 1000 - (totalXP % 1000);
+  const progressToNextLevel = ((totalXP % 1000) / 1000) * 100;
 
   return (
     <div className="space-y-4">
@@ -540,7 +628,7 @@ function XPSection({ profile, badges, stats, walletAddress }: {
                   <p className="text-sm text-gray-400">Current Level</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-yellow-400">{profile.totalXP.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-yellow-400">{totalXP.toLocaleString()}</p>
                   <p className="text-sm text-gray-400">Total XP</p>
                 </div>
               </div>
@@ -552,8 +640,20 @@ function XPSection({ profile, badges, stats, walletAddress }: {
                 </div>
                 <Progress value={progressToNextLevel} className="h-3" />
                 <p className="text-xs text-gray-500">
-                  {profile.totalXP % 1000} / 1000 XP to next level
+                  {totalXP % 1000} / 1000 XP to next level
                 </p>
+              </div>
+
+              {/* Refresh Button */}
+              <div className="flex justify-center mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={refreshXP}
+                  className="text-xs text-yellow-400 border-yellow-500/50 hover:bg-yellow-500/10"
+                >
+                  <RefreshCw className="h-3 w-3 mr-2" /> Refresh XP
+                </Button>
               </div>
             </div>
 

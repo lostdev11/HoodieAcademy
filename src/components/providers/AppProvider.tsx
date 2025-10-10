@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { SettingsProvider } from './SettingsProvider';
 import GlobalAnnouncementBanner from '../GlobalAnnouncementBanner';
+import { Toaster } from '@/components/ui/toaster';
 
 interface AppProviderProps {
   children: ReactNode;
@@ -33,6 +34,8 @@ export default function AppProvider({
       <div className="min-h-screen w-full overflow-x-hidden">
         <GlobalAnnouncementBanner initialAnnouncements={initialAnnouncements} />
         {children}
+        {/* Toast notification system - displays XP notifications and other toasts */}
+        <Toaster />
       </div>
     </SettingsProvider>
   );
