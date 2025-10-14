@@ -45,7 +45,36 @@ export default function TokenGate({ children }: TokenGateProps) {
   const [loading, setLoading] = useState(false);
   const [hasBeenConnected, setHasBeenConnected] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const isPhantomInstalled = typeof window !== 'undefined' && window.solana?.isPhantom;
+  const [isPhantomInstalled, setIsPhantomInstalled] = useState(false);
+
+  // Check for Phantom wallet availability with retries
+  useEffect(() => {
+    const checkPhantomAvailability = async () => {
+      let retries = 0;
+      const maxRetries = 5;
+      
+      while (retries < maxRetries) {
+        if (typeof window !== 'undefined' && window.solana?.isPhantom) {
+          console.log('✅ Phantom wallet detected');
+          setIsPhantomInstalled(true);
+          return;
+        }
+        
+        console.log(`⏳ Checking for Phantom wallet, attempt ${retries + 1}/${maxRetries}`);
+        retries++;
+        
+        if (retries < maxRetries) {
+          // Wait 1 second before retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      console.log('❌ Phantom wallet not found after all retries');
+      setIsPhantomInstalled(false);
+    };
+
+    checkPhantomAvailability();
+  }, []);
 
   // Debug logging
   useEffect(() => {
@@ -337,10 +366,36 @@ export default function TokenGate({ children }: TokenGateProps) {
     
     let provider;
     if (providerName === 'phantom') {
-      if (window.solana?.isPhantom) {
-        provider = window.solana;
-        console.log("✅ Debug: Phantom wallet found and available");
-      } else {
+      // Wait for Phantom to be available with retry mechanism
+      let retries = 0;
+      const maxRetries = 3;
+      
+      while (retries < maxRetries) {
+        if (window.solana?.isPhantom) {
+          provider = window.solana;
+          console.log("✅ Debug: Phantom wallet found and available");
+          break;
+        }
+        
+        console.log(`⏳ Debug: Phantom not found, retry ${retries + 1}/${maxRetries}`);
+        retries++;
+        
+        if (retries < maxRetries) {
+          // Wait 500ms before retry
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+      
+      if (!provider) {
+        // Check if Phantom is available but not fully loaded
+        if (typeof window !== 'undefined' && window.solana && !window.solana.isPhantom) {
+          const errorMsg = "Phantom wallet is installed but not ready. Please refresh the page and try again.";
+          console.error("❌ Debug:", errorMsg);
+          setError(errorMsg);
+          setIsConnecting(false);
+          return;
+        }
+        
         const errorMsg = isMobile 
           ? "Please open this page in the Phantom app browser"
           : "Phantom wallet is not installed. Please install Phantom wallet extension first.";
@@ -509,13 +564,17 @@ export default function TokenGate({ children }: TokenGateProps) {
         <div className="sm:hidden w-full px-4 space-y-3">
           <Button
             onClick={() => connectWallet('phantom')}
-            disabled={isConnecting}
+            disabled={isConnecting || (!isPhantomInstalled && !isMobile)}
             className="group relative overflow-hidden w-full min-h-[56px] font-semibold text-white rounded-xl shadow-lg ring-1 ring-white/20 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation text-base"
           >
             <span className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-white/30 to-transparent opacity-70 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
             <span className="relative z-10 flex items-center justify-center gap-3">
               <Wallet size={20} />
-              <span>{isConnecting ? 'Connecting...' : 'Connect with Phantom'}</span>
+              <span>
+                {isConnecting ? 'Connecting...' : 
+                 !isPhantomInstalled && !isMobile ? 'Checking Phantom...' : 
+                 'Connect with Phantom'}
+              </span>
             </span>
           </Button>
           
@@ -537,13 +596,15 @@ export default function TokenGate({ children }: TokenGateProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                disabled={isConnecting}
+                disabled={isConnecting || !isPhantomInstalled}
                 className="group relative overflow-hidden px-8 py-3 w-64 min-h-[44px] font-semibold text-white rounded-xl shadow-lg ring-1 ring-white/20 bg-gradient-to-r from-amber-500 via-rose-500 to-violet-600 hover:from-amber-400 hover:via-rose-400 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-white/30 to-transparent opacity-70 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                 <Wallet className="mr-2 relative z-10" size={20} />
                 <span className="relative z-10">
-                  {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                  {isConnecting ? 'Connecting...' : 
+                   !isPhantomInstalled ? 'Checking Wallet...' : 
+                   'Connect Wallet'}
                 </span>
                 <ChevronDown className="ml-2 relative z-10" size={16} />
               </Button>
