@@ -54,6 +54,15 @@ export default function TokenGate({ children }: TokenGateProps) {
       const maxRetries = 5;
       
       while (retries < maxRetries) {
+        // Debug: Log what we're actually checking
+        console.log('🔍 Debug wallet check:', {
+          windowExists: typeof window !== 'undefined',
+          solanaExists: typeof window !== 'undefined' && !!window.solana,
+          isPhantom: typeof window !== 'undefined' && window.solana?.isPhantom,
+          solanaKeys: typeof window !== 'undefined' && window.solana ? Object.keys(window.solana) : 'N/A',
+          userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'N/A'
+        });
+        
         if (typeof window !== 'undefined' && window.solana?.isPhantom) {
           console.log('✅ Phantom wallet detected');
           setIsPhantomInstalled(true);
@@ -70,7 +79,14 @@ export default function TokenGate({ children }: TokenGateProps) {
       }
       
       console.log('❌ Phantom wallet not found after all retries');
-      setIsPhantomInstalled(false);
+      
+      // Check if any Solana wallet is available as fallback
+      if (typeof window !== 'undefined' && window.solana && !window.solana.isPhantom) {
+        console.log('⚠️ Solana wallet detected but not Phantom:', window.solana);
+        setIsPhantomInstalled(true); // Allow connection attempt
+      } else {
+        setIsPhantomInstalled(false);
+      }
     };
 
     checkPhantomAvailability();
@@ -387,22 +403,19 @@ export default function TokenGate({ children }: TokenGateProps) {
       }
       
       if (!provider) {
-        // Check if Phantom is available but not fully loaded
-        if (typeof window !== 'undefined' && window.solana && !window.solana.isPhantom) {
-          const errorMsg = "Phantom wallet is installed but not ready. Please refresh the page and try again.";
+        // Check if any Solana wallet is available as fallback
+        if (typeof window !== 'undefined' && window.solana) {
+          console.log("⚠️ Using fallback Solana wallet:", window.solana);
+          provider = window.solana;
+        } else {
+          const errorMsg = isMobile 
+            ? "Please open this page in the Phantom app browser"
+            : "No Solana wallet detected. Please install Phantom wallet extension first.";
           console.error("❌ Debug:", errorMsg);
           setError(errorMsg);
           setIsConnecting(false);
           return;
         }
-        
-        const errorMsg = isMobile 
-          ? "Please open this page in the Phantom app browser"
-          : "Phantom wallet is not installed. Please install Phantom wallet extension first.";
-        console.error("❌ Debug:", errorMsg);
-        setError(errorMsg);
-        setIsConnecting(false);
-        return;
       }
     } else if (providerName === 'solflare') {
       const solflareProvider = getSolflareProvider();
@@ -559,6 +572,26 @@ export default function TokenGate({ children }: TokenGateProps) {
           Connect your wallet to verify your WifHoodie NFT and access this course.
         </p>
         {error && <p className="text-red-400 mb-4 px-4 text-sm sm:text-base">{error}</p>}
+        
+        {/* Debug info for troubleshooting */}
+        {!isPhantomInstalled && (
+          <div className="mb-4 px-4 text-xs text-gray-400">
+            <p>Debug: Phantom wallet detection failed</p>
+            <p>If you have Phantom installed, try:</p>
+            <ul className="list-disc list-inside mt-1 space-y-1">
+              <li>Refresh the page</li>
+              <li>Check if Phantom extension is enabled</li>
+              <li>Try connecting manually below</li>
+            </ul>
+            <Button
+              onClick={() => connectWallet('phantom')}
+              disabled={isConnecting}
+              className="mt-2 w-full text-xs py-1 bg-gray-700 hover:bg-gray-600"
+            >
+              {isConnecting ? 'Connecting...' : 'Force Connect Phantom'}
+            </Button>
+          </div>
+        )}
         
         {/* Mobile: Show buttons directly */}
         <div className="sm:hidden w-full px-4 space-y-3">
