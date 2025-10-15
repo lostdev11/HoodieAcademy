@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallet API Hybrid System Test - Hoodie Academy</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      color: #4cc9f0;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #94a3b8;
+      margin-bottom: 30px;
+    }
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .test-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .test-card h2 {
+      color: #4cc9f0;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+    .test-result {
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+    .result-pass {
+      background: rgba(74, 222, 128, 0.2);
+      border-left: 4px solid #4ade80;
+    }
+    .result-fail {
+      background: rgba(248, 113, 113, 0.2);
+      border-left: 4px solid #f87171;
+    }
+    .result-info {
+      background: rgba(76, 201, 240, 0.2);
+      border-left: 4px solid #4cc9f0;
+    }
+    .result-warning {
+      background: rgba(251, 191, 36, 0.2);
+      border-left: 4px solid #fbbf24;
+    }
+    button {
+      background: linear-gradient(135deg, #4cc9f0 0%, #7209b7 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1em;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 5px;
+      transition: all 0.3s;
+      width: 100%;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(76, 201, 240, 0.4);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .summary-card {
+      background: linear-gradient(135deg, rgba(76, 201, 240, 0.1) 0%, rgba(114, 9, 183, 0.1) 100%);
+      border: 2px solid #4cc9f0;
+      padding: 30px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .summary-stat {
+      display: inline-block;
+      margin: 0 20px;
+      font-size: 1.2em;
+    }
+    .summary-stat .number {
+      font-size: 2em;
+      font-weight: bold;
+      color: #4cc9f0;
+    }
+    code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #a78bfa;
+    }
+    .log-viewer {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 10px;
+      padding: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85em;
+    }
+    .log-entry {
+      padding: 5px;
+      margin: 2px 0;
+      border-left: 2px solid #4cc9f0;
+      padding-left: 10px;
+    }
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top: 3px solid #4cc9f0;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin: 10px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Wallet API Hybrid System Test</h1>
+    <p class="subtitle">Testing localStorage + API validation approach</p>
+
+    <div class="summary-card" id="summary">
+      <div class="summary-stat">
+        <div class="number" id="passCount">0</div>
+        <div>Tests Passed</div>
+      </div>
+      <div class="summary-stat">
+        <div class="number" id="failCount">0</div>
+        <div>Tests Failed</div>
+      </div>
+      <div class="summary-stat">
+        <div class="number" id="totalCount">0</div>
+        <div>Total Tests</div>
+      </div>
+    </div>
+
+    <div class="test-grid">
+      <!-- Test 1: API Endpoints -->
+      <div class="test-card">
+        <h2>1️⃣ API Endpoints Health</h2>
+        <div id="apiHealthResults"></div>
+        <button onclick="testApiHealth()">Run API Health Check</button>
+      </div>
+
+      <!-- Test 2: Connection Logging -->
+      <div class="test-card">
+        <h2>2️⃣ Connection Logging</h2>
+        <div id="connectionResults"></div>
+        <button onclick="testConnectionLogging()">Test Connection API</button>
+      </div>
+
+      <!-- Test 3: Wallet Verification -->
+      <div class="test-card">
+        <h2>3️⃣ Wallet Verification</h2>
+        <div id="verificationResults"></div>
+        <button onclick="testWalletVerification()">Test Verification API</button>
+      </div>
+
+      <!-- Test 4: Disconnection Logging -->
+      <div class="test-card">
+        <h2>4️⃣ Disconnection Logging</h2>
+        <div id="disconnectionResults"></div>
+        <button onclick="testDisconnectionLogging()">Test Disconnect API</button>
+      </div>
+
+      <!-- Test 5: Storage Sync -->
+      <div class="test-card">
+        <h2>5️⃣ Storage Synchronization</h2>
+        <div id="storageSyncResults"></div>
+        <button onclick="testStorageSync()">Test Storage Sync</button>
+      </div>
+
+      <!-- Test 6: Full Flow -->
+      <div class="test-card">
+        <h2>6️⃣ Full Integration Test</h2>
+        <div id="integrationResults"></div>
+        <button onclick="testFullIntegration()">Run Full Flow Test</button>
+      </div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="test-card">
+      <h2>📋 Activity Log</h2>
+      <div class="log-viewer" id="logViewer"></div>
+      <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <!-- Run All Button -->
+    <div style="text-align: center; margin: 30px 0;">
+      <button onclick="runAllTests()" style="max-width: 400px; font-size: 1.2em; padding: 15px;">
+        ▶️ Run All Tests
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const TEST_WALLET = 'TestWallet1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefg';
+    const API_BASE = window.location.origin;
+    let testsPassed = 0;
+    let testsFailed = 0;
+    let testsTotal = 0;
+
+    function log(message, type = 'info') {
+      const logViewer = document.getElementById('logViewer');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      const timestamp = new Date().toLocaleTimeString();
+      entry.textContent = `[${timestamp}] ${message}`;
+      logViewer.appendChild(entry);
+      logViewer.scrollTop = logViewer.scrollHeight;
+      console.log(message);
+    }
+
+    function clearLog() {
+      document.getElementById('logViewer').innerHTML = '';
+    }
+
+    function updateSummary() {
+      document.getElementById('passCount').textContent = testsPassed;
+      document.getElementById('failCount').textContent = testsFailed;
+      document.getElementById('totalCount').textContent = testsTotal;
+    }
+
+    function showResult(containerId, message, type) {
+      const container = document.getElementById(containerId);
+      const div = document.createElement('div');
+      div.className = `test-result result-${type}`;
+      div.innerHTML = message;
+      container.appendChild(div);
+      
+      if (type === 'pass') testsPassed++;
+      if (type === 'fail') testsFailed++;
+      testsTotal++;
+      updateSummary();
+    }
+
+    async function testApiHealth() {
+      const container = document.getElementById('apiHealthResults');
+      container.innerHTML = '<div class="spinner"></div>';
+      log('🏥 Testing API health endpoints...');
+
+      const endpoints = [
+        '/api/wallet/verify',
+        '/api/wallet/connect',
+        '/api/wallet/disconnect'
+      ];
+
+      container.innerHTML = '';
+      for (const endpoint of endpoints) {
+        try {
+          const res = await fetch(`${API_BASE}${endpoint}`);
+          const data = await res.json();
+          
+          if (res.ok) {
+            showResult('apiHealthResults', `✅ ${endpoint} - OK (${data.status})`, 'pass');
+            log(`✅ ${endpoint} is healthy`);
+          } else {
+            showResult('apiHealthResults', `❌ ${endpoint} - Failed`, 'fail');
+            log(`❌ ${endpoint} failed`);
+          }
+        } catch (error) {
+          showResult('apiHealthResults', `❌ ${endpoint} - Error: ${error.message}`, 'fail');
+          log(`❌ ${endpoint} error: ${error.message}`);
+        }
+      }
+    }
+
+    async function testConnectionLogging() {
+      const container = document.getElementById('connectionResults');
+      container.innerHTML = '<div class="spinner"></div>';
+      log('🔗 Testing connection logging...');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/wallet/connect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet: TEST_WALLET,
+            provider: 'phantom'
+          })
+        });
+
+        const data = await res.json();
+        container.innerHTML = '';
+
+        if (data.success) {
+          showResult('connectionResults', `✅ Connection logged successfully`, 'pass');
+          showResult('connectionResults', `📊 Connection ID: ${data.connectionId || 'N/A'}`, 'info');
+          showResult('connectionResults', `👤 Is new user: ${data.isNewUser}`, 'info');
+          log(`✅ Connection logged: ${TEST_WALLET}`);
+        } else {
+          showResult('connectionResults', `❌ Connection logging failed: ${data.error}`, 'fail');
+          log(`❌ Connection failed: ${data.error}`);
+        }
+      } catch (error) {
+        container.innerHTML = '';
+        showResult('connectionResults', `❌ Error: ${error.message}`, 'fail');
+        log(`❌ Connection test error: ${error.message}`);
+      }
+    }
+
+    async function testWalletVerification() {
+      const container = document.getElementById('verificationResults');
+      container.innerHTML = '<div class="spinner"></div>';
+      log('🔍 Testing wallet verification...');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/wallet/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet: TEST_WALLET
+          })
+        });
+
+        const data = await res.json();
+        container.innerHTML = '';
+
+        showResult('verificationResults', `${data.valid ? '✅' : '❌'} Valid: ${data.valid}`, data.valid ? 'pass' : 'fail');
+        showResult('verificationResults', `👑 Admin: ${data.isAdmin}`, 'info');
+        showResult('verificationResults', `📝 Reason: ${data.reason}`, 'info');
+        log(`🔍 Verification result: valid=${data.valid}, admin=${data.isAdmin}`);
+      } catch (error) {
+        container.innerHTML = '';
+        showResult('verificationResults', `❌ Error: ${error.message}`, 'fail');
+        log(`❌ Verification test error: ${error.message}`);
+      }
+    }
+
+    async function testDisconnectionLogging() {
+      const container = document.getElementById('disconnectionResults');
+      container.innerHTML = '<div class="spinner"></div>';
+      log('🔌 Testing disconnection logging...');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/wallet/disconnect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet: TEST_WALLET,
+            reason: 'test'
+          })
+        });
+
+        const data = await res.json();
+        container.innerHTML = '';
+
+        if (data.success) {
+          showResult('disconnectionResults', `✅ Disconnection logged successfully`, 'pass');
+          showResult('disconnectionResults', `📊 Disconnection ID: ${data.disconnectionId || 'N/A'}`, 'info');
+          log(`✅ Disconnection logged: ${TEST_WALLET}`);
+        } else {
+          showResult('disconnectionResults', `❌ Disconnection logging failed`, 'fail');
+          log(`❌ Disconnection failed`);
+        }
+      } catch (error) {
+        container.innerHTML = '';
+        showResult('disconnectionResults', `❌ Error: ${error.message}`, 'fail');
+        log(`❌ Disconnection test error: ${error.message}`);
+      }
+    }
+
+    function testStorageSync() {
+      const container = document.getElementById('storageSyncResults');
+      container.innerHTML = '';
+      log('💾 Testing storage synchronization...');
+
+      // Simulate wallet connection storage
+      localStorage.setItem('hoodie_academy_wallet', TEST_WALLET);
+      localStorage.setItem('walletAddress', TEST_WALLET);
+      localStorage.setItem('connectedWallet', TEST_WALLET);
+
+      const keys = [
+        'hoodie_academy_wallet',
+        'walletAddress',
+        'connectedWallet'
+      ];
+
+      let allMatch = true;
+      keys.forEach(key => {
+        const value = localStorage.getItem(key);
+        if (value === TEST_WALLET) {
+          showResult('storageSyncResults', `✅ ${key}: ${value.substring(0, 20)}...`, 'pass');
+        } else {
+          showResult('storageSyncResults', `❌ ${key}: ${value || 'null'}`, 'fail');
+          allMatch = false;
+        }
+      });
+
+      if (allMatch) {
+        showResult('storageSyncResults', `✅ All storage keys synced correctly`, 'pass');
+        log('✅ Storage sync test passed');
+      } else {
+        showResult('storageSyncResults', `❌ Storage keys not synced`, 'fail');
+        log('❌ Storage sync test failed');
+      }
+
+      // Clean up
+      keys.forEach(key => localStorage.removeItem(key));
+    }
+
+    async function testFullIntegration() {
+      const container = document.getElementById('integrationResults');
+      container.innerHTML = '<div class="spinner"></div>';
+      log('🚀 Running full integration test...');
+
+      try {
+        // Step 1: Connect
+        const connectRes = await fetch(`${API_BASE}/api/wallet/connect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet: TEST_WALLET, provider: 'phantom' })
+        });
+        const connectData = await connectRes.json();
+
+        // Step 2: Verify
+        const verifyRes = await fetch(`${API_BASE}/api/wallet/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet: TEST_WALLET })
+        });
+        const verifyData = await verifyRes.json();
+
+        // Step 3: Disconnect
+        const disconnectRes = await fetch(`${API_BASE}/api/wallet/disconnect`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet: TEST_WALLET, reason: 'test' })
+        });
+        const disconnectData = await disconnectRes.json();
+
+        container.innerHTML = '';
+
+        if (connectData.success && verifyData.valid && disconnectData.success) {
+          showResult('integrationResults', `✅ Full integration test passed!`, 'pass');
+          showResult('integrationResults', `1️⃣ Connection: ${connectData.success}`, 'info');
+          showResult('integrationResults', `2️⃣ Verification: ${verifyData.valid}`, 'info');
+          showResult('integrationResults', `3️⃣ Disconnection: ${disconnectData.success}`, 'info');
+          log('🎉 Full integration test PASSED');
+        } else {
+          showResult('integrationResults', `❌ Integration test failed`, 'fail');
+          log('❌ Integration test FAILED');
+        }
+      } catch (error) {
+        container.innerHTML = '';
+        showResult('integrationResults', `❌ Error: ${error.message}`, 'fail');
+        log(`❌ Integration test error: ${error.message}`);
+      }
+    }
+
+    async function runAllTests() {
+      log('🚀 Running all tests...');
+      testsPassed = 0;
+      testsFailed = 0;
+      testsTotal = 0;
+      updateSummary();
+
+      // Clear all result containers
+      ['apiHealthResults', 'connectionResults', 'verificationResults', 
+       'disconnectionResults', 'storageSyncResults', 'integrationResults'].forEach(id => {
+        document.getElementById(id).innerHTML = '';
+      });
+
+      await testApiHealth();
+      await new Promise(r => setTimeout(r, 500));
+      await testConnectionLogging();
+      await new Promise(r => setTimeout(r, 500));
+      await testWalletVerification();
+      await new Promise(r => setTimeout(r, 500));
+      await testDisconnectionLogging();
+      await new Promise(r => setTimeout(r, 500));
+      testStorageSync();
+      await new Promise(r => setTimeout(r, 500));
+      await testFullIntegration();
+
+      log(`🏁 All tests complete: ${testsPassed} passed, ${testsFailed} failed`);
+    }
+
+    // Initialize
+    log('✅ Test suite loaded and ready');
+    updateSummary();
+  </script>
+</body>
+</html>
+

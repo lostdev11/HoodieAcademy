@@ -34,6 +34,34 @@ export function useWalletSupabase() {
       if (storedWallet) {
         setWallet(storedWallet);
         console.log('💾 Wallet restored from localStorage:', storedWallet);
+        
+        // Validate wallet with API in background (hybrid approach)
+        fetch('/api/wallet/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wallet: storedWallet })
+        })
+          .then(res => res.json())
+          .then(data => {
+            console.log('🔍 API Validation result:', data);
+            if (!data.valid) {
+              console.warn('⚠️ Server says wallet is invalid, disconnecting...');
+              // Server says wallet is invalid (banned, etc.)
+              localStorage.removeItem('hoodie_academy_wallet');
+              localStorage.removeItem('hoodie_academy_is_admin');
+              setWallet(null);
+              setIsAdmin(false);
+              setError(data.reason || 'Wallet validation failed');
+            } else {
+              // Update admin status from server
+              setIsAdmin(data.isAdmin || false);
+              localStorage.setItem('hoodie_academy_is_admin', data.isAdmin ? 'true' : 'false');
+            }
+          })
+          .catch(err => {
+            console.warn('⚠️ API validation failed, keeping localStorage:', err);
+            // On API error, keep the localStorage value (fail open)
+          });
       }
       
       if (storedAdmin === 'true') {
@@ -119,6 +147,33 @@ export function useWalletSupabase() {
       // Set wallet address first (this is the most important part)
       setWallet(walletAddress);
       setLoading(false);
+      
+      // Log connection to API (hybrid approach - fire and don't wait)
+      fetch('/api/wallet/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          wallet: walletAddress,
+          provider: 'phantom'
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('📊 API connection logged:', data);
+          if (data.success && data.isAdmin !== undefined) {
+            setIsAdmin(data.isAdmin);
+            localStorage.setItem('hoodie_academy_is_admin', data.isAdmin ? 'true' : 'false');
+          }
+          if (data.banned) {
+            // Wallet is banned, disconnect immediately
+            console.error('⛔ Wallet is banned!');
+            disconnectWallet();
+          }
+        })
+        .catch(err => {
+          console.warn('⚠️ API connection logging failed:', err);
+          // Continue anyway - don't block user
+        });
       
       // Check admin status after wallet connection
       await checkAdminStatus(walletAddress);
@@ -227,6 +282,23 @@ export function useWalletSupabase() {
   const disconnectWallet = useCallback(async () => {
     if (wallet) {
       try {
+        // Log disconnection to API (hybrid approach)
+        fetch('/api/wallet/disconnect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            wallet: wallet,
+            reason: 'user_initiated'
+          })
+        })
+          .then(res => res.json())
+          .then(data => {
+            console.log('📊 API disconnection logged:', data);
+          })
+          .catch(err => {
+            console.warn('⚠️ API disconnection logging failed:', err);
+          });
+        
         // Enhanced wallet disconnection tracking
         await walletTracker.trackDisconnection(wallet, 'phantom');
         console.log('📊 Enhanced wallet disconnection tracked');

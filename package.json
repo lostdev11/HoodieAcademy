@@ -6,9 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "export": "next export"
+    "export": "next export",
+    "analyze": "ANALYZE=true next build",
+    "perf": "npm run build && npm run start"
   },
   "dependencies": {
+    "@daily-co/daily-js": "^0.84.0",
+    "@daily-co/daily-react": "^0.23.2",
     "@keystonehq/sdk": "^0.20.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

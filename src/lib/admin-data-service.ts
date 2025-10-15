@@ -129,7 +129,7 @@ export class AdminDataService {
   /**
    * Fetch all admin dashboard data in one call
    */
-  async getAllAdminData(): Promise<AdminDashboardData> {
+  async getAllAdminData(walletAddress?: string): Promise<AdminDashboardData> {
     try {
       console.log('🔄 [ADMIN DATA SERVICE] Fetching all admin data...');
       
@@ -140,7 +140,7 @@ export class AdminDataService {
         this.fetchSubmissions(),
         this.fetchAnnouncements(),
         this.fetchEvents(),
-        this.fetchCourses()
+        this.fetchCourses(walletAddress)
       ]);
 
       // Calculate comprehensive stats
@@ -277,17 +277,25 @@ export class AdminDataService {
   /**
    * Fetch courses data
    */
-  async fetchCourses(): Promise<AdminCourse[]> {
+  async fetchCourses(walletAddress?: string): Promise<AdminCourse[]> {
     try {
       console.log('📚 [ADMIN DATA SERVICE] Fetching courses...');
       
-      const response = await fetch('/api/courses');
+      // Build URL with query parameters if wallet address is provided
+      let url = '/api/courses';
+      if (walletAddress) {
+        url += `?wallet_address=${encodeURIComponent(walletAddress)}&is_admin=true&include_hidden=true`;
+      }
+      
+      const response = await fetch(url);
       if (!response.ok) {
         console.warn('⚠️ [ADMIN DATA SERVICE] Courses API failed, returning empty array');
         return [];
       }
       
-      const courses = await response.json();
+      const result = await response.json();
+      // Handle the response format from the API which returns { courses: [...] }
+      const courses = result.courses || result || [];
       console.log('✅ [ADMIN DATA SERVICE] Fetched courses:', courses.length);
       return courses;
     } catch (error) {
@@ -353,7 +361,7 @@ export class AdminDataService {
   /**
    * Refresh specific data type
    */
-  async refreshData(type: 'users' | 'bounties' | 'submissions' | 'announcements' | 'events' | 'courses') {
+  async refreshData(type: 'users' | 'bounties' | 'submissions' | 'announcements' | 'events' | 'courses', walletAddress?: string) {
     console.log(`🔄 [ADMIN DATA SERVICE] Refreshing ${type}...`);
     
     switch (type) {
@@ -368,7 +376,7 @@ export class AdminDataService {
       case 'events':
         return await this.fetchEvents();
       case 'courses':
-        return await this.fetchCourses();
+        return await this.fetchCourses(walletAddress);
       default:
         throw new Error(`Unknown data type: ${type}`);
     }

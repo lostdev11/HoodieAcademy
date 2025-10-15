@@ -281,9 +281,34 @@ export default function HoodieAcademy() {
       const walletAddress = provider.publicKey!.toString();
       console.log('🎯 Connected wallet:', walletAddress);
       
-      // Store wallet address
+      // Store wallet address in all storage locations for consistency
+      localStorage.setItem("hoodie_academy_wallet", walletAddress);
       localStorage.setItem("walletAddress", walletAddress);
       localStorage.setItem("connectedWallet", walletAddress);
+      
+      // Log to API (hybrid approach)
+      fetch('/api/wallet/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          wallet: walletAddress,
+          provider: 'phantom'
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('📊 API connection logged from dashboard:', data);
+          if (data.banned) {
+            console.error('⛔ Wallet is banned!');
+            handleDisconnect();
+          } else if (data.isAdmin !== undefined) {
+            setIsAdmin(data.isAdmin);
+            localStorage.setItem("hoodie_academy_is_admin", data.isAdmin ? 'true' : 'false');
+          }
+        })
+        .catch(err => {
+          console.warn('⚠️ API connection logging failed:', err);
+        });
       
       // Update state
       setWalletAddress(walletAddress);
@@ -323,8 +348,31 @@ export default function HoodieAcademy() {
   }, []);
 
   const handleDisconnect = useCallback(() => {
+    // Log to API before disconnecting
+    if (walletAddress) {
+      fetch('/api/wallet/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          wallet: walletAddress,
+          reason: 'user_initiated'
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('📊 API disconnection logged from dashboard:', data);
+        })
+        .catch(err => {
+          console.warn('⚠️ API disconnection logging failed:', err);
+        });
+    }
+    
+    // Clear all wallet storage locations
+    localStorage.removeItem("hoodie_academy_wallet");
     localStorage.removeItem("walletAddress");
     localStorage.removeItem("connectedWallet");
+    localStorage.removeItem("hoodie_academy_is_admin");
+    sessionStorage.removeItem("wifhoodie_verification");
     sessionStorage.removeItem("wifhoodie_verification_session");
     if (window.solana?.disconnect) {
       window.solana.disconnect();
@@ -334,7 +382,7 @@ export default function HoodieAcademy() {
     setUserDisplayName(null);
     setIsAdmin(false);
     setUserSquad(null);
-  }, []);
+  }, [walletAddress]);
 
   const formatWalletAddress = (address: string) => {
     if (!address) return "";

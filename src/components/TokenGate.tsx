@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import WelcomeTutorial from '@/components/onboarding/WelcomeTutorial';
 
 // Constants
 const HELIUS_API_KEY = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
@@ -46,6 +47,7 @@ export default function TokenGate({ children }: TokenGateProps) {
   const [hasBeenConnected, setHasBeenConnected] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isPhantomInstalled, setIsPhantomInstalled] = useState(false);
+  const [showWelcomeTutorial, setShowWelcomeTutorial] = useState(false);
 
   // Check for Phantom wallet availability with retries
   useEffect(() => {
@@ -233,9 +235,11 @@ export default function TokenGate({ children }: TokenGateProps) {
         };
         sessionStorage.setItem(VERIFICATION_SESSION_KEY, JSON.stringify(sessionData));
         
-        // Store wallet address in database instead of localStorage
-        // TODO: Implement database save here
-        console.log('Wallet verified, should save to database:', wallet);
+        // Sync with other wallet storage systems
+        localStorage.setItem('hoodie_academy_wallet', wallet);
+        localStorage.setItem('walletAddress', wallet);
+        localStorage.setItem('connectedWallet', wallet);
+        console.log('Wallet verified and synced to all storage systems:', wallet);
         
         setHasBeenConnected(true);
         
@@ -271,9 +275,12 @@ export default function TokenGate({ children }: TokenGateProps) {
     setLoading(false);
   };
 
-  // Restore session on component mount
+  // Restore session on component mount - check all storage locations
   useEffect(() => {
     const sessionData = sessionStorage.getItem(VERIFICATION_SESSION_KEY);
+    const storedWallet = localStorage.getItem('hoodie_academy_wallet') 
+      || localStorage.getItem('walletAddress') 
+      || localStorage.getItem('connectedWallet');
     
     // Add timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
@@ -304,6 +311,11 @@ export default function TokenGate({ children }: TokenGateProps) {
         console.error("❌ Debug: Error parsing session data:", error);
         sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
       }
+    } else if (storedWallet) {
+      // Try to restore from localStorage if sessionStorage is empty
+      console.log("🔄 Debug: Restoring wallet from localStorage:", storedWallet);
+      setWalletAddress(storedWallet);
+      // Will trigger verification via the walletAddress useEffect
     }
     
     return () => clearTimeout(timeoutId);
@@ -334,6 +346,23 @@ export default function TokenGate({ children }: TokenGateProps) {
     // Log wallet disconnection
     if (walletAddress) {
       logWalletConnection(walletAddress, 'wallet_disconnect', { provider: 'phantom' });
+      
+      // Log to API (hybrid approach)
+      fetch('/api/wallet/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          wallet: walletAddress,
+          reason: 'user_initiated'
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('📊 API disconnection logged from TokenGate:', data);
+        })
+        .catch(err => {
+          console.warn('⚠️ API disconnection logging failed:', err);
+        });
     }
     
     setWalletAddress(null);
@@ -343,8 +372,12 @@ export default function TokenGate({ children }: TokenGateProps) {
     setShowSuccess(false);
     setError(null);
     
-    // Clear session and local storage
+    // Clear ALL wallet storage systems
     sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
+    localStorage.removeItem('hoodie_academy_wallet');
+    localStorage.removeItem('walletAddress');
+    localStorage.removeItem('connectedWallet');
+    localStorage.removeItem('hoodie_academy_is_admin');
     
     // Disconnect from wallet providers safely
     const sol = typeof window !== 'undefined' ? window.solana : undefined;
@@ -460,7 +493,41 @@ export default function TokenGate({ children }: TokenGateProps) {
       // Log wallet connection
       await logWalletConnection(walletAddress, 'wallet_connect', { provider: providerName });
       
+      // Sync wallet across all storage systems immediately
+      localStorage.setItem('hoodie_academy_wallet', walletAddress);
+      localStorage.setItem('walletAddress', walletAddress);
+      localStorage.setItem('connectedWallet', walletAddress);
+      
+      // Log to API (hybrid approach - fire and don't wait)
+      fetch('/api/wallet/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          wallet: walletAddress,
+          provider: providerName
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('📊 API connection logged from TokenGate:', data);
+          if (data.banned) {
+            // Wallet is banned
+            console.error('⛔ Wallet is banned!');
+            disconnectWallet();
+          }
+        })
+        .catch(err => {
+          console.warn('⚠️ API connection logging failed:', err);
+        });
+      
       setWalletAddress(walletAddress);
+      
+      // Check if this is first time connecting (for tutorial)
+      const hasSeenOnboarding = localStorage.getItem('hoodie_academy_onboarding_seen');
+      if (!hasSeenOnboarding) {
+        setShowWelcomeTutorial(true);
+      }
+      
       // Trigger verification with success message
       await checkWifHoodieOwnership(walletAddress, true);
     } catch (error: any) {
@@ -711,6 +778,14 @@ export default function TokenGate({ children }: TokenGateProps) {
           </div>
         </div>
       </motion.div>
+
+      {/* Welcome Tutorial Overlay */}
+      {showWelcomeTutorial && (
+        <WelcomeTutorial 
+          walletAddress={walletAddress || undefined}
+          onClose={() => setShowWelcomeTutorial(false)}
+        />
+      )}
     </div>
   );
 };

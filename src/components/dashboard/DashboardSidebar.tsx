@@ -19,10 +19,14 @@ import {
   Video,
   MessageCircle,
   Target,
-  Sparkles
+  Sparkles,
+  Bell,
+  Vote
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
 import { getSquadNameFromCache, fetchUserSquad } from '@/utils/squad-api';
+import { NotificationBadge } from '@/components/notifications/NotificationBadge';
+import { TutorialButton } from '@/components/onboarding/TutorialButton';
 // Use canonical wallet types
 
 interface SidebarItem {
@@ -31,6 +35,7 @@ interface SidebarItem {
   icon: React.ReactNode;
   href: string;
   badge?: number;
+  notificationCount?: number;
   dynamic?: boolean;
 }
 
@@ -45,6 +50,13 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [squadChatUrl, setSquadChatUrl] = useState<string>('/squads/hoodie-creators/chat');
   const { isAdmin } = useAdminStatus();
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [notificationCounts, setNotificationCounts] = useState({
+    newAnnouncements: 0,
+    newEvents: 0,
+    newBounties: 0,
+    newCourses: 0,
+  });
 
   // Helper function to get squad chat URL
   const getSquadChatUrl = (squadName: string): string => {
@@ -118,7 +130,7 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
     return `/squads/${urlFriendly}/chat`;
   };
 
-  // Load user's squad
+  // Load user's squad and wallet
   useEffect(() => {
     const loadSquad = async () => {
       // Show cached squad immediately
@@ -128,10 +140,13 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
         setSquadChatUrl(getSquadChatUrl(cachedSquad));
       }
       
-      // Fetch from API for accuracy
-      const walletAddress = localStorage.getItem('walletAddress');
-      if (walletAddress) {
-        const squadData = await fetchUserSquad(walletAddress);
+      // Get wallet from localStorage
+      const wallet = localStorage.getItem('walletAddress');
+      if (wallet) {
+        setWalletAddress(wallet);
+        
+        // Fetch from API for accuracy
+        const squadData = await fetchUserSquad(wallet);
         if (squadData && squadData.hasSquad && squadData.squad) {
           setUserSquad(squadData.squad.name);
           setSquadChatUrl(getSquadChatUrl(squadData.squad.name));
@@ -141,6 +156,36 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
     
     loadSquad();
   }, []);
+
+  // Fetch notification counts
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const walletAddress = localStorage.getItem('walletAddress');
+      if (!walletAddress) return;
+
+      try {
+        const response = await fetch(`/api/notifications/counts?wallet=${walletAddress}&is_admin=${isAdmin}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.counts) {
+            setNotificationCounts({
+              newAnnouncements: data.counts.newAnnouncements || 0,
+              newEvents: data.counts.newEvents || 0,
+              newBounties: data.counts.newBounties || 0,
+              newCourses: data.counts.newCourses || 0,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, [isAdmin]);
 
   // Admin status is now managed by useAdminStatus hook
 
@@ -167,19 +212,33 @@ const sidebarItems: SidebarItem[] = [
     id: 'courses',
     label: 'Courses',
     icon: <BookOpen className="w-5 h-5" />,
-    href: '/courses'
+    href: '/courses',
+    notificationCount: notificationCounts.newCourses
   },
   {
     id: 'bounties',
     label: 'Bounties',
     icon: <Target className="w-5 h-5" />,
-    href: '/bounties'
+    href: '/bounties',
+    notificationCount: notificationCounts.newBounties
   },
   {
     id: 'feedback',
     label: 'Feedback',
     icon: <Sparkles className="w-5 h-5" />,
     href: '/feedback'
+  },
+  {
+    id: 'mentorship',
+    label: 'Live Sessions',
+    icon: <Video className="w-5 h-5" />,
+    href: '/mentorship'
+  },
+  {
+    id: 'governance',
+    label: 'Governance',
+    icon: <Vote className="w-5 h-5" />,
+    href: '/governance'
   },
   {
     id: 'squads',
@@ -284,7 +343,7 @@ const sidebarItems: SidebarItem[] = [
             >
               <Button
                 variant={isActive ? 'default' : 'ghost'}
-                className={`w-full justify-start transition-all duration-200 ${
+                className={`w-full justify-start transition-all duration-200 relative ${
                   isActive 
                     ? 'bg-cyan-600 hover:bg-cyan-700 text-white shadow-[0_0_10px_rgba(6,182,212,0.3)]' 
                     : 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10'
@@ -301,6 +360,15 @@ const sidebarItems: SidebarItem[] = [
                     {item.badge}
                   </div>
                 )}
+                {item.notificationCount && item.notificationCount > 0 && (
+                  <div className={collapsed ? 'absolute -top-1 -right-1' : 'ml-auto'}>
+                    <NotificationBadge 
+                      count={item.notificationCount} 
+                      position={collapsed ? 'inline' : 'inline'} 
+                      size="sm"
+                    />
+                  </div>
+                )}
               </Button>
             </Link>
           );
@@ -308,7 +376,18 @@ const sidebarItems: SidebarItem[] = [
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-cyan-500/20">
+      <div className="p-4 border-t border-cyan-500/20 space-y-3">
+        {/* Tutorial Button */}
+        {!collapsed && (
+          <TutorialButton 
+            walletAddress={walletAddress || undefined}
+            variant="outline"
+            size="sm"
+            label="📚 Take a Tour"
+            showIcon={false}
+          />
+        )}
+        
         {!collapsed && (
           <div className="text-center">
             <div className="text-xs text-gray-400 mb-2">Current Time</div>

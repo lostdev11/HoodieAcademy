@@ -37,15 +37,18 @@ export async function POST(request: NextRequest) {
 
     console.log('📅 [DAILY LOGIN] Checking daily login for:', walletAddress, 'on', today);
 
-    // Check if user already received daily login bonus today
+    // Check if user already received daily login bonus in the last 24 hours
+    const twentyFourHoursAgo = new Date(Date.now() - (24 * 60 * 60 * 1000));
+    
     const { data: todayActivity, error: activityError } = await supabase
       .from('user_activity')
-      .select('id')
+      .select('id, created_at')
       .eq('wallet_address', walletAddress)
       .eq('activity_type', 'daily_login_bonus')
-      .gte('created_at', `${today}T00:00:00.000Z`)
-      .lt('created_at', `${today}T23:59:59.999Z`)
-      .single();
+      .gte('created_at', twentyFourHoursAgo.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (activityError && activityError.code !== 'PGRST116') {
       console.error('❌ [DAILY LOGIN] Error checking today activity:', activityError);
@@ -58,16 +61,16 @@ export async function POST(request: NextRequest) {
     if (todayActivity) {
       console.log('⚠️ [DAILY LOGIN] User already received daily bonus today');
       
-      // Calculate next available time (midnight UTC of next day)
-      const tomorrow = new Date(today);
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-      tomorrow.setUTCHours(0, 0, 0, 0);
+      // Calculate next available time (24 hours from last claim)
+      const lastClaimTime = new Date(todayActivity.created_at);
+      const nextAvailable = new Date(lastClaimTime.getTime() + (24 * 60 * 60 * 1000)); // 24 hours later
       
       return NextResponse.json({
         success: false,
         message: 'Daily login bonus already claimed today',
         alreadyClaimed: true,
-        nextAvailable: tomorrow.toISOString()
+        nextAvailable: nextAvailable.toISOString(),
+        lastClaimed: todayActivity.created_at
       });
     }
 
@@ -174,10 +177,9 @@ export async function POST(request: NextRequest) {
       levelUp
     });
 
-    // Calculate next available time (midnight UTC of next day)
-    const tomorrow = new Date(today);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-    tomorrow.setUTCHours(0, 0, 0, 0);
+    // Calculate next available time (24 hours from now)
+    const now = new Date();
+    const nextAvailable = new Date(now.getTime() + (24 * 60 * 60 * 1000)); // 24 hours from claim
 
     return NextResponse.json({
       success: true,
@@ -186,7 +188,7 @@ export async function POST(request: NextRequest) {
       newTotalXP: newTotalXP,
       levelUp: levelUp,
       message: `Daily login bonus: +${DAILY_LOGIN_XP} XP!`,
-      nextAvailable: tomorrow.toISOString(),
+      nextAvailable: nextAvailable.toISOString(),
       // Include data for real-time updates
       refreshLeaderboard: true,
       targetWallet: walletAddress,
@@ -222,28 +224,36 @@ export async function GET(request: NextRequest) {
     const today = new Date().toISOString().split('T')[0];
 
     // Check if user already received daily login bonus today
-    const { data: todayActivity, error: activityError } = await supabase
+    // Get the most recent daily login claim (last 24 hours)
+    const twentyFourHoursAgo = new Date(Date.now() - (24 * 60 * 60 * 1000));
+    
+    const { data: recentActivity, error: activityError } = await supabase
       .from('user_activity')
       .select('created_at, metadata')
       .eq('wallet_address', walletAddress)
       .eq('activity_type', 'daily_login_bonus')
-      .gte('created_at', `${today}T00:00:00.000Z`)
-      .lt('created_at', `${today}T23:59:59.999Z`)
-      .single();
+      .gte('created_at', twentyFourHoursAgo.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    const alreadyClaimed = !activityError && todayActivity;
+    const alreadyClaimed = !activityError && recentActivity;
 
-    // Calculate next available time (midnight UTC of next day)
-    const tomorrow = new Date(today);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-    tomorrow.setUTCHours(0, 0, 0, 0);
+    // Calculate next available time (24 hours from last claim, or now if never claimed)
+    let nextAvailable: Date;
+    if (alreadyClaimed && recentActivity) {
+      const lastClaimTime = new Date(recentActivity.created_at);
+      nextAvailable = new Date(lastClaimTime.getTime() + (24 * 60 * 60 * 1000)); // 24 hours from last claim
+    } else {
+      nextAvailable = new Date(); // Available now
+    }
 
     return NextResponse.json({
       walletAddress,
       today: today,
       alreadyClaimed: alreadyClaimed,
-      lastClaimed: alreadyClaimed ? todayActivity.created_at : null,
-      nextAvailable: tomorrow.toISOString(),
+      lastClaimed: alreadyClaimed ? recentActivity.created_at : null,
+      nextAvailable: nextAvailable.toISOString(),
       dailyBonusXP: 5
     });
 

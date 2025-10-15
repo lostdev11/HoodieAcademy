@@ -39,39 +39,72 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 
 interface SettingsProviderProps {
   children: React.ReactNode;
-  initialGlobalSettings?: GlobalSettings;
-  initialFeatureFlags?: FeatureFlags;
 }
 
-export function SettingsProvider({ 
-  children, 
-  initialGlobalSettings = defaultGlobalSettings,
-  initialFeatureFlags = defaultFeatureFlags
-}: SettingsProviderProps) {
-  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>(initialGlobalSettings);
-  const [featureFlags, setFeatureFlags] = useState<FeatureFlags>(initialFeatureFlags);
+export function SettingsProvider({ children }: SettingsProviderProps) {
+  const [globalSettings, setGlobalSettings] = useState<GlobalSettings>(defaultGlobalSettings);
+  const [featureFlags, setFeatureFlags] = useState<FeatureFlags>(defaultFeatureFlags);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchSettings = async () => {
-    try {
-      const supabase = getSupabaseBrowser();
-      const { data, error } = await supabase
-        .from('global_settings')
-        .select('*')
-        .single();
-
-      if (error) {
-        console.error('Error fetching global settings:', error);
-        // Use default settings if table doesn't exist or has permission issues
-        setGlobalSettings(defaultGlobalSettings);
+    // PERFORMANCE FIX: Add caching to prevent refetching on every mount
+    const cachedSettings = typeof window !== 'undefined' ? sessionStorage.getItem('globalSettings') : null;
+    const cachedFlags = typeof window !== 'undefined' ? sessionStorage.getItem('featureFlags') : null;
+    const cacheTime = typeof window !== 'undefined' ? sessionStorage.getItem('settingsCacheTime') : null;
+    
+    // Use cached data if less than 5 minutes old
+    if (cachedSettings && cacheTime) {
+      const cacheAge = Date.now() - parseInt(cacheTime);
+      if (cacheAge < 5 * 60 * 1000) { // 5 minutes
+        setGlobalSettings(JSON.parse(cachedSettings));
+        if (cachedFlags) setFeatureFlags(JSON.parse(cachedFlags));
+        setIsLoading(false);
         return;
       }
+    }
+    
+    try {
+      const supabase = getSupabaseBrowser();
+      
+      // Fetch both in parallel instead of sequential
+      const [settingsResult, flagsResult] = await Promise.all([
+        supabase.from('global_settings').select('*').maybeSingle(),
+        supabase.from('feature_flags').select('*')
+      ]);
 
-      setGlobalSettings(data);
+      if (settingsResult.error) {
+        console.error('Error fetching global settings:', settingsResult.error);
+        setGlobalSettings(defaultGlobalSettings);
+      } else if (settingsResult.data) {
+        setGlobalSettings(settingsResult.data);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('globalSettings', JSON.stringify(settingsResult.data));
+        }
+      }
+      
+      if (flagsResult.error) {
+        console.error('Error fetching feature flags:', flagsResult.error);
+        setFeatureFlags(defaultFeatureFlags);
+      } else if (flagsResult.data) {
+        const flags = flagsResult.data.reduce((acc: { [key: string]: boolean }, flag: any) => {
+          if (flag && typeof flag === 'object' && flag.key) {
+            acc[flag.key] = flag.enabled || false;
+          }
+          return acc;
+        }, {});
+        setFeatureFlags(flags);
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('featureFlags', JSON.stringify(flags));
+        }
+      }
+      
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('settingsCacheTime', Date.now().toString());
+      }
     } catch (error) {
       console.error('Error:', error);
-      // Use default settings on any error
       setGlobalSettings(defaultGlobalSettings);
+      setFeatureFlags(defaultFeatureFlags);
     } finally {
       setIsLoading(false);
     }

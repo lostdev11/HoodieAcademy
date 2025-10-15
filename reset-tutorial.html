@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Onboarding Tutorial - Hoodie Academy</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(30, 41, 59, 0.8);
+      border: 2px solid rgba(6, 182, 212, 0.3);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    h1 {
+      color: #06b6d4;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #94a3b8;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .info-box {
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    .info-box strong {
+      color: #06b6d4;
+    }
+
+    .status {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+
+    .status.not-seen {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #4ade80;
+    }
+
+    .status.seen {
+      background: rgba(251, 146, 60, 0.1);
+      border: 1px solid rgba(251, 146, 60, 0.3);
+      color: #fb923c;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 10px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(6, 182, 212, 0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(100, 116, 139, 0.2);
+      color: #cbd5e1;
+      border: 1px solid rgba(100, 116, 139, 0.5);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(100, 116, 139, 0.3);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .success-message {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #4ade80;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      display: none;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .success-message.show {
+      display: block;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .emoji {
+      font-size: 48px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🎓</div>
+    <h1>Onboarding Tutorial Manager</h1>
+    <p class="subtitle">Manage your Hoodie Academy welcome tutorial</p>
+
+    <div class="info-box">
+      <strong>What is this?</strong><br>
+      The welcome tutorial shows new users around Hoodie Academy when they connect their wallet for the first time. Use this tool to reset it if you want to see it again.
+    </div>
+
+    <div id="status" class="status">
+      Checking status...
+    </div>
+
+    <button id="resetBtn" class="btn-primary" onclick="resetTutorial()">
+      🔄 Reset Tutorial
+    </button>
+
+    <button class="btn-secondary" onclick="window.location.href='/'">
+      ← Back to Dashboard
+    </button>
+
+    <div id="successMessage" class="success-message">
+      ✅ Tutorial reset! Disconnect and reconnect your wallet to see it again.
+    </div>
+  </div>
+
+  <script>
+    // Storage key (must match the one in the app)
+    const STORAGE_KEY = 'hoodie_academy_onboarding_seen';
+
+    // Check current status on page load
+    function checkStatus() {
+      const hasSeen = localStorage.getItem(STORAGE_KEY);
+      const statusDiv = document.getElementById('status');
+      
+      if (hasSeen === 'true') {
+        statusDiv.className = 'status seen';
+        statusDiv.innerHTML = '📋 <strong>Status:</strong> Tutorial has been seen<br><small>You can reset it to see it again</small>';
+      } else {
+        statusDiv.className = 'status not-seen';
+        statusDiv.innerHTML = '🎯 <strong>Status:</strong> Tutorial will show on next connection<br><small>Connect your wallet to see the welcome tutorial</small>';
+      }
+    }
+
+    // Reset the tutorial
+    function resetTutorial() {
+      localStorage.removeItem(STORAGE_KEY);
+      console.log('✅ Onboarding tutorial reset');
+      
+      // Show success message
+      const successMsg = document.getElementById('successMessage');
+      successMsg.classList.add('show');
+      
+      // Update status
+      checkStatus();
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        successMsg.classList.remove('show');
+      }, 5000);
+    }
+
+    // Check status on load
+    checkStatus();
+
+    // Log current state to console
+    console.log('🎓 Onboarding Tutorial Manager');
+    console.log('Storage Key:', STORAGE_KEY);
+    console.log('Current Value:', localStorage.getItem(STORAGE_KEY));
+    console.log('');
+    console.log('💡 To manually reset in console, run:');
+    console.log("localStorage.removeItem('hoodie_academy_onboarding_seen')");
+  </script>
+</body>
+</html>
+

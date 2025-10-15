@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clear Wallet Storage - Hoodie Academy</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    h1 {
+      color: #4cc9f0;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .info-box {
+      background: rgba(76, 201, 240, 0.1);
+      border-left: 4px solid #4cc9f0;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 5px;
+    }
+    .storage-list {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+    .storage-item {
+      padding: 8px;
+      margin: 5px 0;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 5px;
+    }
+    .storage-item.found {
+      border-left: 3px solid #4ade80;
+    }
+    .storage-item.empty {
+      border-left: 3px solid #f87171;
+      opacity: 0.6;
+    }
+    button {
+      background: linear-gradient(135deg, #4cc9f0 0%, #7209b7 100%);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 100%;
+      margin: 10px 0;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(76, 201, 240, 0.4);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    .success {
+      background: rgba(74, 222, 128, 0.2);
+      border-left: 4px solid #4ade80;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 5px;
+      display: none;
+    }
+    .refresh-btn {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    .key {
+      color: #a78bfa;
+      font-weight: bold;
+    }
+    .value {
+      color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Wallet Storage Utility</h1>
+    
+    <div class="info-box">
+      <strong>🎯 Purpose:</strong> This tool helps you diagnose and fix wallet connection issues by clearing all wallet-related storage.
+    </div>
+
+    <h2>📊 Current Storage Status</h2>
+    <div class="storage-list" id="storageStatus">
+      Checking storage...
+    </div>
+
+    <button onclick="checkStorage()">🔍 Refresh Storage Status</button>
+    <button onclick="clearWalletStorage()">🧹 Clear All Wallet Storage</button>
+    <button class="refresh-btn" onclick="reloadPage()">🔄 Reload Page</button>
+
+    <div class="success" id="successMessage">
+      ✅ All wallet storage has been cleared successfully! You can now reconnect your wallet.
+    </div>
+
+    <div class="info-box" style="margin-top: 20px;">
+      <strong>📝 Storage Keys:</strong><br>
+      • <span class="key">hoodie_academy_wallet</span> - Main wallet storage<br>
+      • <span class="key">walletAddress</span> - Dashboard wallet<br>
+      • <span class="key">connectedWallet</span> - Legacy wallet storage<br>
+      • <span class="key">hoodie_academy_is_admin</span> - Admin status<br>
+      • <span class="key">wifhoodie_verification</span> - Session verification (sessionStorage)
+    </div>
+  </div>
+
+  <script>
+    function checkStorage() {
+      const keys = [
+        'hoodie_academy_wallet',
+        'walletAddress',
+        'connectedWallet',
+        'hoodie_academy_is_admin',
+        'squadName',
+        'squadLockTime'
+      ];
+      
+      let html = '<h3>localStorage:</h3>';
+      
+      keys.forEach(key => {
+        const value = localStorage.getItem(key);
+        const status = value ? 'found' : 'empty';
+        const displayValue = value 
+          ? (value.length > 50 ? value.substring(0, 47) + '...' : value)
+          : 'null';
+        
+        html += `<div class="storage-item ${status}">
+          <span class="key">${key}:</span> 
+          <span class="value">${displayValue}</span>
+        </div>`;
+      });
+      
+      html += '<h3 style="margin-top: 15px;">sessionStorage:</h3>';
+      const sessionKey = 'wifhoodie_verification';
+      const sessionValue = sessionStorage.getItem(sessionKey);
+      const sessionStatus = sessionValue ? 'found' : 'empty';
+      const sessionDisplay = sessionValue 
+        ? (sessionValue.length > 50 ? sessionValue.substring(0, 47) + '...' : sessionValue)
+        : 'null';
+      
+      html += `<div class="storage-item ${sessionStatus}">
+        <span class="key">${sessionKey}:</span> 
+        <span class="value">${sessionDisplay}</span>
+      </div>`;
+      
+      document.getElementById('storageStatus').innerHTML = html;
+    }
+
+    function clearWalletStorage() {
+      // Clear localStorage
+      localStorage.removeItem('hoodie_academy_wallet');
+      localStorage.removeItem('walletAddress');
+      localStorage.removeItem('connectedWallet');
+      localStorage.removeItem('hoodie_academy_is_admin');
+      
+      // Clear sessionStorage
+      sessionStorage.removeItem('wifhoodie_verification');
+      sessionStorage.removeItem('wifhoodie_verification_session');
+      
+      console.log('✅ All wallet storage cleared');
+      
+      // Show success message
+      document.getElementById('successMessage').style.display = 'block';
+      
+      // Refresh the display
+      checkStorage();
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        document.getElementById('successMessage').style.display = 'none';
+      }, 5000);
+    }
+
+    function reloadPage() {
+      window.location.reload();
+    }
+
+    // Check storage on page load
+    checkStorage();
+  </script>
+</body>
+</html>
+

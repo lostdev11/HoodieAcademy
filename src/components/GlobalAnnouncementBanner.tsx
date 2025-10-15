@@ -15,11 +15,47 @@ export default function GlobalAnnouncementBanner({
 }: GlobalAnnouncementBannerProps) {
   const [announcements, setAnnouncements] = useState<DBAnnouncement[]>(initialAnnouncements);
   const [dismissedAnnouncements, setDismissedAnnouncements] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
   const supabase = useSupabase();
 
   useEffect(() => {
-    // Set initial announcements
-    setAnnouncements(initialAnnouncements);
+    // PERFORMANCE FIX: Fetch announcements client-side with caching
+    const fetchAnnouncements = async () => {
+      // Check cache first
+      const cachedData = typeof window !== 'undefined' ? sessionStorage.getItem('announcements') : null;
+      const cacheTime = typeof window !== 'undefined' ? sessionStorage.getItem('announcementsCacheTime') : null;
+      
+      if (cachedData && cacheTime) {
+        const cacheAge = Date.now() - parseInt(cacheTime);
+        if (cacheAge < 2 * 60 * 1000) { // 2 minutes cache
+          setAnnouncements(JSON.parse(cachedData));
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from("announcements")
+          .select("id,title,content,starts_at,ends_at,is_published,created_at,updated_at")
+          .eq("is_published", true)
+          .order("created_at", { ascending: false });
+        
+        if (!error && data) {
+          setAnnouncements(data);
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('announcements', JSON.stringify(data));
+            sessionStorage.setItem('announcementsCacheTime', Date.now().toString());
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching announcements:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnnouncements();
 
     // Subscribe to realtime changes
     const channel = supabase
@@ -53,7 +89,7 @@ export default function GlobalAnnouncementBanner({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, initialAnnouncements]);
+  }, [supabase]);
 
   const isAnnouncementActive = (announcement: DBAnnouncement): boolean => {
     if (!announcement.is_published) return false;

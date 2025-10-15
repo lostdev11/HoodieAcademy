@@ -13,7 +13,7 @@ import {
   RefreshCw, Download, Upload, Eye, EyeOff, CheckCircle, XCircle, AlertTriangle,
   Info, User, Award, Target, TrendingUp, BarChart3, Megaphone, Bell, Clock,
   FileText, CheckSquare, XSquare, ArrowLeft, LogOut, Shield, AlertCircle, Lock, Key, CalendarDays,
-  Database, Activity, Zap, Globe, X, Image as ImageIcon
+  Database, Activity, Zap, Globe, X, Image as ImageIcon, Video
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -59,6 +59,7 @@ import UserConnectionTest from '@/components/admin/UserConnectionTest';
 import UserTrackingDashboard from '@/components/admin/UserTrackingDashboard';
 import SimpleWalletTracker from '@/components/admin/SimpleWalletTracker';
 import TrackingSystemTest from '@/components/admin/TrackingSystemTest';
+import { MentorshipManager } from '@/components/admin/MentorshipManager';
 
 // Type for file-based courses (from JSON files)
 interface CourseFile {
@@ -1036,6 +1037,10 @@ export default function AdminDashboard({
             <TabsTrigger value="events" className="flex items-center gap-2">
               <CalendarDays className="w-4 h-4" />
               Events
+            </TabsTrigger>
+            <TabsTrigger value="mentorship" className="flex items-center gap-2">
+              <Video className="w-4 h-4" />
+              Mentorship
             </TabsTrigger>
             <TabsTrigger value="admin" className="flex items-center gap-2">
               <Shield className="w-4 h-4" />
@@ -2175,6 +2180,11 @@ export default function AdminDashboard({
           </TabsContent>
 
           {/* Admin Tab */}
+          {/* Mentorship Tab */}
+          <TabsContent value="mentorship" className="space-y-6">
+            <MentorshipManager walletAddress={walletAddress} />
+          </TabsContent>
+
           <TabsContent value="admin" className="space-y-6">
             <Card className="bg-slate-800/50">
               <CardHeader>

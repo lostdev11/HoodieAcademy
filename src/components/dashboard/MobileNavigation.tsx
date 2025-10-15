@@ -17,7 +17,8 @@ import {
   Video,
   MessageCircle,
   Target,
-  Sparkles
+  Sparkles,
+  Vote
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
 import { getSquadNameFromCache, fetchUserSquad } from '@/utils/squad-api';
@@ -149,6 +150,18 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
       label: 'Feedback',
       icon: <Sparkles className="w-5 h-5" />,
       href: '/feedback'
+    },
+    {
+      id: 'mentorship',
+      label: 'Live Sessions',
+      icon: <Video className="w-5 h-5" />,
+      href: '/mentorship'
+    },
+    {
+      id: 'governance',
+      label: 'Governance',
+      icon: <Vote className="w-5 h-5" />,
+      href: '/governance'
     },
     {
       id: 'my-squad',

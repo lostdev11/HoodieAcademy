@@ -195,6 +195,12 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
       href: '/courses'
     },
     {
+      id: 'mentorship',
+      label: 'Live Sessions',
+      icon: <Video className="w-5 h-5" />,
+      href: '/mentorship'
+    },
+    {
       id: 'squad-chat',
       label: userSquad ? `${userSquad.replace(/^[🎨🧠🎤⚔️🦅🏦]+\s*/, '')} Chat` : 'Squad Chat',
       icon: <MessageCircle className="w-5 h-5" />,

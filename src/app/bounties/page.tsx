@@ -1,11 +1,13 @@
 import { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import BountiesGrid from '@/components/BountiesGrid';
+import BountiesGridOptimized from '@/components/BountiesGridOptimized';
 import { Button } from '@/components/ui/button';
 import { Home, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import TokenGate from '@/components/TokenGate';
+import { Suspense } from 'react';
+import { BountyListSkeleton } from '@/components/ui/skeleton';
 
 export const metadata: Metadata = {
   title: 'Bounties - Hoodie Academy',
@@ -167,7 +169,9 @@ export default async function BountiesPage() {
               </div>
             </div>
             
-            <BountiesGrid initialBounties={bounties} showHidden={false} />
+            <Suspense fallback={<BountyListSkeleton count={6} />}>
+              <BountiesGridOptimized initialBounties={bounties} showHidden={false} />
+            </Suspense>
           </div>
         </main>
       </div>

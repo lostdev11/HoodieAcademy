@@ -23,9 +23,10 @@ import { adminDataService, AdminDashboardData, AdminStats } from '@/lib/admin-da
 
 interface AdminOverviewDashboardProps {
   className?: string;
+  walletAddress?: string | null;
 }
 
-export default function AdminOverviewDashboard({ className = '' }: AdminOverviewDashboardProps) {
+export default function AdminOverviewDashboard({ className = '', walletAddress }: AdminOverviewDashboardProps) {
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export default function AdminOverviewDashboard({ className = '' }: AdminOverview
       setLoading(true);
       setError(null);
       
-      const dashboardData = await adminDataService.getAllAdminData();
+      const dashboardData = await adminDataService.getAllAdminData(walletAddress || undefined);
       setData(dashboardData);
       setLastUpdated(new Date());
       setRefreshCount(prev => prev + 1);
@@ -49,7 +50,7 @@ export default function AdminOverviewDashboard({ className = '' }: AdminOverview
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [walletAddress]);
 
   useEffect(() => {
     fetchData();

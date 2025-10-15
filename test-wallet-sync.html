@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallet Sync Test - Hoodie Academy</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      padding: 40px;
+      margin: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      color: #4cc9f0;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .test-section {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .test-result {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+    }
+    .test-pass {
+      background: rgba(74, 222, 128, 0.2);
+      border-left: 4px solid #4ade80;
+    }
+    .test-fail {
+      background: rgba(248, 113, 113, 0.2);
+      border-left: 4px solid #f87171;
+    }
+    .test-info {
+      background: rgba(76, 201, 240, 0.2);
+      border-left: 4px solid #4cc9f0;
+    }
+    button {
+      background: linear-gradient(135deg, #4cc9f0 0%, #7209b7 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 5px;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    .icon {
+      margin-right: 8px;
+    }
+    .summary {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 10px;
+    }
+    .summary.pass {
+      background: rgba(74, 222, 128, 0.2);
+      color: #4ade80;
+    }
+    .summary.fail {
+      background: rgba(248, 113, 113, 0.2);
+      color: #f87171;
+    }
+    code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #a78bfa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Wallet Storage Sync Test</h1>
+    
+    <div class="test-section">
+      <h2>Test Controls</h2>
+      <button onclick="simulateConnect()">🔗 Simulate Wallet Connect</button>
+      <button onclick="runTests()">▶️ Run All Tests</button>
+      <button onclick="clearAll()">🧹 Clear Storage</button>
+    </div>
+
+    <div class="test-section">
+      <h2>Test Results</h2>
+      <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Storage Inspector</h2>
+      <div id="storageInspector"></div>
+    </div>
+  </div>
+
+  <script>
+    const TEST_WALLET = 'DemoWallet1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh';
+    
+    function simulateConnect() {
+      console.log('🔗 Simulating wallet connection...');
+      
+      // Simulate what TokenGate does
+      localStorage.setItem('hoodie_academy_wallet', TEST_WALLET);
+      localStorage.setItem('walletAddress', TEST_WALLET);
+      localStorage.setItem('connectedWallet', TEST_WALLET);
+      
+      const sessionData = {
+        walletAddress: TEST_WALLET,
+        isHolder: true,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem('wifhoodie_verification', JSON.stringify(sessionData));
+      
+      showResult('✅ Wallet connection simulated', 'pass');
+      updateStorageInspector();
+      
+      // Automatically run tests
+      setTimeout(runTests, 500);
+    }
+
+    function runTests() {
+      console.log('🧪 Running tests...');
+      const results = [];
+      
+      // Test 1: Check hoodie_academy_wallet
+      const test1 = localStorage.getItem('hoodie_academy_wallet');
+      results.push({
+        name: 'Test 1: hoodie_academy_wallet exists',
+        pass: test1 === TEST_WALLET,
+        message: test1 ? `Found: ${test1.substring(0, 20)}...` : 'Not found'
+      });
+      
+      // Test 2: Check walletAddress
+      const test2 = localStorage.getItem('walletAddress');
+      results.push({
+        name: 'Test 2: walletAddress exists',
+        pass: test2 === TEST_WALLET,
+        message: test2 ? `Found: ${test2.substring(0, 20)}...` : 'Not found'
+      });
+      
+      // Test 3: Check connectedWallet
+      const test3 = localStorage.getItem('connectedWallet');
+      results.push({
+        name: 'Test 3: connectedWallet exists',
+        pass: test3 === TEST_WALLET,
+        message: test3 ? `Found: ${test3.substring(0, 20)}...` : 'Not found'
+      });
+      
+      // Test 4: Check sessionStorage
+      const test4 = sessionStorage.getItem('wifhoodie_verification');
+      results.push({
+        name: 'Test 4: wifhoodie_verification exists',
+        pass: !!test4,
+        message: test4 ? 'Session data found' : 'Not found'
+      });
+      
+      // Test 5: All values match
+      const allMatch = test1 === test2 && test2 === test3 && test3 === TEST_WALLET;
+      results.push({
+        name: 'Test 5: All storage values match',
+        pass: allMatch,
+        message: allMatch ? 'All storage keys contain the same wallet address' : 'Storage values do not match'
+      });
+      
+      displayResults(results);
+      updateStorageInspector();
+    }
+
+    function displayResults(results) {
+      const container = document.getElementById('testResults');
+      const passCount = results.filter(r => r.pass).length;
+      const totalCount = results.length;
+      
+      let html = '';
+      
+      // Summary
+      const allPassed = passCount === totalCount;
+      html += `<div class="summary ${allPassed ? 'pass' : 'fail'}">
+        ${allPassed ? '✅' : '❌'} ${passCount}/${totalCount} tests passed
+      </div>`;
+      
+      // Individual results
+      results.forEach(result => {
+        html += `<div class="test-result ${result.pass ? 'test-pass' : 'test-fail'}">
+          <span class="icon">${result.pass ? '✅' : '❌'}</span>
+          <strong>${result.name}</strong><br>
+          <small>${result.message}</small>
+        </div>`;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    function updateStorageInspector() {
+      const container = document.getElementById('storageInspector');
+      
+      const keys = [
+        { key: 'hoodie_academy_wallet', storage: 'local' },
+        { key: 'walletAddress', storage: 'local' },
+        { key: 'connectedWallet', storage: 'local' },
+        { key: 'hoodie_academy_is_admin', storage: 'local' },
+        { key: 'wifhoodie_verification', storage: 'session' }
+      ];
+      
+      let html = '<h3>Current Storage State:</h3>';
+      
+      keys.forEach(({ key, storage }) => {
+        const value = storage === 'local' 
+          ? localStorage.getItem(key)
+          : sessionStorage.getItem(key);
+        
+        const display = value 
+          ? (value.length > 60 ? value.substring(0, 57) + '...' : value)
+          : '<em>null</em>';
+        
+        html += `<div class="test-result ${value ? 'test-info' : 'test-fail'}">
+          <code>${key}</code> (${storage}Storage):<br>
+          <small>${display}</small>
+        </div>`;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    function clearAll() {
+      localStorage.removeItem('hoodie_academy_wallet');
+      localStorage.removeItem('walletAddress');
+      localStorage.removeItem('connectedWallet');
+      localStorage.removeItem('hoodie_academy_is_admin');
+      sessionStorage.removeItem('wifhoodie_verification');
+      
+      showResult('🧹 All storage cleared', 'info');
+      updateStorageInspector();
+      document.getElementById('testResults').innerHTML = '<div class="test-result test-info">Storage cleared. Click "Simulate Wallet Connect" to test again.</div>';
+    }
+
+    function showResult(message, type) {
+      const container = document.getElementById('testResults');
+      container.innerHTML = `<div class="test-result test-${type}">${message}</div>`;
+    }
+
+    // Initialize on page load
+    updateStorageInspector();
+  </script>
+</body>
+</html>
+

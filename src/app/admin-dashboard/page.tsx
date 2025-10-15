@@ -18,7 +18,7 @@ import {
   Users, BookOpen, Trophy, Settings, Shield, BarChart3, 
   Target, Megaphone, Bell, Database, Activity, Zap, 
   FileText, Star, CheckCircle, Sparkles, MessageSquare,
-  Crown, ScrollText, Flag
+  Crown, ScrollText, Flag, Video, Vote
 } from 'lucide-react';
 import CouncilNoticesManager from '@/components/admin/CouncilNoticesManager';
 import AnnouncementsManager from '@/components/admin/AnnouncementsManager';
@@ -28,6 +28,10 @@ import ExamApprovalManager from '@/components/admin/ExamApprovalManager';
 import CommunityManagement from '@/components/admin/CommunityManagement';
 import LoreLogManager from '@/components/admin/LoreLogManager';
 import AcademyMilestonesManager from '@/components/admin/AcademyMilestonesManager';
+import { MentorshipManager } from '@/components/admin/MentorshipManager';
+import { GovernanceManager } from '@/components/admin/GovernanceManager';
+import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
+import { NotificationBadge } from '@/components/notifications/NotificationBadge';
 
 interface Bounty {
   id?: string;
@@ -48,8 +52,9 @@ interface Bounty {
   updated_at?: string;
 }
 
-export default function AdminDashboardPage() {
-  const { wallet: walletAddress, isAdmin, connectWallet, loading: walletLoading } = useWalletSupabase();
+// Inner component that uses notifications
+function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
+  const { counts, markAsRead } = useNotifications();
 
   const getTabDisplayName = (tab: string) => {
     const tabNames: Record<string, string> = {
@@ -68,7 +73,8 @@ export default function AdminDashboardPage() {
       'feedback': 'User Feedback',
       'community': 'Community',
       'lore': 'Lore Log',
-      'milestones': 'Milestones'
+      'milestones': 'Milestones',
+      'governance': 'Governance'
     };
     return tabNames[tab] || 'Select a section...';
   };
@@ -95,60 +101,6 @@ export default function AdminDashboardPage() {
 
     fetchBounties();
   }, []);
-
-  // Check localStorage for admin bypass
-  const [localStorageAdmin, setLocalStorageAdmin] = useState(false);
-  
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedAdmin = localStorage.getItem('hoodie_academy_is_admin');
-      setLocalStorageAdmin(storedAdmin === 'true');
-    }
-  }, []);
-
-  // Client-side admin protection with localStorage bypass
-  if (!walletAddress && !localStorageAdmin) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
-        <div className="max-w-md mx-auto text-center">
-          <h1 className="text-2xl font-bold text-red-400 mb-4">Access Denied</h1>
-          <p className="text-slate-400 mb-6">
-            Please connect your wallet to access the admin dashboard.
-          </p>
-          <Button onClick={connectWallet} className="bg-blue-600 hover:bg-blue-700">
-            Connect Wallet
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin && !localStorageAdmin) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
-        <div className="max-w-md mx-auto text-center">
-          <h1 className="text-2xl font-bold text-red-400 mb-4">Admin Access Required</h1>
-          <p className="text-slate-400 mb-6">
-            This wallet ({walletAddress?.slice(0, 4)}...{walletAddress?.slice(-4)}) does not have admin privileges.
-          </p>
-          <div className="space-y-2">
-            <Button onClick={() => window.location.href = '/admin-force'} className="w-full">
-              Try Admin Force Page
-            </Button>
-            <Button onClick={() => {
-              localStorage.setItem('hoodie_academy_is_admin', 'true');
-              window.location.reload();
-            }} className="w-full bg-green-600 hover:bg-green-700">
-              Force Admin Access
-            </Button>
-            <Button onClick={() => window.location.href = '/'} variant="outline" className="w-full">
-              Return to Home
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
@@ -218,6 +170,7 @@ export default function AdminDashboardPage() {
                     {activeTab === 'community' && <Crown className="w-4 h-4" />}
                     {activeTab === 'lore' && <ScrollText className="w-4 h-4" />}
                     {activeTab === 'milestones' && <Flag className="w-4 h-4" />}
+                    {activeTab === 'governance' && <Vote className="w-4 h-4" />}
                     <span>{getTabDisplayName(activeTab)}</span>
                   </div>
                 </SelectValue>
@@ -319,6 +272,12 @@ export default function AdminDashboardPage() {
                     <span>Milestones</span>
                   </div>
                 </SelectItem>
+                <SelectItem value="governance">
+                  <div className="flex items-center space-x-2">
+                    <Vote className="w-4 h-4" />
+                    <span>Governance</span>
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -343,11 +302,17 @@ export default function AdminDashboardPage() {
             </Button>
             <Button
               variant={activeTab === "submissions" ? "default" : "outline"}
-              onClick={() => setActiveTab("submissions")}
-              className="flex items-center space-x-2"
+              onClick={() => {
+                setActiveTab("submissions");
+                if (counts.newSubmissions > 0) markAsRead('newSubmissions');
+              }}
+              className="flex items-center space-x-2 relative"
             >
               <FileText className="w-4 h-4" />
               <span>Submissions</span>
+              {counts.newSubmissions > 0 && (
+                <NotificationBadge count={counts.newSubmissions} position="top-right" size="sm" />
+              )}
             </Button>
             <Button
               variant={activeTab === "bounty-xp" ? "default" : "outline"}
@@ -367,11 +332,17 @@ export default function AdminDashboardPage() {
             </Button>
             <Button
               variant={activeTab === "users" ? "default" : "outline"}
-              onClick={() => setActiveTab("users")}
-              className="flex items-center space-x-2"
+              onClick={() => {
+                setActiveTab("users");
+                if (counts.newUsers > 0) markAsRead('newUsers');
+              }}
+              className="flex items-center space-x-2 relative"
             >
               <Users className="w-4 h-4" />
               <span>Users</span>
+              {counts.newUsers > 0 && (
+                <NotificationBadge count={counts.newUsers} position="top-right" size="sm" />
+              )}
             </Button>
             <Button
               variant={activeTab === "connected-users" ? "default" : "outline"}
@@ -415,11 +386,17 @@ export default function AdminDashboardPage() {
             </Button>
             <Button
               variant={activeTab === "feedback" ? "default" : "outline"}
-              onClick={() => setActiveTab("feedback")}
-              className="flex items-center space-x-2"
+              onClick={() => {
+                setActiveTab("feedback");
+                if (counts.newFeedback > 0) markAsRead('newFeedback');
+              }}
+              className="flex items-center space-x-2 relative"
             >
               <MessageSquare className="w-4 h-4" />
               <span>User Feedback</span>
+              {counts.newFeedback > 0 && (
+                <NotificationBadge count={counts.newFeedback} position="top-right" size="sm" />
+              )}
             </Button>
             <Button
               variant={activeTab === "community" ? "default" : "outline"}
@@ -445,11 +422,33 @@ export default function AdminDashboardPage() {
               <Flag className="w-4 h-4" />
               <span>Milestones</span>
             </Button>
+            <Button
+              variant={activeTab === "mentorship" ? "default" : "outline"}
+              onClick={() => {
+                setActiveTab("mentorship");
+                if (counts.pendingPermissions > 0) markAsRead('pendingPermissions');
+              }}
+              className="flex items-center space-x-2 relative"
+            >
+              <Video className="w-4 h-4" />
+              <span>Live Sessions</span>
+              {counts.pendingPermissions > 0 && (
+                <NotificationBadge count={counts.pendingPermissions} position="top-right" size="sm" />
+              )}
+            </Button>
+            <Button
+              variant={activeTab === "governance" ? "default" : "outline"}
+              onClick={() => setActiveTab("governance")}
+              className="flex items-center space-x-2"
+            >
+              <Vote className="w-4 h-4" />
+              <span>Governance</span>
+            </Button>
           </div>
 
           {/* Overview Tab */}
           <TabsContent value="overview">
-            <AdminOverviewDashboard />
+            <AdminOverviewDashboard walletAddress={walletAddress} />
           </TabsContent>
 
           {/* Bounties Tab */}
@@ -537,8 +536,53 @@ export default function AdminDashboardPage() {
           <TabsContent value="milestones">
             <AcademyMilestonesManager walletAddress={walletAddress} />
           </TabsContent>
+
+          {/* Mentorship Tab */}
+          <TabsContent value="mentorship">
+            <MentorshipManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Governance Tab */}
+          <TabsContent value="governance">
+            <GovernanceManager walletAddress={walletAddress} />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
+  );
+}
+
+// Main export with wallet and notification provider
+export default function AdminDashboardPage() {
+  const { wallet: walletAddress, isAdmin, connectWallet, loading: walletLoading } = useWalletSupabase();
+
+  if (walletLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+          <p>Connecting wallet...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!walletAddress || !isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <Shield className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Admin Access Required</h1>
+          <p className="mb-4 text-slate-300">Please connect your admin wallet</p>
+          <Button onClick={connectWallet}>Connect Wallet</Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <NotificationProvider walletAddress={walletAddress} isAdmin={true}>
+      <AdminDashboardContent walletAddress={walletAddress} />
+    </NotificationProvider>
   );
 }

@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@daily-co/daily-js": "^0.54.0",
+    "@daily-co/daily-react": "^0.37.0"
+  },
+  "note": "Add these to your package.json dependencies section"
+}
+
