@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
-import { verifyAdminAccess } from '@/lib/admin-utils';
+import { createClient } from '@supabase/supabase-js';
+
+// Force dynamic rendering to avoid build-time issues
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   return NextResponse.json({ 
@@ -11,46 +13,52 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!getSupabaseAdmin()) {
-      console.error('Bulk import: Admin client unavailable');
-      return NextResponse.json({ error: 'Server configuration error: Admin client unavailable' }, { status: 500 });
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
+
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
     
     // Get the request data
     const { courses, walletAddress } = await request.json();
     
     if (!courses || !Array.isArray(courses) || courses.length === 0) {
-      console.error('Bulk import: Invalid input');
       return NextResponse.json({ error: 'Invalid input: Expected an array of courses' }, { status: 400 });
     }
     
     if (!walletAddress) {
-      console.error('Bulk import: Wallet address required');
       return NextResponse.json({ error: 'Wallet address required' }, { status: 400 });
     }
 
-    // Verify admin access using the utility function
-    const adminCheck = await verifyAdminAccess(walletAddress);
+    // Verify admin access
+    const { data: userData } = await adminClient
+      .from('users')
+      .select('is_admin, admin')
+      .eq('wallet_address', walletAddress)
+      .single();
     
-    if (!adminCheck.isAdmin) {
-      console.error('Bulk import: Admin access required for wallet', walletAddress);
-      return NextResponse.json({ error: adminCheck.error || 'Forbidden: Admin access required' }, { status: 403 });
+    if (!userData || (!userData.is_admin && !userData.admin)) {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    console.log('Bulk import: Admin verified, proceeding with import of', courses.length, 'courses');
-
-    // Proceed with bulk import using adminSupabase
-    const { data, error } = await getSupabaseAdmin()
+    // Proceed with bulk import
+    const { data, error } = await adminClient
       .from('courses')
       .insert(courses)
       .select();
 
     if (error) {
-      console.error('Bulk import: Database error:', error.message, error.details);
+      console.error('Bulk import: Database error:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
-    console.log('Bulk import: Successfully imported', data.length, 'courses');
 
     return NextResponse.json({ 
       success: true, 
