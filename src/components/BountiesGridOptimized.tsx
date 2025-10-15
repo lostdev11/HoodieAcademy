@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { OptimizedButton } from '@/components/ui/optimized-button';
 import { OptimizedLink } from '@/components/ui/optimized-link';
 import { StaggerChildren, StaggerItem, FadeInWhenVisible } from '@/components/ui/page-transition';
-import { useBountiesOptimized, useBountySubmission } from '@/hooks/optimized/useBountiesOptimized';
+import { useBounties } from '@/hooks/useBounties';
+import { useBountySubmission } from '@/hooks/useBountySubmission';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { Target, Clock, Award, Users, EyeOff, Send, CheckCircle, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,12 +23,12 @@ export default function BountiesGridOptimized({
   initialBounties = [], 
   showHidden = false 
 }: BountiesGridOptimizedProps) {
-  const { bounties, isLoading, prefetchBounty } = useBountiesOptimized(showHidden);
+  const { bounties, loading, error } = useBounties(showHidden);
   const { wallet } = useWalletSupabase();
   const [userSubmissions, setUserSubmissions] = useState<{ [bountyId: string]: any }>({});
 
   // Use initialBounties if still loading and they exist
-  const displayBounties = isLoading && initialBounties.length > 0 ? initialBounties : bounties;
+  const displayBounties = loading && initialBounties.length > 0 ? initialBounties : bounties;
 
   const getStatusColor = (status: string): string => {
     switch (status) {

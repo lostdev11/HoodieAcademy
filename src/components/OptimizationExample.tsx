@@ -19,9 +19,10 @@ import {
   StatsCardSkeleton, 
   DashboardSkeleton 
 } from '@/components/ui/skeleton';
-import { useCoursesOptimized, useCourseProgressOptimized } from '@/hooks/optimized/useCoursesOptimized';
-import { useXPOptimized } from '@/hooks/optimized/useXPOptimized';
-import { useBountiesOptimized } from '@/hooks/optimized/useBountiesOptimized';
+import { useCourses } from '@/hooks/useCourses';
+import { useCourseProgress } from '@/hooks/useCourseProgress';
+import { useXP } from '@/hooks/useXP';
+import { useBounties } from '@/hooks/useBounties';
 import { usePrefetchCommonRoutes } from '@/lib/route-prefetch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -70,8 +71,8 @@ export function OptimizedButtonExample() {
  * ========================================
  */
 export function ReactQueryExample({ walletAddress }: { walletAddress: string }) {
-  const { courses, isLoading, prefetchCourse } = useCoursesOptimized();
-  const { profile, completeCourse, isCompletingCourse } = useXPOptimized(walletAddress);
+  const { courses, loading, error } = useCourses();
+  const { profile, completeCourse, isCompletingCourse } = useXP(walletAddress);
 
   return (
     <div className="space-y-4">
@@ -81,7 +82,7 @@ export function ReactQueryExample({ walletAddress }: { walletAddress: string }) 
         Completing a course uses optimistic updates for instant feedback.
       </p>
       
-      {isLoading ? (
+      {loading ? (
         <div className="grid gap-4 md:grid-cols-2">
           <CardSkeleton />
           <CardSkeleton />
