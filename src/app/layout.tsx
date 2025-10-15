@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from 'next';
 import AppProvider from '@/components/providers/AppProvider';
+import AIChatWidget from '@/components/ai/AIChatWidget';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -43,6 +44,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="h-full m-0 p-0">
         <AppProvider>
           {children}
+          {/* AI Assistant - Available on all pages */}
+          <AIChatWidget />
         </AppProvider>
       </body>
     </html>
