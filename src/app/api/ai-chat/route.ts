@@ -160,8 +160,47 @@ TONE:
 
 Remember: You're not just an AI - you're part of the Hoodie Academy team, helping students become Web3 experts! 🏛️`;
 
+// Simple in-memory rate limiting (resets on server restart)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 100; // Max messages per hour per IP
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
+
+function checkRateLimit(identifier: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(identifier);
+
+  if (!userLimit || now > userLimit.resetTime) {
+    rateLimitMap.set(identifier, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return { allowed: true, remaining: RATE_LIMIT - 1 };
+  }
+
+  if (userLimit.count >= RATE_LIMIT) {
+    return { allowed: false, remaining: 0 };
+  }
+
+  userLimit.count++;
+  return { allowed: true, remaining: RATE_LIMIT - userLimit.count };
+}
+
 export async function POST(req: Request) {
   try {
+    // Rate limiting by IP
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const rateCheck = checkRateLimit(ip);
+
+    if (!rateCheck.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          details: 'You have reached the maximum number of messages per hour. Please try again later.'
+        }), 
+        { 
+          status: 429,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     const { messages } = await req.json();
 
     // Convert messages to Groq format

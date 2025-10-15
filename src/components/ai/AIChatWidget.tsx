@@ -25,6 +25,8 @@ interface AIChatWidgetProps {
 export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [messageCount, setMessageCount] = useState(0);
+  const MESSAGE_LIMIT = 50; // Limit messages per session
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
     api: '/api/ai-chat',
@@ -35,7 +37,13 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         content: "Hey there! 👋 I'm your Hoodie Academy AI Assistant. I'm here to help you with Web3, Solana, NFTs, and any coding questions you have. What would you like to learn today?",
       },
     ],
+    onFinish: () => {
+      setMessageCount(prev => prev + 1);
+    },
   });
+
+  const hasReachedLimit = messageCount >= MESSAGE_LIMIT;
+  const messagesRemaining = MESSAGE_LIMIT - messageCount;
 
   if (!isOpen) {
     return (
@@ -154,33 +162,57 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
 
           {/* Input */}
           <form
-            onSubmit={handleSubmit}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (hasReachedLimit) {
+                return;
+              }
+              handleSubmit(e);
+            }}
             className="p-4 border-t border-cyan-500/30 bg-slate-800/50"
           >
-            <div className="flex gap-2">
-              <Input
-                value={input}
-                onChange={handleInputChange}
-                placeholder="Ask me anything about Web3, Solana, or coding..."
-                className="flex-1 bg-slate-700/50 border-cyan-500/30 text-white placeholder:text-gray-400 focus:border-cyan-400"
-                disabled={isLoading}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                disabled={isLoading || !input.trim()}
-                className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              💡 Tip: Ask me to explain code, debug errors, or learn Web3 concepts!
-            </p>
+            {hasReachedLimit ? (
+              <div className="p-3 rounded-lg bg-orange-900/30 border border-orange-500/30 mb-2">
+                <p className="text-sm text-orange-400">
+                  ⚠️ Message limit reached ({MESSAGE_LIMIT} messages per session). 
+                  Refresh the page to reset.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex gap-2">
+                  <Input
+                    value={input}
+                    onChange={handleInputChange}
+                    placeholder="Ask me anything about Web3, Solana, or coding..."
+                    className="flex-1 bg-slate-700/50 border-cyan-500/30 text-white placeholder:text-gray-400 focus:border-cyan-400"
+                    disabled={isLoading || hasReachedLimit}
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    disabled={isLoading || !input.trim() || hasReachedLimit}
+                    className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 disabled:opacity-50"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <div className="flex justify-between items-center mt-2">
+                  <p className="text-xs text-gray-500">
+                    💡 Ask me to explain code, debug errors, or learn Web3!
+                  </p>
+                  {messageCount > MESSAGE_LIMIT * 0.7 && (
+                    <p className="text-xs text-orange-400">
+                      {messagesRemaining} messages left
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </form>
         </CardContent>
       )}
