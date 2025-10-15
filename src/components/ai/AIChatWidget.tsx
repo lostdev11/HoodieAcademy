@@ -17,6 +17,7 @@ import {
   Loader2,
   Sparkles 
 } from 'lucide-react';
+import Image from 'next/image';
 
 interface AIChatWidgetProps {
   initialOpen?: boolean;
@@ -52,7 +53,13 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         className="fixed bottom-6 left-6 h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 z-50"
         size="icon"
       >
-        <Bot className="h-6 w-6 text-white" />
+        <Image 
+          src="/images/hoodie-bot.png" 
+          alt="Hoodie AI Bot" 
+          width={24} 
+          height={24} 
+          className="rounded-sm"
+        />
         <span className="sr-only">Open AI Assistant</span>
       </Button>
     );
@@ -71,7 +78,13 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Bot className="h-5 w-5 text-cyan-400" />
+              <Image 
+                src="/images/hoodie-bot.png" 
+                alt="Hoodie AI Bot" 
+                width={20} 
+                height={20} 
+                className="rounded-sm"
+              />
               <Sparkles className="h-3 w-3 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
             </div>
             <CardTitle className="text-base text-cyan-400">Hoodie AI Assistant</CardTitle>
@@ -122,7 +135,13 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
                     {message.role === 'user' ? (
                       <User className="h-4 w-4 text-white" />
                     ) : (
-                      <Bot className="h-4 w-4 text-white" />
+                      <Image 
+                        src="/images/hoodie-bot.png" 
+                        alt="Hoodie AI Bot" 
+                        width={16} 
+                        height={16} 
+                        className="rounded-sm"
+                      />
                     )}
                   </div>
                   <div
