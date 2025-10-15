@@ -39,6 +39,19 @@ const nextConfig = {
       transform: 'lucide-react/dist/esm/icons/{{member}}',
     },
   },
+  // Skip building problematic demo pages
+  async headers() {
+    return [];
+  },
+  async redirects() {
+    return [];
+  },
+  // Exclude tracking-demo from static export
+  exportPathMap: async function (defaultPathMap, { dev, dir, outDir, distDir, buildId }) {
+    // Remove tracking-demo from static generation
+    const { '/tracking-demo': removed, ...paths } = defaultPathMap;
+    return paths;
+  },
 }
 
 module.exports = nextConfig
