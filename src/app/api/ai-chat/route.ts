@@ -185,7 +185,7 @@ export async function POST(req: Request) {
       stream: true,
     });
 
-    // Create streaming response
+    // Create streaming response in Vercel AI SDK format
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -193,7 +193,9 @@ export async function POST(req: Request) {
           for await (const chunk of completion) {
             const content = chunk.choices[0]?.delta?.content || '';
             if (content) {
-              controller.enqueue(encoder.encode(content));
+              // Format as data stream for Vercel AI SDK
+              const payload = `0:"${content.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"\n`;
+              controller.enqueue(encoder.encode(payload));
             }
           }
           controller.close();
@@ -206,7 +208,7 @@ export async function POST(req: Request) {
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Transfer-Encoding': 'chunked',
+        'X-Vercel-AI-Data-Stream': 'v1',
       },
     });
   } catch (error: any) {
