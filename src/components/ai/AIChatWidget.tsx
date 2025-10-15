@@ -56,9 +56,9 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         <Image 
           src="/images/hoodie-bot.png" 
           alt="Hoodie AI Bot" 
-          width={24} 
-          height={24} 
-          className="rounded-sm"
+          width={32} 
+          height={32} 
+          className="rounded-full object-cover"
         />
         <span className="sr-only">Open AI Assistant</span>
       </Button>
@@ -83,7 +83,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
                 alt="Hoodie AI Bot" 
                 width={20} 
                 height={20} 
-                className="rounded-sm"
+                className="rounded-full object-cover"
               />
               <Sparkles className="h-3 w-3 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
             </div>
@@ -140,7 +140,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
                         alt="Hoodie AI Bot" 
                         width={16} 
                         height={16} 
-                        className="rounded-sm"
+                        className="rounded-full object-cover"
                       />
                     )}
                   </div>
