@@ -1,14 +1,13 @@
-import { createOpenAI } from '@ai-sdk/openai';
-import { streamText, convertToCoreMessages } from 'ai';
+import Groq from 'groq-sdk';
 
-// IMPORTANT: Set this in your .env.local file
-// OPENAI_API_KEY=your-api-key-here
+// IMPORTANT: Get FREE Groq API key from https://console.groq.com/keys
+// Add to .env.local: GROQ_API_KEY=your-groq-key-here
 
 export const runtime = 'edge';
 
-// Initialize OpenAI with explicit API key
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
+// Initialize Groq with Llama 3 (FREE!)
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY || '',
 });
 
 const systemPrompt = `You are the Hoodie Academy AI Assistant - a helpful, knowledgeable guide for students learning Web3, Solana, NFTs, and cryptocurrency. You know EVERYTHING about the academy and can answer any questions about how it works.
@@ -165,15 +164,51 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
-    const result = await streamText({
-      model: openai('gpt-3.5-turbo'), // Fast, affordable, and available on all accounts
-      system: systemPrompt,
-      messages: convertToCoreMessages(messages),
-      maxTokens: 1000,
+    // Convert messages to Groq format
+    const groqMessages = messages.map((msg: any) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
+
+    // Add system message
+    const allMessages = [
+      { role: 'system', content: systemPrompt },
+      ...groqMessages,
+    ];
+
+    // Call Groq API
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile', // FREE and FAST!
+      messages: allMessages as any,
+      max_tokens: 1000,
       temperature: 0.7,
+      stream: true,
     });
 
-    return result.toDataStreamResponse();
+    // Create streaming response
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of completion) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+              controller.enqueue(encoder.encode(content));
+            }
+          }
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
+      },
+    });
   } catch (error: any) {
     console.error('AI Chat Error:', error);
     return new Response(

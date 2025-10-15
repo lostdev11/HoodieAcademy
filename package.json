@@ -19,6 +19,7 @@
     "@tanstack/react-query-devtools": "^5.17.19",
     "@ai-sdk/openai": "^0.0.66",
     "ai": "^3.4.33",
+    "groq-sdk": "^0.7.0",
     "openai": "^4.73.0",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-avatar": "^1.1.10",
