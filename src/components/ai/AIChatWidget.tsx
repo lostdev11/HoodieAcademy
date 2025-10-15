@@ -41,7 +41,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 z-50"
+        className="fixed bottom-6 left-6 h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 z-50"
         size="icon"
       >
         <Bot className="h-6 w-6 text-white" />
@@ -52,7 +52,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
 
   return (
     <Card 
-      className={`fixed right-6 z-50 shadow-2xl border-cyan-500/30 bg-slate-900/95 backdrop-blur-lg transition-all duration-300 ${
+      className={`fixed left-6 z-50 shadow-2xl border-cyan-500/30 bg-slate-900/95 backdrop-blur-lg transition-all duration-300 ${
         isMinimized 
           ? 'bottom-6 w-80 h-16' 
           : 'bottom-6 w-96 h-[600px]'
