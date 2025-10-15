@@ -20,9 +20,8 @@ import {
   DashboardSkeleton 
 } from '@/components/ui/skeleton';
 import { useCourses } from '@/hooks/useCourses';
-import { useCourseProgress } from '@/hooks/useCourseProgress';
-import { useXP } from '@/hooks/useXP';
-import { useBounties } from '@/hooks/useBounties';
+import { useUserXP } from '@/hooks/useUserXP';
+import { useUserBounties } from '@/hooks/useUserBounties';
 import { usePrefetchCommonRoutes } from '@/lib/route-prefetch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -72,7 +71,7 @@ export function OptimizedButtonExample() {
  */
 export function ReactQueryExample({ walletAddress }: { walletAddress: string }) {
   const { courses, loading, error } = useCourses();
-  const { profile, completeCourse, isCompletingCourse } = useXP(walletAddress);
+  const { profile, completeCourse, isCompletingCourse } = useUserXP();
 
   return (
     <div className="space-y-4">

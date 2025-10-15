@@ -4,8 +4,7 @@ import React, { useState } from 'react';
 import { OptimizedButton } from '@/components/ui/optimized-button';
 import { OptimizedLink } from '@/components/ui/optimized-link';
 import { StaggerChildren, StaggerItem, FadeInWhenVisible } from '@/components/ui/page-transition';
-import { useBounties } from '@/hooks/useBounties';
-import { useBountySubmission } from '@/hooks/useBountySubmission';
+import { useUserBounties } from '@/hooks/useUserBounties';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { Target, Clock, Award, Users, EyeOff, Send, CheckCircle, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +22,7 @@ export default function BountiesGridOptimized({
   initialBounties = [], 
   showHidden = false 
 }: BountiesGridOptimizedProps) {
-  const { bounties, loading, error } = useBounties(showHidden);
+  const { bounties, loading, error } = useUserBounties();
   const { wallet } = useWalletSupabase();
   const [userSubmissions, setUserSubmissions] = useState<{ [bountyId: string]: any }>({});
 
