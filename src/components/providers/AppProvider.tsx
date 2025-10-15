@@ -2,7 +2,6 @@
 
 import { ReactNode } from 'react';
 import { SettingsProvider } from './SettingsProvider';
-import { QueryProvider } from './QueryProvider';
 import GlobalAnnouncementBanner from '../GlobalAnnouncementBanner';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -15,15 +14,13 @@ export default function AppProvider({ children }: AppProviderProps) {
   // All data now loads client-side with proper caching
   
   return (
-    <QueryProvider>
-      <SettingsProvider>
-        <div className="min-h-screen w-full overflow-x-hidden">
-          <GlobalAnnouncementBanner />
-          {children}
-          {/* Toast notification system - displays XP notifications and other toasts */}
-          <Toaster />
-        </div>
-      </SettingsProvider>
-    </QueryProvider>
+    <SettingsProvider>
+      <div className="min-h-screen w-full overflow-x-hidden">
+        <GlobalAnnouncementBanner />
+        {children}
+        {/* Toast notification system - displays XP notifications and other toasts */}
+        <Toaster />
+      </div>
+    </SettingsProvider>
   );
 }
