@@ -1,10 +1,15 @@
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { streamText, convertToCoreMessages } from 'ai';
 
 // IMPORTANT: Set this in your .env.local file
 // OPENAI_API_KEY=your-api-key-here
 
 export const runtime = 'edge';
+
+// Initialize OpenAI with explicit API key
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY || '',
+});
 
 const systemPrompt = `You are the Hoodie Academy AI Assistant - a helpful, knowledgeable guide for students learning Web3, Solana, NFTs, and cryptocurrency. You know EVERYTHING about the academy and can answer any questions about how it works.
 
