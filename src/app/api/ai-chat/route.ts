@@ -166,7 +166,7 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
 
     const result = await streamText({
-      model: openai('gpt-4-turbo-preview'), // Use gpt-3.5-turbo for lower cost
+      model: openai('gpt-3.5-turbo'), // Fast, affordable, and available on all accounts
       system: systemPrompt,
       messages: convertToCoreMessages(messages),
       maxTokens: 1000,
