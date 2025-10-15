@@ -46,23 +46,34 @@ export const metadata: Metadata = {
   },
 };
 
+// Force dynamic rendering to avoid build-time fetch errors
+export const dynamic = 'force-dynamic';
+export const revalidate = 60; // Revalidate every 60 seconds
+
 export default async function BountiesPage() {
   // Use the API to fetch bounties instead of direct database access
   // This ensures we get the most up-to-date data
   let bounties = [];
   
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/bounties`, {
-      next: { revalidate: 60 } // Revalidate every 60 seconds for fresh data
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      // API returns bounties directly, not wrapped in a bounties property
-      bounties = Array.isArray(result) ? result : [];
+  // Skip fetch during build time
+  if (process.env.NEXT_PHASE !== 'phase-production-build') {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/bounties`, {
+        next: { revalidate: 60 },
+        cache: 'no-store' // Don't cache during SSR
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        bounties = Array.isArray(result) ? result : [];
+      }
+    } catch (error) {
+      // Silently handle errors during build or when API is unavailable
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching bounties:', error);
+      }
     }
-  } catch (error) {
-    console.error('Error fetching bounties:', error);
   }
 
   return (

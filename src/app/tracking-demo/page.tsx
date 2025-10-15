@@ -7,6 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { useTracking } from '@/components/TrackingProvider';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 
+// Force dynamic rendering - this page needs client-side providers
+export const dynamic = 'force-dynamic';
+
 export default function TrackingDemoPage() {
   const { wallet, connectWallet, disconnectWallet } = useWalletSupabase();
   const { 
