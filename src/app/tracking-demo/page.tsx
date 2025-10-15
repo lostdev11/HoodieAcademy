@@ -9,8 +9,6 @@ import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 
 // Prevent static generation - this page requires client-side providers
 export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-export const revalidate = 0;
 
 export default function TrackingDemoPage() {
   const { wallet, connectWallet, disconnectWallet } = useWalletSupabase();
