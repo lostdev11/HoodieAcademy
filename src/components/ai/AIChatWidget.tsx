@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useChat } from 'ai/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,13 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
+  const [position, setPosition] = useState({ 
+    x: 24, 
+    y: typeof window !== 'undefined' ? window.innerHeight - 80 : 600 
+  }); // Default bottom-left
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const widgetRef = useRef<HTMLDivElement>(null);
   const MESSAGE_LIMIT = 50; // Limit messages per session
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
@@ -46,11 +53,62 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const hasReachedLimit = messageCount >= MESSAGE_LIMIT;
   const messagesRemaining = MESSAGE_LIMIT - messageCount;
 
+  // Drag functionality
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!widgetRef.current) return;
+    
+    const rect = widgetRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
+    setIsDragging(true);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    
+    const newX = e.clientX - dragOffset.x;
+    const newY = e.clientY - dragOffset.y;
+    
+    // Keep widget within viewport bounds
+    const widgetWidth = isMinimized ? 320 : 384;
+    const widgetHeight = isMinimized ? 64 : 600;
+    const maxX = window.innerWidth - widgetWidth;
+    const maxY = window.innerHeight - widgetHeight;
+    
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset]);
+
   if (!isOpen) {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 left-6 h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 z-50"
+        style={{
+          position: 'fixed',
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          zIndex: 50
+        }}
+        className="h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 cursor-pointer"
         size="icon"
       >
         <div className="w-full h-full flex items-center justify-center">
@@ -69,14 +127,24 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
 
   return (
     <Card 
-      className={`fixed left-6 z-50 shadow-2xl border-cyan-500/30 bg-slate-900/95 backdrop-blur-lg transition-all duration-300 ${
+      ref={widgetRef}
+      style={{
+        position: 'fixed',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        zIndex: 50
+      }}
+      className={`shadow-2xl border-cyan-500/30 bg-slate-900/95 backdrop-blur-lg transition-all duration-300 ${
         isMinimized 
-          ? 'bottom-6 w-80 h-16' 
-          : 'bottom-6 w-96 h-[600px]'
-      }`}
+          ? 'w-80 h-16' 
+          : 'w-96 h-[600px]'
+      } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
     >
       {/* Header */}
-      <CardHeader className="pb-3 border-b border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-purple-900/30">
+      <CardHeader 
+        className="pb-3 border-b border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-purple-900/30"
+        onMouseDown={handleMouseDown}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -91,7 +159,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
               </div>
               <Sparkles className="h-3 w-3 text-yellow-400 absolute -top-1 -right-1 animate-pulse" />
             </div>
-            <CardTitle className="text-base text-cyan-400">Hoodie AI Assistant</CardTitle>
+            <CardTitle className="text-base text-cyan-400 select-none">Hoodie AI Assistant</CardTitle>
             <Badge variant="outline" className="text-xs border-green-500/30 text-green-400">
               Online
             </Badge>
