@@ -57,6 +57,9 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!widgetRef.current) return;
     
+    // Prevent opening chat when dragging
+    e.preventDefault();
+    
     const rect = widgetRef.current.getBoundingClientRect();
     setDragOffset({
       x: e.clientX - rect.left,
@@ -72,8 +75,8 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     const newY = e.clientY - dragOffset.y;
     
     // Keep widget within viewport bounds
-    const widgetWidth = isMinimized ? 320 : 384;
-    const widgetHeight = isMinimized ? 64 : 600;
+    const widgetWidth = isOpen ? (isMinimized ? 320 : 384) : 56; // 56px for button
+    const widgetHeight = isOpen ? (isMinimized ? 64 : 600) : 56; // 56px for button
     const maxX = window.innerWidth - widgetWidth;
     const maxY = window.innerHeight - widgetHeight;
     
@@ -85,6 +88,13 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
 
   const handleMouseUp = () => {
     setIsDragging(false);
+  };
+
+  const handleButtonClick = (e: React.MouseEvent) => {
+    // Only open chat if not dragging
+    if (!isDragging) {
+      setIsOpen(true);
+    }
   };
 
   useEffect(() => {
@@ -101,14 +111,16 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   if (!isOpen) {
     return (
       <Button
-        onClick={() => setIsOpen(true)}
+        ref={widgetRef}
+        onClick={handleButtonClick}
+        onMouseDown={handleMouseDown}
         style={{
           position: 'fixed',
           left: `${position.x}px`,
           top: `${position.y}px`,
           zIndex: 50
         }}
-        className="h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 cursor-pointer"
+        className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         size="icon"
       >
         <div className="w-full h-full flex items-center justify-center">
