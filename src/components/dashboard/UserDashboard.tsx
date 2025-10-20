@@ -973,24 +973,30 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
           content: trialPostContent,
           postType: 'text',
           tags: ['trial'],
-          squad: stats.squadRank ? 'Unknown' : null
+          squad: null // Will use squad from user profile in API
         })
       });
 
       const data = await response.json();
+      
+      console.log('📝 Trial post response:', data);
 
-      if (data.success) {
+      if (data.success && data.post) {
+        console.log('✅ Trial post saved successfully:', data.post);
+        
         // Mark trial as used
         localStorage.setItem(`trial_post_used_${walletAddress}`, 'true');
         setHasUsedTrialPost(true);
         setTrialPostContent('');
-        alert('🎉 Trial post created! Now earn 1000 XP to unlock full access!');
+        
+        alert('🎉 Trial post created successfully!\n\n✅ Your post is now live on the social feed.\n📍 Visit the Social Feed tab to see it.\n🎯 Earn 1000 XP to unlock unlimited posting!');
       } else {
-        alert('Failed to create post: ' + data.error);
+        console.error('Trial post creation failed:', data);
+        alert('Failed to create post: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error creating trial post:', error);
-      alert('Failed to create post');
+      alert('Failed to create post. Please try again.');
     } finally {
       setPostingTrial(false);
     }

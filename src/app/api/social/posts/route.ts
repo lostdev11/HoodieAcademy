@@ -212,13 +212,22 @@ export async function POST(request: NextRequest) {
         moderation_status: 'approved', // Auto-approve for now
         created_at: new Date().toISOString()
       })
-      .select()
+      .select(`
+        *,
+        author:users!social_posts_wallet_address_fkey(
+          wallet_address,
+          display_name,
+          level,
+          squad,
+          is_admin
+        )
+      `)
       .single();
 
     if (postError) {
       console.error('Error creating post:', postError);
       return NextResponse.json(
-        { error: 'Failed to create post' },
+        { error: 'Failed to create post', details: postError.message },
         { status: 500 }
       );
     }
@@ -232,7 +241,6 @@ export async function POST(request: NextRequest) {
           walletAddress,
           action: 'SOCIAL_POST_CREATED',
           referenceId: post.id,
-          customXPAmount: 5,
           metadata: {
             post_id: post.id,
             post_type: postType

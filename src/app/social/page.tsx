@@ -165,25 +165,33 @@ export default function SocialFeedPage() {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success && data.post) {
+        console.log('✅ Post created successfully:', data.post);
+        
+        // Clear the input
         setNewPostContent('');
-        // Add new post to the top
+        
+        // Add new post to the top of the feed
         setPosts([data.post, ...posts]);
         
         // Mark trial as used for trial users
         if (isTrialUser) {
           localStorage.setItem(`trial_post_used_${walletAddress}`, 'true');
           setHasUsedTrialPost(true);
-          alert('🎉 Trial post created! Earn 1000 XP to unlock unlimited posting.');
+          alert('🎉 Trial post created successfully! Your post is now visible on the feed.\n\nEarn 1000 XP to unlock unlimited posting.');
         } else {
-          alert('Post created! +1 XP');
+          alert('✅ Post created successfully! +1 XP\n\nYour post is now live on the feed.');
         }
+        
+        // Refresh the feed to show the new post with updated counts
+        setTimeout(() => fetchPosts(), 1000);
       } else {
-        alert('Failed to create post: ' + data.error);
+        console.error('Post creation failed:', data);
+        alert('Failed to create post: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Failed to create post');
+      alert('Failed to create post. Please try again.');
     } finally {
       setPosting(false);
     }
