@@ -33,169 +33,77 @@ export async function POST(request: NextRequest) {
     }
 
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    const DAILY_LOGIN_XP = 5;
+    console.log('📅 [DAILY LOGIN] Processing login for:', walletAddress.slice(0, 10) + '...', 'on', today);
 
-    console.log('📅 [DAILY LOGIN] Checking daily login for:', walletAddress, 'on', today);
+    // Use the auto-reward API with proper duplicate prevention
+    const autoRewardResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/xp/auto-reward`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        walletAddress,
+        action: 'DAILY_LOGIN',
+        referenceId: `login_${today}`, // Prevents duplicates for the same day
+        metadata: {
+          login_date: today,
+          login_timestamp: new Date().toISOString()
+        }
+      })
+    });
 
-    // Check if user already received daily login bonus in the last 24 hours
-    const twentyFourHoursAgo = new Date(Date.now() - (24 * 60 * 60 * 1000));
-    
-    const { data: todayActivity, error: activityError } = await supabase
-      .from('user_activity')
-      .select('id, created_at')
-      .eq('wallet_address', walletAddress)
-      .eq('activity_type', 'daily_login_bonus')
-      .gte('created_at', twentyFourHoursAgo.toISOString())
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const autoRewardData = await autoRewardResponse.json();
 
-    if (activityError && activityError.code !== 'PGRST116') {
-      console.error('❌ [DAILY LOGIN] Error checking today activity:', activityError);
-      return NextResponse.json(
-        { error: 'Failed to check daily login status' },
-        { status: 500 }
-      );
-    }
-
-    if (todayActivity) {
-      console.log('⚠️ [DAILY LOGIN] User already received daily bonus today');
+    // If already awarded or duplicate
+    if (!autoRewardResponse.ok) {
+      if (autoRewardData.duplicate) {
+        console.log('⚠️ [DAILY LOGIN] Already claimed today');
+        
+        // Calculate next available (tomorrow at midnight)
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        
+        return NextResponse.json({
+          success: false,
+          message: 'Daily login bonus already claimed today',
+          alreadyClaimed: true,
+          nextAvailable: tomorrow.toISOString(),
+          today
+        });
+      }
       
-      // Calculate next available time (24 hours from last claim)
-      const lastClaimTime = new Date(todayActivity.created_at);
-      const nextAvailable = new Date(lastClaimTime.getTime() + (24 * 60 * 60 * 1000)); // 24 hours later
-      
+      // Other errors (daily cap, etc.)
       return NextResponse.json({
         success: false,
-        message: 'Daily login bonus already claimed today',
-        alreadyClaimed: true,
-        nextAvailable: nextAvailable.toISOString(),
-        lastClaimed: todayActivity.created_at
-      });
+        message: autoRewardData.message || 'Failed to award daily login bonus',
+        error: autoRewardData.error
+      }, { status: autoRewardResponse.status });
     }
 
-    // Get current user data
-    const { data: currentUser, error: userError } = await supabase
-      .from('users')
-      .select('total_xp, level, display_name')
-      .eq('wallet_address', walletAddress)
-      .single();
+    // XP was successfully awarded via auto-reward API
+    console.log('✅ [DAILY LOGIN] Successfully awarded daily login bonus via auto-reward');
 
-    if (userError && userError.code !== 'PGRST116') {
-      console.error('❌ [DAILY LOGIN] Error fetching user:', userError);
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // If user doesn't exist, create them
-    if (!currentUser) {
-      console.log('👤 [DAILY LOGIN] User not found, creating new user:', walletAddress);
-      const { data: newUser, error: createError } = await supabase
-        .from('users')
-        .upsert({
-          wallet_address: walletAddress,
-          display_name: `User ${walletAddress.slice(0, 6)}...`,
-          total_xp: 0,
-          level: 1,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'wallet_address'
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('❌ [DAILY LOGIN] Error creating user:', createError);
-        return NextResponse.json(
-          { error: 'Failed to create user' },
-          { status: 500 }
-        );
-      }
-    }
-
-    // Calculate new XP and level
-    const previousXP = currentUser?.total_xp || 0;
-    const newTotalXP = previousXP + DAILY_LOGIN_XP;
-    const newLevel = Math.floor(newTotalXP / 1000) + 1;
-    const levelUp = newLevel > (currentUser?.level || 1);
-
-    console.log('📊 [DAILY LOGIN] XP calculation:', {
-      previousXP,
-      dailyBonus: DAILY_LOGIN_XP,
-      newTotalXP,
-      levelUp
-    });
-
-    // Update user XP and level
-    const { data: updatedUser, error: updateError } = await supabase
-      .from('users')
-      .update({
-        total_xp: newTotalXP,
-        level: newLevel,
-        updated_at: new Date().toISOString()
-      })
-      .eq('wallet_address', walletAddress)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error('❌ [DAILY LOGIN] Error updating user XP:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to award daily login bonus' },
-        { status: 500 }
-      );
-    }
-
-    // Log the daily login bonus activity
-    const { error: logError } = await supabase
-      .from('user_activity')
-      .insert({
-        wallet_address: walletAddress,
-        activity_type: 'daily_login_bonus',
-        metadata: {
-          xp_amount: DAILY_LOGIN_XP,
-          reason: 'Daily login bonus',
-          previous_xp: previousXP,
-          new_total_xp: newTotalXP,
-          level_up: levelUp,
-          login_date: today
-        },
-        created_at: new Date().toISOString()
-      });
-
-    if (logError) {
-      console.error('⚠️ [DAILY LOGIN] Failed to log activity (non-critical):', logError);
-    }
-
-    console.log('✅ [DAILY LOGIN] Successfully awarded daily login bonus:', {
-      wallet: walletAddress,
-      xpAwarded: DAILY_LOGIN_XP,
-      newTotalXP,
-      levelUp
-    });
-
-    // Calculate next available time (24 hours from now)
-    const now = new Date();
-    const nextAvailable = new Date(now.getTime() + (24 * 60 * 60 * 1000)); // 24 hours from claim
+    // Calculate next available time (tomorrow at midnight)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
 
     return NextResponse.json({
       success: true,
-      user: updatedUser,
-      xpAwarded: DAILY_LOGIN_XP,
-      newTotalXP: newTotalXP,
-      levelUp: levelUp,
-      message: `Daily login bonus: +${DAILY_LOGIN_XP} XP!`,
-      nextAvailable: nextAvailable.toISOString(),
+      user: autoRewardData.user,
+      xpAwarded: autoRewardData.xpAwarded,
+      newTotalXP: autoRewardData.newTotalXP,
+      previousXP: autoRewardData.previousXP,
+      levelUp: autoRewardData.levelUp,
+      previousLevel: autoRewardData.previousLevel,
+      newLevel: autoRewardData.newLevel,
+      message: `Daily login bonus: +${autoRewardData.xpAwarded} XP!`,
+      nextAvailable: tomorrow.toISOString(),
+      today,
       // Include data for real-time updates
       refreshLeaderboard: true,
       targetWallet: walletAddress,
-      newTotalXP,
-      xpAwarded: DAILY_LOGIN_XP,
       reason: 'Daily login bonus',
-      levelUp
+      dailyProgress: autoRewardData.dailyProgress
     });
 
   } catch (error) {

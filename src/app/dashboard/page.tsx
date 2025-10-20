@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { useDisplayNameReadOnly } from '@/hooks/use-display-name';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,10 +16,12 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { MobileNavigation } from "@/components/dashboard/MobileNavigation";
 import TokenGate from "@/components/TokenGate";
 import SquadBadge from "@/components/SquadBadge";
-import { getSquadName } from "@/utils/squad-storage";
+import { fetchUserSquad } from "@/utils/squad-api";
 import Image from "next/image";
 import { supabase } from "@/utils/supabase/client";
-import UserDashboard from "@/components/dashboard/UserDashboard";
+
+// Lazy load the heavy UserDashboard component
+const UserDashboard = lazy(() => import("@/components/dashboard/UserDashboard"));
 
 // Wallet Context
 const WalletContext = createContext<{
@@ -184,63 +186,83 @@ export default function HoodieAcademy() {
       setCurrentTime(new Date().toLocaleTimeString());
     }, 1000);
 
-    const initialize = async () => {
-      try {
-        const storedWallet =
-          localStorage.getItem("walletAddress") || localStorage.getItem("connectedWallet");
-        if (storedWallet) {
-          setWalletAddress(storedWallet);
-          try {
-            setIsLoadingSns(true);
-            const resolvedName = storedWallet; // Mock SNS resolver
-            setSnsDomain(resolvedName);
-            // Display name is now handled by the global hook
-          } catch (err) {
-            console.error("Error resolving SNS domain:", err);
-            setSnsDomain(null);
-            setError("Failed to resolve SNS domain.");
-          } finally {
-            setIsLoadingSns(false);
-          }
+    const initialize = () => {
+      // Synchronous initialization for fast rendering
+      const storedWallet =
+        localStorage.getItem("walletAddress") || localStorage.getItem("connectedWallet");
+      
+      if (storedWallet) {
+        setWalletAddress(storedWallet);
+        setSnsDomain(storedWallet);
+        setIsLoadingSns(false);
 
+        // Check cached admin status first
+        const cachedAdminStatus = localStorage.getItem('hoodie_academy_is_admin');
+        if (cachedAdminStatus === 'true') {
+          setIsAdmin(true);
+        }
+
+        // Background admin check with caching
+        setTimeout(async () => {
           try {
-            console.log("🔍 Main page: Checking admin status...");
-            // Check admin status using the existing users table instead of admins table
+            const cacheKey = `admin_check_${storedWallet}`;
+            const cacheTimestampKey = `${cacheKey}_timestamp`;
+            const cachedResult = localStorage.getItem(cacheKey);
+            const cacheTimestamp = localStorage.getItem(cacheTimestampKey);
+            
+            // Use cache if less than 5 minutes old
+            if (cachedResult && cacheTimestamp) {
+              const age = Date.now() - parseInt(cacheTimestamp);
+              if (age < 5 * 60 * 1000) {
+                setIsAdmin(cachedResult === 'true');
+                return;
+              }
+            }
+
+            // Fetch fresh admin status
             const { data, error } = await supabase
               .from("users")
               .select("is_admin")
               .eq("wallet_address", storedWallet)
               .single();
-            if (error) {
-              console.error("Error checking admin status:", error.message, error.details);
-              setIsAdmin(false);
+            
+            if (!error && data) {
+              const isAdminStatus = !!data?.is_admin;
+              setIsAdmin(isAdminStatus);
+              localStorage.setItem(cacheKey, isAdminStatus ? 'true' : 'false');
+              localStorage.setItem(cacheTimestampKey, Date.now().toString());
+              localStorage.setItem('hoodie_academy_is_admin', isAdminStatus ? 'true' : 'false');
             } else {
-              setIsAdmin(!!data?.is_admin);
+              setIsAdmin(false);
             }
           } catch (err) {
             console.error("Admin check failed:", err);
             setIsAdmin(false);
-            setError("Failed to verify admin status.");
           }
-        } else {
-          setError("No wallet connected. Please connect your wallet.");
-        }
-
-        const userSquadName = getSquadName();
-        if (userSquadName) {
-          setUserSquad(userSquadName);
-          const squadLockTime = localStorage.getItem("squadLockTime");
-          if (squadLockTime) {
-            const lockTime = parseInt(squadLockTime);
-            const now = Date.now();
-            const lockExpired = now - lockTime > 24 * 60 * 60 * 1000;
-            setSquadLockExpired(lockExpired);
-          }
-        }
-      } catch (err) {
-        console.error("Initialization error:", err);
-        setError("Failed to initialize dashboard.");
+        }, 0);
       }
+
+      // Fetch squad from database API (non-blocking)
+      setTimeout(async () => {
+        try {
+          const profileResponse = await fetch(`/api/user-profile?wallet=${storedWallet}`);
+          const profileData = await profileResponse.json();
+          
+          if (profileData.success && profileData.profile) {
+            const squadName = profileData.profile.squad?.name || 'Unassigned';
+            setUserSquad(squadName);
+            
+            // Check if squad lock has expired
+            if (profileData.profile.squad?.isLocked) {
+              setSquadLockExpired(false);
+            } else if (profileData.profile.squad) {
+              setSquadLockExpired(true);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching squad data:', error);
+        }
+      }, 0);
     };
 
     initialize();
@@ -333,10 +355,17 @@ export default function HoodieAcademy() {
         setIsAdmin(false);
       }
 
-      // Get squad information
-      const userSquadName = getSquadName();
-      if (userSquadName) {
-        setUserSquad(userSquadName);
+      // Fetch squad from database API
+      try {
+        const profileResponse = await fetch(`/api/user-profile?wallet=${walletAddress}`);
+        const profileData = await profileResponse.json();
+        
+        if (profileData.success && profileData.profile) {
+          const squadName = profileData.profile.squad?.name || 'Unassigned';
+          setUserSquad(squadName);
+        }
+      } catch (error) {
+        console.error('Error fetching squad data:', error);
       }
 
     } catch (error) {
@@ -522,7 +551,23 @@ export default function HoodieAcademy() {
             </header>
             <main className="flex-1 px-4 py-6 space-y-6">
               {walletAddress ? (
-                <UserDashboard walletAddress={walletAddress} />
+                <Suspense fallback={
+                  <div className="space-y-6">
+                    <Card className="bg-slate-800/50 border-cyan-500/30">
+                      <CardContent className="p-8">
+                        <div className="flex flex-col items-center justify-center space-y-4 text-gray-400">
+                          <RefreshCw className="w-8 h-8 animate-spin text-cyan-400" />
+                          <div className="text-center">
+                            <h3 className="text-lg font-semibold text-cyan-400 mb-2">Loading Your Dashboard</h3>
+                            <p className="text-sm">Fetching your progress, bounties, and squad info...</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                }>
+                  <UserDashboard walletAddress={walletAddress} />
+                </Suspense>
               ) : (
                 <div className="text-center py-12">
                   <div className="max-w-md mx-auto">

@@ -70,8 +70,9 @@ const navigationGroups: NavigationGroup[] = [
     key: 'social',
     label: 'Social',
     icon: <Trophy className="h-4 w-4" />,
-    primaryHref: '/leaderboard',
+    primaryHref: '/social',
     items: [
+      { key: 'social-feed', label: 'Social Feed', icon: <MessageSquare className="h-4 w-4" />, href: '/social' },
       { key: 'leaderboard', label: 'Leaderboard', icon: <Trophy className="h-4 w-4" />, href: '/leaderboard' },
       { key: 'media', label: 'My Media', icon: <Image className="h-4 w-4" />, href: '/media' },
       { key: 'achievements', label: 'Achievements', icon: <Award className="h-4 w-4" />, href: '/achievements' },

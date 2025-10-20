@@ -18,7 +18,8 @@ import {
   MessageCircle,
   Target,
   Sparkles,
-  Vote
+  Vote,
+  MessageSquare
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
 import { getSquadNameFromCache, fetchUserSquad } from '@/utils/squad-api';
@@ -181,6 +182,12 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
       label: 'Leaderboard',
       icon: <BarChart3 className="w-5 h-5" />,
       href: '/leaderboard'
+    },
+    {
+      id: 'social',
+      label: 'Social Feed',
+      icon: <MessageSquare className="w-5 h-5" />,
+      href: '/social'
     },
     {
       id: 'profile',

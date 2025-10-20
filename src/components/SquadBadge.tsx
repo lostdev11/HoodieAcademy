@@ -13,7 +13,8 @@ export default function SquadBadge({ squad }: { squad: string }) {
       Decoders: '🧠',
       Raiders: '⚔️',
       Speakers: '🎤',
-      Rangers: '🦅', // Fixed: was "Ranger" but should be "Rangers"
+      Rangers: '🦅',
+      Unassigned: '🎓', // New: Unassigned users get academy badge
     };
     
     const colorMap: Record<string, string> = {
@@ -21,15 +22,18 @@ export default function SquadBadge({ squad }: { squad: string }) {
       Decoders: 'bg-gray-500/20 border-gray-500/50 text-gray-300',
       Raiders: 'bg-blue-500/20 border-blue-500/50 text-blue-400',
       Speakers: 'bg-red-500/20 border-red-500/50 text-red-400',
-      Rangers: 'bg-purple-500/20 border-purple-500/50 text-purple-400', // Fixed: was "Ranger" but should be "Rangers"
+      Rangers: 'bg-purple-500/20 border-purple-500/50 text-purple-400',
+      Unassigned: 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400', // New: Cyan for unassigned
     };
+
+    const displayName = squadName === 'Unassigned' ? 'Academy Member' : `${squadName} Squad`;
 
     return (
       <div className="text-center">
         <div className={`w-40 h-40 rounded-xl border-2 ${colorMap[squadName] || 'bg-slate-500/20 border-slate-500/50 text-slate-300'} flex items-center justify-center text-6xl shadow-xl`}>
           {emojiMap[squadName] || '🏆'}
         </div>
-        <p className="mt-3 text-lg font-bold">{squadName} Badge</p>
+        <p className="mt-3 text-lg font-bold">{displayName}</p>
       </div>
     );
   };
@@ -61,13 +65,14 @@ export default function SquadBadge({ squad }: { squad: string }) {
     Decoders: '/badges/badge_decoders.png',
     Raiders: '/badges/badge_raiders.png',
     Speakers: '/badges/badge_speakers.png',
-    Rangers: '/badges/badge_ranger.png', // Note: badge file is named "badge_ranger.png" but represents "Rangers"
+    Rangers: '/badges/badge_ranger.png',
+    Unassigned: '', // No image badge for unassigned - use fallback
   };
 
   const badgePath = badgeMap[normalizedSquad];
-  if (!badgePath) {
-    // Return fallback badge if no matching badge found
-    console.warn(`No badge found for squad: ${squad} (normalized: ${normalizedSquad})`);
+  
+  // Always use fallback for Unassigned or if no badge path found
+  if (!badgePath || normalizedSquad === 'Unassigned') {
     return getFallbackBadge(normalizedSquad);
   }
 

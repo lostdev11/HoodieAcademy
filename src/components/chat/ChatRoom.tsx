@@ -332,13 +332,13 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
-            className="flex-1 bg-slate-700/50 border-slate-600/30 text-white placeholder-gray-400"
+            className="flex-1 bg-gradient-to-br from-slate-800/80 to-slate-700/80 border-cyan-500/30 text-gray-100 placeholder:text-gray-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-200 font-medium"
             disabled={isSending || !currentUser}
           />
           <Button
             onClick={sendMessage}
             disabled={!newMessage.trim() || isSending || !currentUser}
-            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:opacity-50"
+            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:opacity-50 transition-all duration-200"
           >
             {isSending ? (
               <Loader2 className="w-4 h-4 animate-spin" />

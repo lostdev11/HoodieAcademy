@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { useDisplayNameReadOnly } from '@/hooks/use-display-name'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -41,14 +41,12 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import { MobileNavigation } from "@/components/dashboard/MobileNavigation"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
-import AnnouncementsDisplay from "@/components/AnnouncementsDisplay"
-import AcademyInfo from "@/components/home/AcademyInfo"
-import FeedbackTrackerWidget from "@/components/feedback/FeedbackTrackerWidget"
-import { getUserRank, getUserScore, isCurrentUserAdmin, getConnectedWallet } from '@/lib/utils'
-import { getSquadName } from '@/utils/squad-storage'
+import { fetchUserSquad } from '@/utils/squad-api'
 import Image from 'next/image'
-// import { getSNSResolver, formatWalletAddress } from '@/services/sns-resolver';
-import { Connection } from '@solana/web3.js';
+
+// Lazy load heavy components
+const AcademyInfo = lazy(() => import("@/components/home/AcademyInfo"));
+const FeedbackTrackerWidget = lazy(() => import("@/components/feedback/FeedbackTrackerWidget"));
 
 // Mock data for the new home page sections
 const academySpotlights = [
@@ -164,68 +162,84 @@ export default function HoodieAcademy() {
     const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
     if (storedWallet) {
       setWalletAddress(storedWallet);
-      
-      // Resolve SNS domain for the wallet
-      const resolveSnsDomain = async () => {
-        try {
-          setIsLoadingSns(true);
-          // const { getDisplayNameWithSNS } = await import('@/services/sns-resolver');
-          // const resolvedName = await getDisplayNameWithSNS(storedWallet);
-          const resolvedName = storedWallet;
-          console.log('Main page: Resolved SNS name:', resolvedName);
-          setSnsDomain(resolvedName);
-          
-          // Display name is now handled by the global hook
-        } catch (error) {
-          console.error('Main page: Error resolving SNS domain:', error);
-          setSnsDomain(null);
-        } finally {
-          setIsLoadingSns(false);
-        }
-      };
-      
-      resolveSnsDomain();
+      // Set SNS domain immediately without async resolution
+      setSnsDomain(storedWallet);
+      setIsLoadingSns(false);
     }
 
-    // Check if user is admin
+    // Check cached admin status first (non-blocking)
+    const cachedAdminStatus = typeof window !== 'undefined' ? localStorage.getItem('hoodie_academy_is_admin') : null;
+    if (cachedAdminStatus === 'true') {
+      setIsAdmin(true);
+    }
+
+    // Then verify admin status in background (don't block rendering)
     const checkAdminStatus = async () => {
       try {
-        console.log('🔍 Main page: Checking admin status...');
-        
-        // Get wallet address first
         const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
         if (!walletAddress) {
           setIsAdmin(false);
           return;
         }
         
-        // Use direct admin check to bypass RLS policy issues
+        // Check cache timestamp to avoid excessive API calls
+        const cacheKey = `admin_check_${walletAddress}`;
+        const cacheTimestampKey = `${cacheKey}_timestamp`;
+        const cachedResult = localStorage.getItem(cacheKey);
+        const cacheTimestamp = localStorage.getItem(cacheTimestampKey);
+        
+        // Use cache if less than 5 minutes old
+        if (cachedResult && cacheTimestamp) {
+          const age = Date.now() - parseInt(cacheTimestamp);
+          if (age < 5 * 60 * 1000) { // 5 minutes
+            setIsAdmin(cachedResult === 'true');
+            return;
+          }
+        }
+        
+        // Use direct admin check in background
         const { checkAdminStatusDirect } = await import('@/lib/admin-check');
         const adminStatus = await checkAdminStatusDirect(walletAddress);
         
-        console.log('🔍 Main page: Direct admin check result:', adminStatus);
+        // Cache the result
+        localStorage.setItem(cacheKey, adminStatus ? 'true' : 'false');
+        localStorage.setItem(cacheTimestampKey, Date.now().toString());
+        localStorage.setItem('hoodie_academy_is_admin', adminStatus ? 'true' : 'false');
+        
         setIsAdmin(adminStatus);
       } catch (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);
       }
     };
-    checkAdminStatus();
+    
+    // Run admin check in background without blocking
+    setTimeout(() => checkAdminStatus(), 0);
 
-    // Get squad placement result using utility function
-    const userSquadName = getSquadName();
-    if (userSquadName) {
-      setUserSquad(userSquadName);
-      
-      // Check if squad lock has expired
-      const squadLockTime = localStorage.getItem('squadLockTime');
-      if (squadLockTime) {
-        const lockTime = parseInt(squadLockTime);
-        const now = Date.now();
-        const lockExpired = now - lockTime > 24 * 60 * 60 * 1000; // 24 hours
-        setSquadLockExpired(lockExpired);
+    // Fetch squad from database API
+    const fetchSquadData = async () => {
+      try {
+        const profileResponse = await fetch(`/api/user-profile?wallet=${storedWallet}`);
+        const profileData = await profileResponse.json();
+        
+        if (profileData.success && profileData.profile) {
+          const squadName = profileData.profile.squad?.name || 'Unassigned';
+          setUserSquad(squadName);
+          
+          // Check if squad lock has expired
+          if (profileData.profile.squad?.isLocked) {
+            setSquadLockExpired(false);
+          } else if (profileData.profile.squad) {
+            setSquadLockExpired(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching squad data:', error);
       }
-    }
+    };
+    
+    // Run squad fetch in background without blocking
+    setTimeout(() => fetchSquadData(), 0);
   }, []);
 
   useEffect(() => {
@@ -323,11 +337,9 @@ export default function HoodieAcademy() {
                 </div>
                 
                 {/* Squad Badge */}
-                {userSquad && (
-                  <div className="hidden md:block">
-                    <SquadBadge squad={typeof userSquad === 'string' ? userSquad.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '') : 'Unknown Squad'} />
-                  </div>
-                )}
+                <div className="hidden md:block">
+                  <SquadBadge squad={userSquad || 'Unassigned'} />
+                </div>
               </div>
               <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full">
                 {/* Wallet Info */}
@@ -475,10 +487,32 @@ export default function HoodieAcademy() {
             )}
 
             {/* Academy Information - Council Notice, Announcements, and Spotlight */}
-            <AcademyInfo />
+            <Suspense fallback={
+              <Card className="bg-slate-800/50 border-cyan-500/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-center space-x-2 text-gray-400">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <span>Loading academy info...</span>
+                  </div>
+                </CardContent>
+              </Card>
+            }>
+              <AcademyInfo />
+            </Suspense>
 
             {/* Feedback Tracker - You Asked, We Fixed */}
-            <FeedbackTrackerWidget limit={5} showTitle={true} />
+            <Suspense fallback={
+              <Card className="bg-slate-800/50 border-green-500/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-center space-x-2 text-gray-400">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <span>Loading feedback updates...</span>
+                  </div>
+                </CardContent>
+              </Card>
+            }>
+              <FeedbackTrackerWidget limit={5} showTitle={true} />
+            </Suspense>
 
             {/* Student of the Week */}
             <Card className="bg-slate-800/50 border-yellow-500/30">

@@ -33,8 +33,11 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   }); // Default bottom-left
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [hasMoved, setHasMoved] = useState(false);
   const widgetRef = useRef<HTMLDivElement>(null);
   const MESSAGE_LIMIT = 50; // Limit messages per session
+  const DRAG_THRESHOLD = 5; // Minimum pixels to move before considering it a drag
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
     api: '/api/ai-chat',
@@ -65,11 +68,23 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
       x: e.clientX - rect.left,
       y: e.clientY - rect.top
     });
+    setDragStart({
+      x: e.clientX,
+      y: e.clientY
+    });
     setIsDragging(true);
+    setHasMoved(false); // Reset movement flag
   };
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
+    
+    // Check if movement exceeds threshold before marking as moved
+    const deltaX = Math.abs(e.clientX - dragStart.x);
+    const deltaY = Math.abs(e.clientY - dragStart.y);
+    if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
+      setHasMoved(true); // Mark that we've moved beyond threshold
+    }
     
     const newX = e.clientX - dragOffset.x;
     const newY = e.clientY - dragOffset.y;
@@ -88,11 +103,17 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
 
   const handleMouseUp = () => {
     setIsDragging(false);
+    // Keep hasMoved flag active briefly to prevent click event from firing
+    if (hasMoved) {
+      setTimeout(() => {
+        setHasMoved(false);
+      }, 100);
+    }
   };
 
   const handleButtonClick = (e: React.MouseEvent) => {
-    // Only open chat if not dragging
-    if (!isDragging) {
+    // Only open chat if we didn't just finish dragging
+    if (!hasMoved) {
       setIsOpen(true);
     }
   };
@@ -106,7 +127,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging, dragOffset, dragStart, hasMoved]);
 
   if (!isOpen) {
     return (
@@ -237,7 +258,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
                         : 'bg-gradient-to-br from-slate-800/80 to-slate-700/80 border border-cyan-500/30'
                     }`}
                   >
-                    <p className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-sm text-gray-100 whitespace-pre-wrap leading-relaxed font-medium">
                       {message.content}
                     </p>
                   </div>
@@ -290,14 +311,14 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
                     value={input}
                     onChange={handleInputChange}
                     placeholder="Ask me anything about Web3, Solana, or coding..."
-                    className="flex-1 bg-slate-700/50 border-cyan-500/30 text-white placeholder:text-gray-400 focus:border-cyan-400"
+                    className="flex-1 bg-gradient-to-br from-slate-800/80 to-slate-700/80 border-cyan-500/30 text-gray-100 placeholder:text-gray-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-200 font-medium"
                     disabled={isLoading || hasReachedLimit}
                   />
                   <Button
                     type="submit"
                     size="icon"
                     disabled={isLoading || !input.trim() || hasReachedLimit}
-                    className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 disabled:opacity-50"
+                    className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 disabled:opacity-50 transition-all duration-200"
                   >
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

@@ -12,9 +12,6 @@ const nextConfig = {
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
   },
-  images: {
-    domains: ['images.unsplash.com', 'via.placeholder.com', 'arweave.net'],
-  },
   experimental: {
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
@@ -29,7 +26,12 @@ const nextConfig = {
   reactStrictMode: true,
   // Optimize images
   images: {
-    domains: ['images.unsplash.com', 'via.placeholder.com', 'arweave.net'],
+    domains: [
+      'images.unsplash.com', 
+      'via.placeholder.com', 
+      'arweave.net',
+      'wifhoodie.s3.eu-north-1.amazonaws.com'
+    ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
   },

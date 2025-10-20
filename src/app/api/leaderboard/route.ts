@@ -1,157 +1,242 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic';
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Supabase configuration missing');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
+/**
+ * GET /api/leaderboard
+ * Get ranked list of users by XP
+ * Query params:
+ *   - limit: Number of users to return (default: 100, max: 500)
+ *   - offset: Pagination offset (default: 0)
+ *   - squad: Filter by squad (optional)
+ *   - wallet: Get specific user's rank (optional)
+ *   - timeframe: 'all-time' | 'monthly' | 'weekly' (default: 'all-time')
+ */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = request.nextUrl;
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const { searchParams } = new URL(request.url);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 500);
+    const offset = parseInt(searchParams.get('offset') || '0');
     const squad = searchParams.get('squad');
-    const sortBy = searchParams.get('sortBy') || 'completion_percentage'; // completion_percentage, total_xp, courses_completed
+    const walletAddress = searchParams.get('wallet');
+    const timeframe = searchParams.get('timeframe') || 'all-time';
 
-    // Build the query to get comprehensive user data
+    const supabase = getSupabaseClient();
+
+    // If requesting specific user's rank
+    if (walletAddress) {
+      return getUserRank(supabase, walletAddress, squad);
+    }
+
+    // Build base query
     let query = supabase
       .from('users')
-      .select(`
-        wallet_address,
-        display_name,
-        squad,
-        created_at,
-        last_active,
-        total_xp,
-        level,
-        is_admin
-      `);
+      .select('wallet_address, display_name, total_xp, level, squad, created_at, updated_at')
+      .order('total_xp', { ascending: false });
 
-    // Apply squad filter if provided
-    if (squad && squad !== 'all') {
+    // Apply filters
+    if (squad) {
       query = query.eq('squad', squad);
     }
 
-    const { data: users, error: usersError } = await query;
+    // Time-based filtering (if you track XP with timestamps)
+    if (timeframe === 'weekly') {
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      query = query.gte('updated_at', oneWeekAgo);
+    } else if (timeframe === 'monthly') {
+      const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      query = query.gte('updated_at', oneMonthAgo);
+    }
 
-    if (usersError) {
-      console.error('Error fetching users for leaderboard:', usersError);
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    const { data: users, error } = await query;
+
+    if (error) {
+      console.error('Error fetching leaderboard:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch leaderboard data', details: usersError.message },
+        { error: 'Failed to fetch leaderboard' },
         { status: 500 }
       );
     }
 
-    // Get detailed course completion data for each user
-    const leaderboardData = await Promise.all(
-      users.map(async (user) => {
-        // Get course completions with details
-        const { data: courseCompletions, error: courseError } = await supabase
-          .from('course_completions')
-          .select(`
-            course_id,
-            completed_at,
-            final_score,
-            lessons_completed,
-            total_lessons
-          `)
-          .eq('wallet_address', user.wallet_address);
+    // Add rank to each user
+    const rankedUsers = users?.map((user, index) => ({
+      ...user,
+      rank: offset + index + 1,
+      xpToNextLevel: 1000 - (user.total_xp % 1000),
+      progressToNextLevel: ((user.total_xp % 1000) / 1000) * 100
+    })) || [];
 
-        // Get bounty submissions with XP data
-        const { data: bountySubmissions, error: bountyError } = await supabase
-          .from('bounty_submissions')
-          .select(`
-            xp_earned,
-            sol_earned,
-            status
-          `)
-          .eq('wallet_address', user.wallet_address);
+    // Get total user count for pagination
+    const { count: totalUsers } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
 
-        if (courseError || bountyError) {
-          console.warn('Error fetching detailed data for user:', user.wallet_address);
-        }
+    return NextResponse.json({
+      success: true,
+      leaderboard: rankedUsers,
+      pagination: {
+        limit,
+        offset,
+        total: totalUsers || 0,
+        hasMore: (offset + limit) < (totalUsers || 0)
+      },
+      timeframe,
+      squad: squad || 'all'
+    });
 
-        // Calculate statistics
-        const completedCourses = courseCompletions?.length || 0;
-        const totalLessonsCompleted = courseCompletions?.reduce((sum, comp) => sum + (comp.lessons_completed || 0), 0) || 0;
-        const totalLessonsAvailable = courseCompletions?.reduce((sum, comp) => sum + (comp.total_lessons || 0), 0) || 0;
-        const totalBountyXP = bountySubmissions?.reduce((sum, sub) => sum + (sub.xp_earned || 0), 0) || 0;
-        const totalBountySOL = bountySubmissions?.reduce((sum, sub) => sum + (sub.sol_earned || 0), 0) || 0;
-        
-        // Get XP from users table (primary source)
-        const totalXP = user.total_xp || 0;
-        const userLevel = user.level || 1;
-
-        // Calculate completion percentage
-        const completionPercentage = totalLessonsAvailable > 0 
-          ? (totalLessonsCompleted / totalLessonsAvailable) * 100 
-          : 0;
-
-        // Calculate average quiz score
-        const quizScores = courseCompletions?.filter(comp => comp.final_score !== null)
-          .map(comp => comp.final_score) || [];
-        const averageQuizScore = quizScores.length > 0 
-          ? quizScores.reduce((sum, score) => sum + score, 0) / quizScores.length 
-          : 0;
-
-        return {
-          walletAddress: user.wallet_address,
-          displayName: user.display_name || `User ${user.wallet_address.slice(0, 6)}...`,
-          squad: user.squad || 'Unassigned',
-          rank: 0, // Will be calculated after sorting
-          totalScore: totalXP,
-          level: userLevel,
-          coursesCompleted: completedCourses,
-          totalLessons: totalLessonsCompleted,
-          totalLessonsAvailable,
-          completionPercentage: Math.round(completionPercentage * 100) / 100,
-          averageQuizScore: Math.round(averageQuizScore * 100) / 100,
-          totalBountyXP,
-          totalBountySOL,
-          bountySubmissions: bountySubmissions?.length || 0,
-          joinDate: user.created_at,
-          lastActive: user.last_active || user.created_at,
-          profileImage: null, // TODO: Add profile image support
-          courseProgress: courseCompletions?.map(comp => ({
-            courseId: comp.course_id,
-            completed: true,
-            completedDate: comp.completed_at,
-            lessonsCompleted: comp.lessons_completed || 0,
-            totalLessons: comp.total_lessons || 0,
-            score: comp.final_score || 0
-          })) || []
-        };
-      })
+  } catch (error) {
+    console.error('Error in GET /api/leaderboard:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
     );
+  }
+}
 
-    // Sort the data based on the requested sort criteria
-    leaderboardData.sort((a, b) => {
-      switch (sortBy) {
-        case 'completion_percentage':
-          return b.completionPercentage - a.completionPercentage;
-        case 'total_xp':
-          return b.totalScore - a.totalScore;
-        case 'courses_completed':
-          return b.coursesCompleted - a.coursesCompleted;
-        default:
-          return b.completionPercentage - a.completionPercentage;
+/**
+ * Get a specific user's rank and nearby users
+ */
+async function getUserRank(supabase: any, walletAddress: string, squad?: string | null) {
+  try {
+    // Get user's data
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('wallet_address, display_name, total_xp, level, squad, created_at')
+      .eq('wallet_address', walletAddress)
+      .single();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Calculate user's rank
+    let rankQuery = supabase
+      .from('users')
+      .select('total_xp', { count: 'exact', head: true })
+      .gt('total_xp', user.total_xp);
+
+    if (squad) {
+      rankQuery = rankQuery.eq('squad', squad);
+    }
+
+    const { count } = await rankQuery;
+    const userRank = (count || 0) + 1;
+
+    // Get users above and below this user (context)
+    let contextQuery = supabase
+      .from('users')
+      .select('wallet_address, display_name, total_xp, level, squad')
+      .order('total_xp', { ascending: false });
+
+    if (squad) {
+      contextQuery = contextQuery.eq('squad', squad);
+    }
+
+    // Get 5 users above and 5 below
+    const startRank = Math.max(1, userRank - 5);
+    const endRank = userRank + 5;
+
+    contextQuery = contextQuery.range(startRank - 1, endRank - 1);
+
+    const { data: nearbyUsers } = await contextQuery;
+
+    // Add ranks to nearby users
+    const rankedNearbyUsers = nearbyUsers?.map((u, idx) => ({
+      ...u,
+      rank: startRank + idx,
+      isCurrentUser: u.wallet_address === walletAddress
+    })) || [];
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        ...user,
+        rank: userRank,
+        xpToNextLevel: 1000 - (user.total_xp % 1000),
+        progressToNextLevel: ((user.total_xp % 1000) / 1000) * 100
+      },
+      nearbyUsers: rankedNearbyUsers,
+      squad: squad || 'all'
+    });
+
+  } catch (error) {
+    console.error('Error getting user rank:', error);
+    return NextResponse.json(
+      { error: 'Failed to get user rank' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/leaderboard/stats
+ * Get overall leaderboard statistics
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = getSupabaseClient();
+
+    // Get total stats
+    const { data: stats } = await supabase
+      .rpc('get_leaderboard_stats')
+      .single();
+
+    // If RPC doesn't exist, calculate manually
+    const { count: totalUsers } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+
+    const { data: topUser } = await supabase
+      .from('users')
+      .select('total_xp, display_name')
+      .order('total_xp', { ascending: false })
+      .limit(1)
+      .single();
+
+    const { data: avgXP } = await supabase
+      .from('users')
+      .select('total_xp');
+
+    const averageXP = avgXP 
+      ? avgXP.reduce((sum, u) => sum + (u.total_xp || 0), 0) / avgXP.length 
+      : 0;
+
+    return NextResponse.json({
+      success: true,
+      stats: {
+        totalUsers: totalUsers || 0,
+        topUser: topUser ? {
+          name: topUser.display_name,
+          xp: topUser.total_xp
+        } : null,
+        averageXP: Math.round(averageXP),
+        totalXPAwarded: avgXP ? avgXP.reduce((sum, u) => sum + (u.total_xp || 0), 0) : 0
       }
     });
 
-    // Assign ranks and apply limit
-    const rankedData = leaderboardData
-      .slice(0, limit)
-      .map((user, index) => ({
-        ...user,
-        rank: index + 1
-      }));
-
-    return NextResponse.json(rankedData);
   } catch (error) {
-    console.error('Error in leaderboard API:', error);
+    console.error('Error in POST /api/leaderboard:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

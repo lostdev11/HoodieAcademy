@@ -21,7 +21,9 @@ import {
   Target,
   Sparkles,
   Bell,
-  Vote
+  Vote,
+  MessageSquare,
+  TrendingUp
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
 import { getSquadNameFromCache, fetchUserSquad } from '@/utils/squad-api';
@@ -253,11 +255,23 @@ const sidebarItems: SidebarItem[] = [
       href: squadChatUrl,
       dynamic: true
     },
+    {
+      id: 'squad-analytics',
+      label: 'Squad Analytics',
+      icon: <TrendingUp className="w-5 h-5" />,
+      href: '/squads/analytics'
+    },
   {
     id: 'leaderboard',
     label: 'Leaderboard',
     icon: <BarChart3 className="w-5 h-5" />,
     href: '/leaderboard'
+  },
+  {
+    id: 'social',
+    label: 'Social Feed',
+    icon: <MessageSquare className="w-5 h-5" />,
+    href: '/social'
   },
   {
     id: 'profile',

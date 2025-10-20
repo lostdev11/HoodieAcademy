@@ -30,6 +30,7 @@ import LoreLogManager from '@/components/admin/LoreLogManager';
 import AcademyMilestonesManager from '@/components/admin/AcademyMilestonesManager';
 import { MentorshipManager } from '@/components/admin/MentorshipManager';
 import { GovernanceManager } from '@/components/admin/GovernanceManager';
+import SocialFeedManager from '@/components/admin/SocialFeedManager';
 import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
 import { NotificationBadge } from '@/components/notifications/NotificationBadge';
 
@@ -71,9 +72,11 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
       'announcements': 'Announcements',
       'spotlight': 'Spotlight',
       'feedback': 'User Feedback',
+      'social-feed': 'Social Feed',
       'community': 'Community',
       'lore': 'Lore Log',
       'milestones': 'Milestones',
+      'mentorship': 'Mentorship',
       'governance': 'Governance'
     };
     return tabNames[tab] || 'Select a section...';
@@ -167,9 +170,11 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     {activeTab === 'announcements' && <Megaphone className="w-4 h-4" />}
                     {activeTab === 'spotlight' && <Sparkles className="w-4 h-4" />}
                     {activeTab === 'feedback' && <MessageSquare className="w-4 h-4" />}
+                    {activeTab === 'social-feed' && <MessageSquare className="w-4 h-4" />}
                     {activeTab === 'community' && <Crown className="w-4 h-4" />}
                     {activeTab === 'lore' && <ScrollText className="w-4 h-4" />}
                     {activeTab === 'milestones' && <Flag className="w-4 h-4" />}
+                    {activeTab === 'mentorship' && <Video className="w-4 h-4" />}
                     {activeTab === 'governance' && <Vote className="w-4 h-4" />}
                     <span>{getTabDisplayName(activeTab)}</span>
                   </div>
@@ -252,6 +257,12 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                   <div className="flex items-center space-x-2">
                     <MessageSquare className="w-4 h-4" />
                     <span>User Feedback</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="social-feed">
+                  <div className="flex items-center space-x-2">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Social Feed</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="community">
@@ -399,6 +410,14 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               )}
             </Button>
             <Button
+              variant={activeTab === "social-feed" ? "default" : "outline"}
+              onClick={() => setActiveTab("social-feed")}
+              className="flex items-center space-x-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Social Feed</span>
+            </Button>
+            <Button
               variant={activeTab === "community" ? "default" : "outline"}
               onClick={() => setActiveTab("community")}
               className="flex items-center space-x-2"
@@ -520,6 +539,11 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
           {/* User Feedback Tab */}
           <TabsContent value="feedback">
             <UserFeedbackManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Social Feed Moderation Tab */}
+          <TabsContent value="social-feed">
+            <SocialFeedManager adminWallet={walletAddress} />
           </TabsContent>
 
           {/* Community Management Tab */}
