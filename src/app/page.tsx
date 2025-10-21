@@ -218,12 +218,16 @@ export default function HoodieAcademy() {
 
     // Fetch squad from database API
     const fetchSquadData = async () => {
+      if (!storedWallet) return;
+      
       try {
+        console.log('🔄 Home: Fetching squad data for', storedWallet.slice(0, 8) + '...');
         const profileResponse = await fetch(`/api/user-profile?wallet=${storedWallet}`);
         const profileData = await profileResponse.json();
         
         if (profileData.success && profileData.profile) {
           const squadName = profileData.profile.squad?.name || 'Unassigned';
+          console.log('✅ Home: Squad fetched:', squadName);
           setUserSquad(squadName);
           
           // Check if squad lock has expired
@@ -234,12 +238,34 @@ export default function HoodieAcademy() {
           }
         }
       } catch (error) {
-        console.error('Error fetching squad data:', error);
+        console.error('❌ Home: Error fetching squad data:', error);
       }
     };
     
-    // Run squad fetch in background without blocking
-    setTimeout(() => fetchSquadData(), 0);
+    // Fetch immediately
+    fetchSquadData();
+    
+    // Listen for storage events (when squad is updated on squad selection page)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'userSquad' || e.key === null) {
+        console.log('🔄 Home: Storage event detected, refreshing squad data...');
+        fetchSquadData();
+      }
+    };
+    
+    // Listen for custom squad update events
+    const handleSquadUpdate = () => {
+      console.log('🔄 Home: Squad update event detected, refreshing...');
+      fetchSquadData();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('squadUpdated', handleSquadUpdate);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('squadUpdated', handleSquadUpdate);
+    };
   }, []);
 
   useEffect(() => {

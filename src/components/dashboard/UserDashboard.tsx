@@ -107,23 +107,35 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
         setLoading(true);
         
         // Fetch complete user profile (includes squad, XP, level)
-        let squadName = 'Unassigned';
-        try {
-          const profileResponse = await fetch(`/api/user-profile?wallet=${walletAddress}`);
-          const profileData = await profileResponse.json();
-          
-          if (profileData.success && profileData.profile) {
-            squadName = profileData.profile.squad?.name || 'Unassigned';
-            console.log('👤 UserDashboard: Fetched user profile with squad:', squadName);
-          }
-        } catch (error) {
-          console.error('Error fetching user profile:', error);
-          // Fallback to old method
-          const squadData = await fetchUserSquad(walletAddress);
-          squadName = squadData?.hasSquad && squadData?.squad?.name ? squadData.squad.name : 'Unassigned';
-        }
+        await fetchUserProfile();
+      } catch (err) {
+        console.error('❌ UserDashboard: Error initializing dashboard:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchUserProfile = async () => {
+      let squadName = 'Unassigned';
+      try {
+        console.log('🔄 UserDashboard: Fetching user profile for', walletAddress?.slice(0, 8) + '...');
+        const profileResponse = await fetch(`/api/user-profile?wallet=${walletAddress}`);
+        const profileData = await profileResponse.json();
         
-        setUserSquad(squadName);
+        if (profileData.success && profileData.profile) {
+          squadName = profileData.profile.squad?.name || 'Unassigned';
+          console.log('✅ UserDashboard: Fetched user profile with squad:', squadName);
+        }
+      } catch (error) {
+        console.error('❌ UserDashboard: Error fetching user profile:', error);
+        // Fallback to old method
+        const squadData = await fetchUserSquad(walletAddress);
+        squadName = squadData?.hasSquad && squadData?.squad?.name ? squadData.squad.name : 'Unassigned';
+      }
+      
+      setUserSquad(squadName);
+      return squadName;
+    };
 
         // Calculate level from XP (with fallback)
         const totalXP = xpProfile?.totalXP || 0;

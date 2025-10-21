@@ -8,6 +8,42 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const walletAddress = searchParams.get('walletAddress');
+
+    // If wallet address provided, fetch specific user
+    if (walletAddress) {
+      console.log('📡 [USERS API] Fetching user:', walletAddress.slice(0, 8) + '...');
+      
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('wallet_address', walletAddress)
+        .single();
+
+      if (error) {
+        // User not found is not an error - return empty user
+        if (error.code === 'PGRST116') {
+          console.log('📝 [USERS API] User not found, returning default');
+          return NextResponse.json({
+            wallet_address: walletAddress,
+            display_name: null,
+            squad: null
+          });
+        }
+        
+        console.error('❌ [USERS API] Error fetching user:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch user', details: error.message },
+          { status: 500 }
+        );
+      }
+
+      console.log('✅ [USERS API] Fetched user:', user?.display_name || 'No display name');
+      return NextResponse.json(user);
+    }
+    
+    // Otherwise, fetch all users
     console.log('📡 [USERS API] Fetching all users...');
     
     const { data: users, error } = await supabase

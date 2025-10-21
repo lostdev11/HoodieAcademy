@@ -292,6 +292,11 @@ export default function ChooseYourSquadPage() {
       // Trigger storage event for other tabs/components
       window.dispatchEvent(new Event('storage'));
       
+      // Dispatch custom squad update event
+      window.dispatchEvent(new CustomEvent('squadUpdated', { 
+        detail: { squad: selectedSquad.name } 
+      }));
+      
       // Show success message
       alert(`🎉 Success! You've joined ${selectedSquad.name}!\n\n✅ Squad saved to database\n🎯 +30 XP for joining a squad\n🔒 Locked for 30 days\n\nYour squad selection is now active!`);
       
