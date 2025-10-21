@@ -221,8 +221,6 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
     );
   }
 
-  const canClaim = !status.alreadyClaimed;
-
   return (
     <Card className={`bg-slate-800/50 border-yellow-500/30 ${className}`}>
       <CardHeader>
@@ -266,30 +264,7 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
         </div>
 
         {/* Claim Button or Countdown */}
-        {canClaim ? (
-          <Button
-            onClick={claimDailyBonus}
-            disabled={claiming || status.alreadyClaimed}
-            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {claiming ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Claiming...
-              </>
-            ) : status.alreadyClaimed ? (
-              <>
-                <CheckCircle className="w-4 h-4 mr-2" />
-                Already Claimed
-              </>
-            ) : (
-              <>
-                <Gift className="w-4 h-4 mr-2" />
-                Claim Daily Bonus
-              </>
-            )}
-          </Button>
-        ) : (
+        {status.alreadyClaimed ? (
           <div className="text-center p-4 bg-slate-700/50 rounded-lg">
             <Clock className="w-6 h-6 text-gray-400 mx-auto mb-2" />
             <p className="text-sm text-gray-400 mb-1">Next bonus available in:</p>
@@ -311,6 +286,24 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
               <p className="text-lg font-bold text-green-400">Available!</p>
             )}
           </div>
+        ) : (
+          <Button
+            onClick={claimDailyBonus}
+            disabled={claiming}
+            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {claiming ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Claiming...
+              </>
+            ) : (
+              <>
+                <Gift className="w-4 h-4 mr-2" />
+                Claim Daily Bonus
+              </>
+            )}
+          </Button>
         )}
 
         {/* Error Messages (success now shown as toast) */}
