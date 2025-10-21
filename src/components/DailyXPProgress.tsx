@@ -37,7 +37,23 @@ export default function DailyXPProgress({
     try {
       setLoading(true);
       const response = await fetch(`/api/xp/auto-reward?wallet=${walletAddress}`);
-      const data = await response.json();
+      
+      // Check if response is ok
+      if (!response.ok) {
+        console.warn('⚠️ DailyXPProgress: API returned error status:', response.status);
+        setLoading(false);
+        return;
+      }
+      
+      // Get response text first to check if it's valid JSON
+      const text = await response.text();
+      if (!text || text.trim() === '') {
+        console.warn('⚠️ DailyXPProgress: Empty response from API');
+        setLoading(false);
+        return;
+      }
+      
+      const data = JSON.parse(text);
 
       if (data.success) {
         setDailyProgress(data.dailyProgress);
@@ -47,6 +63,14 @@ export default function DailyXPProgress({
       }
     } catch (error) {
       console.error('Error fetching daily XP progress:', error);
+      // Use default values on error
+      setDailyProgress({
+        earnedToday: 0,
+        dailyCap: 300,
+        remaining: 300,
+        percentUsed: 0,
+        capReached: false
+      });
     } finally {
       setLoading(false);
     }

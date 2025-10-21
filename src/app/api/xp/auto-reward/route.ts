@@ -405,9 +405,10 @@ export async function GET(request: NextRequest) {
 
     // If requesting daily XP progress for a user
     if (walletAddress) {
+      const DAILY_XP_CAP = 300;
+      
       try {
         const supabase = getSupabaseClient();
-        const DAILY_XP_CAP = 300;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -461,13 +462,13 @@ export async function GET(request: NextRequest) {
         });
       } catch (innerError) {
         console.error('❌ [AUTO XP] Error in GET daily progress:', innerError);
-        // Return safe defaults instead of crashing
+        // Return safe defaults instead of crashing - MUST return valid JSON
         return NextResponse.json({
           success: true,
           dailyProgress: {
             earnedToday: 0,
-            dailyCap: 300,
-            remaining: 300,
+            dailyCap: DAILY_XP_CAP,
+            remaining: DAILY_XP_CAP,
             percentUsed: 0,
             capReached: false
           },
