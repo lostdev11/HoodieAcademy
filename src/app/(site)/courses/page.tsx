@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     title: 'Web3 Courses - Hoodie Academy',
     description: 'Master Web3, NFTs, and crypto trading with our comprehensive course library. From beginners to advanced traders.',
     type: 'website',
-    url: 'https://hoodieacademy.xyz/courses',
+    url: 'https://hoodieacademy.com/courses',
     images: [
       {
         url: '/images/hoodie-academy-courses.png',

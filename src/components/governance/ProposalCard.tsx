@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
 import { ThumbsUp, ThumbsDown, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 interface Proposal {
@@ -127,9 +128,9 @@ export function ProposalCard({
       
       <CardContent className="space-y-4">
         {/* Description */}
-        <p className="text-gray-300 text-sm leading-relaxed">
-          {proposal.description}
-        </p>
+        <div className="text-sm">
+          <MarkdownRenderer content={proposal.description} />
+        </div>
 
         {/* Vote Progress */}
         <div className="space-y-2">

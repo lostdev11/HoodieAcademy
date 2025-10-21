@@ -1,0 +1,18 @@
+URL,Status,Title,Description,Canonical,Robots,In_Sitemap,H1,JSON_LD,Notes
+/,OK,Hoodie Academy - Master Web3 NFTs & Crypto Trading,Join Hoodie Academy to master Web3 NFT trading technical analysis and wallet security. Gamified learning with squads bounties and real crypto rewards.,✅,✅,✅,✅,✅,Homepage with WebSite + Organization schema
+/courses,OK,Courses - Hoodie Academy,Explore Web3 courses on NFT trading technical analysis wallet security and community building. Join the Hoodie Academy and master crypto trading like a degen.,✅,✅,✅,✅,✅,Course listing with comprehensive metadata
+/courses/wallet-wizardry,OK,Wallet Wizardry - Hoodie Academy,Master wallet setup with interactive quizzes and MetaMask integration.,✅,✅,✅,✅,✅,Course page with Course + BreadcrumbList schema
+/courses/nft-mastery,OK,NFT Mastery - Hoodie Academy,Learn the ins and outs of NFTs from creation to trading and community building with interactive quizzes and mock minting.,✅,✅,✅,✅,✅,Course page with Course + BreadcrumbList schema
+/courses/meme-coin-mania,OK,Meme Coin Mania - Hoodie Academy,Dynamic course content with metadata.,✅,✅,✅,✅,✅,Course page with Course + BreadcrumbList schema
+/courses/technical-analysis,OK,Technical Analysis - Hoodie Academy,Dynamic course content with metadata.,✅,✅,✅,✅,✅,Course page with Course + BreadcrumbList schema
+/courses/cybersecurity-wallet-practices,OK,Cybersecurity Wallet Practices - Hoodie Academy,Dynamic course content with metadata.,✅,✅,✅,✅,✅,Course page with Course + BreadcrumbList schema
+/bounties,OK,Bounties - Hoodie Academy,Complete bounties to earn XP SOL and exclusive rewards. Take on challenges and showcase your skills in the Hoodie Academy community.,✅,✅,✅,✅,✅,Bounties page with metadata
+/achievements,OK,Achievements & Badges,Track your progress unlock badges and earn rewards for completing courses at Hoodie Academy. See your achievements and compete with other students.,✅,✅,✅,✅,✅,Achievements page with metadata
+/leaderboard,OK,Leaderboard - Top Students,See top performers at Hoodie Academy. Compete with students earn XP and climb the rankings. View leaderboards by squad and timeframe.,✅,✅,✅,✅,✅,Leaderboard with metadata
+/profile,NOINDEX,Your Profile,Manage your Hoodie Academy profile view your courses achievements and squad status. Track your progress and customize your learning experience.,✅,❌,❌,✅,✅,User-specific content correctly noindexed
+/dashboard,NOINDEX,Dashboard,User dashboard content.,❌,❌,❌,✅,✅,User-specific should be noindexed
+/onboarding,NOINDEX,Onboarding,User onboarding flow.,❌,❌,❌,✅,✅,User-specific should be noindexed
+/admin/*,BLOCKED,N/A,Admin pages.,❌,❌,❌,❌,❌,Correctly blocked in robots.txt
+/api/*,BLOCKED,N/A,API endpoints.,❌,❌,❌,❌,❌,Correctly blocked in robots.txt
+/_next/*,BLOCKED,N/A,Next.js internal files.,❌,❌,❌,❌,❌,Correctly blocked in robots.txt
+/placement/*,BLOCKED,N/A,Placement test pages.,❌,❌,❌,❌,❌,Correctly blocked in robots.txt

@@ -57,18 +57,10 @@ export function useUserTracking(walletAddress?: string) {
     setError(null);
 
     try {
-      // Add aggressive cache-busting
-      const timestamp = Date.now();
+      // Simple cache-busting
       const response = await fetch(
-        `/api/users/track?wallet=${walletAddress}&t=${timestamp}&refresh=${Math.random()}`,
-        { 
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        }
+        `/api/users/track?wallet=${walletAddress}&t=${Date.now()}`,
+        { cache: 'no-store' }
       );
       
       if (!response.ok) {
@@ -239,14 +231,14 @@ export function useUserTracking(walletAddress?: string) {
     fetchUserData();
   }, [fetchUserData]);
 
-  // Auto-refresh tracking data every 30 seconds
+  // Auto-refresh tracking data every 2 minutes (reduced frequency)
   useEffect(() => {
     if (!walletAddress) return;
 
     const interval = setInterval(() => {
       console.log('⏰ [useUserTracking] Auto-refreshing...');
       fetchUserData();
-    }, 30000); // 30 seconds
+    }, 120000); // 2 minutes instead of 30 seconds
 
     return () => clearInterval(interval);
   }, [walletAddress, fetchUserData]);

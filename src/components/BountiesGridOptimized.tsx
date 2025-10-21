@@ -22,12 +22,12 @@ export default function BountiesGridOptimized({
   initialBounties = [], 
   showHidden = false 
 }: BountiesGridOptimizedProps) {
-  const { bounties, loading, error } = useUserBounties();
+  const { submissions, loading, error } = useUserBounties();
   const { wallet } = useWalletSupabase();
   const [userSubmissions, setUserSubmissions] = useState<{ [bountyId: string]: any }>({});
 
-  // Use initialBounties if still loading and they exist
-  const displayBounties = loading && initialBounties.length > 0 ? initialBounties : bounties;
+  // Use initialBounties if still loading and they exist, otherwise use submissions
+  const displayBounties = loading && initialBounties.length > 0 ? initialBounties : (submissions || []);
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -65,11 +65,11 @@ export default function BountiesGridOptimized({
     return diffDays <= 3 && diffDays >= 0;
   };
 
-  if (isLoading && initialBounties.length === 0) {
+  if (loading && initialBounties.length === 0) {
     return <BountyListSkeleton count={6} />;
   }
 
-  if (displayBounties.length === 0) {
+  if (!displayBounties || displayBounties.length === 0) {
     return (
       <FadeInWhenVisible>
         <div className="text-center py-8">
@@ -85,12 +85,11 @@ export default function BountiesGridOptimized({
 
   return (
     <StaggerChildren className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {displayBounties.map((bounty, index) => (
+      {(displayBounties || []).map((bounty, index) => (
         <StaggerItem key={bounty.id}>
           <motion.div
             whileHover={{ scale: 1.02, y: -8 }}
             transition={{ duration: 0.2 }}
-            onMouseEnter={() => prefetchBounty(bounty.id)}
           >
             <Card 
               className={`group overflow-hidden bg-slate-800/50 border transition-all duration-300 ${
