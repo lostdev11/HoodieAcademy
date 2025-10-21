@@ -253,6 +253,12 @@ export default function ChooseYourSquadPage() {
 
       console.log('✅ Squad saved successfully to database');
 
+      // Update local state immediately
+      setCurrentSquad(selectedSquad);
+      setIsLocked(true);
+      setRemainingDays(30);
+      setShowConfirmation(false);
+
       // Mark placement test as completed
       localStorage.setItem('placementTestCompleted', 'true');
       
@@ -287,17 +293,15 @@ export default function ChooseYourSquadPage() {
       window.dispatchEvent(new Event('storage'));
       
       // Show success message
-      alert(`🎉 Success! You've joined ${selectedSquad.name}!\n\n✅ Squad saved to database\n🎯 +30 XP for joining a squad\n🔒 Locked for 30 days\n\nRedirecting to dashboard...`);
+      alert(`🎉 Success! You've joined ${selectedSquad.name}!\n\n✅ Squad saved to database\n🎯 +30 XP for joining a squad\n🔒 Locked for 30 days\n\nYour squad selection is now active!`);
       
-      // Small delay to let user see the success message
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Scroll to top to show the updated squad card
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       
     } catch (err) {
       console.error('❌ Error saving squad:', err);
       setError(err instanceof Error ? err.message : 'Failed to save squad selection');
+    } finally {
       setSaving(false);
     }
   };
