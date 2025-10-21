@@ -182,6 +182,8 @@ export default function ChooseYourSquadPage() {
     setRenewSuccess(false);
     
     try {
+      console.log('🔄 Renewing squad:', currentSquad.name);
+
       const result = await updateUserSquad(
         walletAddress,
         currentSquad.name,
@@ -189,20 +191,34 @@ export default function ChooseYourSquadPage() {
         true // renew flag
       );
 
+      console.log('📡 Squad renewal result:', result);
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to renew squad');
       }
+
+      console.log('✅ Squad renewed successfully');
 
       // Update state
       setIsLocked(true);
       setRemainingDays(30);
       setRenewSuccess(true);
       
+      // Update localStorage cache
+      localStorage.setItem('userSquad', JSON.stringify({
+        name: currentSquad.name,
+        id: currentSquad.id,
+        selectedAt: new Date().toISOString()
+      }));
+      
+      // Trigger storage event for other tabs/components
+      window.dispatchEvent(new Event('storage'));
+      
       // Clear success message after 5 seconds
       setTimeout(() => setRenewSuccess(false), 5000);
       
     } catch (err) {
-      console.error('Error renewing squad:', err);
+      console.error('❌ Error renewing squad:', err);
       setError(err instanceof Error ? err.message : 'Failed to renew squad');
     } finally {
       setRenewing(false);
@@ -216,6 +232,12 @@ export default function ChooseYourSquadPage() {
     setError(null);
     
     try {
+      console.log('🔄 Saving squad selection:', {
+        wallet: walletAddress.slice(0, 8) + '...',
+        squad: selectedSquad.name,
+        squadId: selectedSquad.id
+      });
+
       const result = await updateUserSquad(
         walletAddress,
         selectedSquad.name,
@@ -223,10 +245,15 @@ export default function ChooseYourSquadPage() {
         false // not a renewal
       );
 
+      console.log('📡 Squad save result:', result);
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to save squad');
       }
 
+      console.log('✅ Squad saved successfully to database');
+
+      // Mark placement test as completed
       localStorage.setItem('placementTestCompleted', 'true');
       
       // Update localStorage cache for immediate effect
@@ -236,14 +263,40 @@ export default function ChooseYourSquadPage() {
         selectedAt: new Date().toISOString()
       }));
       
+      // Award XP for joining squad (if not already done)
+      try {
+        await fetch('/api/xp/auto-reward', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            walletAddress,
+            action: 'SQUAD_JOINED',
+            referenceId: `squad_${selectedSquad.id}_${Date.now()}`,
+            metadata: {
+              squad: selectedSquad.name,
+              squadId: selectedSquad.id
+            }
+          })
+        });
+        console.log('✅ Squad join XP awarded (+30 XP)');
+      } catch (xpError) {
+        console.warn('XP award failed (non-critical):', xpError);
+      }
+      
       // Trigger storage event for other tabs/components
       window.dispatchEvent(new Event('storage'));
       
-      // Redirect to home page
-      router.push('/');
+      // Show success message
+      alert(`🎉 Success! You've joined ${selectedSquad.name}!\n\n✅ Squad saved to database\n🎯 +30 XP for joining a squad\n🔒 Locked for 30 days\n\nRedirecting to dashboard...`);
+      
+      // Small delay to let user see the success message
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Redirect to dashboard
+      router.push('/dashboard');
       
     } catch (err) {
-      console.error('Error saving squad:', err);
+      console.error('❌ Error saving squad:', err);
       setError(err instanceof Error ? err.message : 'Failed to save squad selection');
       setSaving(false);
     }

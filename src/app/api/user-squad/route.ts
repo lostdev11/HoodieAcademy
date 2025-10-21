@@ -172,30 +172,63 @@ export async function POST(request: NextRequest) {
     const lockEndDate = new Date();
     lockEndDate.setDate(lockEndDate.getDate() + 30);
 
-    // Update or insert user squad data
-    const { data, error } = await supabase
-      .from('users')
-      .upsert({
-        wallet_address,
-        squad,
-        squad_id,
-        squad_selected_at: new Date().toISOString(),
-        squad_lock_end_date: lockEndDate.toISOString(),
-        squad_change_count: (existingUser?.squad ? (existingUser.squad_change_count || 0) + 1 : 1),
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'wallet_address'
-      })
-      .select()
-      .single();
+    let data;
+    let updateError;
 
-    if (error) {
-      console.error('Error updating user squad:', error);
+    // Update or insert user squad data
+    if (existingUser) {
+      // User exists - UPDATE
+      const { data: updateData, error } = await supabase
+        .from('users')
+        .update({
+          squad,
+          squad_id,
+          squad_selected_at: new Date().toISOString(),
+          squad_lock_end_date: lockEndDate.toISOString(),
+          squad_change_count: (existingUser.squad ? (existingUser.squad_change_count || 0) + 1 : 1),
+          updated_at: new Date().toISOString()
+        })
+        .eq('wallet_address', wallet_address)
+        .select()
+        .single();
+      
+      data = updateData;
+      updateError = error;
+    } else {
+      // User doesn't exist - INSERT
+      const { data: insertData, error } = await supabase
+        .from('users')
+        .insert({
+          wallet_address,
+          squad,
+          squad_id,
+          squad_selected_at: new Date().toISOString(),
+          squad_lock_end_date: lockEndDate.toISOString(),
+          squad_change_count: 1,
+          total_xp: 0,
+          level: 1,
+          streak: 0,
+          is_admin: false,
+          banned: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      
+      data = insertData;
+      updateError = error;
+    }
+
+    if (updateError) {
+      console.error('Error updating user squad:', updateError);
       return NextResponse.json(
-        { error: 'Failed to update squad' },
+        { error: 'Failed to update squad', details: updateError.message },
         { status: 500 }
       );
     }
+
+    console.log('✅ Squad saved successfully:', { wallet_address, squad, squad_id });
 
     return NextResponse.json({
       success: true,
