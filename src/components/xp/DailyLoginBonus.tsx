@@ -71,8 +71,18 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
       const result = await xpBountyService.awardDailyLoginBonus(walletAddress);
 
       if (result.success) {
-        // Update status to claimed
-        setStatus(prev => prev ? { ...prev, alreadyClaimed: true } : prev);
+        // Calculate tomorrow for countdown
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+        
+        // Update status to claimed with next available time
+        setStatus(prev => prev ? { 
+          ...prev, 
+          alreadyClaimed: true,
+          lastClaimed: new Date().toISOString(),
+          nextAvailable: tomorrow.toISOString()
+        } : prev);
         
         // Show beautiful success toast
         toast({
