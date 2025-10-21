@@ -207,6 +207,12 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
       icon: <Trophy className="w-5 h-5" />,
       href: '/achievements'
     },
+    {
+      id: 'squad-tracker',
+      label: 'Squad Tracker',
+      icon: <Users className="w-5 h-5" />,
+      href: '/squads/tracker'
+    },
     // Only include Admin tab if isAdmin is true
     ...(isAdmin ? [{
       id: 'admin',
