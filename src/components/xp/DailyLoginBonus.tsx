@@ -62,18 +62,18 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
 
   // Claim daily login bonus
   const claimDailyBonus = async () => {
-    if (!walletAddress || !status || status.alreadyClaimed) return;
+    if (!walletAddress || !status || status.alreadyClaimed || claiming) return;
 
     try {
       setClaiming(true);
       setError(null);
 
-      // Optimistic update - show claiming immediately
-      setStatus(prev => prev ? { ...prev, alreadyClaimed: true } : prev);
-
       const result = await xpBountyService.awardDailyLoginBonus(walletAddress);
 
       if (result.success) {
+        // Update status to claimed
+        setStatus(prev => prev ? { ...prev, alreadyClaimed: true } : prev);
+        
         // Show beautiful success toast
         toast({
           title: (
@@ -106,12 +106,12 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
           className: "bg-gradient-to-r from-yellow-900/90 to-orange-900/90 border-yellow-500/50",
         });
         
+        // Stop claiming state immediately
+        setClaiming(false);
+        
         // Reload status in background (don't wait)
         setTimeout(() => loadStatus(), 1000);
       } else {
-        // Revert optimistic update on error
-        setStatus(prev => prev ? { ...prev, alreadyClaimed: false } : prev);
-        
         // Show error toast
         toast({
           title: "Unable to Claim",
@@ -120,12 +120,12 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
           duration: 4000,
         });
         setError(result.message || 'Failed to claim daily login bonus');
+        
+        // Stop claiming state
+        setClaiming(false);
       }
     } catch (err) {
       console.error('Error claiming daily login bonus:', err);
-      
-      // Revert optimistic update on error
-      setStatus(prev => prev ? { ...prev, alreadyClaimed: false } : prev);
       
       const errorMsg = 'Network error while claiming daily login bonus';
       
@@ -138,7 +138,8 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
       });
       
       setError(errorMsg);
-    } finally {
+      
+      // Stop claiming state
       setClaiming(false);
     }
   };
@@ -258,13 +259,18 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
         {canClaim ? (
           <Button
             onClick={claimDailyBonus}
-            disabled={claiming}
-            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+            disabled={claiming || status.alreadyClaimed}
+            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {claiming ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 Claiming...
+              </>
+            ) : status.alreadyClaimed ? (
+              <>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Already Claimed
               </>
             ) : (
               <>
