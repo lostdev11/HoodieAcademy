@@ -68,6 +68,9 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
       setClaiming(true);
       setError(null);
 
+      // Optimistic update - show claiming immediately
+      setStatus(prev => prev ? { ...prev, alreadyClaimed: true } : prev);
+
       const result = await xpBountyService.awardDailyLoginBonus(walletAddress);
 
       if (result.success) {
@@ -103,9 +106,12 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
           className: "bg-gradient-to-r from-yellow-900/90 to-orange-900/90 border-yellow-500/50",
         });
         
-        // Reload status to update the UI
-        await loadStatus();
+        // Reload status in background (don't wait)
+        setTimeout(() => loadStatus(), 1000);
       } else {
+        // Revert optimistic update on error
+        setStatus(prev => prev ? { ...prev, alreadyClaimed: false } : prev);
+        
         // Show error toast
         toast({
           title: "Unable to Claim",
@@ -117,6 +123,10 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
       }
     } catch (err) {
       console.error('Error claiming daily login bonus:', err);
+      
+      // Revert optimistic update on error
+      setStatus(prev => prev ? { ...prev, alreadyClaimed: false } : prev);
+      
       const errorMsg = 'Network error while claiming daily login bonus';
       
       // Show error toast
