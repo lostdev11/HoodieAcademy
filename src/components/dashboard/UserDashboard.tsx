@@ -94,27 +94,6 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
   useAutoDailyLogin(walletAddress);
 
   useEffect(() => {
-    const initializeDashboard = async () => {
-      try {
-        console.log('🔄 UserDashboard: Initializing dashboard...', {
-          walletAddress: walletAddress?.slice(0, 8) + '...',
-          hasXPProfile: !!xpProfile,
-          hasBountyStats: !!bountyStats,
-          xpProfile,
-          bountyStats
-        });
-        
-        setLoading(true);
-        
-        // Fetch complete user profile (includes squad, XP, level)
-        await fetchUserProfile();
-      } catch (err) {
-        console.error('❌ UserDashboard: Error initializing dashboard:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const fetchUserProfile = async () => {
       let squadName = 'Unassigned';
       try {
@@ -137,6 +116,21 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
       return squadName;
     };
 
+    const initializeDashboard = async () => {
+      try {
+        console.log('🔄 UserDashboard: Initializing dashboard...', {
+          walletAddress: walletAddress?.slice(0, 8) + '...',
+          hasXPProfile: !!xpProfile,
+          hasBountyStats: !!bountyStats,
+          xpProfile,
+          bountyStats
+        });
+        
+        setLoading(true);
+        
+        // Fetch complete user profile (includes squad, XP, level)
+        const squadName = await fetchUserProfile();
+
         // Calculate level from XP (with fallback)
         const totalXP = xpProfile?.totalXP || 0;
         const level = Math.floor(totalXP / 1000) + 1;
@@ -155,7 +149,7 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
           }
 
           // Get squad rank if user has a squad
-          if (squadName) {
+          if (squadName && squadName !== 'Unassigned') {
             const squadRankResponse = await fetch(`/api/leaderboard?wallet=${walletAddress}&squad=${squadName}`);
             if (squadRankResponse.ok) {
               const squadRankData = await squadRankResponse.json();
@@ -166,7 +160,7 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
             }
           }
         } catch (error) {
-          console.error('Error fetching user rank:', error);
+          console.error('❌ UserDashboard: Error fetching ranks:', error);
         }
 
         const newStats = {
@@ -183,7 +177,6 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
 
         console.log('📊 UserDashboard: Setting stats:', newStats);
         setStats(newStats);
-
       } catch (error) {
         console.error("💥 UserDashboard: Error initializing dashboard:", error);
         // Set default stats on error
@@ -207,6 +200,31 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
     if (walletAddress) {
       initializeDashboard();
     }
+    
+    // Listen for squad updates
+    const handleSquadUpdate = () => {
+      console.log('🔄 UserDashboard: Squad update event detected, refreshing...');
+      if (walletAddress) {
+        initializeDashboard();
+      }
+    };
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'userSquad' || e.key === null) {
+        console.log('🔄 UserDashboard: Storage event detected, refreshing...');
+        if (walletAddress) {
+          initializeDashboard();
+        }
+      }
+    };
+    
+    window.addEventListener('squadUpdated', handleSquadUpdate);
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('squadUpdated', handleSquadUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [walletAddress, xpProfile, bountyStats]);
 
   // Separate effect to update stats when XP data becomes available
