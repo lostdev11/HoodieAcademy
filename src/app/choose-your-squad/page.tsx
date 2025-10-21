@@ -586,43 +586,43 @@ export default function ChooseYourSquadPage() {
                 <AlertTriangle className="w-5 h-5" />
                 Confirm Squad Assignment
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-gray-300">
-                <div className="space-y-4">
+              <AlertDialogDescription asChild>
+                <div className="text-gray-300 space-y-4">
                   <div className="flex items-center gap-3 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                     <Clock className="w-5 h-5 text-yellow-400" />
                     <div>
-                      <p className="font-semibold text-yellow-400">30-Day Lock Period</p>
-                      <p className="text-sm text-gray-300">
+                      <div className="font-semibold text-yellow-400">30-Day Lock Period</div>
+                      <div className="text-sm text-gray-300">
                         Once assigned, you cannot change your squad for 30 days. This prevents gaming the system and ensures focused learning.
-                      </p>
+                      </div>
                     </div>
                   </div>
                   
                   {selectedSquad && (
                     <div className="p-4 bg-slate-700/30 border border-slate-600/30 rounded-lg">
-                      <h4 className="font-semibold text-cyan-400 mb-2">Your Selected Squad:</h4>
+                      <div className="font-semibold text-cyan-400 mb-2">Your Selected Squad:</div>
                       <div className="flex items-center gap-3">
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${selectedSquad.bgColor}`}>
                           {selectedSquad.emoji}
                         </div>
                         <div>
-                          <p className="font-semibold text-white">{selectedSquad.name}</p>
-                          <p className="text-sm text-gray-300">{selectedSquad.description}</p>
+                          <div className="font-semibold text-white">{selectedSquad.name}</div>
+                          <div className="text-sm text-gray-300">{selectedSquad.description}</div>
                         </div>
                       </div>
                     </div>
                   )}
                   
-                  <div className="text-sm text-gray-400">
-                    <p>• You'll have access to squad-specific courses and challenges</p>
-                    <p>• Your progress will be tracked within your squad</p>
-                    <p>• You can participate in squad competitions and events</p>
-                    <p>• After 30 days, you can request a squad change</p>
+                  <div className="text-sm text-gray-400 space-y-1">
+                    <div>• You'll have access to squad-specific courses and challenges</div>
+                    <div>• Your progress will be tracked within your squad</div>
+                    <div>• You can participate in squad competitions and events</div>
+                    <div>• After 30 days, you can request a squad change</div>
                   </div>
 
                   {error && (
                     <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                      <p className="text-sm text-red-400">{error}</p>
+                      <div className="text-sm text-red-400">{error}</div>
                     </div>
                   )}
                 </div>
