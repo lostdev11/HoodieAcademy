@@ -101,5 +101,12 @@ SELECT
 FROM user_activity;
 
 -- Show table structure
-\d user_activity
+SELECT 
+  column_name, 
+  data_type, 
+  is_nullable,
+  column_default
+FROM information_schema.columns
+WHERE table_name = 'user_activity'
+ORDER BY ordinal_position;
 
