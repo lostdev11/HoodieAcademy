@@ -405,50 +405,76 @@ export async function GET(request: NextRequest) {
 
     // If requesting daily XP progress for a user
     if (walletAddress) {
-      const supabase = getSupabaseClient();
-      const DAILY_XP_CAP = 300;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      try {
+        const supabase = getSupabaseClient();
+        const DAILY_XP_CAP = 300;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-      const { data: todayXP, error } = await supabase
-        .from('user_activity')
-        .select('metadata, created_at')
-        .eq('wallet_address', walletAddress)
-        .eq('activity_type', 'xp_awarded')
-        .gte('created_at', today.toISOString())
-        .order('created_at', { ascending: false });
+        const { data: todayXP, error } = await supabase
+          .from('user_activity')
+          .select('metadata, created_at')
+          .eq('wallet_address', walletAddress)
+          .eq('activity_type', 'xp_awarded')
+          .gte('created_at', today.toISOString())
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching daily XP:', error);
-        return NextResponse.json(
-          { error: 'Failed to fetch daily XP progress' },
-          { status: 500 }
-        );
+        // If table doesn't exist or other error, return default values
+        if (error) {
+          console.warn('⚠️ [AUTO XP] Table might not exist, returning defaults:', error.message);
+          return NextResponse.json({
+            success: true,
+            dailyProgress: {
+              earnedToday: 0,
+              dailyCap: DAILY_XP_CAP,
+              remaining: DAILY_XP_CAP,
+              percentUsed: 0,
+              capReached: false
+            },
+            recentActivities: [],
+            tableNotSetup: true
+          });
+        }
+
+        const totalXPToday = todayXP?.reduce((sum, activity) => {
+          return sum + (activity.metadata?.xp_amount || 0);
+        }, 0) || 0;
+
+        const xpRemaining = Math.max(0, DAILY_XP_CAP - totalXPToday);
+        const percentUsed = Math.round((totalXPToday / DAILY_XP_CAP) * 100);
+
+        return NextResponse.json({
+          success: true,
+          dailyProgress: {
+            earnedToday: totalXPToday,
+            dailyCap: DAILY_XP_CAP,
+            remaining: xpRemaining,
+            percentUsed,
+            capReached: totalXPToday >= DAILY_XP_CAP
+          },
+          recentActivities: todayXP?.map(activity => ({
+            action: activity.metadata?.action,
+            xpAmount: activity.metadata?.xp_amount,
+            reason: activity.metadata?.reason,
+            timestamp: activity.created_at
+          })).slice(0, 10) || []
+        });
+      } catch (innerError) {
+        console.error('❌ [AUTO XP] Error in GET daily progress:', innerError);
+        // Return safe defaults instead of crashing
+        return NextResponse.json({
+          success: true,
+          dailyProgress: {
+            earnedToday: 0,
+            dailyCap: 300,
+            remaining: 300,
+            percentUsed: 0,
+            capReached: false
+          },
+          recentActivities: [],
+          error: 'Failed to fetch progress, using defaults'
+        });
       }
-
-      const totalXPToday = todayXP?.reduce((sum, activity) => {
-        return sum + (activity.metadata?.xp_amount || 0);
-      }, 0) || 0;
-
-      const xpRemaining = Math.max(0, DAILY_XP_CAP - totalXPToday);
-      const percentUsed = Math.round((totalXPToday / DAILY_XP_CAP) * 100);
-
-      return NextResponse.json({
-        success: true,
-        dailyProgress: {
-          earnedToday: totalXPToday,
-          dailyCap: DAILY_XP_CAP,
-          remaining: xpRemaining,
-          percentUsed,
-          capReached: totalXPToday >= DAILY_XP_CAP
-        },
-        recentActivities: todayXP?.map(activity => ({
-          action: activity.metadata?.action,
-          xpAmount: activity.metadata?.xp_amount,
-          reason: activity.metadata?.reason,
-          timestamp: activity.created_at
-        })).slice(0, 10) || []
-      });
     }
 
     // If specific action requested

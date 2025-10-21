@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
     console.log('📅 [DAILY LOGIN] Processing login for:', walletAddress.slice(0, 10) + '...', 'on', today);
 
     // Use the auto-reward API with proper duplicate prevention
-    const autoRewardResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/xp/auto-reward`, {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+    const autoRewardResponse = await fetch(`${siteUrl}/api/xp/auto-reward`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
