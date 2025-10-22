@@ -1,12 +1,32 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { bountyXPService } from '@/services/bounty-xp-service';
 import { retailstarIncentiveService } from '@/services/retailstar-incentive-service';
 
+// Initialize Supabase client with service role for admin operations
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('❌ Missing Supabase environment variables');
+    throw new Error('Supabase configuration missing');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
+
 export async function GET() {
   try {
+    const supabase = getSupabaseClient();
+    
     // Get both regular submissions and bounty submissions
     const [regularSubmissionsResult, bountySubmissionsResult] = await Promise.all([
       // Regular submissions
@@ -21,10 +41,7 @@ export async function GET() {
       // Bounty submissions
       supabase
         .from('bounty_submissions')
-        .select(`
-          *,
-          bounty:bounties(id, title, description, xp_reward)
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
     ]);
 
@@ -38,6 +55,13 @@ export async function GET() {
     if (bountyError) {
       console.error('[SUBMISSIONS API] Bounty submissions database error:', bountyError);
     }
+    
+    console.log('[SUBMISSIONS API] Query results:', {
+      regularSubmissions: dbSubmissions?.length || 0,
+      bountySubmissions: bountySubmissions?.length || 0,
+      regularError: dbError,
+      bountyError: bountyError
+    });
     
     // Transform regular submissions
     const transformedRegularSubmissions = (dbSubmissions || []).map((submission: any) => ({
@@ -114,6 +138,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const supabase = getSupabaseClient();
     const body = await request.json();
     const { title, description, squad, courseRef, bountyId, walletAddress, imageUrl } = body;
 
