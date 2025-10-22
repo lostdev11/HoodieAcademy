@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { OptimizedButton } from '@/components/ui/optimized-button';
 import { OptimizedLink } from '@/components/ui/optimized-link';
 import { StaggerChildren, StaggerItem, FadeInWhenVisible } from '@/components/ui/page-transition';
 import { useUserBounties } from '@/hooks/useUserBounties';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
-import { Target, Clock, Award, Users, EyeOff, Send, CheckCircle, Upload, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Target, Clock, Award, Users, EyeOff, Send, CheckCircle, Upload, Image as ImageIcon, AlertCircle, XCircle, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BountyListSkeleton } from '@/components/ui/skeleton';
@@ -26,9 +26,106 @@ export default function BountiesGridOptimized({
   const { wallet } = useWalletSupabase();
   const [userSubmissions, setUserSubmissions] = useState<{ [bountyId: string]: any }>({});
   const [submittingBounty, setSubmittingBounty] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   // Use initialBounties from server-side rendering and filter based on showHidden prop
   const displayBounties = (initialBounties || []).filter(bounty => showHidden || !bounty.hidden);
+
+  // Get wallet address from localStorage
+  useEffect(() => {
+    const checkWalletConnection = () => {
+      if (typeof window !== 'undefined') {
+        const storedWallet = localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet');
+        setWalletAddress(storedWallet);
+      }
+    };
+
+    // Check on mount
+    checkWalletConnection();
+
+    // Listen for storage changes (when wallet connects/disconnects)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'walletAddress' || e.key === 'hoodie_academy_wallet') {
+        checkWalletConnection();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Also check periodically for changes
+      const interval = setInterval(checkWalletConnection, 1000);
+      
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(interval);
+      };
+    }
+  }, []);
+
+  // Fetch user submissions for all bounties
+  useEffect(() => {
+    if (!walletAddress || displayBounties.length === 0) return;
+
+    const fetchUserSubmissions = async () => {
+      const submissions: { [bountyId: string]: any } = {};
+      
+      for (const bounty of displayBounties) {
+        try {
+          const response = await fetch(`/api/bounties/${bounty.id}/submit/?walletAddress=${walletAddress}`);
+          if (response.ok) {
+            const result = await response.json();
+            if (result.submission) {
+              submissions[bounty.id] = result.submission;
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching submission for bounty ${bounty.id}:`, error);
+        }
+      }
+      
+      setUserSubmissions(submissions);
+    };
+
+    fetchUserSubmissions();
+  }, [walletAddress, displayBounties]);
+
+  // Auto-refresh submissions every 30 seconds to catch status updates
+  useEffect(() => {
+    if (!walletAddress || displayBounties.length === 0) return;
+
+    const interval = setInterval(() => {
+      const fetchUserSubmissions = async () => {
+        const submissions: { [bountyId: string]: any } = {};
+        
+        for (const bounty of displayBounties) {
+          try {
+            const response = await fetch(`/api/bounties/${bounty.id}/submit/?walletAddress=${walletAddress}`);
+            if (response.ok) {
+              const result = await response.json();
+              if (result.submission) {
+                submissions[bounty.id] = result.submission;
+              }
+            }
+          } catch (error) {
+            console.error(`Error fetching submission for bounty ${bounty.id}:`, error);
+          }
+        }
+        
+        setUserSubmissions(prev => {
+          // Only update if there are actual changes
+          const hasChanges = Object.keys(submissions).some(bountyId => 
+            JSON.stringify(prev[bountyId]) !== JSON.stringify(submissions[bountyId])
+          );
+          return hasChanges ? submissions : prev;
+        });
+      };
+
+      fetchUserSubmissions();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [walletAddress, displayBounties]);
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -230,17 +327,64 @@ export default function BountiesGridOptimized({
                         </OptimizedButton>
                       </div>
                     ) : userSubmissions[bounty.id] ? (
-                      <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
-                        <div className="flex items-center justify-center gap-2 text-green-400 mb-3">
-                          <CheckCircle className="w-5 h-5" />
-                          <span className="text-sm font-bold">Submission Submitted! ✨</span>
-                        </div>
-                        <Badge 
-                          variant="outline" 
-                          className="text-sm font-semibold px-4 py-1 border-yellow-500/50 text-yellow-400 bg-yellow-500/20"
-                        >
-                          PENDING
-                        </Badge>
+                      <div className="text-center p-4 rounded-lg border">
+                        {userSubmissions[bounty.id].status === 'approved' ? (
+                          <div className="bg-green-500/10 border-green-500/30">
+                            <div className="flex items-center justify-center gap-2 text-green-400 mb-3">
+                              <CheckCircle className="w-5 h-5" />
+                              <span className="text-sm font-bold">Bounty Completed! 🎉</span>
+                            </div>
+                            <Badge 
+                              variant="outline" 
+                              className="text-sm font-semibold px-4 py-1 border-green-500/50 text-green-400 bg-green-500/20"
+                            >
+                              APPROVED
+                            </Badge>
+                            <div className="mt-3 text-xs text-green-300">
+                              XP Awarded: {userSubmissions[bounty.id].xp_awarded || 0}
+                            </div>
+                          </div>
+                        ) : userSubmissions[bounty.id].status === 'rejected' ? (
+                          <div className="bg-red-500/10 border-red-500/30">
+                            <div className="flex items-center justify-center gap-2 text-red-400 mb-3">
+                              <XCircle className="w-5 h-5" />
+                              <span className="text-sm font-bold">Submission Rejected</span>
+                            </div>
+                            <Badge 
+                              variant="outline" 
+                              className="text-sm font-semibold px-4 py-1 border-red-500/50 text-red-400 bg-red-500/20 mb-3"
+                            >
+                              REJECTED
+                            </Badge>
+                            <OptimizedButton
+                              onClick={() => {
+                                // Clear the submission to allow resubmission
+                                setUserSubmissions(prev => {
+                                  const newSubmissions = { ...prev };
+                                  delete newSubmissions[bounty.id];
+                                  return newSubmissions;
+                                });
+                              }}
+                              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 text-sm"
+                            >
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Resubmit Entry
+                            </OptimizedButton>
+                          </div>
+                        ) : (
+                          <div className="bg-yellow-500/10 border-yellow-500/30">
+                            <div className="flex items-center justify-center gap-2 text-yellow-400 mb-3">
+                              <Clock className="w-5 h-5" />
+                              <span className="text-sm font-bold">Submission Submitted! ✨</span>
+                            </div>
+                            <Badge 
+                              variant="outline" 
+                              className="text-sm font-semibold px-4 py-1 border-yellow-500/50 text-yellow-400 bg-yellow-500/20"
+                            >
+                              PENDING REVIEW
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <BountySubmissionCard 
