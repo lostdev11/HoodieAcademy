@@ -674,6 +674,7 @@ export default function AdminDashboard() {
 
   // XP Awarding functions
   const handleAwardXp = (user: SupabaseUser) => {
+    console.log('🎯 Award XP button clicked for user:', user);
     setSelectedUser(user);
     setXpAmount('');
     setXpReason('');
@@ -692,8 +693,20 @@ export default function AdminDashboard() {
       return;
     }
 
+    // Get current admin wallet from localStorage
+    const currentAdminWallet = typeof window !== 'undefined' 
+      ? localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet') || 'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA'
+      : 'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA';
+
     setAwardingXp(true);
     try {
+      console.log('🎯 Awarding XP:', {
+        targetWallet: selectedUser.wallet_address,
+        xpAmount: amount,
+        reason: xpReason,
+        awardedBy: currentAdminWallet
+      });
+
       const response = await fetch('/api/admin/xp/award', {
         method: 'POST',
         headers: {
@@ -703,11 +716,13 @@ export default function AdminDashboard() {
           targetWallet: selectedUser.wallet_address,
           xpAmount: amount,
           reason: xpReason,
-          awardedBy: 'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA' // Current admin wallet
+          awardedBy: currentAdminWallet
         }),
       });
 
+      console.log('📥 XP Award Response:', response.status, response.statusText);
       const result = await response.json();
+      console.log('📥 XP Award Result:', result);
 
       if (response.ok) {
         alert(`Successfully awarded ${amount} XP to ${selectedUser.display_name || 'User'}!`);
@@ -1294,6 +1309,7 @@ export default function AdminDashboard() {
                                 variant="outline"
                                 onClick={() => handleAwardXp(user)}
                                 className="border-green-500 text-green-400 hover:bg-green-500/10"
+                                title="Award XP to this user"
                               >
                                 <Award className="w-3 h-3" />
                               </Button>
