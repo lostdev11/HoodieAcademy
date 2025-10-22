@@ -306,10 +306,26 @@ export default function BountiesGrid({
                     </Button>
                   </div>
                 ) : userSubmissions[bounty.id] ? (
-                  <div className="text-center p-4 bg-green-500/10 rounded-lg border border-green-500/30">
-                    <div className="flex items-center justify-center gap-2 text-green-400 mb-3">
+                  <div className={`text-center p-4 rounded-lg border ${
+                    userSubmissions[bounty.id].status === 'approved' 
+                      ? 'bg-green-500/10 border-green-500/30' 
+                      : userSubmissions[bounty.id].status === 'rejected'
+                      ? 'bg-red-500/10 border-red-500/30'
+                      : 'bg-yellow-500/10 border-yellow-500/30'
+                  }`}>
+                    <div className={`flex items-center justify-center gap-2 mb-3 ${
+                      userSubmissions[bounty.id].status === 'approved' 
+                        ? 'text-green-400' 
+                        : userSubmissions[bounty.id].status === 'rejected'
+                        ? 'text-red-400'
+                        : 'text-yellow-400'
+                    }`}>
                       <CheckCircle className="w-5 h-5" />
-                      <span className="text-sm font-bold">Submission Submitted! ✨</span>
+                      <span className="text-sm font-bold">
+                        {userSubmissions[bounty.id].status === 'pending' ? 'Submission Submitted! ✨' : 
+                         userSubmissions[bounty.id].status === 'approved' ? 'Submission Approved! 🎉' :
+                         'Submission Rejected ❌'}
+                      </span>
                     </div>
                     <Badge 
                       variant="outline" 
@@ -321,7 +337,7 @@ export default function BountiesGrid({
                           : 'border-yellow-500/50 text-yellow-400 bg-yellow-500/20'
                       }`}
                     >
-                      {userSubmissions[bounty.id].status.toUpperCase()}
+                      {userSubmissions[bounty.id].status === 'pending' ? 'PENDING REVIEW' : userSubmissions[bounty.id].status.toUpperCase()}
                     </Badge>
                   </div>
                 ) : (

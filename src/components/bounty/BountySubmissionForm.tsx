@@ -195,6 +195,18 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
       return;
     }
     
+    // Check if image is required but not uploaded
+    if (bountyData?.image_required && (!selectedFile || !uploadSuccess)) {
+      setUploadError('Image upload is required for this bounty');
+      return;
+    }
+    
+    // Check if image is required and uploaded but URL is missing
+    if (bountyData?.image_required && selectedFile && uploadSuccess && !formData.imageUrl) {
+      setUploadError('Image upload is still processing. Please wait...');
+      return;
+    }
+    
     onSubmit({ 
       ...formData, 
       file: selectedFile,
@@ -571,10 +583,12 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
 
         <Button 
           type="submit" 
-          disabled={!wallet}
+          disabled={!wallet || (bountyData?.image_required && (!selectedFile || !uploadSuccess || !formData.imageUrl))}
           className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {wallet ? '🚀 Submit Bounty Entry' : '🔒 Connect Wallet to Submit'}
+          {!wallet ? '🔒 Connect Wallet to Submit' : 
+           (bountyData?.image_required && (!selectedFile || !uploadSuccess || !formData.imageUrl)) ? '📷 Image Upload Required' :
+           '🚀 Submit Bounty Entry'}
         </Button>
       </form>
     </div>

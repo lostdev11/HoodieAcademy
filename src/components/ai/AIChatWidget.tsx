@@ -29,7 +29,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const [messageCount, setMessageCount] = useState(0);
   const [position, setPosition] = useState({ 
     x: 24, 
-    y: typeof window !== 'undefined' ? window.innerHeight - 80 : 600 
+    y: 600 // Default fallback value, will be updated in useEffect
   }); // Default bottom-left
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -55,6 +55,14 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
 
   const hasReachedLimit = messageCount >= MESSAGE_LIMIT;
   const messagesRemaining = MESSAGE_LIMIT - messageCount;
+
+  // Set initial position after component mounts to avoid hydration mismatch
+  useEffect(() => {
+    setPosition(prev => ({
+      ...prev,
+      y: window.innerHeight - 80
+    }));
+  }, []);
 
   // Drag functionality
   const handleMouseDown = (e: React.MouseEvent) => {
