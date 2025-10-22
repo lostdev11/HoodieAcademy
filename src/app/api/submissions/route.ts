@@ -7,47 +7,94 @@ import { retailstarIncentiveService } from '@/services/retailstar-incentive-serv
 
 export async function GET() {
   try {
-    // First try to get from database
-    const { data: dbSubmissions, error: dbError } = await supabase
-      .from('submissions')
-      .select(`
-        *,
-        bounty:bounties(id, title, description, xp_reward)
-      `)
-      .order('created_at', { ascending: false });
+    // Get both regular submissions and bounty submissions
+    const [regularSubmissionsResult, bountySubmissionsResult] = await Promise.all([
+      // Regular submissions
+      supabase
+        .from('submissions')
+        .select(`
+          *,
+          bounty:bounties(id, title, description, xp_reward)
+        `)
+        .order('created_at', { ascending: false }),
+      
+      // Bounty submissions
+      supabase
+        .from('bounty_submissions')
+        .select(`
+          *,
+          bounty:bounties(id, title, description, xp_reward)
+        `)
+        .order('created_at', { ascending: false })
+    ]);
+
+    const { data: dbSubmissions, error: dbError } = regularSubmissionsResult;
+    const { data: bountySubmissions, error: bountyError } = bountySubmissionsResult;
 
     if (dbError) {
-      console.error('[SUBMISSIONS API] Database error:', dbError);
+      console.error('[SUBMISSIONS API] Regular submissions database error:', dbError);
     }
     
-    if (dbSubmissions && !dbError) {
-      console.log('[SUBMISSIONS API] Found', dbSubmissions.length, 'submissions in database');
-      console.log('[SUBMISSIONS API] First submission:', dbSubmissions[0]);
-      
-      // Transform database submissions to match expected format
-      const transformedSubmissions = dbSubmissions.map((submission: any) => ({
-        id: submission.id,
-        title: submission.title,
-        description: submission.description,
-        squad: submission.squad,
-        courseRef: submission.course_ref,
-        bountyId: submission.bounty_id,
-        walletAddress: submission.wallet_address || 'Unknown Wallet',
-        imageUrl: submission.image_url,
-        status: submission.status || 'pending',
-        upvotes: submission.upvotes || {},
-        totalUpvotes: submission.total_upvotes || 0,
-        timestamp: submission.created_at,
-        bounty: submission.bounty,
-        // Add additional fields for admin components
-        wallet_address: submission.wallet_address || 'Unknown Wallet',
-        bounty_id: submission.bounty_id,
-        created_at: submission.created_at,
-        updated_at: submission.updated_at
-      }));
-      
-      console.log('[SUBMISSIONS API] Transformed submissions:', transformedSubmissions.length);
-      return NextResponse.json(transformedSubmissions);
+    if (bountyError) {
+      console.error('[SUBMISSIONS API] Bounty submissions database error:', bountyError);
+    }
+    
+    // Transform regular submissions
+    const transformedRegularSubmissions = (dbSubmissions || []).map((submission: any) => ({
+      id: submission.id,
+      title: submission.title,
+      description: submission.description,
+      squad: submission.squad,
+      courseRef: submission.course_ref,
+      bountyId: submission.bounty_id,
+      walletAddress: submission.wallet_address || 'Unknown Wallet',
+      imageUrl: submission.image_url,
+      status: submission.status || 'pending',
+      upvotes: submission.upvotes || {},
+      totalUpvotes: submission.total_upvotes || 0,
+      timestamp: submission.created_at,
+      bounty: submission.bounty,
+      // Add additional fields for admin components
+      wallet_address: submission.wallet_address || 'Unknown Wallet',
+      bounty_id: submission.bounty_id,
+      created_at: submission.created_at,
+      updated_at: submission.updated_at,
+      submission_type: 'regular'
+    }));
+
+    // Transform bounty submissions
+    const transformedBountySubmissions = (bountySubmissions || []).map((submission: any) => ({
+      id: submission.id,
+      title: submission.title || 'Bounty Submission',
+      description: submission.description || submission.submission_content,
+      squad: submission.squad,
+      courseRef: submission.course_ref,
+      bountyId: submission.bounty_id,
+      walletAddress: submission.wallet_address || 'Unknown Wallet',
+      imageUrl: submission.image_url,
+      status: submission.status || 'pending',
+      upvotes: {},
+      totalUpvotes: 0,
+      timestamp: submission.created_at,
+      bounty: submission.bounty,
+      // Add additional fields for admin components
+      wallet_address: submission.wallet_address || 'Unknown Wallet',
+      bounty_id: submission.bounty_id,
+      created_at: submission.created_at,
+      updated_at: submission.updated_at,
+      submission_type: 'bounty',
+      submission_content: submission.submission_content
+    }));
+    
+    // Combine both types of submissions
+    const allSubmissions = [...transformedRegularSubmissions, ...transformedBountySubmissions]
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    
+    console.log('[SUBMISSIONS API] Found', transformedRegularSubmissions.length, 'regular submissions and', transformedBountySubmissions.length, 'bounty submissions');
+    console.log('[SUBMISSIONS API] Total submissions:', allSubmissions.length);
+    
+    if (allSubmissions.length > 0) {
+      return NextResponse.json(allSubmissions);
     }
 
     // Fallback to JSON file

@@ -3069,9 +3069,12 @@ export default function AdminDashboard() {
                           <h3 className="font-semibold text-lg mb-2">{submission.title}</h3>
                           <p className="text-sm text-gray-400 mb-2">{submission.description}</p>
                           <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
-                            <span>Bounty ID: {submission.bountyId || 'No Bounty'}</span>
+                            <span>Bounty: {submission.bounty?.title || submission.bountyId || 'No Bounty'}</span>
                             <span>Squad: {submission.squad || 'No Squad'}</span>
                             <span>Upvotes: {submission.totalUpvotes || 0}</span>
+                            <Badge variant={submission.submission_type === 'bounty' ? 'default' : 'outline'} className={submission.submission_type === 'bounty' ? 'bg-purple-500/20 text-purple-400 border-purple-500/30' : ''}>
+                              {submission.submission_type === 'bounty' ? 'Bounty' : 'Regular'}
+                            </Badge>
                             <Badge variant={submission.status === 'approved' ? 'default' : submission.status === 'rejected' ? 'destructive' : 'secondary'}>
                               {submission.status}
                             </Badge>
