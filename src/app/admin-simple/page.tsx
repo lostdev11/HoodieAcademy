@@ -109,6 +109,13 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<SupabaseUser[]>([]);
   const [courseCompletions, setCourseCompletions] = useState<CourseCompletion[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // XP Awarding state
+  const [showXpAwardModal, setShowXpAwardModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<SupabaseUser | null>(null);
+  const [xpAmount, setXpAmount] = useState('');
+  const [xpReason, setXpReason] = useState('');
+  const [awardingXp, setAwardingXp] = useState(false);
 
 
   const [activeTab, setActiveTab] = useState<string>("users");
@@ -665,6 +672,62 @@ export default function AdminDashboard() {
     window.location.reload();
   };
 
+  // XP Awarding functions
+  const handleAwardXp = (user: SupabaseUser) => {
+    setSelectedUser(user);
+    setXpAmount('');
+    setXpReason('');
+    setShowXpAwardModal(true);
+  };
+
+  const handleSubmitXpAward = async () => {
+    if (!selectedUser || !xpAmount || !xpReason) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    const amount = parseInt(xpAmount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid XP amount');
+      return;
+    }
+
+    setAwardingXp(true);
+    try {
+      const response = await fetch('/api/admin/xp/award', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          targetWallet: selectedUser.wallet_address,
+          xpAmount: amount,
+          reason: xpReason,
+          awardedBy: 'qg7pNNZq7qDQuc6Xkd1x4NvS2VM3aHtCqHEzucZxRGA' // Current admin wallet
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert(`Successfully awarded ${amount} XP to ${selectedUser.display_name || 'User'}!`);
+        setShowXpAwardModal(false);
+        setSelectedUser(null);
+        setXpAmount('');
+        setXpReason('');
+        // Refresh users data
+        handleRefreshData();
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error awarding XP:', error);
+      alert('Failed to award XP. Please try again.');
+    } finally {
+      setAwardingXp(false);
+    }
+  };
+
   // Initialize courses state with initialCourses
   useEffect(() => {
     setCourses(initialCourses);
@@ -1177,6 +1240,7 @@ export default function AdminDashboard() {
                       <tr className="border-b border-slate-700">
                         <th className="text-left p-2">User</th>
                         <th className="text-left p-2">Squad</th>
+                        <th className="text-left p-2">XP</th>
                         <th className="text-left p-2">Status</th>
                         <th className="text-left p-2">Actions</th>
                       </tr>
@@ -1199,6 +1263,12 @@ export default function AdminDashboard() {
                             <Badge variant="outline">{user.squad || 'No Squad'}</Badge>
                           </td>
                           <td className="p-2">
+                            <div className="flex items-center gap-2">
+                              <Award className="w-4 h-4 text-yellow-400" />
+                              <span className="font-medium text-yellow-400">{user.total_xp || 0}</span>
+                            </div>
+                          </td>
+                          <td className="p-2">
                             <Badge variant={user.is_admin ? "default" : "secondary"}>
                               {user.is_admin ? 'Admin' : 'User'}
                             </Badge>
@@ -1218,6 +1288,14 @@ export default function AdminDashboard() {
                                 onClick={() => handleEditUser(user)}
                               >
                                 <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleAwardXp(user)}
+                                className="border-green-500 text-green-400 hover:bg-green-500/10"
+                              >
+                                <Award className="w-3 h-3" />
                               </Button>
                             </div>
                           </td>
@@ -4123,6 +4201,75 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* XP Award Modal */}
+      {showXpAwardModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Award XP to {selectedUser.display_name || 'User'}
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="xp-amount" className="text-sm text-gray-300">
+                  XP Amount
+                </Label>
+                <Input
+                  id="xp-amount"
+                  type="number"
+                  value={xpAmount}
+                  onChange={(e) => setXpAmount(e.target.value)}
+                  placeholder="Enter XP amount"
+                  className="bg-slate-700 border-slate-600 text-white"
+                  min="1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="xp-reason" className="text-sm text-gray-300">
+                  Reason
+                </Label>
+                <Input
+                  id="xp-reason"
+                  value={xpReason}
+                  onChange={(e) => setXpReason(e.target.value)}
+                  placeholder="Enter reason for awarding XP"
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleSubmitXpAward}
+                  disabled={awardingXp || !xpAmount || !xpReason}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  {awardingXp ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Awarding...
+                    </>
+                  ) : (
+                    <>
+                      <Award className="w-4 h-4 mr-2" />
+                      Award XP
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => setShowXpAwardModal(false)}
+                  variant="outline"
+                  disabled={awardingXp}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
