@@ -26,8 +26,8 @@ export default function BountiesGridOptimized({
   const { wallet } = useWalletSupabase();
   const [userSubmissions, setUserSubmissions] = useState<{ [bountyId: string]: any }>({});
 
-  // Use initialBounties from server-side rendering
-  const displayBounties = initialBounties || [];
+  // Use initialBounties from server-side rendering and filter based on showHidden prop
+  const displayBounties = (initialBounties || []).filter(bounty => showHidden || !bounty.hidden);
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -65,11 +65,7 @@ export default function BountiesGridOptimized({
     return diffDays <= 3 && diffDays >= 0;
   };
 
-<<<<<<< HEAD
   if (initialBounties.length === 0) {
-=======
-  if (loading && initialBounties.length === 0) {
->>>>>>> a3955a6c1f223f6f744630a4957fcaba0457bd82
     return <BountyListSkeleton count={6} />;
   }
 
