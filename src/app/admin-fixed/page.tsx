@@ -65,6 +65,13 @@ export default function AdminDashboardFixed() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("users");
+  
+  // XP Awarding state
+  const [showXpAwardModal, setShowXpAwardModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [xpAmount, setXpAmount] = useState('');
+  const [xpReason, setXpReason] = useState('');
+  const [awardingXp, setAwardingXp] = useState(false);
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     activeUsers: 0,
@@ -303,6 +310,77 @@ export default function AdminDashboardFixed() {
     } catch (error) {
       console.error('Error updating bounty:', error);
       alert('Failed to update bounty');
+    }
+  };
+
+  // XP Awarding functions
+  const handleAwardXp = (user: any) => {
+    console.log('🎯 Award XP button clicked for user:', user);
+    setSelectedUser(user);
+    setXpAmount('');
+    setXpReason('');
+    setShowXpAwardModal(true);
+  };
+
+  const handleSubmitXpAward = async () => {
+    if (!selectedUser || !xpAmount || !xpReason) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    const amount = parseInt(xpAmount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid XP amount');
+      return;
+    }
+
+    // Get current admin wallet from localStorage
+    const currentAdminWallet = typeof window !== 'undefined' 
+      ? localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet') || walletAddress
+      : walletAddress;
+
+    setAwardingXp(true);
+    try {
+      console.log('🎯 Awarding XP:', {
+        targetWallet: selectedUser.wallet_address,
+        xpAmount: amount,
+        reason: xpReason,
+        awardedBy: currentAdminWallet
+      });
+
+      const response = await fetch('/api/admin/xp/award', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          targetWallet: selectedUser.wallet_address,
+          xpAmount: amount,
+          reason: xpReason,
+          awardedBy: currentAdminWallet
+        }),
+      });
+
+      console.log('📥 XP Award Response:', response.status, response.statusText);
+      const result = await response.json();
+      console.log('📥 XP Award Result:', result);
+
+      if (response.ok) {
+        alert(`Successfully awarded ${amount} XP to ${selectedUser.display_name || 'User'}!`);
+        setShowXpAwardModal(false);
+        setSelectedUser(null);
+        setXpAmount('');
+        setXpReason('');
+        // Refresh users data
+        fetchUsers();
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error awarding XP:', error);
+      alert('Failed to award XP. Please try again.');
+    } finally {
+      setAwardingXp(false);
     }
   };
 
@@ -654,12 +732,68 @@ export default function AdminDashboardFixed() {
           <TabsContent value="users">
             <Card className="bg-slate-800">
               <CardHeader>
-                <CardTitle className="text-white">User Management</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Users className="w-5 h-5" />
+                  User Management
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-slate-400">User management features coming soon...</p>
-                <div className="mt-4">
-                  <p className="text-sm text-slate-500">Total Users: {stats.totalUsers}</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-700">
+                        <th className="text-left p-2">User</th>
+                        <th className="text-left p-2">Squad</th>
+                        <th className="text-left p-2">XP</th>
+                        <th className="text-left p-2">Status</th>
+                        <th className="text-left p-2">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((user) => (
+                        <tr key={user.id} className="border-b border-slate-700/50">
+                          <td className="p-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
+                                <User className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{user.display_name || 'Anonymous'}</p>
+                                <p className="text-xs text-slate-400">{user.wallet_address?.slice(0, 8)}...{user.wallet_address?.slice(-6)}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-2">
+                            <Badge variant="outline">{user.squad || 'No Squad'}</Badge>
+                          </td>
+                          <td className="p-2">
+                            <div className="flex items-center gap-2">
+                              <Award className="w-4 h-4 text-yellow-400" />
+                              <span className="font-medium text-yellow-400">{user.total_xp || 0}</span>
+                            </div>
+                          </td>
+                          <td className="p-2">
+                            <Badge variant={user.is_admin ? "default" : "secondary"}>
+                              {user.is_admin ? 'Admin' : 'User'}
+                            </Badge>
+                          </td>
+                          <td className="p-2">
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleAwardXp(user)}
+                                className="border-green-500 text-green-400 hover:bg-green-500/10"
+                                title="Award XP to this user"
+                              >
+                                <Award className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </CardContent>
             </Card>
@@ -679,6 +813,75 @@ export default function AdminDashboardFixed() {
         </Tabs>
         </div>
       </ErrorBoundary>
+
+      {/* XP Award Modal */}
+      {showXpAwardModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Award XP to {selectedUser.display_name || 'User'}
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="xp-amount" className="text-sm text-gray-300">
+                  XP Amount
+                </Label>
+                <Input
+                  id="xp-amount"
+                  type="number"
+                  value={xpAmount}
+                  onChange={(e) => setXpAmount(e.target.value)}
+                  placeholder="Enter XP amount"
+                  className="bg-slate-700 border-slate-600 text-white"
+                  min="1"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="xp-reason" className="text-sm text-gray-300">
+                  Reason
+                </Label>
+                <Input
+                  id="xp-reason"
+                  value={xpReason}
+                  onChange={(e) => setXpReason(e.target.value)}
+                  placeholder="Enter reason for awarding XP"
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={handleSubmitXpAward}
+                  disabled={awardingXp || !xpAmount || !xpReason}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  {awardingXp ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Awarding...
+                    </>
+                  ) : (
+                    <>
+                      <Award className="w-4 h-4 mr-2" />
+                      Award XP
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={() => setShowXpAwardModal(false)}
+                  variant="outline"
+                  disabled={awardingXp}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
