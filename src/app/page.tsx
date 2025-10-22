@@ -326,16 +326,16 @@ export default function HoodieAcademy() {
             "@type": "WebSite",
             "name": "Hoodie Academy",
             "description": "Master Web3, NFTs, and crypto trading with gamified learning. Join the Hoodie Academy community and become a Web3 expert.",
-            "url": "https://hoodieacademy.xyz",
+            "url": "https://hoodieacademy.com",
             "potentialAction": {
               "@type": "SearchAction",
-              "target": "https://hoodieacademy.xyz/courses?search={search_term_string}",
+              "target": "https://hoodieacademy.com/courses?search={search_term_string}",
               "query-input": "required name=search_term_string"
             },
             "publisher": {
               "@type": "Organization",
               "name": "Hoodie Academy",
-              "url": "https://hoodieacademy.xyz"
+              "url": "https://hoodieacademy.com"
             }
           })
         }}

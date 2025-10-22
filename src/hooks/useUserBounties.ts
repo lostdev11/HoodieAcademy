@@ -68,18 +68,10 @@ export function useUserBounties(walletAddress?: string) {
       try {
         console.log('🔄 useUserBounties: Fetching bounties for wallet:', walletAddress?.slice(0, 8) + '...');
         
-                // Fetch user tracking data with aggressive cache-busting
-                const timestamp = Date.now();
+                // Fetch user tracking data with simple cache-busting
                 const response = await fetch(
-                  `/api/users/track?wallet=${walletAddress}&t=${timestamp}&refresh=${Math.random()}`,
-                  { 
-                    cache: 'no-store',
-                    headers: {
-                      'Cache-Control': 'no-cache, no-store, must-revalidate',
-                      'Pragma': 'no-cache',
-                      'Expires': '0'
-                    }
-                  }
+                  `/api/users/track?wallet=${walletAddress}&t=${Date.now()}`,
+                  { cache: 'no-store' }
                 );
         
         if (!response.ok) {
@@ -133,7 +125,7 @@ export function useUserBounties(walletAddress?: string) {
     fetchUserBounties();
   }, [walletAddress]);
 
-  // Auto-refresh bounties every 30 seconds
+  // Auto-refresh bounties every 2 minutes (reduced frequency)
   useEffect(() => {
     if (!walletAddress) return;
 
@@ -141,18 +133,10 @@ export function useUserBounties(walletAddress?: string) {
       console.log('⏰ [useUserBounties] Auto-refreshing...');
       const fetchUserBounties = async () => {
         try {
-                  const timestamp = Date.now();
-                  const response = await fetch(
-                    `/api/users/track?wallet=${walletAddress}&t=${timestamp}&refresh=${Math.random()}`,
-                    { 
-                      cache: 'no-store',
-                      headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                      }
-                    }
-                  );
+          const response = await fetch(
+            `/api/users/track?wallet=${walletAddress}&t=${Date.now()}`,
+            { cache: 'no-store' }
+          );
           if (response.ok) {
             const data = await response.json();
             const bountySubmissions = data.submissions || [];
@@ -172,7 +156,7 @@ export function useUserBounties(walletAddress?: string) {
         }
       };
       fetchUserBounties();
-    }, 30000); // 30 seconds
+    }, 120000); // 2 minutes instead of 30 seconds
 
     return () => clearInterval(interval);
   }, [walletAddress]);

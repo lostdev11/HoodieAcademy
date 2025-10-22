@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useDisplayNameReadOnly } from '@/hooks/use-display-name';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { 
   Home, 
@@ -40,6 +40,7 @@ interface MobileSidebarProps {
 
 export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }: MobileSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [squadChatUrl, setSquadChatUrl] = useState<string>('/squads/hoodie-creators/chat');
   const [isAdmin, setIsAdmin] = useState(false);
@@ -243,10 +244,8 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
   // Handle navigation and close sidebar
   const handleNavigation = (href: string) => {
     onClose();
-    // Small delay to allow the close animation to start
-    setTimeout(() => {
-      window.location.href = href;
-    }, 100);
+    // Use Next.js router for proper navigation
+    router.push(href);
   };
 
   return (

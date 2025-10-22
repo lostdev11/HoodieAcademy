@@ -8,7 +8,8 @@
     "start": "next start",
     "export": "next export",
     "analyze": "ANALYZE=true next build",
-    "perf": "npm run build && npm run start"
+    "perf": "npm run build && npm run start",
+    "postbuild": "next-sitemap"
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.66",
@@ -64,6 +65,7 @@
     "react-markdown": "^10.1.0",
     "react-qr-scanner": "^1.0.0-alpha.11",
     "react-swipeable": "^7.0.2",
+    "remark-gfm": "^4.0.1",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "supabase": "^2.31.8",
@@ -77,6 +79,7 @@
     "@types/react-dom": "^18.2.19",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
+    "next-sitemap": "^4.2.3",
     "typescript": "5.9.2"
   },
   "overrides": {

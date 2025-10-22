@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     title: 'Bounties - Hoodie Academy',
     description: 'Complete bounties to earn XP, SOL, and exclusive rewards.',
     type: 'website',
-    url: 'https://hoodieacademy.xyz/bounties',
+    url: 'https://hoodieacademy.com/bounties',
     images: [
       {
         url: '/images/hoodie-academy-bounties.png',

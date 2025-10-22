@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import CoursePageClient from './CoursePageClient';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import BreadcrumbList from '@/components/SEO/BreadcrumbList';
 import fs from 'fs';
 import path from 'path';
 
@@ -113,7 +114,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
         title: `${course.title} - Hoodie Academy`,
         description: course.description,
         type: 'website',
-        url: `https://hoodieacademy.xyz/courses/${params.slug}`,
+        url: `https://hoodieacademy.com/courses/${params.slug}`,
         images: [
           {
             url: '/images/hoodie-academy-courses.png',
@@ -151,7 +152,7 @@ function generateStructuredData(course: any) {
     "provider": {
       "@type": "Organization",
       "name": "Hoodie Academy",
-      "url": "https://hoodieacademy.xyz"
+      "url": "https://hoodieacademy.com"
     },
     "courseMode": "online",
     "educationalLevel": course.level === 'beginner' ? 'Beginner' : course.level === 'intermediate' ? 'Intermediate' : 'Advanced',
@@ -207,6 +208,15 @@ export default async function CoursePage({ params }: { params: { slug: string } 
     
     return (
       <>
+        {/* Breadcrumb Structured Data */}
+        <BreadcrumbList 
+          items={[
+            { name: 'Home', url: '/' },
+            { name: 'Courses', url: '/courses' },
+            { name: course.title, url: `/courses/${params.slug}` }
+          ]} 
+        />
+        
         {/* Structured Data for Course */}
         <script
           type="application/ld+json"
@@ -237,7 +247,7 @@ export default async function CoursePage({ params }: { params: { slug: string } 
               "provider": {
                 "@type": "Organization",
                 "name": "Hoodie Academy",
-                "url": "https://hoodieacademy.xyz"
+                "url": "https://hoodieacademy.com"
               }
             })
           }}

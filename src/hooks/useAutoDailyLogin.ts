@@ -1,9 +1,19 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { xpBountyService } from '@/services/xp-bounty-service';
 
 export function useAutoDailyLogin(walletAddress?: string) {
+  const lastCheckRef = useRef<number>(0);
+  const THROTTLE_MS = 10000; // Only check once every 10 seconds
+
   const checkAndAwardDailyLogin = useCallback(async () => {
     if (!walletAddress) return;
+
+    const now = Date.now();
+    if (now - lastCheckRef.current < THROTTLE_MS) {
+      console.log('⏰ [Auto Daily Login] Throttled - too soon since last check');
+      return;
+    }
+    lastCheckRef.current = now;
 
     try {
       console.log('🔄 [Auto Daily Login] Checking daily login status for:', walletAddress);
@@ -35,13 +45,21 @@ export function useAutoDailyLogin(walletAddress?: string) {
   }, [walletAddress, checkAndAwardDailyLogin]);
 
   // Also check daily login when the page becomes visible (user returns to tab)
+  // BUT with throttling to prevent spam
   useEffect(() => {
+    let lastCheck = 0;
+    const THROTTLE_MS = 30000; // Only check once every 30 seconds
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && walletAddress) {
-        // Small delay to avoid spam
-        setTimeout(() => {
-          checkAndAwardDailyLogin();
-        }, 1000);
+        const now = Date.now();
+        if (now - lastCheck > THROTTLE_MS) {
+          lastCheck = now;
+          // Small delay to avoid spam
+          setTimeout(() => {
+            checkAndAwardDailyLogin();
+          }, 1000);
+        }
       }
     };
 

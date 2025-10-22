@@ -1,20 +1,15 @@
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://hoodieacademy.xyz/sitemap.xml
+Sitemap: https://hoodieacademy.com/sitemap.xml
 
 # Disallow admin and private areas
 Disallow: /admin/
 Disallow: /api/
 Disallow: /_next/
-Disallow: /netlify/
+Disallow: /placement/
 
-# Allow important pages
-Allow: /courses/
-Allow: /leaderboard/
-Allow: /profile/
-Allow: /achievements/
-
-# Crawl-delay for respectful crawling
-Crawl-delay: 1 
+# User-specific pages
+Disallow: /profile
+Disallow: /dashboard
+Disallow: /onboarding 
