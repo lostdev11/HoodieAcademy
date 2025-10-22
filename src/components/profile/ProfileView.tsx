@@ -745,7 +745,7 @@ export function ProfileView() {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <SquadBadge squad={getSquadForBadge()} />
+                            <SquadBadge squad={getSquadForBadge()} walletAddress={wallet} />
                             <div>
                               <p className="text-yellow-400 font-semibold text-lg">
                                 {getSquadDisplayName()}
@@ -919,7 +919,7 @@ export function ProfileView() {
                 {/* Squad Information */}
                 {userSquad && (
                   <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30 text-center space-y-3">
-                    <SquadBadge squad={getSquadForBadge()} />
+                    <SquadBadge squad={getSquadForBadge()} walletAddress={wallet} />
                     <div className="text-sm text-gray-300">
                       {getSquadDisplayName()}
                     </div>
@@ -1101,7 +1101,7 @@ export function ProfileView() {
                 {/* Squad Badge and Info */}
                 <div className="flex flex-col md:flex-row items-center gap-6">
                   <div className="text-center">
-                    <SquadBadge squad={getSquadForBadge()} />
+                    <SquadBadge squad={getSquadForBadge()} walletAddress={wallet} />
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-yellow-400 mb-2">{getSquadDisplayName()}</h3>

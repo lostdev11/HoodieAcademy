@@ -273,11 +273,21 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
 
     // 3. Listen for XP award events for notifications (now handled by XPNotification component)
     const handleXpAwarded = (event: CustomEvent) => {
+      // Safety check for event.detail
+      if (!event.detail) {
+        console.log('🎯 [UserDashboard] XP event without detail, refreshing anyway');
+        refreshXP();
+        return;
+      }
+      
       const { targetWallet } = event.detail;
       
-      // If XP was awarded to this user, refresh
-      if (targetWallet === walletAddress) {
-        console.log('🎯 [UserDashboard] XP awarded, refreshing...');
+      // If no targetWallet (general refresh) or if XP was awarded to this user, refresh
+      if (!targetWallet || targetWallet === walletAddress) {
+        console.log('🎯 [UserDashboard] XP event received, refreshing...', {
+          targetWallet: targetWallet || 'general',
+          myWallet: walletAddress?.slice(0, 10) + '...'
+        });
         
         // Refresh immediately
         refreshXP();
@@ -361,7 +371,7 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
               </div>
             </div>
             <div className="flex-shrink-0">
-              <SquadBadge squad={userSquad || 'Unassigned'} />
+              <SquadBadge squad={userSquad || 'Unassigned'} walletAddress={walletAddress} />
             </div>
           </div>
         </CardContent>

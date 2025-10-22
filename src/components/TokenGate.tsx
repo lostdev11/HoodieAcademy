@@ -282,11 +282,11 @@ export default function TokenGate({ children }: TokenGateProps) {
       || localStorage.getItem('walletAddress') 
       || localStorage.getItem('connectedWallet');
     
-    // Add timeout to prevent infinite loading
+    // Add timeout to prevent infinite loading - only log warning if needed
     const timeoutId = setTimeout(() => {
-      console.warn('TokenGate: Session restoration timeout reached');
       if (!isAuthenticated && !walletAddress) {
-        setError('Session restoration timeout - please refresh the page');
+        console.warn('TokenGate: Session restoration timeout - no wallet found after 15 seconds');
+        // Don't set error - this is normal if user hasn't connected wallet yet
       }
     }, 15000); // 15 second timeout
     
@@ -303,6 +303,7 @@ export default function TokenGate({ children }: TokenGateProps) {
           setIsHolder(true);
           setIsAuthenticated(true);
           setHasBeenConnected(true);
+          clearTimeout(timeoutId); // Clear timeout on successful restoration
         } else {
           console.log("⏰ Debug: Session expired, clearing storage");
           sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
@@ -315,6 +316,7 @@ export default function TokenGate({ children }: TokenGateProps) {
       // Try to restore from localStorage if sessionStorage is empty
       console.log("🔄 Debug: Restoring wallet from localStorage:", storedWallet);
       setWalletAddress(storedWallet);
+      clearTimeout(timeoutId); // Clear timeout when wallet is found
       // Will trigger verification via the walletAddress useEffect
     }
     

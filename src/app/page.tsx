@@ -364,7 +364,7 @@ export default function HoodieAcademy() {
                 
                 {/* Squad Badge */}
                 <div className="hidden md:block">
-                  <SquadBadge squad={userSquad || 'Unassigned'} />
+                  <SquadBadge squad={userSquad || 'Unassigned'} walletAddress={walletAddress} />
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full">

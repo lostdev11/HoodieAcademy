@@ -84,8 +84,20 @@ export async function GET(request: NextRequest) {
       console.warn('[ADMIN USERS API] Error fetching submissions:', submissionsError);
     }
 
+    // Deduplicate users by wallet_address (keep most recent)
+    const uniqueUsersMap = new Map();
+    users.forEach(user => {
+      const existing = uniqueUsersMap.get(user.wallet_address);
+      if (!existing || new Date(user.updated_at) > new Date(existing.updated_at)) {
+        uniqueUsersMap.set(user.wallet_address, user);
+      }
+    });
+    const deduplicatedUsers = Array.from(uniqueUsersMap.values());
+
+    console.log(`[ADMIN USERS API] Deduplicated: ${users.length} → ${deduplicatedUsers.length} users`);
+
     // Enrich users with basic data
-    const enrichedUsers = users.map(user => {
+    const enrichedUsers = deduplicatedUsers.map(user => {
       // Calculate submission stats for this user
       const userSubmissions = submissions?.filter(sub => sub.wallet_address === user.wallet_address) || [];
       

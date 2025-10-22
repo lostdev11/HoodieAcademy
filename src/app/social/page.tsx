@@ -27,6 +27,7 @@ import { Progress } from '@/components/ui/progress';
 import { Lock, Sparkles } from 'lucide-react';
 import { fetchUserSquad } from '@/utils/squad-api';
 import Link from 'next/link';
+import VoiceChatWidget from '@/components/voice/VoiceChatWidget';
 
 interface Post {
   id: string;
@@ -437,6 +438,14 @@ export default function SocialFeedPage() {
             )}
           </main>
         </div>
+
+        {/* Voice Chat Widget */}
+        {walletAddress && userXP >= 1000 && (
+          <VoiceChatWidget 
+            walletAddress={walletAddress}
+            userSquad={userSquad || undefined}
+          />
+        )}
       </div>
     </TokenGate>
   );

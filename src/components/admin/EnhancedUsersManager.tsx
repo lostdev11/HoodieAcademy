@@ -177,6 +177,49 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
     }
   };
 
+  // Delete user
+  const handleDeleteUser = async (user: EnhancedUser) => {
+    if (!walletAddress) return;
+
+    const confirmDelete = confirm(
+      `Are you sure you want to delete user ${user.displayName}?\n\n` +
+      `This will permanently remove:\n` +
+      `- User profile and data\n` +
+      `- All submissions and activity\n` +
+      `- XP and progress\n\n` +
+      `This action cannot be undone!`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch('/api/admin/users/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_wallet: walletAddress,
+          target_wallet: user.wallet_address
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(`Error: ${data.error || 'Failed to delete user'}`);
+        return;
+      }
+
+      alert(`User ${user.displayName} has been deleted successfully`);
+      
+      // Refresh users data
+      await fetchUsers();
+
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user. Please try again.');
+    }
+  };
+
   // Open edit modal
   const handleEditUser = (user: EnhancedUser) => {
     setEditingUser(user);
@@ -932,6 +975,13 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
                           <DropdownMenuItem className="text-purple-600">
                             <Trophy className="w-4 h-4 mr-2" />
                             Award Badge
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => handleDeleteUser(user)}
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Delete User
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

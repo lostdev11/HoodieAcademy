@@ -107,6 +107,7 @@ export async function GET(request: NextRequest) {
         completedCourses: user.completed_courses || [],
         badges: user.badges || [],
         bio: user.bio || null,
+        pfp_url: user.profile_picture || null, // Map profile_picture to pfp_url
         
         // NFT holdings (if stored)
         nftCount: user.nft_count || 0

@@ -45,12 +45,17 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
   const { toast } = useToast();
 
   // Load daily login status
-  const loadStatus = async () => {
+  const loadStatus = useCallback(async () => {
     if (!walletAddress) return;
 
     try {
       setLoading(true);
       const result = await xpBountyService.checkDailyLoginStatus(walletAddress);
+      console.log('📥 [DailyLoginBonus] Status loaded:', {
+        alreadyClaimed: result?.alreadyClaimed,
+        nextAvailable: result?.nextAvailable,
+        lastClaimed: result?.lastClaimed
+      });
       setStatus(result);
     } catch (err) {
       console.error('Error loading daily login status:', err);
@@ -58,7 +63,7 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
     } finally {
       setLoading(false);
     }
-  };
+  }, [walletAddress]);
 
   // Claim daily login bonus
   const claimDailyBonus = async () => {
@@ -71,47 +76,30 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
       const result = await xpBountyService.awardDailyLoginBonus(walletAddress);
 
       if (result.success) {
-        // Calculate tomorrow for countdown
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
+        // Calculate exactly 24 hours from now for countdown
+        const now = new Date();
+        const nextAvailable = new Date(now.getTime() + (24 * 60 * 60 * 1000));
         
         // Update status to claimed with next available time
-        setStatus(prev => prev ? { 
-          ...prev, 
+        const newStatus = {
+          ...status,
           alreadyClaimed: true,
-          lastClaimed: new Date().toISOString(),
-          nextAvailable: tomorrow.toISOString()
-        } : prev);
+          lastClaimed: now.toISOString(),
+          nextAvailable: nextAvailable.toISOString()
+        };
+        
+        console.log('✅ [DailyLoginBonus] Updating status after claim:', {
+          alreadyClaimed: newStatus.alreadyClaimed,
+          nextAvailable: newStatus.nextAvailable,
+          hoursUntilNext: 24
+        });
+        
+        setStatus(newStatus);
         
         // Show beautiful success toast
         toast({
-          title: (
-            <div className="flex items-center gap-2">
-              <PartyPopper className="w-5 h-5 text-yellow-400" />
-              <span className="font-bold text-yellow-400">Daily Bonus Claimed!</span>
-            </div>
-          ),
-          description: (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-cyan-400" />
-                <span className="text-lg font-bold text-cyan-400">+{result.xpAwarded} XP</span>
-              </div>
-              <div className="text-sm text-gray-300">
-                Come back tomorrow for more!
-              </div>
-              <div className="text-sm font-semibold text-cyan-400">
-                Total: {result.newTotalXP?.toLocaleString() || 'N/A'} XP
-              </div>
-              {result.levelUp && (
-                <div className="text-sm font-bold text-green-400 flex items-center gap-1">
-                  <TrendingUp className="w-4 h-4" />
-                  Level up to {result.newLevel}!
-                </div>
-              )}
-            </div>
-          ),
+          title: "Daily Bonus Claimed! 🎉",
+          description: `+${result.xpAwarded} XP awarded! Total: ${result.newTotalXP?.toLocaleString() || 'N/A'} XP. ${result.levelUp ? `Level up! 🎊` : 'Come back in 24 hours!'}`,
           duration: 6000,
           className: "bg-gradient-to-r from-yellow-900/90 to-orange-900/90 border-yellow-500/50",
         });
@@ -119,8 +107,46 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
         // Stop claiming state immediately
         setClaiming(false);
         
-        // Reload status in background (don't wait)
-        setTimeout(() => loadStatus(), 1000);
+        // Dispatch XP update events after state update
+        setTimeout(() => {
+          console.log('🎯 [DailyLoginBonus] Dispatching XP update events', {
+            xpAwarded: result.xpAwarded,
+            newTotalXP: result.newTotalXP
+          });
+          
+          // Dispatch XP update event to trigger page refresh
+          window.dispatchEvent(new CustomEvent('xpUpdated', {
+            detail: {
+              targetWallet: walletAddress,
+              xpAwarded: result.xpAwarded,
+              newTotalXP: result.newTotalXP,
+              source: 'daily_login'
+            }
+          }));
+
+          // Also dispatch xpAwarded for compatibility
+          window.dispatchEvent(new CustomEvent('xpAwarded', {
+            detail: {
+              targetWallet: walletAddress,
+              xpAwarded: result.xpAwarded,
+              newTotalXP: result.newTotalXP
+            }
+          }));
+          
+          // Force refresh all XP displays
+          window.dispatchEvent(new CustomEvent('forceXPRefresh', {
+            detail: { targetWallet: walletAddress }
+          }));
+          
+          // Trigger global refresh with detail
+          window.dispatchEvent(new CustomEvent('forceRefresh', {
+            detail: { targetWallet: walletAddress }
+          }));
+        }, 100);
+        
+        // Don't reload status immediately - let the local state persist
+        // The countdown will use the calculated nextAvailable time
+        // Status will refresh naturally via auto-refresh interval
       } else {
         // Show error toast
         toast({
@@ -156,43 +182,85 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
 
   // Calculate time until next claim
   const updateCountdown = useCallback(() => {
-    if (!status || !status.nextAvailable) return;
+    if (!status || !status.nextAvailable) {
+      setTimeUntilNext(null);
+      return;
+    }
+    
+    // Only show countdown if claimed
+    if (!status.alreadyClaimed) {
+      setTimeUntilNext(null);
+      return;
+    }
 
     const now = new Date().getTime();
     const nextAvailable = new Date(status.nextAvailable).getTime();
     const timeLeft = nextAvailable - now;
+
+    console.log('⏱️ [DailyLoginBonus] Countdown update:', {
+      now: new Date(now).toISOString(),
+      nextAvailable: new Date(nextAvailable).toISOString(),
+      timeLeft,
+      alreadyClaimed: status.alreadyClaimed
+    });
 
     if (timeLeft > 0) {
       const hours = Math.floor(timeLeft / (1000 * 60 * 60));
       const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
       
+      console.log('✅ [DailyLoginBonus] Setting countdown:', { hours, minutes, seconds });
       setTimeUntilNext({ hours, minutes, seconds });
     } else {
+      console.log('⚠️ [DailyLoginBonus] Time reached zero, reloading status');
       setTimeUntilNext(null);
-      // Reload status when countdown reaches zero
-      loadStatus();
+      
+      // Mark as available again
+      setStatus(prev => prev ? {
+        ...prev,
+        alreadyClaimed: false,
+        lastClaimed: null
+      } : prev);
+      
+      // Reload status from API to confirm
+      setTimeout(() => {
+        loadStatus();
+      }, 100);
     }
   }, [status, loadStatus]);
 
   // Load status on mount and when wallet changes
   useEffect(() => {
     loadStatus();
-  }, [walletAddress]);
+  }, [loadStatus]);
 
-  // Update countdown timer
+  // Update countdown timer every second
   useEffect(() => {
+    // Initial update
     updateCountdown();
     
-    const interval = setInterval(updateCountdown, 1000);
+    // Set up interval for updates
+    const interval = setInterval(() => {
+      updateCountdown();
+    }, 1000);
+    
     return () => clearInterval(interval);
   }, [updateCountdown]);
 
-  // Auto-refresh status every minute
+  // Auto-refresh status every 5 minutes (but not during active countdown)
   useEffect(() => {
-    const interval = setInterval(loadStatus, 60000);
+    const interval = setInterval(() => {
+      // Only refresh if not in countdown mode
+      if (!status?.alreadyClaimed) {
+        console.log('🔄 [DailyLoginBonus] Auto-refreshing status (no active countdown)');
+        loadStatus();
+      } else {
+        console.log('⏸️ [DailyLoginBonus] Skipping auto-refresh during active countdown');
+      }
+    }, 300000); // 5 minutes
+    
     return () => clearInterval(interval);
-  }, [walletAddress]);
+  }, [status?.alreadyClaimed, loadStatus]);
 
   if (loading && !status) {
     return (
@@ -283,7 +351,14 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
                 </span>
               </div>
             ) : (
-              <p className="text-lg font-bold text-green-400">Available!</p>
+              <Button
+                onClick={claimDailyBonus}
+                disabled={claiming}
+                className="w-full bg-green-600 hover:bg-green-700 text-white mt-2"
+              >
+                <Gift className="w-4 h-4 mr-2" />
+                Available Now - Claim Bonus!
+              </Button>
             )}
           </div>
         ) : (

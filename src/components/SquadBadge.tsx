@@ -1,10 +1,44 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 
-export default function SquadBadge({ squad }: { squad: string }) {
+interface SquadBadgeProps {
+  squad: string;
+  walletAddress?: string;
+  showPfpForAcademyMember?: boolean;
+}
+
+export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMember = true }: SquadBadgeProps) {
   const [imageError, setImageError] = useState(false);
+  const [userPfp, setUserPfp] = useState<string | null>(null);
+  const [loadingPfp, setLoadingPfp] = useState(false);
+
+  // Fetch user's PFP if they're an Academy Member
+  useEffect(() => {
+    if (showPfpForAcademyMember && walletAddress && squad === 'Unassigned') {
+      fetchUserPfp();
+    }
+  }, [walletAddress, squad, showPfpForAcademyMember]);
+
+  const fetchUserPfp = async () => {
+    if (!walletAddress) return;
+    
+    setLoadingPfp(true);
+    try {
+      const response = await fetch(`/api/user-profile?wallet=${walletAddress}`);
+      const data = await response.json();
+      
+      if (data.success && data.profile?.pfp_url) {
+        setUserPfp(data.profile.pfp_url);
+      }
+    } catch (error) {
+      console.error('Error fetching user PFP:', error);
+    } finally {
+      setLoadingPfp(false);
+    }
+  };
   
   // Fallback badge with emoji and styling
   const getFallbackBadge = (squadName: string) => {
@@ -27,6 +61,18 @@ export default function SquadBadge({ squad }: { squad: string }) {
     };
 
     const displayName = squadName === 'Unassigned' ? 'Academy Member' : `${squadName} Squad`;
+
+    // Special handling for Academy Member with PFP
+    if (squadName === 'Unassigned' && showPfpForAcademyMember && userPfp) {
+      return (
+        <div className="text-center">
+          <div className="w-40 h-40 rounded-xl border-2 bg-cyan-500/20 border-cyan-500/50 shadow-xl overflow-hidden">
+            <ProfileAvatar pfpUrl={userPfp} size={160} />
+          </div>
+          <p className="mt-3 text-lg font-bold">{displayName}</p>
+        </div>
+      );
+    }
 
     return (
       <div className="text-center">

@@ -33,6 +33,7 @@ import { GovernanceManager } from '@/components/admin/GovernanceManager';
 import SocialFeedManager from '@/components/admin/SocialFeedManager';
 import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
 import { NotificationBadge } from '@/components/notifications/NotificationBadge';
+import CourseManagementTab from '@/components/admin/CourseManagementTab';
 
 interface Bounty {
   id?: string;
@@ -77,7 +78,8 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
       'lore': 'Lore Log',
       'milestones': 'Milestones',
       'mentorship': 'Mentorship',
-      'governance': 'Governance'
+      'governance': 'Governance',
+      'courses': 'Courses'
     };
     return tabNames[tab] || 'Select a section...';
   };
@@ -90,13 +92,21 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
   useEffect(() => {
     const fetchBounties = async () => {
       try {
+        console.log('🎯 [ADMIN DASHBOARD] Fetching bounties...');
         const response = await fetch('/api/bounties');
+        console.log('📊 [ADMIN DASHBOARD] Response status:', response.status);
+        console.log('📊 [ADMIN DASHBOARD] Response headers:', Object.fromEntries(response.headers.entries()));
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('✅ [ADMIN DASHBOARD] Bounties fetched:', data.length);
           setBounties(data);
+        } else {
+          const errorText = await response.text();
+          console.error('❌ [ADMIN DASHBOARD] API error:', response.status, errorText);
         }
       } catch (error) {
-        console.error('Error fetching bounties:', error);
+        console.error('💥 [ADMIN DASHBOARD] Fetch error:', error);
       } finally {
         setLoading(false);
       }
@@ -176,6 +186,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     {activeTab === 'milestones' && <Flag className="w-4 h-4" />}
                     {activeTab === 'mentorship' && <Video className="w-4 h-4" />}
                     {activeTab === 'governance' && <Vote className="w-4 h-4" />}
+                    {activeTab === 'courses' && <BookOpen className="w-4 h-4" />}
                     <span>{getTabDisplayName(activeTab)}</span>
                   </div>
                 </SelectValue>
@@ -287,6 +298,12 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                   <div className="flex items-center space-x-2">
                     <Vote className="w-4 h-4" />
                     <span>Governance</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="courses">
+                  <div className="flex items-center space-x-2">
+                    <BookOpen className="w-4 h-4" />
+                    <span>Courses</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -463,6 +480,14 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               <Vote className="w-4 h-4" />
               <span>Governance</span>
             </Button>
+            <Button
+              variant={activeTab === "courses" ? "default" : "outline"}
+              onClick={() => setActiveTab("courses")}
+              className="flex items-center space-x-2"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Courses</span>
+            </Button>
           </div>
 
           {/* Overview Tab */}
@@ -569,6 +594,11 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
           {/* Governance Tab */}
           <TabsContent value="governance">
             <GovernanceManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Courses Tab */}
+          <TabsContent value="courses">
+            <CourseManagementTab adminWallet={walletAddress} />
           </TabsContent>
         </Tabs>
       </div>

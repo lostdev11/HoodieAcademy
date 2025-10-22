@@ -101,7 +101,7 @@ export default function SquadTrackerPage() {
               {userSquad && (
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-400">Your Squad:</span>
-                  <SquadBadge squad={userSquad} />
+                  <SquadBadge squad={userSquad} walletAddress={walletAddress} />
                 </div>
               )}
             </div>

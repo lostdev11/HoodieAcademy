@@ -1,35 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
-import { isAdminForUser } from '@/lib/admin';
-import { BountyStatus } from '@/types/tracking';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-const BountyCreate = z.object({
-  title: z.string().min(3),
-  description: z.string().optional(),
-  slug: z.string().optional(),
-  reward_xp: z.number().int().min(1).default(50),
-  status: z.enum(['draft','open','closed']).default('draft'),
-  open_at: z.string().datetime().optional(),
-  close_at: z.string().datetime().optional(),
-  tags: z.array(z.string()).optional(),
-  max_submissions: z.number().int().positive().optional(),
-  allow_multiple_submissions: z.boolean().optional(),
-  image_required: z.boolean().default(false),
-  submission_type: z.enum(['text', 'image', 'both']).default('text')
-});
-
-export const runtime = 'edge';
+// Initialize Supabase client
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Supabase configuration missing');
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
 
 export async function GET(req: NextRequest) {
   try {
+    console.log('🎯 [BOUNTIES GET] Fetching bounties...');
+    console.log('🔍 [BOUNTIES GET] Request URL:', req.url);
+    console.log('🔍 [BOUNTIES GET] Request headers:', Object.fromEntries(req.headers.entries()));
+    
+    const supabase = getSupabaseClient();
+    console.log('✅ [BOUNTIES GET] Supabase client created');
+    
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
+    console.log('🔍 [BOUNTIES GET] Status filter:', status);
     
     let query = supabase
       .from('bounties')
@@ -40,63 +40,128 @@ export async function GET(req: NextRequest) {
       query = query.eq('status', status);
     }
     
+    console.log('🔍 [BOUNTIES GET] Executing query...');
     const { data, error } = await query;
     
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error('❌ [BOUNTIES GET] Database error:', error);
+      return NextResponse.json({ 
+        error: 'Database error', 
+        details: error.message,
+        code: error.code 
+      }, { status: 400 });
     }
     
-    return NextResponse.json(data);
+    console.log(`✅ [BOUNTIES GET] Retrieved ${data?.length || 0} bounties`);
+    console.log('📋 [BOUNTIES GET] Sample bounty:', data?.[0]);
+    
+    return NextResponse.json(data || []);
   } catch (error) {
-    console.error('Error fetching bounties:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('💥 [BOUNTIES GET] Unexpected error:', error);
+    console.error('💥 [BOUNTIES GET] Error stack:', error instanceof Error ? error.stack : 'No stack');
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    // Check admin permissions
-    const admin = await isAdminForUser(supabase);
-    if (!admin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    console.log('🎯 [BOUNTIES POST] Creating bounty...');
+    const supabase = getSupabaseClient();
     
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    // Parse request body
     const body = await req.json();
-    const parsed = BountyCreate.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ 
-        error: 'Invalid request data', 
-        details: parsed.error.flatten() 
-      }, { status: 400 });
+    const { 
+      title, 
+      short_desc, 
+      reward, 
+      reward_type = 'XP',
+      deadline, 
+      status = 'active', 
+      squad_tag, 
+      walletAddress,
+      hidden = false,
+      nft_prize,
+      nft_prize_image,
+      nft_prize_description
+    } = body;
+
+    console.log('📦 [BOUNTIES POST] Request data:', { 
+      title, 
+      short_desc, 
+      reward, 
+      reward_type,
+      walletAddress: walletAddress ? `${walletAddress.slice(0, 8)}...` : 'none'
+    });
+
+    // Validate required fields
+    if (!title || !walletAddress) {
+      return NextResponse.json(
+        { error: 'Title and wallet address are required' },
+        { status: 400 }
+      );
     }
-    
-    const input = parsed.data;
-    
-    // Create bounty
-    const { data, error } = await supabase
-      .from('bounties')
-      .insert({
-        ...input,
-        tags: input.tags ?? [],
-        created_by: user.id
-      })
-      .select('*')
+
+    // Check if user is admin
+    console.log('🔍 [BOUNTIES POST] Checking admin permissions...');
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('wallet_address', walletAddress)
       .single();
-    
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+
+    if (userError || !userData?.is_admin) {
+      console.error('❌ [BOUNTIES POST] Admin check failed:', { userError, userData });
+      return NextResponse.json(
+        { error: 'Admin access required' },
+        { status: 403 }
+      );
     }
-    
-    return NextResponse.json(data);
+
+    console.log('✅ [BOUNTIES POST] Admin check passed');
+
+    // Create bounty with proper schema (handle missing NFT columns gracefully)
+    const bountyData = {
+      title,
+      short_desc,
+      reward,
+      reward_type,
+      deadline: deadline ? new Date(deadline).toISOString() : null,
+      status,
+      squad_tag: squad_tag === 'none' ? null : squad_tag,
+      hidden,
+      submissions: 0
+      // Note: NFT columns will be added when database migration is run
+      // nft_prize: reward_type === 'NFT' ? nft_prize : null,
+      // nft_prize_image: reward_type === 'NFT' ? nft_prize_image : null,
+      // nft_prize_description: reward_type === 'NFT' ? nft_prize_description : null
+    };
+
+    console.log('📝 [BOUNTIES POST] Inserting bounty:', bountyData);
+
+    const { data: bounty, error: bountyError } = await supabase
+      .from('bounties')
+      .insert([bountyData])
+      .select()
+      .single();
+
+    if (bountyError) {
+      console.error('❌ [BOUNTIES POST] Database error:', bountyError);
+      return NextResponse.json(
+        { error: 'Failed to create bounty', details: bountyError.message },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ [BOUNTIES POST] Bounty created successfully:', bounty.id);
+    return NextResponse.json({ success: true, bounty });
   } catch (error) {
-    console.error('Error creating bounty:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('💥 [BOUNTIES POST] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }

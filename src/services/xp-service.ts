@@ -367,7 +367,9 @@ export class XPService {
    */
   static forceRefresh(): void {
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('forceXPRefresh'));
+      window.dispatchEvent(new CustomEvent('forceXPRefresh', {
+        detail: {} // Empty detail object to prevent undefined errors
+      }));
       
       // Set flag in sessionStorage for components to check
       try {

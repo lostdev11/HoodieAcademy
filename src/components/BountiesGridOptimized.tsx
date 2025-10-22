@@ -22,12 +22,12 @@ export default function BountiesGridOptimized({
   initialBounties = [], 
   showHidden = false 
 }: BountiesGridOptimizedProps) {
-  const { bounties, loading, error } = useUserBounties();
+  const { submissions, stats, loading: userLoading, error } = useUserBounties();
   const { wallet } = useWalletSupabase();
   const [userSubmissions, setUserSubmissions] = useState<{ [bountyId: string]: any }>({});
 
-  // Use initialBounties if still loading and they exist
-  const displayBounties = loading && initialBounties.length > 0 ? initialBounties : bounties;
+  // Use initialBounties from server-side rendering
+  const displayBounties = initialBounties || [];
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -65,7 +65,7 @@ export default function BountiesGridOptimized({
     return diffDays <= 3 && diffDays >= 0;
   };
 
-  if (isLoading && initialBounties.length === 0) {
+  if (initialBounties.length === 0) {
     return <BountyListSkeleton count={6} />;
   }
 
@@ -90,7 +90,6 @@ export default function BountiesGridOptimized({
           <motion.div
             whileHover={{ scale: 1.02, y: -8 }}
             transition={{ duration: 0.2 }}
-            onMouseEnter={() => prefetchBounty(bounty.id)}
           >
             <Card 
               className={`group overflow-hidden bg-slate-800/50 border transition-all duration-300 ${
