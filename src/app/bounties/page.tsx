@@ -5,7 +5,7 @@ import BountiesGridOptimized from '@/components/BountiesGridOptimized';
 import { Button } from '@/components/ui/button';
 import { Home, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import TokenGate from '@/components/TokenGate';
+// import TokenGate from '@/components/TokenGate'; // Removed - bounties should be viewable without wallet connection
 import { Suspense } from 'react';
 import { BountyListSkeleton } from '@/components/ui/skeleton';
 
@@ -77,7 +77,6 @@ export default async function BountiesPage() {
   }
 
   return (
-    <TokenGate>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
         {/* Animated background effects */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-900 to-slate-900"></div>
@@ -186,6 +185,5 @@ export default async function BountiesPage() {
           </div>
         </main>
       </div>
-    </TokenGate>
   );
 } 
