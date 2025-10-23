@@ -72,6 +72,14 @@ export default function AdminDashboardFixed() {
   const [xpAmount, setXpAmount] = useState('');
   const [xpReason, setXpReason] = useState('');
   const [awardingXp, setAwardingXp] = useState(false);
+
+  // XP Management state
+  const [selectedUserForXp, setSelectedUserForXp] = useState<string>('');
+  const [xpManagementAmount, setXpManagementAmount] = useState('');
+  const [xpManagementReason, setXpManagementReason] = useState('');
+  const [xpAwarding, setXpAwarding] = useState(false);
+  const [userXpHistory, setUserXpHistory] = useState<any[]>([]);
+  const [loadingXpHistory, setLoadingXpHistory] = useState(false);
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     activeUsers: 0,
@@ -384,6 +392,104 @@ export default function AdminDashboardFixed() {
     }
   };
 
+  // XP Management functions
+  const handleUserSelect = async (userId: string) => {
+    setSelectedUserForXp(userId);
+    if (userId) {
+      await fetchUserXpHistory(userId);
+    } else {
+      setUserXpHistory([]);
+    }
+  };
+
+  const fetchUserXpHistory = async (userId: string) => {
+    setLoadingXpHistory(true);
+    try {
+      const response = await fetch(`/api/admin/xp/history?userId=${userId}`);
+      if (response.ok) {
+        const history = await response.json();
+        setUserXpHistory(history);
+      } else {
+        console.error('Failed to fetch XP history');
+        setUserXpHistory([]);
+      }
+    } catch (error) {
+      console.error('Error fetching XP history:', error);
+      setUserXpHistory([]);
+    } finally {
+      setLoadingXpHistory(false);
+    }
+  };
+
+  const handleXpManagementAward = async () => {
+    if (!selectedUserForXp || !xpManagementAmount || !xpManagementReason) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    const amount = parseInt(xpManagementAmount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Please enter a valid XP amount');
+      return;
+    }
+
+    const selectedUserData = users.find(u => u.id === selectedUserForXp);
+    if (!selectedUserData) {
+      alert('Selected user not found');
+      return;
+    }
+
+    // Get current admin wallet from localStorage
+    const currentAdminWallet = typeof window !== 'undefined' 
+      ? localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet') || walletAddress
+      : walletAddress;
+
+    setXpAwarding(true);
+    try {
+      console.log('🎯 XP Management - Awarding XP:', {
+        targetWallet: selectedUserData.wallet_address,
+        xpAmount: amount,
+        reason: xpManagementReason,
+        awardedBy: currentAdminWallet
+      });
+
+      const response = await fetch('/api/admin/xp/award', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          targetWallet: selectedUserData.wallet_address,
+          xpAmount: amount,
+          reason: xpManagementReason,
+          awardedBy: currentAdminWallet
+        }),
+      });
+
+      console.log('📥 XP Management - Award Response:', response.status, response.statusText);
+      const result = await response.json();
+      console.log('📥 XP Management - Award Result:', result);
+
+      if (response.ok) {
+        alert(`Successfully awarded ${amount} XP to ${selectedUserData.display_name || 'User'}!`);
+        setXpManagementAmount('');
+        setXpManagementReason('');
+        // Refresh users data and XP history
+        fetchUsers();
+        if (selectedUserForXp) {
+          await fetchUserXpHistory(selectedUserForXp);
+        }
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error awarding XP:', error);
+      alert('Failed to award XP. Please try again.');
+    } finally {
+      setXpAwarding(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
@@ -418,7 +524,7 @@ export default function AdminDashboardFixed() {
       <ErrorBoundary>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span>Overview</span>
@@ -430,6 +536,10 @@ export default function AdminDashboardFixed() {
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
               <span>Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="xp-management" className="flex items-center space-x-2">
+              <Award className="w-4 h-4" />
+              <span>XP Management</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="w-4 h-4" />
@@ -797,6 +907,157 @@ export default function AdminDashboardFixed() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* XP Management Tab */}
+          <TabsContent value="xp-management" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* XP Award Form */}
+              <Card className="bg-slate-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Award className="w-5 h-5" />
+                    Award XP
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* User Selection */}
+                  <div>
+                    <Label htmlFor="user-select" className="text-sm text-gray-300">
+                      Select User
+                    </Label>
+                    <Select value={selectedUserForXp} onValueChange={handleUserSelect}>
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                        <SelectValue placeholder="Choose a user to award XP to..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-700 border-slate-600">
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id} className="text-white hover:bg-slate-600">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center">
+                                <User className="w-3 h-3" />
+                              </div>
+                              <div>
+                                <div className="font-medium">{user.display_name || 'Anonymous'}</div>
+                                <div className="text-xs text-slate-400">
+                                  {user.wallet_address?.slice(0, 8)}...{user.wallet_address?.slice(-6)} • {user.total_xp || 0} XP
+                                </div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* XP Amount */}
+                  <div>
+                    <Label htmlFor="xp-amount-management" className="text-sm text-gray-300">
+                      XP Amount
+                    </Label>
+                    <Input
+                      id="xp-amount-management"
+                      type="number"
+                      value={xpManagementAmount}
+                      onChange={(e) => setXpManagementAmount(e.target.value)}
+                      placeholder="Enter XP amount"
+                      className="bg-slate-700 border-slate-600 text-white"
+                      min="1"
+                    />
+                  </div>
+
+                  {/* Reason */}
+                  <div>
+                    <Label htmlFor="xp-reason-management" className="text-sm text-gray-300">
+                      Reason
+                    </Label>
+                    <Input
+                      id="xp-reason-management"
+                      value={xpManagementReason}
+                      onChange={(e) => setXpManagementReason(e.target.value)}
+                      placeholder="Enter reason for awarding XP"
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+
+                  {/* Award Button */}
+                  <Button
+                    onClick={handleXpManagementAward}
+                    disabled={xpAwarding || !selectedUserForXp || !xpManagementAmount || !xpManagementReason}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    {xpAwarding ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Awarding XP...
+                      </>
+                    ) : (
+                      <>
+                        <Award className="w-4 h-4 mr-2" />
+                        Award XP
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* XP History */}
+              <Card className="bg-slate-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Clock className="w-5 h-5" />
+                    XP History
+                    {selectedUserForXp && (
+                      <Badge variant="outline" className="ml-auto">
+                        {users.find(u => u.id === selectedUserForXp)?.display_name || 'Selected User'}
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!selectedUserForXp ? (
+                    <div className="text-center py-8 text-slate-400">
+                      <Award className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>Select a user to view their XP history</p>
+                    </div>
+                  ) : loadingXpHistory ? (
+                    <div className="text-center py-8">
+                      <div className="w-8 h-8 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-slate-400">Loading XP history...</p>
+                    </div>
+                  ) : userXpHistory.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">
+                      <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No XP history found for this user</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {userXpHistory.map((entry, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                              <Award className="w-4 h-4 text-green-400" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-white">+{entry.xp_amount} XP</p>
+                              <p className="text-sm text-slate-400">{entry.reason}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-500">
+                              {new Date(entry.created_at).toLocaleDateString()}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {new Date(entry.created_at).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Settings Tab */}
