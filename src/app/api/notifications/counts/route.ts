@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
       // Count unread feedback
       const { count: feedbackCount } = await supabase
-        .from('user_feedback')
+        .from('user_feedback_submissions')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending')
         .gte('created_at', sevenDaysAgo.toISOString());

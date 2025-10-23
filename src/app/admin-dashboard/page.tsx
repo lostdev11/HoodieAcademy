@@ -263,6 +263,11 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                   <div className="flex items-center space-x-2">
                     <MessageSquare className="w-4 h-4" />
                     <span>User Feedback</span>
+                    {counts.newFeedback > 0 && (
+                      <div className="ml-auto">
+                        <NotificationBadge count={counts.newFeedback} position="inline" size="sm" />
+                      </div>
+                    )}
                   </div>
                 </SelectItem>
                 <SelectItem value="social-feed">
