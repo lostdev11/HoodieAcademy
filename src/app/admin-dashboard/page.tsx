@@ -127,7 +127,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+      <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -172,6 +172,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     {activeTab === 'submissions' && <FileText className="w-4 h-4" />}
                     {activeTab === 'exams' && <Trophy className="w-4 h-4" />}
                     {activeTab === 'bounty-xp' && <Zap className="w-4 h-4" />}
+                    {activeTab === 'xp-management' && <Star className="w-4 h-4" />}
                     {activeTab === 'users' && <Users className="w-4 h-4" />}
                     {activeTab === 'connected-users' && <Activity className="w-4 h-4" />}
                     {activeTab === 'settings' && <Settings className="w-4 h-4" />}
@@ -191,12 +192,34 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-slate-800 border-slate-600">
-                {/* Core Management */}
-                <div className="px-2 py-1 text-xs font-semibold text-slate-400 border-b border-slate-600">Core Management</div>
                 <SelectItem value="overview">
                   <div className="flex items-center space-x-2">
                     <BarChart3 className="w-4 h-4" />
                     <span>Overview</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="bounties">
+                  <div className="flex items-center space-x-2">
+                    <Target className="w-4 h-4" />
+                    <span>Bounties</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="submissions">
+                  <div className="flex items-center space-x-2">
+                    <FileText className="w-4 h-4" />
+                    <span>Submissions</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="exams">
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="w-4 h-4" />
+                    <span>Exam Approval</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="bounty-xp">
+                  <div className="flex items-center space-x-2">
+                    <Zap className="w-4 h-4" />
+                    <span>Bounty XP</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="users">
@@ -211,46 +234,10 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     <span>Connected Users</span>
                   </div>
                 </SelectItem>
-                
-                {/* Content & Bounties */}
-                <div className="px-2 py-1 text-xs font-semibold text-slate-400 border-b border-slate-600 mt-2">Content & Bounties</div>
-                <SelectItem value="bounties">
+                <SelectItem value="settings">
                   <div className="flex items-center space-x-2">
-                    <Target className="w-4 h-4" />
-                    <span>Bounties</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="submissions">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="w-4 h-4" />
-                    <span>Submissions</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="bounty-xp">
-                  <div className="flex items-center space-x-2">
-                    <Zap className="w-4 h-4" />
-                    <span>Bounty XP</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="exams">
-                  <div className="flex items-center space-x-2">
-                    <Trophy className="w-4 h-4" />
-                    <span>Exam Approval</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="courses">
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="w-4 h-4" />
-                    <span>Courses</span>
-                  </div>
-                </SelectItem>
-                
-                {/* Community & Communication */}
-                <div className="px-2 py-1 text-xs font-semibold text-slate-400 border-b border-slate-600 mt-2">Community & Communication</div>
-                <SelectItem value="announcements">
-                  <div className="flex items-center space-x-2">
-                    <Megaphone className="w-4 h-4" />
-                    <span>Announcements</span>
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="council-notices">
@@ -259,10 +246,16 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     <span>Council Notices</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="social-feed">
+                <SelectItem value="announcements">
                   <div className="flex items-center space-x-2">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Social Feed</span>
+                    <Megaphone className="w-4 h-4" />
+                    <span>Announcements</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="spotlight">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Spotlight</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="feedback">
@@ -271,19 +264,16 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     <span>User Feedback</span>
                   </div>
                 </SelectItem>
+                <SelectItem value="social-feed">
+                  <div className="flex items-center space-x-2">
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Social Feed</span>
+                  </div>
+                </SelectItem>
                 <SelectItem value="community">
                   <div className="flex items-center space-x-2">
                     <Crown className="w-4 h-4" />
                     <span>Community</span>
-                  </div>
-                </SelectItem>
-                
-                {/* Content & Events */}
-                <div className="px-2 py-1 text-xs font-semibold text-slate-400 border-b border-slate-600 mt-2">Content & Events</div>
-                <SelectItem value="spotlight">
-                  <div className="flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4" />
-                    <span>Spotlight</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="lore">
@@ -298,76 +288,40 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     <span>Milestones</span>
                   </div>
                 </SelectItem>
-                
-                {/* System & Governance */}
-                <div className="px-2 py-1 text-xs font-semibold text-slate-400 border-b border-slate-600 mt-2">System & Governance</div>
                 <SelectItem value="governance">
                   <div className="flex items-center space-x-2">
                     <Vote className="w-4 h-4" />
                     <span>Governance</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="settings">
+                <SelectItem value="courses">
                   <div className="flex items-center space-x-2">
-                    <Settings className="w-4 h-4" />
-                    <span>Settings</span>
+                    <BookOpen className="w-4 h-4" />
+                    <span>Courses</span>
                   </div>
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
           
-          {/* Desktop: Organized Tab Groups */}
-          <div className="hidden sm:block space-y-4 mb-6">
-            {/* Core Management */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">Core Management</h3>
-              <div className="flex flex-wrap gap-2">
-                <Button
+          {/* Desktop: Tab buttons */}
+          <div className="hidden sm:flex flex-wrap gap-2 mb-6">
+            <Button
               variant={activeTab === "overview" ? "default" : "outline"}
               onClick={() => setActiveTab("overview")}
               className="flex items-center space-x-2"
             >
               <BarChart3 className="w-4 h-4" />
               <span>Overview</span>
-                </Button>
-                <Button
-                  variant={activeTab === "users" ? "default" : "outline"}
-                  onClick={() => {
-                    setActiveTab("users");
-                    if (counts.newUsers > 0) markAsRead('newUsers');
-                  }}
-                  className="flex items-center space-x-2 relative"
-                >
-                  <Users className="w-4 h-4" />
-                  <span>Users & XP</span>
-                  {counts.newUsers > 0 && (
-                    <NotificationBadge count={counts.newUsers} position="top-right" size="sm" />
-                  )}
-                </Button>
-                <Button
-                  variant={activeTab === "connected-users" ? "default" : "outline"}
-                  onClick={() => setActiveTab("connected-users")}
-                  className="flex items-center space-x-2"
-                >
-                  <Activity className="w-4 h-4" />
-                  <span>Connected Users</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* Content & Bounties */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wide">Content & Bounties</h3>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={activeTab === "bounties" ? "default" : "outline"}
-                  onClick={() => setActiveTab("bounties")}
-                  className="flex items-center space-x-2"
-                >
-                  <Target className="w-4 h-4" />
-                  <span>Bounties</span>
-                </Button>
+            </Button>
+            <Button
+              variant={activeTab === "bounties" ? "default" : "outline"}
+              onClick={() => setActiveTab("bounties")}
+              className="flex items-center space-x-2"
+            >
+              <Target className="w-4 h-4" />
+              <span>Bounties</span>
+            </Button>
             <Button
               variant={activeTab === "submissions" ? "default" : "outline"}
               onClick={() => {
@@ -391,6 +345,14 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               <span>Bounty XP</span>
             </Button>
             <Button
+              variant={activeTab === "xp-management" ? "default" : "outline"}
+              onClick={() => setActiveTab("xp-management")}
+              className="flex items-center space-x-2"
+            >
+              <Star className="w-4 h-4" />
+              <span>XP Management</span>
+            </Button>
+            <Button
               variant={activeTab === "users" ? "default" : "outline"}
               onClick={() => {
                 setActiveTab("users");
@@ -399,7 +361,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               className="flex items-center space-x-2 relative"
             >
               <Users className="w-4 h-4" />
-              <span>Users & XP</span>
+              <span>Users</span>
               {counts.newUsers > 0 && (
                 <NotificationBadge count={counts.newUsers} position="top-right" size="sm" />
               )}
