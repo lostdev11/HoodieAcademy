@@ -65,8 +65,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
       'submissions': 'Submissions',
       'exams': 'Exam Approval',
       'bounty-xp': 'Bounty XP',
-      'xp-management': 'XP Management',
-      'users': 'Users',
+       'users': 'Users & XP',
       'connected-users': 'Connected Users',
       'settings': 'Settings',
       'council-notices': 'Council Notices',
@@ -172,7 +171,6 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     {activeTab === 'submissions' && <FileText className="w-4 h-4" />}
                     {activeTab === 'exams' && <Trophy className="w-4 h-4" />}
                     {activeTab === 'bounty-xp' && <Zap className="w-4 h-4" />}
-                    {activeTab === 'xp-management' && <Star className="w-4 h-4" />}
                     {activeTab === 'users' && <Users className="w-4 h-4" />}
                     {activeTab === 'connected-users' && <Activity className="w-4 h-4" />}
                     {activeTab === 'settings' && <Settings className="w-4 h-4" />}
@@ -345,14 +343,6 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               <span>Bounty XP</span>
             </Button>
             <Button
-              variant={activeTab === "xp-management" ? "default" : "outline"}
-              onClick={() => setActiveTab("xp-management")}
-              className="flex items-center space-x-2"
-            >
-              <Star className="w-4 h-4" />
-              <span>XP Management</span>
-            </Button>
-            <Button
               variant={activeTab === "users" ? "default" : "outline"}
               onClick={() => {
                 setActiveTab("users");
@@ -361,7 +351,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               className="flex items-center space-x-2 relative"
             >
               <Users className="w-4 h-4" />
-              <span>Users</span>
+               <span>Users & XP</span>
               {counts.newUsers > 0 && (
                 <NotificationBadge count={counts.newUsers} position="top-right" size="sm" />
               )}
