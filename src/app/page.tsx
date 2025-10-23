@@ -47,6 +47,7 @@ import Image from 'next/image'
 // Lazy load heavy components
 const AcademyInfo = lazy(() => import("@/components/home/AcademyInfo"));
 const FeedbackTrackerWidget = lazy(() => import("@/components/feedback/FeedbackTrackerWidget"));
+const StudentOfTheWeekWidget = lazy(() => import("@/components/home/StudentOfTheWeekWidget"));
 
 // Mock data for the new home page sections
 const academySpotlights = [
@@ -70,22 +71,6 @@ const academySpotlights = [
   }
 ];
 
-const studentsOfTheWeek = [
-  {
-    name: "@ChainWitch",
-    squad: "Speakers",
-    achievement: "Submitted 3 trait designs + led a meme challenge",
-    avatar: "/images/hoodie-academy-pixel-art-logo.png",
-    badge: "🏅"
-  },
-  {
-    name: "@CryptoVoyager",
-    squad: "Raiders",
-    achievement: "Top 3 leaderboard + completed advanced course",
-    avatar: "/images/hoodie-academy-pixel-art-logo.png",
-    badge: "⚔️"
-  }
-];
 
 const loreEntries = [
   {
@@ -151,7 +136,6 @@ export default function HoodieAcademy() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isDemoWallet, setIsDemoWallet] = useState(false);
   const [currentSpotlightIndex, setCurrentSpotlightIndex] = useState(0);
-  const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
   const [snsDomain, setSnsDomain] = useState<string | null>(null);
   const [isLoadingSns, setIsLoadingSns] = useState(false);
   // Use the global display name hook
@@ -282,13 +266,8 @@ export default function HoodieAcademy() {
       setCurrentSpotlightIndex((prev) => (prev + 1) % academySpotlights.length);
     }, 8000);
 
-    const studentInterval = setInterval(() => {
-      setCurrentStudentIndex((prev) => (prev + 1) % studentsOfTheWeek.length);
-    }, 12000);
-
     return () => {
       clearInterval(spotlightInterval);
-      clearInterval(studentInterval);
     };
   }, []);
 
@@ -541,35 +520,18 @@ export default function HoodieAcademy() {
             </Suspense>
 
             {/* Student of the Week */}
-            <Card className="bg-slate-800/50 border-yellow-500/30">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="relative">
-                    <Image
-                      src={studentsOfTheWeek[currentStudentIndex].avatar}
-                      alt="Student PFP"
-                      width={64}
-                      height={64}
-                      className="rounded-full border-2 border-yellow-500/50"
-                    />
-                    <div className="absolute -top-2 -right-2 text-2xl">
-                      {studentsOfTheWeek[currentStudentIndex].badge}
-                    </div>
+            <Suspense fallback={
+              <Card className="bg-slate-800/50 border-yellow-500/30">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+                    <span className="ml-3 text-gray-400">Loading Student of the Week...</span>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-yellow-400 mb-1">
-                      🏅 Student of the Week: {studentsOfTheWeek[currentStudentIndex].name}
-                    </h3>
-                    <p className="text-sm text-gray-300 mb-2">
-                      {studentsOfTheWeek[currentStudentIndex].achievement}
-                    </p>
-                    <Badge variant="outline" className="text-yellow-400 border-yellow-500/30">
-                      {studentsOfTheWeek[currentStudentIndex].squad} Squad
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            }>
+              <StudentOfTheWeekWidget />
+            </Suspense>
 
             {/* Lore Log Preview */}
             <Card className="bg-slate-800/50 border-green-500/30">

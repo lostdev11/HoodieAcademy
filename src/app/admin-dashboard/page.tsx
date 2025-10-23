@@ -18,7 +18,7 @@ import {
   Users, BookOpen, Trophy, Settings, Shield, BarChart3, 
   Target, Megaphone, Bell, Database, Activity, Zap, 
   FileText, Star, CheckCircle, Sparkles, MessageSquare,
-  Crown, ScrollText, Flag, Video, Vote
+  Crown, ScrollText, Flag, Video, Vote, Award
 } from 'lucide-react';
 import CouncilNoticesManager from '@/components/admin/CouncilNoticesManager';
 import AnnouncementsManager from '@/components/admin/AnnouncementsManager';
@@ -31,6 +31,7 @@ import AcademyMilestonesManager from '@/components/admin/AcademyMilestonesManage
 import { MentorshipManager } from '@/components/admin/MentorshipManager';
 import { GovernanceManager } from '@/components/admin/GovernanceManager';
 import SocialFeedManager from '@/components/admin/SocialFeedManager';
+import StudentOfTheWeekManager from '@/components/admin/StudentOfTheWeekManager';
 import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
 import { NotificationBadge } from '@/components/notifications/NotificationBadge';
 import CourseManagementTab from '@/components/admin/CourseManagementTab';
@@ -78,7 +79,8 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
       'milestones': 'Milestones',
       'mentorship': 'Mentorship',
       'governance': 'Governance',
-      'courses': 'Courses'
+      'courses': 'Courses',
+      'student-of-the-week': 'Student of the Week'
     };
     return tabNames[tab] || 'Select a section...';
   };
@@ -185,6 +187,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     {activeTab === 'mentorship' && <Video className="w-4 h-4" />}
                     {activeTab === 'governance' && <Vote className="w-4 h-4" />}
                     {activeTab === 'courses' && <BookOpen className="w-4 h-4" />}
+                    {activeTab === 'student-of-the-week' && <Award className="w-4 h-4" />}
                     <span>{getTabDisplayName(activeTab)}</span>
                   </div>
                 </SelectValue>
@@ -296,6 +299,12 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                   <div className="flex items-center space-x-2">
                     <BookOpen className="w-4 h-4" />
                     <span>Courses</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="student-of-the-week">
+                  <div className="flex items-center space-x-2">
+                    <Award className="w-4 h-4" />
+                    <span>Student of the Week</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -472,6 +481,14 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               <BookOpen className="w-4 h-4" />
               <span>Courses</span>
             </Button>
+            <Button
+              variant={activeTab === "student-of-the-week" ? "default" : "outline"}
+              onClick={() => setActiveTab("student-of-the-week")}
+              className="flex items-center space-x-2"
+            >
+              <Award className="w-4 h-4" />
+              <span>Student of the Week</span>
+            </Button>
           </div>
 
           {/* Overview Tab */}
@@ -588,6 +605,11 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
           {/* Courses Tab */}
           <TabsContent value="courses">
             <CourseManagementTab adminWallet={walletAddress} />
+          </TabsContent>
+
+          {/* Student of the Week Tab */}
+          <TabsContent value="student-of-the-week">
+            <StudentOfTheWeekManager walletAddress={walletAddress} />
           </TabsContent>
         </Tabs>
       </div>
