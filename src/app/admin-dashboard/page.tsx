@@ -222,16 +222,10 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     <span>Bounty XP</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="xp-management">
-                  <div className="flex items-center space-x-2">
-                    <Star className="w-4 h-4" />
-                    <span>XP Management</span>
-                  </div>
-                </SelectItem>
                 <SelectItem value="users">
                   <div className="flex items-center space-x-2">
                     <Users className="w-4 h-4" />
-                    <span>Users</span>
+                    <span>Users & XP</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="connected-users">
@@ -518,22 +512,27 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
             <BountyXPManager walletAddress={walletAddress} />
           </TabsContent>
 
-          {/* XP Management Tab */}
-          <TabsContent value="xp-management">
-            <XPManagement walletAddress={walletAddress} />
-          </TabsContent>
-
-          {/* Users Tab */}
+          {/* Users & XP Management Tab */}
           <TabsContent value="users">
-            <EnhancedUsersManager 
-              walletAddress={walletAddress}
-              onViewUserSubmissions={(user) => {
-                // Switch to submissions tab and filter by user
-                setActiveTab('submissions');
-                // You could add a filter mechanism here to show only this user's submissions
-                console.log('Viewing submissions for user:', user.displayName);
-              }}
-            />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* User Management - 2/3 width */}
+              <div className="lg:col-span-2">
+                <EnhancedUsersManager 
+                  walletAddress={walletAddress}
+                  onViewUserSubmissions={(user) => {
+                    // Switch to submissions tab and filter by user
+                    setActiveTab('submissions');
+                    // You could add a filter mechanism here to show only this user's submissions
+                    console.log('Viewing submissions for user:', user.displayName);
+                  }}
+                />
+              </div>
+              
+              {/* XP Management - 1/3 width */}
+              <div className="lg:col-span-1">
+                <XPManagement walletAddress={walletAddress} />
+              </div>
+            </div>
           </TabsContent>
 
           {/* Connected Users Tab */}
