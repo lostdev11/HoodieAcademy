@@ -524,7 +524,7 @@ export default function AdminDashboardFixed() {
       <ErrorBoundary>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
             <TabsTrigger value="overview" className="flex items-center space-x-2">
               <BarChart3 className="w-4 h-4" />
               <span>Overview</span>
@@ -535,11 +535,7 @@ export default function AdminDashboardFixed() {
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
-              <span>Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="xp-management" className="flex items-center space-x-2">
-              <Award className="w-4 h-4" />
-              <span>XP Management</span>
+              <span>Users & XP</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center space-x-2">
               <Settings className="w-4 h-4" />
@@ -838,227 +834,231 @@ export default function AdminDashboardFixed() {
             </div>
           </TabsContent>
 
-          {/* Users Tab */}
-          <TabsContent value="users">
-            <Card className="bg-slate-800">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <Users className="w-5 h-5" />
-                  User Management
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-slate-700">
-                        <th className="text-left p-2">User</th>
-                        <th className="text-left p-2">Squad</th>
-                        <th className="text-left p-2">XP</th>
-                        <th className="text-left p-2">Status</th>
-                        <th className="text-left p-2">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((user) => (
-                        <tr key={user.id} className="border-b border-slate-700/50">
-                          <td className="p-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
-                                <User className="w-4 h-4" />
-                              </div>
-                              <div>
-                                <p className="font-medium">{user.display_name || 'Anonymous'}</p>
-                                <p className="text-xs text-slate-400">{user.wallet_address?.slice(0, 8)}...{user.wallet_address?.slice(-6)}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-2">
-                            <Badge variant="outline">{user.squad || 'No Squad'}</Badge>
-                          </td>
-                          <td className="p-2">
-                            <div className="flex items-center gap-2">
-                              <Award className="w-4 h-4 text-yellow-400" />
-                              <span className="font-medium text-yellow-400">{user.total_xp || 0}</span>
-                            </div>
-                          </td>
-                          <td className="p-2">
-                            <Badge variant={user.is_admin ? "default" : "secondary"}>
-                              {user.is_admin ? 'Admin' : 'User'}
-                            </Badge>
-                          </td>
-                          <td className="p-2">
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleAwardXp(user)}
-                                className="border-green-500 text-green-400 hover:bg-green-500/10"
-                                title="Award XP to this user"
-                              >
-                                <Award className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {/* Users & XP Management Tab */}
+          <TabsContent value="users" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* User List */}
+              <div className="lg:col-span-2">
+                <Card className="bg-slate-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <Users className="w-5 h-5" />
+                      User Management
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-700">
+                            <th className="text-left p-2">User</th>
+                            <th className="text-left p-2">Squad</th>
+                            <th className="text-left p-2">XP</th>
+                            <th className="text-left p-2">Status</th>
+                            <th className="text-left p-2">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {users.map((user) => (
+                            <tr key={user.id} className="border-b border-slate-700/50">
+                              <td className="p-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
+                                    <User className="w-4 h-4" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{user.display_name || 'Anonymous'}</p>
+                                    <p className="text-xs text-slate-400">{user.wallet_address?.slice(0, 8)}...{user.wallet_address?.slice(-6)}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-2">
+                                <Badge variant="outline">{user.squad || 'No Squad'}</Badge>
+                              </td>
+                              <td className="p-2">
+                                <div className="flex items-center gap-2">
+                                  <Award className="w-4 h-4 text-yellow-400" />
+                                  <span className="font-medium text-yellow-400">{user.total_xp || 0}</span>
+                                </div>
+                              </td>
+                              <td className="p-2">
+                                <Badge variant={user.is_admin ? "default" : "secondary"}>
+                                  {user.is_admin ? 'Admin' : 'User'}
+                                </Badge>
+                              </td>
+                              <td className="p-2">
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleAwardXp(user)}
+                                    className="border-green-500 text-green-400 hover:bg-green-500/10"
+                                    title="Award XP to this user"
+                                  >
+                                    <Award className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-          {/* XP Management Tab */}
-          <TabsContent value="xp-management" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* XP Award Form */}
-              <Card className="bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <Award className="w-5 h-5" />
-                    Award XP
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* User Selection */}
-                  <div>
-                    <Label htmlFor="user-select" className="text-sm text-gray-300">
-                      Select User
-                    </Label>
-                    <Select value={selectedUserForXp} onValueChange={handleUserSelect}>
-                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                        <SelectValue placeholder="Choose a user to award XP to..." />
-                      </SelectTrigger>
-                      <SelectContent className="bg-slate-700 border-slate-600">
-                        {users.map((user) => (
-                          <SelectItem key={user.id} value={user.id} className="text-white hover:bg-slate-600">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center">
-                                <User className="w-3 h-3" />
-                              </div>
-                              <div>
-                                <div className="font-medium">{user.display_name || 'Anonymous'}</div>
-                                <div className="text-xs text-slate-400">
-                                  {user.wallet_address?.slice(0, 8)}...{user.wallet_address?.slice(-6)} • {user.total_xp || 0} XP
+              {/* XP Management Panel */}
+              <div className="space-y-6">
+                {/* XP Award Form */}
+                <Card className="bg-slate-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <Award className="w-5 h-5" />
+                      Award XP
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* User Selection */}
+                    <div>
+                      <Label htmlFor="user-select" className="text-sm text-gray-300">
+                        Select User
+                      </Label>
+                      <Select value={selectedUserForXp} onValueChange={handleUserSelect}>
+                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                          <SelectValue placeholder="Choose a user to award XP to..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-700 border-slate-600">
+                          {users.map((user) => (
+                            <SelectItem key={user.id} value={user.id} className="text-white hover:bg-slate-600">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 bg-slate-600 rounded-full flex items-center justify-center">
+                                  <User className="w-3 h-3" />
+                                </div>
+                                <div>
+                                  <div className="font-medium">{user.display_name || 'Anonymous'}</div>
+                                  <div className="text-xs text-slate-400">
+                                    {user.wallet_address?.slice(0, 8)}...{user.wallet_address?.slice(-6)} • {user.total_xp || 0} XP
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  {/* XP Amount */}
-                  <div>
-                    <Label htmlFor="xp-amount-management" className="text-sm text-gray-300">
-                      XP Amount
-                    </Label>
-                    <Input
-                      id="xp-amount-management"
-                      type="number"
-                      value={xpManagementAmount}
-                      onChange={(e) => setXpManagementAmount(e.target.value)}
-                      placeholder="Enter XP amount"
-                      className="bg-slate-700 border-slate-600 text-white"
-                      min="1"
-                    />
-                  </div>
+                    {/* XP Amount */}
+                    <div>
+                      <Label htmlFor="xp-amount-management" className="text-sm text-gray-300">
+                        XP Amount
+                      </Label>
+                      <Input
+                        id="xp-amount-management"
+                        type="number"
+                        value={xpManagementAmount}
+                        onChange={(e) => setXpManagementAmount(e.target.value)}
+                        placeholder="Enter XP amount"
+                        className="bg-slate-700 border-slate-600 text-white"
+                        min="1"
+                      />
+                    </div>
 
-                  {/* Reason */}
-                  <div>
-                    <Label htmlFor="xp-reason-management" className="text-sm text-gray-300">
-                      Reason
-                    </Label>
-                    <Input
-                      id="xp-reason-management"
-                      value={xpManagementReason}
-                      onChange={(e) => setXpManagementReason(e.target.value)}
-                      placeholder="Enter reason for awarding XP"
-                      className="bg-slate-700 border-slate-600 text-white"
-                    />
-                  </div>
+                    {/* Reason */}
+                    <div>
+                      <Label htmlFor="xp-reason-management" className="text-sm text-gray-300">
+                        Reason
+                      </Label>
+                      <Input
+                        id="xp-reason-management"
+                        value={xpManagementReason}
+                        onChange={(e) => setXpManagementReason(e.target.value)}
+                        placeholder="Enter reason for awarding XP"
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
+                    </div>
 
-                  {/* Award Button */}
-                  <Button
-                    onClick={handleXpManagementAward}
-                    disabled={xpAwarding || !selectedUserForXp || !xpManagementAmount || !xpManagementReason}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                  >
-                    {xpAwarding ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                        Awarding XP...
-                      </>
+                    {/* Award Button */}
+                    <Button
+                      onClick={handleXpManagementAward}
+                      disabled={xpAwarding || !selectedUserForXp || !xpManagementAmount || !xpManagementReason}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                    >
+                      {xpAwarding ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Awarding XP...
+                        </>
+                      ) : (
+                        <>
+                          <Award className="w-4 h-4 mr-2" />
+                          Award XP
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* XP History */}
+                <Card className="bg-slate-800">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-white">
+                      <Clock className="w-5 h-5" />
+                      XP History
+                      {selectedUserForXp && (
+                        <Badge variant="outline" className="ml-auto">
+                          {users.find(u => u.id === selectedUserForXp)?.display_name || 'Selected User'}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!selectedUserForXp ? (
+                      <div className="text-center py-8 text-slate-400">
+                        <Award className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>Select a user to view their XP history</p>
+                      </div>
+                    ) : loadingXpHistory ? (
+                      <div className="text-center py-8">
+                        <div className="w-8 h-8 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                        <p className="text-slate-400">Loading XP history...</p>
+                      </div>
+                    ) : userXpHistory.length === 0 ? (
+                      <div className="text-center py-8 text-slate-400">
+                        <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                        <p>No XP history found for this user</p>
+                      </div>
                     ) : (
-                      <>
-                        <Award className="w-4 h-4 mr-2" />
-                        Award XP
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* XP History */}
-              <Card className="bg-slate-800">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <Clock className="w-5 h-5" />
-                    XP History
-                    {selectedUserForXp && (
-                      <Badge variant="outline" className="ml-auto">
-                        {users.find(u => u.id === selectedUserForXp)?.display_name || 'Selected User'}
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!selectedUserForXp ? (
-                    <div className="text-center py-8 text-slate-400">
-                      <Award className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>Select a user to view their XP history</p>
-                    </div>
-                  ) : loadingXpHistory ? (
-                    <div className="text-center py-8">
-                      <div className="w-8 h-8 border-2 border-slate-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <p className="text-slate-400">Loading XP history...</p>
-                    </div>
-                  ) : userXpHistory.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400">
-                      <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No XP history found for this user</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {userXpHistory.map((entry, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                              <Award className="w-4 h-4 text-green-400" />
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {userXpHistory.map((entry, index) => (
+                          <div key={index} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
+                                <Award className="w-4 h-4 text-green-400" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-white">+{entry.xp_amount} XP</p>
+                                <p className="text-sm text-slate-400">{entry.reason}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium text-white">+{entry.xp_amount} XP</p>
-                              <p className="text-sm text-slate-400">{entry.reason}</p>
+                            <div className="text-right">
+                              <p className="text-xs text-slate-500">
+                                {new Date(entry.created_at).toLocaleDateString()}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {new Date(entry.created_at).toLocaleTimeString()}
+                              </p>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-xs text-slate-500">
-                              {new Date(entry.created_at).toLocaleDateString()}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {new Date(entry.created_at).toLocaleTimeString()}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
+
 
           {/* Settings Tab */}
           <TabsContent value="settings">
