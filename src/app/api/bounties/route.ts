@@ -20,18 +20,12 @@ function getSupabaseClient() {
 
 export async function GET(req: NextRequest) {
   try {
-    console.log('🎯 [BOUNTIES GET] Fetching bounties...');
-    console.log('🔍 [BOUNTIES GET] Request URL:', req.url);
-    console.log('🔍 [BOUNTIES GET] Request headers:', Object.fromEntries(req.headers.entries()));
     
     const supabase = getSupabaseClient();
-    console.log('✅ [BOUNTIES GET] Supabase client created');
     
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
     const showHidden = searchParams.get('showHidden') === 'true';
-    console.log('🔍 [BOUNTIES GET] Status filter:', status);
-    console.log('🔍 [BOUNTIES GET] Show hidden:', showHidden);
     
     let query = supabase
       .from('bounties')
@@ -47,7 +41,6 @@ export async function GET(req: NextRequest) {
       query = query.eq('status', status);
     }
     
-    console.log('🔍 [BOUNTIES GET] Executing query...');
     const { data, error } = await query;
     
     if (error) {

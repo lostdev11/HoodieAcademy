@@ -301,7 +301,6 @@ export default function HoodieAcademy() {
       }
 
       const walletAddress = provider.publicKey!.toString();
-      console.log('🎯 Connected wallet:', walletAddress);
       
       // Store wallet address in all storage locations for consistency
       localStorage.setItem("hoodie_academy_wallet", walletAddress);
@@ -319,9 +318,7 @@ export default function HoodieAcademy() {
       })
         .then(res => res.json())
         .then(data => {
-          console.log('📊 API connection logged from dashboard:', data);
           if (data.banned) {
-            console.error('⛔ Wallet is banned!');
             handleDisconnect();
           } else if (data.isAdmin !== undefined) {
             setIsAdmin(data.isAdmin);
@@ -329,7 +326,7 @@ export default function HoodieAcademy() {
           }
         })
         .catch(err => {
-          console.warn('⚠️ API connection logging failed:', err);
+          // Silent error handling
         });
       
       // Update state
@@ -389,10 +386,10 @@ export default function HoodieAcademy() {
       })
         .then(res => res.json())
         .then(data => {
-          console.log('📊 API disconnection logged from dashboard:', data);
+          // Silent success
         })
         .catch(err => {
-          console.warn('⚠️ API disconnection logging failed:', err);
+          // Silent error handling
         });
     }
     

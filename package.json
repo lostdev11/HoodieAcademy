@@ -16,6 +16,8 @@
     "@daily-co/daily-js": "^0.84.0",
     "@daily-co/daily-react": "^0.23.2",
     "@keystonehq/sdk": "^0.20.0",
+    "@privy-io/react-auth": "^3.4.1",
+    "@privy-io/wagmi": "^2.0.2",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-avatar": "^1.1.10",

@@ -62,7 +62,6 @@ export default function WalletConnect() {
       icon: '🔥',
       isInstalled: () => {
         const installed = typeof window !== 'undefined' && !!window.solflare;
-        console.log('Solflare installed check:', installed, 'window.solflare:', window.solflare);
         return installed;
       },
       connect: async () => {
@@ -88,17 +87,16 @@ export default function WalletConnect() {
   };
 
   useEffect(() => {
-    // Debug wallet detection
-    const debugWallets = () => {
+    // Check wallet availability
+    const checkWallets = () => {
       const debug = Object.entries(wallets).map(([key, wallet]) => {
         const installed = wallet.isInstalled();
         return `${key}: ${installed ? '✅' : '❌'}`;
       }).join(', ');
       setDebugInfo(debug);
-      console.log('Wallet detection debug:', debug);
     };
 
-    debugWallets();
+    checkWallets();
     
     // Try to auto-connect to previously authorized wallet
     const autoConnect = async () => {
