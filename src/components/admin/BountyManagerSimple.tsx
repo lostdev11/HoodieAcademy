@@ -139,7 +139,8 @@ export default function BountyManagerSimple({ bounties, onBountiesChange, wallet
         throw new Error(errorData.error || 'Failed to save bounty');
       }
 
-      const savedBounty = await response.json();
+      const responseData = await response.json();
+      const savedBounty = responseData.bounty || responseData;
       
       if (editingBounty) {
         // Update existing bounty

@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
 
     console.log('✅ [BOUNTIES POST] Admin check passed');
 
-    // Create bounty with proper schema (handle missing NFT columns gracefully)
+    // Create bounty with proper schema
     const bountyData = {
       title,
       short_desc,
@@ -132,11 +132,10 @@ export async function POST(req: NextRequest) {
       status,
       squad_tag: squad_tag === 'none' ? null : squad_tag,
       hidden,
-      submissions: 0
-      // Note: NFT columns will be added when database migration is run
-      // nft_prize: reward_type === 'NFT' ? nft_prize : null,
-      // nft_prize_image: reward_type === 'NFT' ? nft_prize_image : null,
-      // nft_prize_description: reward_type === 'NFT' ? nft_prize_description : null
+      submissions: 0,
+      nft_prize: reward_type === 'NFT' ? nft_prize : null,
+      nft_prize_image: reward_type === 'NFT' ? nft_prize_image : null,
+      nft_prize_description: reward_type === 'NFT' ? nft_prize_description : null
     };
 
     console.log('📝 [BOUNTIES POST] Inserting bounty:', bountyData);

@@ -9,6 +9,9 @@ import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { Target, Clock, Award, Users, EyeOff, Send, CheckCircle, Upload, Image as ImageIcon, AlertCircle, XCircle, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ExpandableDescription } from '@/components/ui/ExpandableDescription';
+import Markdown from '@/components/Markdown';
+import { ExpandableMarkdown } from '@/components/ui/ExpandableMarkdown';
 import { BountyListSkeleton } from '@/components/ui/skeleton';
 import { DBBounty } from '@/types/database';
 import { motion } from 'framer-motion';
@@ -275,9 +278,13 @@ export default function BountiesGridOptimized({
               </CardHeader>
               
               <CardContent className="overflow-hidden">
-                <p className="text-gray-300 mb-6 line-clamp-3 break-words leading-relaxed">
-                  {bounty.short_desc}
-                </p>
+                <div className="mb-6">
+                  <ExpandableMarkdown 
+                    content={bounty.short_desc}
+                    maxLength={200}
+                    className="text-gray-300"
+                  />
+                </div>
                 
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg border border-green-500/30">
