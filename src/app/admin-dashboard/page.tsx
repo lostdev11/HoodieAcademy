@@ -94,7 +94,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
     const fetchBounties = async () => {
       try {
         console.log('🎯 [ADMIN DASHBOARD] Fetching bounties...');
-        const response = await fetch('/api/bounties');
+        const response = await fetch('/api/bounties?showHidden=true');
         console.log('📊 [ADMIN DASHBOARD] Response status:', response.status);
         console.log('📊 [ADMIN DASHBOARD] Response headers:', Object.fromEntries(response.headers.entries()));
         

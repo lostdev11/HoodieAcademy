@@ -29,12 +29,19 @@ export async function GET(req: NextRequest) {
     
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
+    const showHidden = searchParams.get('showHidden') === 'true';
     console.log('🔍 [BOUNTIES GET] Status filter:', status);
+    console.log('🔍 [BOUNTIES GET] Show hidden:', showHidden);
     
     let query = supabase
       .from('bounties')
       .select('*')
       .order('created_at', { ascending: false });
+    
+    // Only filter out hidden bounties if showHidden is not true
+    if (!showHidden) {
+      query = query.eq('hidden', false);
+    }
     
     if (status) {
       query = query.eq('status', status);

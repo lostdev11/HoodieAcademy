@@ -33,7 +33,7 @@ export default function AdminBountiesPage() {
   useEffect(() => {
     const fetchBounties = async () => {
       try {
-        const response = await fetch('/api/bounties');
+        const response = await fetch('/api/bounties?showHidden=true');
         if (response.ok) {
           const data = await response.json();
           setBounties(data);

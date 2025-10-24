@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Zap, Star, Trophy, Users, TrendingUp, Award, 
@@ -191,15 +192,33 @@ export default function XPManagement({ walletAddress }: XPManagementProps) {
           <CardContent>
             <form onSubmit={handleAwardXP} className="space-y-4">
               <div>
-                <Label htmlFor="walletAddress" className="text-white">Wallet Address</Label>
-                <Input
-                  id="walletAddress"
+                <Label htmlFor="userSelect" className="text-white">Select User</Label>
+                <Select
                   value={awardForm.walletAddress}
-                  onChange={(e) => setAwardForm({ ...awardForm, walletAddress: e.target.value })}
-                  placeholder="Enter wallet address"
-                  className="mt-1 bg-slate-700 border-slate-600 text-white placeholder:text-gray-400 focus:text-black"
-                  required
-                />
+                  onValueChange={(value) => setAwardForm({ ...awardForm, walletAddress: value })}
+                >
+                  <SelectTrigger className="mt-1 bg-slate-700 border-slate-600 text-white">
+                    <SelectValue placeholder="Choose a user to award XP to" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-700 border-slate-600">
+                    {users.map((user) => (
+                      <SelectItem 
+                        key={user.wallet_address} 
+                        value={user.wallet_address}
+                        className="text-white hover:bg-slate-600"
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-medium">
+                            {user.display_name || `User ${user.wallet_address.slice(0, 6)}...`}
+                          </span>
+                          <span className="text-sm text-gray-400 ml-2">
+                            {user.total_xp} XP (Level {user.level})
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="xpAmount" className="text-white">XP Amount</Label>

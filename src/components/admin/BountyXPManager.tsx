@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Trophy, Users, Award, CheckCircle, AlertCircle
 } from 'lucide-react';
@@ -295,20 +296,32 @@ export default function BountyXPManager({ walletAddress }: BountyXPManagerProps)
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="userSelect" className="text-white">Select User</Label>
-                <select
-                  id="userSelect"
+                <Select
                   value={selectedUser || ''}
-                  onChange={(e) => setSelectedUser(e.target.value)}
-                  className="mt-1 w-full bg-slate-700 border border-slate-600 text-white rounded-md px-3 py-2"
-                  required
+                  onValueChange={(value) => setSelectedUser(value)}
                 >
-                  <option value="">Choose a user...</option>
-                  {users.map((user) => (
-                    <option key={user.wallet_address} value={user.wallet_address}>
-                      {user.displayName || formatWalletAddress(user.wallet_address)} - {user.total_xp || 0} XP
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="mt-1 bg-slate-700 border-slate-600 text-white">
+                    <SelectValue placeholder="Choose a user to award XP to" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-700 border-slate-600">
+                    {users.map((user) => (
+                      <SelectItem 
+                        key={user.wallet_address} 
+                        value={user.wallet_address}
+                        className="text-white hover:bg-slate-600"
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-medium">
+                            {user.displayName || formatWalletAddress(user.wallet_address)}
+                          </span>
+                          <span className="text-sm text-gray-400 ml-2">
+                            {user.total_xp || 0} XP
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
