@@ -46,13 +46,13 @@ export function useAdminStatus(): UseAdminStatusReturn {
       setLastChecked(now);
       
       if (adminStatus) {
-        console.log('✅ useAdminStatus: Admin status confirmed');
+        // Admin status confirmed
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to check admin status';
       setError(errorMessage);
       setIsAdmin(false);
-      console.error('💥 useAdminStatus: Failed to check admin:', err);
+      // Silent error handling
     } finally {
       setIsLoading(false);
     }

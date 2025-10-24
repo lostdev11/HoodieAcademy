@@ -159,6 +159,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
             width={48} 
             height={48} 
             className="rounded-full object-cover w-full h-full"
+            priority
           />
         </div>
         <span className="sr-only">Open AI Assistant</span>
