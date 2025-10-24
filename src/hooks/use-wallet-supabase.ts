@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useDevice } from '@/hooks/use-device';
 import { createClient } from '@supabase/supabase-js';
-import { logWalletConnection } from '@/lib/activity-logger';
-import { walletTracker } from '@/lib/wallet-tracker';
+import { logWalletConnection, logUserActivity } from '@/lib/activity-logger';
+import { walletTracker } from '@/lib/wallet-connection-tracker';
 import { simpleUserTracker } from '@/lib/simple-user-tracker';
 
 // Hardcoded admin wallets for fallback
@@ -393,9 +393,14 @@ export function useWalletSupabase() {
     if (!wallet) return;
     
     try {
-      await logUserActivity(wallet, 'course_start', {
-        course_slug: courseSlug,
-        timestamp: new Date().toISOString()
+      await logUserActivity({
+        wallet_address: wallet,
+        activity_type: 'course_start',
+        course_data: {
+          course_id: courseSlug,
+          course_name: courseSlug,
+          completion_status: 'started'
+        }
       });
     } catch (err) {
       // Silent error handling
@@ -407,10 +412,15 @@ export function useWalletSupabase() {
     if (!wallet) return;
     
     try {
-      await logUserActivity(wallet, 'course_completion', {
-        course_slug: courseSlug,
-        score: score,
-        timestamp: new Date().toISOString()
+      await logUserActivity({
+        wallet_address: wallet,
+        activity_type: 'course_completion',
+        course_data: {
+          course_id: courseSlug,
+          course_name: courseSlug,
+          completion_status: 'completed',
+          score: score
+        }
       });
     } catch (err) {
       // Silent error handling
