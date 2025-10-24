@@ -68,7 +68,7 @@ export default function BountiesGridOptimized({
 
   // Fetch user submissions for all bounties
   useEffect(() => {
-    if (!walletAddress || displayBounties.length === 0) return;
+    if (!walletAddress || !displayBounties || displayBounties.length === 0) return;
 
     const fetchUserSubmissions = async () => {
       const submissions: { [bountyId: string]: any } = {};
@@ -95,7 +95,7 @@ export default function BountiesGridOptimized({
 
   // Auto-refresh submissions every 30 seconds to catch status updates
   useEffect(() => {
-    if (!walletAddress || displayBounties.length === 0) return;
+    if (!walletAddress || !displayBounties || displayBounties.length === 0) return;
 
     const interval = setInterval(() => {
       const fetchUserSubmissions = async () => {
@@ -224,7 +224,7 @@ export default function BountiesGridOptimized({
     }
   };
 
-  if (initialBounties.length === 0) {
+  if (!initialBounties || initialBounties.length === 0) {
     return <BountyListSkeleton count={6} />;
   }
 

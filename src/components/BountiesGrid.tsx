@@ -20,7 +20,7 @@ export default function BountiesGrid({
   initialBounties = [], 
   showHidden = false 
 }: BountiesGridProps) {
-  const [bounties, setBounties] = useState<DBBounty[]>(initialBounties);
+  const [bounties, setBounties] = useState<DBBounty[]>(Array.isArray(initialBounties) ? initialBounties : []);
   const [userSubmissions, setUserSubmissions] = useState<{ [bountyId: string]: { status: string; submission: string } }>({});
   const [submittingBounty, setSubmittingBounty] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function BountiesGrid({
 
   // Fetch user submissions for all bounties
   useEffect(() => {
-    if (!walletAddress || bounties.length === 0) return;
+    if (!walletAddress || !bounties || bounties.length === 0) return;
 
     const fetchUserSubmissions = async () => {
       const submissions: { [bountyId: string]: { status: string; submission: string } } = {};
@@ -211,7 +211,7 @@ export default function BountiesGrid({
     ? bounties 
     : bounties.filter(bounty => !bounty.hidden);
 
-  if (visibleBounties.length === 0) {
+  if (!visibleBounties || visibleBounties.length === 0) {
     return (
       <div className="text-center py-8">
         <Target className="w-12 h-12 mx-auto text-gray-400 mb-4" />

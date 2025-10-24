@@ -1,5 +1,8 @@
 import BountiesGrid from '@/components/BountiesGrid';
 
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic';
+
 // Mock bounty data for testing
 const testBounties = [
   {
@@ -25,6 +28,9 @@ const testBounties = [
     link_to: null
   }
 ];
+
+// Ensure testBounties is always an array
+const safeTestBounties = Array.isArray(testBounties) ? testBounties : [];
 
 export default function TestBountyUploadPage() {
   return (
@@ -66,7 +72,7 @@ export default function TestBountyUploadPage() {
         </div>
 
         {/* Bounties Grid */}
-        <BountiesGrid initialBounties={testBounties} showHidden={false} />
+        <BountiesGrid initialBounties={safeTestBounties} showHidden={false} />
       </div>
     </div>
   );
