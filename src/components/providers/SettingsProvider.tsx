@@ -68,7 +68,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       
       // Fetch both in parallel instead of sequential
       const [settingsResult, flagsResult] = await Promise.all([
-        supabase.from('global_settings').select('*').maybeSingle(),
+        supabase.from('global_settings').select('*').limit(1).single(),
         supabase.from('feature_flags').select('*')
       ]);
 
