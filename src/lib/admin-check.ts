@@ -16,14 +16,37 @@ export async function checkAdminStatusDirect(wallet: string): Promise<boolean> {
     }
 
     const supabase = getSupabaseBrowser();
-    const { data, error } = await supabase.rpc('is_wallet_admin', { wallet });
     
-    if (error) {
-      console.error('Error checking admin status:', error);
-      throw error;
+    // Try RPC first, fallback to direct query
+    let isAdmin = false;
+    
+    try {
+      const { data, error } = await supabase.rpc('is_wallet_admin', { wallet });
+      
+      if (error) {
+        console.error('RPC error checking admin status:', error);
+        // Fallback to direct query
+        throw error;
+      }
+      
+      isAdmin = Boolean(data);
+    } catch (rpcError) {
+      // Fallback: direct query with service role key if RPC fails
+      console.warn('RPC failed, using fallback admin check');
+      const { data: userData, error: queryError } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('wallet_address', wallet)
+        .maybeSingle();
+      
+      if (queryError) {
+        console.error('Error checking admin status:', queryError);
+        // Return cached value if available, otherwise false
+        return cached?.isAdmin || false;
+      }
+      
+      isAdmin = Boolean(userData?.is_admin);
     }
-
-    const isAdmin = Boolean(data);
     
     // Cache the result
     adminCache.set(wallet, { isAdmin, timestamp: Date.now() });
@@ -31,7 +54,9 @@ export async function checkAdminStatusDirect(wallet: string): Promise<boolean> {
     return isAdmin;
   } catch (error) {
     console.error('Failed to check admin status for wallet:', wallet, error);
-    return false; // Fail safe - assume not admin on error
+    // Return cached value if available
+    const cached = adminCache.get(wallet);
+    return cached?.isAdmin || false;
   }
 }
 
