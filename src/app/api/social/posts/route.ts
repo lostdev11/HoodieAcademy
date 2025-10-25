@@ -234,8 +234,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create post
-    const { data: post, error: postError } = await supabase
+    // Create post - try with relationship first, fallback to simple query if FK doesn't exist
+    let post: any;
+    let postError: any;
+
+    // First attempt: with foreign key relationship
+    const { data: postWithUser, error: errorWithUser } = await supabase
       .from('social_posts')
       .insert({
         wallet_address: walletAddress,
@@ -247,7 +251,7 @@ export async function POST(request: NextRequest) {
         link_description: linkDescription,
         tags,
         squad: squad || user?.squad,
-        moderation_status: 'approved', // Auto-approve for now
+        moderation_status: 'approved',
         created_at: new Date().toISOString()
       })
       .select(`
@@ -262,7 +266,50 @@ export async function POST(request: NextRequest) {
       `)
       .single();
 
-    if (postError) {
+    post = postWithUser;
+    postError = errorWithUser;
+
+    // If relationship doesn't exist, create without it and fetch user separately
+    if (errorWithUser && (errorWithUser.message?.includes('Could not find a relationship') || errorWithUser.message?.includes('schema cache'))) {
+      console.log('Foreign key relationship not found - creating post without relationship');
+      
+      const { data: simplePost, error: simpleError } = await supabase
+        .from('social_posts')
+        .insert({
+          wallet_address: walletAddress,
+          content,
+          post_type: postType,
+          image_url: imageUrl,
+          link_url: linkUrl,
+          link_title: linkTitle,
+          link_description: linkDescription,
+          tags,
+          squad: squad || user?.squad,
+          moderation_status: 'approved',
+          created_at: new Date().toISOString()
+        })
+        .select('*')
+        .single();
+
+      if (simpleError) {
+        console.error('Error creating post:', simpleError);
+        return NextResponse.json(
+          { error: 'Failed to create post', details: simpleError.message },
+          { status: 500 }
+        );
+      }
+
+      post = simplePost;
+      
+      // Manually attach user data
+      if (post) {
+        post.users = user ? {
+          wallet_address: user.wallet_address,
+          display_name: user.display_name,
+          squad: user.squad
+        } : null;
+      }
+    } else if (postError) {
       console.error('Error creating post:', postError);
       return NextResponse.json(
         { error: 'Failed to create post', details: postError.message },
@@ -271,28 +318,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Award XP for creating post (using auto-reward API)
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/xp/auto-reward`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          walletAddress,
-          action: 'SOCIAL_POST_CREATED',
-          referenceId: post.id,
-          metadata: {
-            post_id: post.id,
-            post_type: postType
-          }
-        })
-      });
-    } catch (xpError) {
-      console.warn('XP award failed (non-critical):', xpError);
+    if (post?.id) {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/xp/auto-reward`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            walletAddress,
+            action: 'SOCIAL_POST_CREATED',
+            referenceId: post.id,
+            metadata: {
+              post_id: post.id,
+              post_type: postType
+            }
+          })
+        });
+      } catch (xpError) {
+        console.warn('XP award failed (non-critical):', xpError);
+      }
     }
 
     // Map users to author for consistency with frontend
     const postWithAuthor: any = {
       ...post,
-      author: (post as any).users || null
+      author: post.users || null
     };
 
     return NextResponse.json({
