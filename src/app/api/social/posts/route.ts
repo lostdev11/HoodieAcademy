@@ -104,6 +104,38 @@ export async function GET(request: NextRequest) {
         );
       }
       
+      // Check if foreign key relationship doesn't exist yet
+      if (error.message?.includes('Could not find a relationship') || 
+          error.message?.includes('schema cache')) {
+        console.log('Foreign key relationship not found - fetching posts without user data');
+        // Try fetching without the relationship
+        const { data: postsWithoutUser, error: simpleError } = await supabase
+          .from('social_posts')
+          .select('*')
+          .eq('moderation_status', 'approved')
+          .eq('is_hidden', false)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1);
+
+        if (simpleError) {
+          return NextResponse.json(
+            { error: 'Failed to fetch posts', details: simpleError.message },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({
+          success: true,
+          posts: postsWithoutUser || [],
+          pagination: {
+            limit,
+            offset,
+            total: postsWithoutUser?.length || 0,
+            hasMore: false
+          }
+        });
+      }
+      
       return NextResponse.json(
         { error: 'Failed to fetch posts', details: error.message },
         { status: 500 }

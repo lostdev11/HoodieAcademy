@@ -21,29 +21,21 @@ export async function POST(req: NextRequest) {
     // Check if wallet is banned or has any restrictions
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('wallet_address, is_banned, admin_status')
+      .select('wallet_address, is_admin')
       .eq('wallet_address', wallet)
-      .single();
+      .maybeSingle();
 
-    if (userError && userError.code !== 'PGRST116') {
-      // If there's an error other than "not found", return invalid
+    if (userError && userError.code !== 'PGRST116' && userError.code !== '42P01') {
+      // If there's an error other than "not found" or "table missing", return invalid
+      console.error('[WALLET VALIDATION ERROR]', userError);
       return NextResponse.json({ 
         valid: false, 
         reason: 'Database error' 
       }, { status: 500 });
     }
 
-    // If user exists and is banned
-    if (userData && userData.is_banned) {
-      return NextResponse.json({ 
-        valid: false, 
-        reason: 'Wallet is banned',
-        isAdmin: false
-      });
-    }
-
     // Check if wallet is admin
-    const isAdmin = userData?.admin_status === 'admin' || userData?.admin_status === 'super_admin';
+    const isAdmin = userData?.is_admin === true;
 
     // Wallet is valid
     return NextResponse.json({ 

@@ -23,72 +23,104 @@ export async function GET(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('wallet_address', walletAddress)
-      .single();
+      .maybeSingle();
 
-    if (userError && userError.code !== 'PGRST116') {
+    if (userError && userError.code !== 'PGRST116' && userError.code !== '42P01') {
       console.error('[FETCH USER ERROR]', userError);
       return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
     }
 
+    // If user doesn't exist yet, return default data
+    if (!user) {
+      return NextResponse.json({
+        user: null,
+        stats: {
+          profileCompleted: false,
+          squadTestCompleted: false,
+          placementTestCompleted: false,
+          isAdmin: false,
+          totalXP: 0,
+          bountyXP: 0,
+          courseXP: 0,
+          streakXP: 0,
+          totalSubmissions: 0,
+          totalCourseCompletions: 0,
+          totalBountyCompletions: 0,
+          totalBountyXP: 0,
+          totalActivity: 0,
+          currentSquad: null,
+          placementTestScore: null,
+          placementTestDate: null,
+          lastActive: null,
+          lastSeen: null
+        },
+        submissions: [],
+        courseCompletions: [],
+        bountyCompletions: [],
+        placementTest: null,
+        activity: []
+      });
+    }
+
     // XP data is now stored directly in the users table
 
-    // Get bounty submissions
+    // Get bounty submissions (with error handling for missing tables)
     const { data: bountySubmissions, error: bountyError } = await supabase
       .from('bounty_submissions')
-      .select(`
-        *,
-        submissions:submission_id (
-          id,
-          title,
-          description,
-          image_url,
-          created_at,
-          status
-        )
-      `)
+      .select('*')
       .eq('wallet_address', walletAddress)
       .order('created_at', { ascending: false });
 
-    // Get course completions
+    if (bountyError && bountyError.code !== '42P01') {
+      console.error('[BOUNTY SUBMISSIONS ERROR]', bountyError);
+    }
+
+    // Get course completions (with error handling for missing tables)
     const { data: courseCompletions, error: courseError } = await supabase
       .from('course_completions')
       .select('*')
       .eq('wallet_address', walletAddress)
       .order('completed_at', { ascending: false });
 
-    // Get bounty completions
+    if (courseError && courseError.code !== '42P01') {
+      console.error('[COURSE COMPLETIONS ERROR]', courseError);
+    }
+
+    // Get bounty completions (with error handling for missing tables)
     const { data: bountyCompletions, error: bountyCompletionError } = await supabase
       .from('user_bounty_completions')
-      .select(`
-        *,
-        bounties:bounty_id (
-          id,
-          title,
-          short_desc,
-          reward,
-          reward_type,
-          squad_tag
-        )
-      `)
+      .select('*')
       .eq('wallet_address', walletAddress)
       .order('completed_at', { ascending: false });
 
-    // Get placement test data
+    if (bountyCompletionError && bountyCompletionError.code !== '42P01') {
+      console.error('[BOUNTY COMPLETIONS ERROR]', bountyCompletionError);
+    }
+
+    // Get placement test data (with error handling for missing tables)
     const { data: placementTest, error: placementError } = await supabase
       .from('placement_tests')
       .select('*')
       .eq('wallet_address', walletAddress)
       .order('completed_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    // Get user activity logs
+    if (placementError && placementError.code !== '42P01') {
+      console.error('[PLACEMENT TEST ERROR]', placementError);
+    }
+
+    // Get user activity logs (with error handling for missing tables)
     const { data: userActivity, error: activityError } = await supabase
       .from('user_activity')
       .select('*')
       .eq('wallet_address', walletAddress)
       .order('created_at', { ascending: false })
       .limit(50);
+
+    if (activityError && activityError.code !== '42P01') {
+      console.error('[USER ACTIVITY ERROR]', activityError);
+    }
 
     // Calculate comprehensive stats
     const stats = {
