@@ -355,60 +355,49 @@ export default function HoodieAcademy() {
               <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full">
                 {/* Wallet Info */}
                 {walletAddress && (
-                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30 w-full sm:w-auto min-w-0 flex-shrink-0">
+                  <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30 w-full sm:w-auto flex-shrink-0">
                     <User className="w-4 h-4 text-cyan-400 flex-shrink-0" />
-                    <span className="text-sm text-cyan-400 font-mono truncate">
-                      {isLoadingSns ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                          <span>Resolving...</span>
-                        </div>
-                      ) : snsDomain ? (
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center flex-wrap gap-2 min-w-0">
+                      <span className="text-sm text-cyan-400 font-mono break-all">
+                        {isLoadingSns ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Resolving...</span>
+                          </div>
+                        ) : snsDomain ? (
                           <span 
                             className="font-semibold cursor-help" 
                             title={`Wallet: ${walletAddress}`}
                           >
                             {snsDomain}
                           </span>
-
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
+                        ) : (
                           <span title={`Full wallet: ${walletAddress}`} className="font-mono">
-                            {walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}
+                            {walletAddress.slice(0, 6)}...{walletAddress.slice(-6)}
                           </span>
-
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setSnsDomain(null);
-                              setIsLoadingSns(true);
-                              // const snsResolver = getSNSResolver();
-                              // const connection = new Connection(process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com');
-                              // snsResolver.reverseResolve(connection, walletAddress).then(domain => {
-                              //   setSnsDomain(domain);
-                              //   setIsLoadingSns(false);
-                              // }).catch(() => {
-                              //   setIsLoadingSns(false);
-                              // });
-                              setSnsDomain(null);
-                              setIsLoadingSns(false);
-                            }}
-                            className="h-4 w-4 p-0 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10"
-                            title="Refresh SNS resolution"
-                          >
-                            🔄
-                          </Button>
-                        </div>
+                        )}
+                      </span>
+                      {!snsDomain && !isLoadingSns && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSnsDomain(null);
+                            setIsLoadingSns(true);
+                            setTimeout(() => setIsLoadingSns(false), 1000);
+                          }}
+                          className="h-4 w-4 p-0 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 flex-shrink-0"
+                          title="Refresh SNS resolution"
+                        >
+                          🔄
+                        </Button>
                       )}
-                    </span>
-                    {isDemoWallet && (
-                      <Badge variant="outline" className="ml-2 text-yellow-400 border-yellow-500/30 text-xs">
-                        DEMO
-                      </Badge>
-                    )}
+                      {isDemoWallet && (
+                        <Badge variant="outline" className="text-yellow-400 border-yellow-500/30 text-xs">
+                          DEMO
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 )}
                 
