@@ -6,17 +6,29 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('[USER TRACK] Starting request');
+    
+    // Validate environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('[USER TRACK] Missing Supabase environment variables');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    // Use service role key to bypass RLS for server-side operations
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
 
     const { searchParams } = new URL(request.url);
     const walletAddress = searchParams.get('wallet');
 
     if (!walletAddress) {
+      console.log('[USER TRACK] No wallet address provided');
       return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
     }
+
+    console.log('[USER TRACK] Fetching user data for wallet:', walletAddress.slice(0, 8) + '...');
 
     // Get comprehensive user data
     const { data: user, error: userError } = await supabase
@@ -25,9 +37,20 @@ export async function GET(request: NextRequest) {
       .eq('wallet_address', walletAddress)
       .maybeSingle();
 
-    if (userError && userError.code !== 'PGRST116' && userError.code !== '42P01') {
-      console.error('[FETCH USER ERROR]', userError);
-      return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
+    if (userError) {
+      console.error('[USER TRACK] User fetch error:', {
+        code: userError.code,
+        message: userError.message,
+        details: userError.details
+      });
+      
+      // Only return 500 for unexpected errors (not table missing or not found)
+      if (userError.code !== 'PGRST116' && userError.code !== '42P01') {
+        return NextResponse.json({ 
+          error: 'Failed to fetch user data',
+          details: userError.message 
+        }, { status: 500 });
+      }
     }
 
     // If user doesn't exist yet, return default data
@@ -174,9 +197,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Use service role key to bypass RLS for server-side operations
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
     const body = await request.json();
