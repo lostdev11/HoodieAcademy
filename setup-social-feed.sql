@@ -8,7 +8,7 @@
 -- =====================================================
 CREATE TABLE IF NOT EXISTS social_posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  wallet_address TEXT NOT NULL,
+  wallet_address TEXT NOT NULL REFERENCES users(wallet_address) ON DELETE CASCADE,
   content TEXT NOT NULL CHECK (char_length(content) >= 1 AND char_length(content) <= 5000),
   post_type TEXT DEFAULT 'text' CHECK (post_type IN ('text', 'image', 'link', 'poll')),
   
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS social_comments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES social_posts(id) ON DELETE CASCADE,
   parent_comment_id UUID REFERENCES social_comments(id) ON DELETE CASCADE, -- For nested replies
-  wallet_address TEXT NOT NULL,
+  wallet_address TEXT NOT NULL REFERENCES users(wallet_address) ON DELETE CASCADE,
   content TEXT NOT NULL CHECK (char_length(content) >= 1 AND char_length(content) <= 2000),
   
   -- Engagement metrics
@@ -84,7 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_social_comments_parent ON social_comments(parent_
 -- =====================================================
 CREATE TABLE IF NOT EXISTS social_reactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  wallet_address TEXT NOT NULL,
+  wallet_address TEXT NOT NULL REFERENCES users(wallet_address) ON DELETE CASCADE,
   target_type TEXT NOT NULL CHECK (target_type IN ('post', 'comment')),
   target_id UUID NOT NULL, -- References either social_posts.id or social_comments.id
   reaction_type TEXT NOT NULL CHECK (reaction_type IN ('like', 'dislike', 'love', 'fire', 'rocket')),
@@ -104,7 +104,7 @@ CREATE INDEX IF NOT EXISTS idx_social_reactions_wallet ON social_reactions(walle
 CREATE TABLE IF NOT EXISTS social_post_views (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   post_id UUID NOT NULL REFERENCES social_posts(id) ON DELETE CASCADE,
-  wallet_address TEXT NOT NULL,
+  wallet_address TEXT NOT NULL REFERENCES users(wallet_address) ON DELETE CASCADE,
   viewed_at TIMESTAMPTZ DEFAULT NOW(),
   
   -- One view per user per post (can update timestamp)

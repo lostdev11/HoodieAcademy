@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       .from('social_posts')
       .select(`
         *,
-        author:users!social_posts_wallet_address_fkey(
+        users!social_posts_wallet_address_fkey(
           wallet_address,
           display_name,
           level,
@@ -120,9 +120,15 @@ export async function GET(request: NextRequest) {
       hidden: stats?.filter(p => p.is_hidden).length || 0
     };
 
+    // Map users to author for consistency with frontend
+    const postsWithAuthor = posts?.map((post: any) => ({
+      ...post,
+      author: post.users || null
+    })) || [];
+
     return NextResponse.json({
       success: true,
-      posts,
+      posts: postsWithAuthor,
       stats: statusCounts,
       pagination: {
         limit,
@@ -327,7 +333,7 @@ export async function PATCH(request: NextRequest) {
       // Top posters
       supabase
         .from('social_posts')
-        .select('wallet_address, author:users!social_posts_wallet_address_fkey(display_name)')
+        .select('wallet_address, users!social_posts_wallet_address_fkey(display_name)')
         .limit(1000)
     ]);
 

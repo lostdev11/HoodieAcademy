@@ -60,6 +60,13 @@ ON CONFLICT DO NOTHING;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 -- Create safe RLS policies that avoid recursion
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Users can view own profile" ON users;
+DROP POLICY IF EXISTS "Users can insert own profile" ON users;
+DROP POLICY IF EXISTS "Users can update own profile" ON users;
+DROP POLICY IF EXISTS "Admins can view all users" ON users;
+DROP POLICY IF EXISTS "Admins can update all users" ON users;
+
 -- Policy 1: Users can view their own profile
 CREATE POLICY "Users can view own profile" ON users
   FOR SELECT USING (
@@ -279,5 +286,10 @@ SELECT 'User Lookup Test' as test_name, COUNT(*) as found_users
 FROM get_user_by_wallet('test-wallet-123');
 
 -- Test admin status update function (will return false for non-admin caller)
+-- This should return false because 'non-admin-wallet' is not an admin
 SELECT 'Admin Update Test' as test_name, 
-       update_user_admin_status('test-wallet-123', true, 'non-admin-wallet') as success;
+       (CASE 
+         WHEN update_user_admin_status('test-wallet-123', true, 'non-admin-wallet') = false 
+         THEN true  -- Expected result: false (because caller is not admin)
+         ELSE false  -- Unexpected result: should be false
+       END) as success;

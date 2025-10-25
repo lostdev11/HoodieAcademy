@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       .from('social_posts')
       .select(`
         *,
-        author:users!social_posts_wallet_address_fkey(
+        users!social_posts_wallet_address_fkey(
           wallet_address,
           display_name,
           level,
@@ -117,9 +117,15 @@ export async function GET(request: NextRequest) {
       .eq('moderation_status', 'approved')
       .eq('is_hidden', false);
 
+    // Map users to author for consistency with frontend
+    const postsWithAuthor = posts?.map((post: any) => ({
+      ...post,
+      author: post.users || null
+    })) || [];
+
     return NextResponse.json({
       success: true,
-      posts,
+      posts: postsWithAuthor,
       pagination: {
         limit,
         offset,
@@ -214,7 +220,7 @@ export async function POST(request: NextRequest) {
       })
       .select(`
         *,
-        author:users!social_posts_wallet_address_fkey(
+        users!social_posts_wallet_address_fkey(
           wallet_address,
           display_name,
           level,
@@ -251,9 +257,15 @@ export async function POST(request: NextRequest) {
       console.warn('XP award failed (non-critical):', xpError);
     }
 
+    // Map users to author for consistency with frontend
+    const postWithAuthor: any = {
+      ...post,
+      author: (post as any).users || null
+    };
+
     return NextResponse.json({
       success: true,
-      post,
+      post: postWithAuthor,
       message: 'Post created successfully'
     });
 
