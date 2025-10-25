@@ -76,22 +76,18 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
       const result = await xpBountyService.awardDailyLoginBonus(walletAddress);
 
       if (result.success) {
-        // Calculate exactly 24 hours from now for countdown
-        const now = new Date();
-        const nextAvailable = new Date(now.getTime() + (24 * 60 * 60 * 1000));
-        
-        // Update status to claimed with next available time
+        // Use the server-provided nextAvailable time (24 hours from claim)
         const newStatus = {
           ...status,
           alreadyClaimed: true,
-          lastClaimed: now.toISOString(),
-          nextAvailable: nextAvailable.toISOString()
+          lastClaimed: result.lastClaimed || new Date().toISOString(),
+          nextAvailable: result.nextAvailable || new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString()
         };
         
         console.log('✅ [DailyLoginBonus] Updating status after claim:', {
           alreadyClaimed: newStatus.alreadyClaimed,
           nextAvailable: newStatus.nextAvailable,
-          hoursUntilNext: 24
+          lastClaimed: newStatus.lastClaimed
         });
         
         setStatus(newStatus);

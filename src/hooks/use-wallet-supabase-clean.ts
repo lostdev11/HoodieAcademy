@@ -195,7 +195,7 @@ export function useWalletSupabase() {
           const response = await fetch('/api/admin/check-status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ wallet: walletAddress })
+            body: JSON.stringify({ walletAddress })
           });
           
           const { isAdmin: isAdminStatus, error: adminError } = await response.json();
@@ -301,7 +301,7 @@ export function useWalletSupabase() {
               const response = await fetch('/api/admin/check-status', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ wallet: currentWallet })
+                body: JSON.stringify({ walletAddress: currentWallet })
               });
               
               const { isAdmin: isAdminStatus, error: adminError } = await response.json();

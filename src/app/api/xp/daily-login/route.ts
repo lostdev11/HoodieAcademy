@@ -19,11 +19,9 @@ function getSupabaseClient() {
   });
 }
 
-// Helper: Get next midnight UTC
-function getNextMidnightUTC(now = new Date()): Date {
-  const n = new Date(now);
-  const d = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1, 0, 0, 0));
-  return d;
+// Helper: Get next available time (24 hours from now)
+function getNextAvailableTime(now = new Date()): Date {
+  return new Date(now.getTime() + (24 * 60 * 60 * 1000));
 }
 
 // Helper: Calculate minutes since midnight UTC
@@ -345,65 +343,63 @@ export async function POST(request: NextRequest) {
       // Continue without streaks - not a fatal error
     }
 
-    // 3) Attempt atomic insert (prevents double claims even under race conditions)
-    const todayUtc = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    // 3) Check if user can claim (24-hour cooldown)
+    const { data: cooldownData, error: cooldownError } = await supabase
+      .rpc('can_claim_daily_bonus', { p_wallet_address: walletAddress })
+      .single();
     
-    // Try to insert with claim_utc_date, but fallback if column doesn't exist
-    let insertData: any = { 
-      wallet_address: walletAddress, 
-      xp_awarded: XP
-    };
-    
-    // Only add claim_utc_date if it exists in the table
-    try {
-      insertData.claim_utc_date = todayUtc;
-    } catch (e) {
-      console.warn('⚠️ [DAILY LOGIN] claim_utc_date column not available');
+    if (cooldownError) {
+      console.error('❌ [DAILY LOGIN] Cooldown check error:', cooldownError);
+      throw new Error('Failed to check daily bonus cooldown');
     }
     
-    const { data, error } = await supabase
-      .from('daily_logins')
-      .insert(insertData)
-      .select()
-      .single();
-
-    // Handle unique constraint violation (already claimed today)
-    if (error?.code === '23505') {  // unique_violation
-      console.log('⚠️ [DAILY LOGIN] Already claimed today (atomic check)');
+    if (!cooldownData.can_claim) {
+      console.log('⚠️ [DAILY LOGIN] Still in 24-hour cooldown');
       const processingTime = Date.now() - startTime;
-      const nextMidnightUtc = getNextMidnightUTC();
+      const nextAvailable = new Date(cooldownData.next_available);
       
-      // Log analytics for duplicate claim attempt
+      // Log analytics for cooldown rejection
       await logAnalyticsEvent(supabase, {
         walletAddress,
         eventType: 'claim_rejected_already_claimed',
-        rejectionReason: 'Daily login bonus already claimed today',
+        rejectionReason: `Daily login bonus available in ${cooldownData.hours_remaining}h ${cooldownData.minutes_remaining}m`,
         processingTimeMs: processingTime,
         request
       });
       
       return NextResponse.json({
         success: false,
-        message: 'Daily login bonus already claimed today',
+        message: `Daily login bonus available in ${cooldownData.hours_remaining}h ${cooldownData.minutes_remaining}m`,
         alreadyClaimed: true,
-        nextAvailable: nextMidnightUtc.toISOString(),
+        lastClaimed: cooldownData.last_claim_time,
+        nextAvailable: nextAvailable.toISOString(),
       }, { status: 409 });
     }
 
-    // Handle other database errors
+    // 4) Award XP and record claim
+    const { data, error } = await supabase
+      .from('daily_logins')
+      .insert({
+        wallet_address: walletAddress, 
+        xp_awarded: XP
+      })
+      .select()
+      .single();
+
+    // Handle database errors
     if (error) {
       console.error('❌ [DAILY LOGIN] Database error:', error);
       throw error;
     }
 
-    console.log('✅ [DAILY LOGIN] Atomic insert successful, awarding XP');
+    console.log('✅ [DAILY LOGIN] Claim recorded successfully, awarding XP');
 
-    // 4) Update user XP + compute level + emit events
+    // 5) Update user XP + compute level + emit events
     const { previousXP, newTotalXP, previousLevel, newLevel, levelUp } = 
       await awardXpAndEmitEvents(walletAddress, XP, supabase);
 
     const processingTime = Date.now() - startTime;
-    const nextMidnightUtc = getNextMidnightUTC();
+    const nextAvailable = getNextAvailableTime();
 
     // 5) Log successful claim analytics with actual streak
     await logAnalyticsEvent(supabase, {
@@ -431,7 +427,7 @@ export async function POST(request: NextRequest) {
       streakContinued: claimedYesterday,
       message: `Daily login bonus: +${XP} XP!`,
       lastClaimed: data.created_at,
-      nextAvailable: nextMidnightUtc.toISOString(),
+      nextAvailable: nextAvailable.toISOString(),
       refreshLeaderboard: true,
       targetWallet: walletAddress,
       reason: 'Daily login bonus'
@@ -464,7 +460,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET endpoint to check daily login status (calendar day system)
+// GET endpoint to check daily login status (24-hour cooldown system)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -478,17 +474,16 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = getSupabaseClient();
-    const today = new Date().toISOString().split('T')[0];
 
-    // Check if user already claimed today from daily_logins
-    const { data: todayLogin } = await supabase
-      .from('daily_logins')
-      .select('created_at')
-      .eq('wallet_address', walletAddress)
-      .eq('claim_utc_date', today)
-      .maybeSingle();
+    // Get 24-hour cooldown status
+    const { data: statusData, error: statusError } = await supabase
+      .rpc('get_daily_bonus_status', { p_wallet_address: walletAddress })
+      .single();
 
-    const alreadyClaimed = !!todayLogin;
+    if (statusError) {
+      console.error('❌ [DAILY LOGIN] Status check error:', statusError);
+      throw new Error('Failed to check daily bonus status');
+    }
 
     // Get streak information (optional - gracefully handle if functions don't exist)
     let streakStats: any = null;
@@ -504,25 +499,28 @@ export async function GET(request: NextRequest) {
       console.warn('⚠️ [DAILY LOGIN] Streak stats not available');
     }
 
-    // Calculate next available time (tomorrow at midnight UTC)
-    const nextMidnightUtc = getNextMidnightUTC();
-
-    console.log('📊 [DAILY LOGIN] Status check:', {
+    console.log('📊 [DAILY LOGIN] Status check (24-hour system):', {
       wallet: walletAddress.slice(0, 10) + '...',
-      today,
-      alreadyClaimed,
-      currentStreak: streakStats?.current_streak || 0,
-      lastClaimed: todayLogin?.created_at || null,
-      nextAvailable: nextMidnightUtc.toISOString()
+      alreadyClaimed: statusData.already_claimed,
+      canClaimNow: statusData.can_claim_now,
+      lastClaimed: statusData.last_claimed,
+      nextAvailable: statusData.next_available,
+      timeRemaining: `${statusData.hours_remaining}h ${statusData.minutes_remaining}m ${statusData.seconds_remaining}s`
     });
 
     return NextResponse.json({
       walletAddress,
-      today: today,
-      alreadyClaimed,
-      lastClaimed: alreadyClaimed ? todayLogin.created_at : null,
-      nextAvailable: nextMidnightUtc.toISOString(),
+      today: new Date().toISOString().split('T')[0],
+      alreadyClaimed: statusData.already_claimed,
+      lastClaimed: statusData.last_claimed,
+      nextAvailable: statusData.next_available,
       dailyBonusXP: 5,
+      canClaimNow: statusData.can_claim_now,
+      timeRemaining: {
+        hours: statusData.hours_remaining,
+        minutes: statusData.minutes_remaining,
+        seconds: statusData.seconds_remaining
+      },
       streak: {
         current: streakStats?.current_streak || 0,
         longest: streakStats?.longest_streak || 0,
