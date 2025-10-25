@@ -199,6 +199,16 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
 
       await res.json();
       onChange(imageUrl!);
+      
+      // Notify other components that PFP was updated
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('profile_pfp_updated', owner);
+        // Clear the event after a short delay
+        setTimeout(() => {
+          localStorage.removeItem('profile_pfp_updated');
+        }, 100);
+      }
+      
       toast({ title: 'Success', description: 'Profile picture updated!' });
       setOpen(false);
     } catch (error) {

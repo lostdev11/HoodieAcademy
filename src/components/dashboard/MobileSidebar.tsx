@@ -48,7 +48,7 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
   const [currentTime, setCurrentTime] = useState<string>("");
 
   // Use the global display name hook
-  const { displayName: userDisplayName } = useDisplayNameReadOnly();
+  const { displayName: userDisplayName, isLoading: displayNameLoading } = useDisplayNameReadOnly();
 
   // Helper function to get squad chat URL
   const getSquadChatUrl = (squadName: string): string => {
@@ -313,7 +313,7 @@ export function MobileSidebar({ isOpen, onClose, profileImage = "🧑‍🎓" }:
               )}
             </div>
             <div className="flex-1">
-              <p className="text-white font-medium">{userDisplayName}</p>
+              <p className="text-white font-medium">{displayNameLoading ? '...' : (userDisplayName || 'Scholar')}</p>
               <p className="text-xs text-gray-400">Web3 Student</p>
             </div>
           </div>

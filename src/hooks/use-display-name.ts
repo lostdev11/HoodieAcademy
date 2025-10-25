@@ -32,37 +32,42 @@ export function useDisplayName() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      // First, check localStorage for quick access
+      // First, check localStorage for quick access (but don't set as final yet)
       const cachedName = localStorage.getItem('userDisplayName');
       if (cachedName) {
         setState(prev => ({ ...prev, displayName: cachedName, isLoading: false }));
       }
 
       // Then fetch from database for accuracy
-      const response = await fetch(`/api/users/?walletAddress=${walletAddress}&t=${Date.now()}`, {
+      const response = await fetch(`/api/users/track?wallet=${walletAddress}&t=${Date.now()}`, {
         cache: 'no-store'
       });
 
       if (response.ok) {
         const userData = await response.json();
-        const dbDisplayName = userData?.display_name;
+        const dbDisplayName = userData?.user?.display_name;
+        
+        console.log('🔍 [DISPLAY NAME] Fetched user data:', userData);
+        console.log('🔍 [DISPLAY NAME] Database display name:', dbDisplayName);
         
         if (dbDisplayName) {
-          // Update localStorage with database value
+          // Database has a display name - use it and update localStorage
           localStorage.setItem('userDisplayName', dbDisplayName);
           setState({
             displayName: dbDisplayName,
             isLoading: false,
             error: null
           });
+          console.log('✅ [DISPLAY NAME] Using database display name:', dbDisplayName);
         } else {
-          // No display name in database, use fallback
-          const fallbackName = `User ${walletAddress.slice(0, 6)}...`;
+          // No display name in database, use cached or fallback
+          const finalName = cachedName || `User ${walletAddress.slice(0, 6)}...`;
           setState({
-            displayName: fallbackName,
+            displayName: finalName,
             isLoading: false,
             error: null
           });
+          console.log('⚠️ [DISPLAY NAME] No database display name, using fallback:', finalName);
         }
       } else {
         // API failed, use cached or fallback

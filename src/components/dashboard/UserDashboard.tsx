@@ -88,7 +88,7 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
   const { data: trackingData, loading: trackingLoading } = useUserTracking(walletAddress);
   
   // Display name hook
-  const { displayName } = useDisplayNameReadOnly();
+  const { displayName, isLoading: displayNameLoading } = useDisplayNameReadOnly();
   
   // Auto daily login bonus
   useAutoDailyLogin(walletAddress);
@@ -363,7 +363,7 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-blue-400 mb-1">
-                  Welcome back, {displayName || 'Scholar'}!
+                  Welcome back, {displayNameLoading ? '...' : (displayName || 'Scholar')}!
                 </h1>
                 <p className="text-gray-300">
                   Ready to continue your Web3 journey?

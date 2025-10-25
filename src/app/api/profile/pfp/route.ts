@@ -45,18 +45,50 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // For now, just log the data and return success
-    // We'll add Supabase integration later
-    console.log('API: Would update profile for user:', userId, {
-      pfp_url: imageUrl,
-      pfp_asset_id: assetId,
-      pfp_last_verified: new Date().toISOString()
+    // Save to Supabase database
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.log('API: Supabase not configured, saving to localStorage only');
+      return NextResponse.json({ 
+        ok: true, 
+        message: 'Profile picture saved locally (database not configured)',
+        data: { userId, owner, assetId, imageUrl }
+      });
+    }
+
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
     });
 
-    console.log('API: Profile update logged successfully (Supabase not configured yet)');
+    // Update user's profile picture in database
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        profile_picture: imageUrl,
+        pfp_asset_id: assetId,
+        pfp_last_verified: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('wallet_address', owner);
+
+    if (updateError) {
+      console.error('API: Database update error:', updateError);
+      return NextResponse.json({ 
+        error: 'Failed to update profile picture in database',
+        details: updateError.message
+      }, { status: 500 });
+    }
+
+    console.log('API: Profile picture updated successfully in database');
     return NextResponse.json({ 
       ok: true, 
-      message: 'Profile picture update logged successfully (database not configured yet)',
+      message: 'Profile picture updated successfully',
       data: { userId, owner, assetId, imageUrl }
     });
     

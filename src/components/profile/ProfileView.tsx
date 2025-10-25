@@ -20,7 +20,6 @@ import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { useUserXP } from '@/hooks/useUserXP';
 import { useUserBounties } from '@/hooks/useUserBounties';
 import { useDisplayName } from '@/hooks/use-display-name';
-import { UserDataDebug } from '@/components/debug/UserDataDebug';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -102,10 +101,20 @@ export function ProfileView() {
   // Initialize local display name state with global value
   useEffect(() => {
     if (globalDisplayName) {
+      console.log('🔄 [PROFILE VIEW] Updating local display name from global:', globalDisplayName);
       setDisplayName(globalDisplayName);
       setOriginalDisplayName(globalDisplayName);
     }
   }, [globalDisplayName]);
+
+  // Sync local display name with global when not in edit mode
+  useEffect(() => {
+    if (!editMode && globalDisplayName && globalDisplayName !== displayName) {
+      console.log('🔄 [PROFILE VIEW] Syncing local display name with global:', globalDisplayName);
+      setDisplayName(globalDisplayName);
+      setOriginalDisplayName(globalDisplayName);
+    }
+  }, [globalDisplayName, editMode, displayName]);
 
   // Wallet connection
   const { connectWallet, disconnectWallet: disconnectWalletHook } = useWalletSupabase();
@@ -215,12 +224,19 @@ export function ProfileView() {
 
       const result = await response.json();
       console.log('✅ Profile saved successfully:', result);
+      console.log('📝 Display name being saved:', displayName.trim());
 
       // Update global display name (this will update localStorage and trigger updates everywhere)
       updateDisplayName(displayName.trim());
       setOriginalDisplayName(displayName.trim());
       setSaveSuccess(true);
       setSaveProgress('Profile saved successfully!');
+      
+      // Refresh display name from database to ensure consistency
+      refreshDisplayName();
+      
+      // Exit edit mode after successful save
+      setEditMode(false);
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -246,7 +262,7 @@ export function ProfileView() {
     setSaveProgress('');
   };
 
-  // Load profile data from API
+  // Load profile data from API (for squad and other data, not display name)
   const loadProfileData = async (walletAddress: string) => {
     try {
       console.log('🔄 Loading profile data for wallet:', walletAddress.slice(0, 8) + '...');
@@ -256,13 +272,14 @@ export function ProfileView() {
         const data = await response.json();
         console.log('📊 Profile data loaded:', data);
         
-        if (data.user && data.user.display_name) {
-          const savedDisplayName = data.user.display_name;
-          setDisplayName(savedDisplayName);
-          setOriginalDisplayName(savedDisplayName);
-          localStorage.setItem('userDisplayName', savedDisplayName);
-          console.log('✅ Loaded saved display name:', savedDisplayName);
-        }
+        // Don't set display name here - let useDisplayName hook handle it
+        // if (data.user && data.user.display_name) {
+        //   const savedDisplayName = data.user.display_name;
+        //   setDisplayName(savedDisplayName);
+        //   setOriginalDisplayName(savedDisplayName);
+        //   localStorage.setItem('userDisplayName', savedDisplayName);
+        //   console.log('✅ Loaded saved display name:', savedDisplayName);
+        // }
         
         if (data.user && data.user.squad) {
           setSquad(data.user.squad);
@@ -289,18 +306,18 @@ export function ProfileView() {
         await loadProfileData(currentWallet);
       }
 
-      // Try to fetch user data from Supabase first
+      // Try to fetch user data from Supabase first (for squad and other data, not display name)
       if (currentWallet) {
         try {
           // Check if Supabase is properly configured
           if (isSupabaseConfigured) {
             const userData = await fetchUserByWallet(currentWallet);
             if (userData) {
-              // Update state with Supabase data
-              if (userData.display_name) {
-                setDisplayName(userData.display_name);
-                setOriginalDisplayName(userData.display_name);
-              }
+              // Don't set display name here - let useDisplayName hook handle it
+              // if (userData.display_name) {
+              //   setDisplayName(userData.display_name);
+              //   setOriginalDisplayName(userData.display_name);
+              // }
               if (userData.squad) {
                 // Set squad from Supabase
                 setSquad(userData.squad);
@@ -450,13 +467,49 @@ export function ProfileView() {
     disconnectWalletHook();
   };
 
-  const handleProfileImageChange = (imageUrl: string, nftData?: NFT) => {
+  const handleProfileImageChange = async (imageUrl: string, nftData?: NFT) => {
+    console.log('🖼️ Profile image changed:', { imageUrl, nftData, wallet });
     setProfileImage(imageUrl);
     setSelectedNFT(nftData || null);
     
-    // Save to database instead of localStorage
-    // TODO: Implement database save here
-    console.log('Profile image changed, should save to database:', { imageUrl, nftData });
+    // Save to database
+    if (wallet) {
+      try {
+        const response = await fetch('/api/profile/pfp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': wallet,
+          },
+          body: JSON.stringify({
+            owner: wallet,
+            assetId: nftData?.id || 'emoji',
+            imageUrl: imageUrl,
+          }),
+        });
+
+        if (response.ok) {
+          console.log('✅ PFP saved to database');
+        } else {
+          console.error('❌ Failed to save PFP to database');
+        }
+      } catch (error) {
+        console.error('❌ Error saving PFP:', error);
+      }
+    }
+    
+    // Notify other components that PFP was updated
+    if (typeof window !== 'undefined' && wallet) {
+      console.log('📢 Triggering storage event for wallet:', wallet);
+      localStorage.setItem('profile_pfp_updated', wallet);
+      // Clear the event after a short delay
+      setTimeout(() => {
+        localStorage.removeItem('profile_pfp_updated');
+        console.log('🧹 Storage event cleared');
+      }, 100);
+    }
+    
+    console.log('Profile image changed, saved to database:', { imageUrl, nftData });
   };
 
   const getWalletDisplay = () => {
@@ -585,8 +638,6 @@ export function ProfileView() {
           </Card>
         )}
 
-        {/* Debug Component - Remove this in production */}
-        <UserDataDebug />
 
         <Card className="w-full max-w-4xl bg-slate-800/60 border-cyan-500/30 mb-8">
           <CardHeader>
@@ -604,17 +655,6 @@ export function ProfileView() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h3 className="text-gray-300 text-sm font-semibold uppercase tracking-wide">Display Name</h3>
-                      {!editMode && (
-                        <Button 
-                          onClick={() => setEditMode(true)}
-                          size="sm"
-                          variant="outline"
-                          className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10"
-                        >
-                          <Pencil className="w-3 h-3 mr-1" />
-                          Edit
-                        </Button>
-                      )}
                     </div>
                     
                     {editMode ? (
@@ -664,7 +704,23 @@ export function ProfileView() {
                       </div>
                     ) : (
                       <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
-                        <span className="text-cyan-300 font-semibold text-lg">{displayName}</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-cyan-300 font-semibold text-lg">{displayName}</span>
+                          <Button 
+                            onClick={() => {
+                              if (isSaving) return;
+                              setOriginalDisplayName(displayName);
+                              setEditMode(true);
+                            }} 
+                            variant="outline" 
+                            size="sm"
+                            className="text-cyan-400 border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10"
+                            disabled={isSaving}
+                          >
+                            <Pencil className="w-4 h-4 mr-1" /> 
+                            Edit
+                          </Button>
+                        </div>
                       </div>
                     )}
                     
@@ -733,6 +789,40 @@ export function ProfileView() {
                               <ExternalLink className="w-4 h-4" />
                             </a>
                           </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Social Connections Section */}
+                  <div className="space-y-3">
+                    <h3 className="text-gray-300 text-sm font-semibold uppercase tracking-wide">Social Connections</h3>
+                    <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/30">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-white text-sm font-medium">X (Twitter)</p>
+                              <p className="text-gray-400 text-xs">Connect your X account for social features</p>
+                            </div>
+                          </div>
+                          <Button
+                            asChild
+                            size="sm"
+                            className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white"
+                          >
+                            <Link href="/twitter-demo">
+                              Connect X Profile
+                            </Link>
+                          </Button>
+                        </div>
+                        <div className="text-xs text-gray-400 bg-slate-800/50 p-2 rounded">
+                          💡 Linking your X account enables social features like sharing achievements and connecting with other students
                         </div>
                       </div>
                     </div>
@@ -867,21 +957,7 @@ export function ProfileView() {
                         </div>
                       )}
                     </div>
-                  ) : (
-                    <Button 
-                      onClick={() => {
-                        if (isSaving) return;
-                        setOriginalDisplayName(displayName);
-                        setEditMode(true);
-                      }} 
-                      variant="outline" 
-                      className="w-full text-cyan-400 border-cyan-500/30 hover:text-cyan-300 hover:bg-cyan-500/10"
-                      disabled={isSaving}
-                    >
-                      <Pencil className="w-4 h-4 mr-2" /> 
-                      Edit Profile
-                    </Button>
-                  )}
+                  ) : null}
                 </div>
               </div>
 

@@ -1,5 +1,6 @@
 'use client';
 
+import dynamicImport from 'next/dynamic';
 import { PrivyProvider } from '@/components/privy/PrivyProvider';
 import { EnhancedProfile } from '@/components/privy/EnhancedProfile';
 import { TwitterConnection } from '@/components/privy/TwitterConnection';
@@ -15,6 +16,7 @@ import {
   ExternalLink,
   Share2
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 function TwitterDemoContent() {
   const { user, login, logout, authenticated, ready } = usePrivy();
@@ -141,10 +143,51 @@ function TwitterDemoContent() {
   );
 }
 
+// Client-side only wrapper to prevent SSR issues
+function ClientOnlyWrapper({ children }: { children: React.ReactNode }) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+// Dynamic component that only loads on client side
+const DynamicTwitterDemo = dynamicImport(() => Promise.resolve(TwitterDemoContent), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p>Loading Twitter Demo...</p>
+      </div>
+    </div>
+  )
+});
+
+// Prevent static generation for this page
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export default function TwitterDemoPage() {
   return (
-    <PrivyProvider>
-      <TwitterDemoContent />
-    </PrivyProvider>
+    <ClientOnlyWrapper>
+      <PrivyProvider>
+        <DynamicTwitterDemo />
+      </PrivyProvider>
+    </ClientOnlyWrapper>
   );
 }

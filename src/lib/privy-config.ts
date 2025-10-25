@@ -1,8 +1,19 @@
 import { PrivyConfig } from '@privy-io/react-auth';
 
+// Safely get the app ID, handling both client and server environments
+function getPrivyAppId(): string {
+  if (typeof window !== 'undefined') {
+    // Client-side: use the environment variable
+    return process.env.NEXT_PUBLIC_PRIVY_APP_ID || '';
+  } else {
+    // Server-side/build time: return empty string to prevent initialization
+    return '';
+  }
+}
+
 export const privyConfig: PrivyConfig = {
   // Replace with your actual Privy App ID
-  appId: process.env.NEXT_PUBLIC_PRIVY_APP_ID || '',
+  appId: getPrivyAppId(),
   
   // Configure login methods
   loginMethods: ['wallet', 'twitter', 'email'],

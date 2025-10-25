@@ -22,19 +22,43 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
     }
   }, [walletAddress, squad, showPfpForAcademyMember]);
 
+  // Listen for PFP updates from profile page
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      console.log('🔔 Storage event detected:', e.key, e.newValue, 'Current wallet:', walletAddress);
+      if (e.key === 'profile_pfp_updated' && e.newValue === walletAddress) {
+        console.log('🔄 PFP update detected for current wallet, refreshing...');
+        // PFP was updated for this wallet, refresh it
+        if (showPfpForAcademyMember && walletAddress && squad === 'Unassigned') {
+          fetchUserPfp();
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [walletAddress, squad, showPfpForAcademyMember]);
+
   const fetchUserPfp = async () => {
     if (!walletAddress) return;
     
+    console.log('🔍 Fetching PFP for wallet:', walletAddress);
     setLoadingPfp(true);
     try {
       const response = await fetch(`/api/user-profile?wallet=${walletAddress}`);
       const data = await response.json();
       
+      console.log('📡 PFP API response:', data);
+      
       if (data.success && data.profile?.pfp_url) {
+        console.log('✅ PFP found:', data.profile.pfp_url);
         setUserPfp(data.profile.pfp_url);
+      } else {
+        console.log('❌ No PFP found in response');
+        setUserPfp(null);
       }
     } catch (error) {
-      console.error('Error fetching user PFP:', error);
+      console.error('❌ Error fetching user PFP:', error);
     } finally {
       setLoadingPfp(false);
     }

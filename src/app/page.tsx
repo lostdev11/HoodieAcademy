@@ -268,17 +268,27 @@ export default function HoodieAcademy() {
   }, []);
 
   const handleDisconnect = () => {
+    // Clear all wallet-related storage
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('connectedWallet');
+    localStorage.removeItem('hoodie_academy_wallet');
+    localStorage.removeItem('hoodie_academy_is_admin');
     sessionStorage.removeItem('wifhoodie_verification_session');
+    sessionStorage.removeItem('wifhoodie_verification');
     
+    // Disconnect from wallet provider
     if (window.solana?.disconnect) {
       window.solana.disconnect();
     }
     
+    // Reset all state
     setWalletAddress("");
     setSnsDomain(null);
-    window.location.href = '/';
+    setIsAdmin(false);
+    setUserSquad(null);
+    
+    // Force a page reload to show the wallet connection screen
+    window.location.reload();
   };
 
   const formatWalletAddress = (address: string) => {
