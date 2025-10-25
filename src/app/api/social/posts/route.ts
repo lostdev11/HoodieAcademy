@@ -219,17 +219,49 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseClient();
 
-    // Check if user exists
-    const { data: user, error: userError } = await supabase
+    // Check if user exists, create if they don't
+    let user;
+    let userError;
+
+    const { data: existingUser, error: fetchError } = await supabase
       .from('users')
       .select('wallet_address, display_name, squad')
       .eq('wallet_address', walletAddress)
       .maybeSingle();
 
-    if (userError) {
+    user = existingUser;
+    userError = fetchError;
+
+    // If user doesn't exist, create them
+    if (!user && !userError) {
+      console.log('User not found, creating new user:', walletAddress);
+      
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert({
+          wallet_address: walletAddress,
+          display_name: `User ${walletAddress.slice(0, 6)}...`,
+          profile_completed: false,
+          squad: squad || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select('wallet_address, display_name, squad')
+        .single();
+
+      if (createError) {
+        console.error('Error creating user:', createError);
+        return NextResponse.json(
+          { error: 'Failed to create user profile', details: createError.message },
+          { status: 500 }
+        );
+      }
+
+      user = newUser;
+    } else if (userError) {
       console.error('Error checking user:', userError);
       return NextResponse.json(
-        { error: 'Failed to verify user' },
+        { error: 'Failed to verify user', details: userError.message },
         { status: 500 }
       );
     }
