@@ -282,11 +282,7 @@ CREATE TRIGGER trigger_social_comments_updated_at
 -- 7. SAMPLE DATA (Optional - for testing)
 -- =====================================================
 
--- Sample posts
-INSERT INTO social_posts (wallet_address, content, post_type, tags, squad, moderation_status) VALUES
-  ('demo_wallet_1', 'Just completed my first Web3 course! 🚀 The journey from zero to hero begins here.', 'text', ARRAY['web3', 'learning', 'milestone'], 'Decoders', 'approved'),
-  ('demo_wallet_2', 'Hot take: NFTs are more than just profile pictures. They''re the future of digital ownership.', 'text', ARRAY['nfts', 'opinion'], 'Speakers', 'approved'),
-  ('demo_wallet_3', 'Check out this amazing Solana tutorial I found 👉 https://solana.com/docs', 'link', ARRAY['solana', 'resources'], 'Rangers', 'approved');
+-- Sample posts removed - use actual user wallets for testing
 
 COMMENT ON TABLE social_posts IS 'User-generated posts for the social feed';
 COMMENT ON TABLE social_comments IS 'Comments and replies to social posts';
