@@ -41,8 +41,8 @@ export const privyConfig: PrivyConfig = {
   
   // Configure legal
   legal: {
-    termsAndConditionsUrl: 'https://your-site.com/terms',
-    privacyPolicyUrl: 'https://your-site.com/privacy',
+    termsAndConditionsUrl: 'https://hoodieacademy.com/terms',
+    privacyPolicyUrl: 'https://hoodieacademy.com/privacy',
   },
   
   // Configure MFA
