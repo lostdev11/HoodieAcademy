@@ -121,10 +121,53 @@ export default function TermsOfService() {
         <div className="mt-12 text-center">
           <a 
             href="/" 
-            className="inline-flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+            className="inline-flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors mb-8"
           >
             ← Back to Hoodie Academy
           </a>
+        </div>
+
+        {/* Footer Links */}
+        <div className="mt-8 pt-8 border-t border-gray-700">
+          <div className="flex flex-wrap justify-center gap-6 text-sm">
+            <a 
+              href="/privacy" 
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              Privacy Policy
+            </a>
+            <span className="text-gray-500">•</span>
+            <a 
+              href="/terms" 
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              Terms of Service
+            </a>
+            <span className="text-gray-500">•</span>
+            <a 
+              href="/governance" 
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              Governance
+            </a>
+            <span className="text-gray-500">•</span>
+            <a 
+              href="/courses" 
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              Courses
+            </a>
+            <span className="text-gray-500">•</span>
+            <a 
+              href="/bounties" 
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              Bounties
+            </a>
+          </div>
+          <div className="text-center mt-4 text-gray-500 text-sm">
+            © {new Date().getFullYear()} Hoodie Academy. All rights reserved.
+          </div>
         </div>
       </div>
     </div>
