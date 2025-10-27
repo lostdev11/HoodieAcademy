@@ -66,66 +66,55 @@ export default function BountiesGridOptimized({
     }
   }, []);
 
-  // Fetch user submissions for all bounties
+  // Fetch user submissions for all bounties (optimized - single API call)
   useEffect(() => {
     if (!walletAddress || !displayBounties || displayBounties.length === 0) return;
 
     const fetchUserSubmissions = async () => {
-      const submissions: { [bountyId: string]: any } = {};
-      
-      for (const bounty of displayBounties) {
-        try {
-          const response = await fetch(`/api/bounties/${bounty.id}/submit/?walletAddress=${walletAddress}`);
-          if (response.ok) {
-            const result = await response.json();
-            if (result.submission) {
-              submissions[bounty.id] = result.submission;
-            }
-          }
-        } catch (error) {
-          console.error(`Error fetching submission for bounty ${bounty.id}:`, error);
+      try {
+        // Batch fetch all submissions in a single API call
+        const bountyIds = displayBounties.map(b => b.id);
+        const response = await fetch(`/api/bounties/submissions?walletAddress=${walletAddress}&bountyIds=${bountyIds.join(',')}`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          setUserSubmissions(result.submissions || {});
         }
+      } catch (error) {
+        console.error('Error fetching submissions:', error);
       }
-      
-      setUserSubmissions(submissions);
     };
 
     fetchUserSubmissions();
   }, [walletAddress, displayBounties]);
 
-  // Auto-refresh submissions every 30 seconds to catch status updates
+  // Auto-refresh submissions every 60 seconds to catch status updates (optimized)
   useEffect(() => {
     if (!walletAddress || !displayBounties || displayBounties.length === 0) return;
 
     const interval = setInterval(() => {
       const fetchUserSubmissions = async () => {
-        const submissions: { [bountyId: string]: any } = {};
-        
-        for (const bounty of displayBounties) {
-          try {
-            const response = await fetch(`/api/bounties/${bounty.id}/submit/?walletAddress=${walletAddress}`);
-            if (response.ok) {
-              const result = await response.json();
-              if (result.submission) {
-                submissions[bounty.id] = result.submission;
-              }
-            }
-          } catch (error) {
-            console.error(`Error fetching submission for bounty ${bounty.id}:`, error);
+        try {
+          const bountyIds = displayBounties.map(b => b.id);
+          const response = await fetch(`/api/bounties/submissions?walletAddress=${walletAddress}&bountyIds=${bountyIds.join(',')}`);
+          
+          if (response.ok) {
+            const result = await response.json();
+            setUserSubmissions(prev => {
+              // Only update if there are actual changes
+              const hasChanges = Object.keys(result.submissions || {}).some(bountyId => 
+                JSON.stringify(prev[bountyId]) !== JSON.stringify(result.submissions[bountyId])
+              );
+              return hasChanges ? result.submissions : prev;
+            });
           }
+        } catch (error) {
+          console.error('Error refreshing submissions:', error);
         }
-        
-        setUserSubmissions(prev => {
-          // Only update if there are actual changes
-          const hasChanges = Object.keys(submissions).some(bountyId => 
-            JSON.stringify(prev[bountyId]) !== JSON.stringify(submissions[bountyId])
-          );
-          return hasChanges ? submissions : prev;
-        });
       };
 
       fetchUserSubmissions();
-    }, 30000); // Refresh every 30 seconds
+    }, 60000); // Refresh every 60 seconds (reduced frequency)
 
     return () => clearInterval(interval);
   }, [walletAddress, displayBounties]);

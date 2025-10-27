@@ -51,28 +51,26 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0; // Always revalidate to get fresh data
 
 export default async function BountiesPage() {
-  // Use the API to fetch bounties instead of direct database access
-  // This ensures we get the most up-to-date data
+  // Fetch bounties directly from Supabase on the server for better performance
   let bounties = [];
   
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/bounties`, {
-      cache: 'no-store', // Always fetch fresh data
-      headers: {
-        'Cache-Control': 'no-cache'
-      }
-    });
+    const supabase = createServerComponentClient({ cookies });
     
-    if (response.ok) {
-      const result = await response.json();
-      bounties = Array.isArray(result) ? result : [];
-      console.log('✅ [BOUNTIES PAGE] Fetched bounties:', bounties.length);
+    const { data, error } = await supabase
+      .from('bounties')
+      .select('*')
+      .eq('hidden', false)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('❌ [BOUNTIES PAGE] Database error:', error);
     } else {
-      console.error('❌ [BOUNTIES PAGE] API error:', response.status, response.statusText);
+      bounties = data || [];
+      console.log('✅ [BOUNTIES PAGE] Fetched bounties:', bounties.length);
     }
   } catch (error) {
-    console.error('❌ [BOUNTIES PAGE] Fetch error:', error);
+    console.error('❌ [BOUNTIES PAGE] Error:', error);
   }
 
   return (
