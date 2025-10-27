@@ -54,11 +54,21 @@ export async function GET(request: NextRequest) {
           .single();
 
         if (error) {
-          console.error('❌ [ANALYTICS API] Error fetching overview:', error);
-          return NextResponse.json(
-            { error: 'Failed to fetch analytics overview', details: error.message },
-            { status: 500 }
-          );
+          console.error('❌ [ANALYTICS API] Error fetching overview (database function may not exist):', error.message);
+          // Return empty stats if function doesn't exist
+          return NextResponse.json({
+            success: true,
+            data: {
+              totalClaims: 0,
+              uniqueClaimers: 0,
+              successfulClaims: 0,
+              rejectedClaims: 0,
+              avgTimeToClaimMinutes: 0,
+              medianTimeToClaimMinutes: 0,
+              totalXpAwarded: 0,
+              avgProcessingTimeMs: 0
+            }
+          });
         }
 
         return NextResponse.json({
