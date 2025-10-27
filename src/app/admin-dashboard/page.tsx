@@ -14,6 +14,7 @@ import { EnhancedUsersManager } from '@/components/admin/EnhancedUsersManager';
 import ConnectedUsersList from '@/components/admin/ConnectedUsersList';
 import AdminOverviewDashboard from '@/components/admin/AdminOverviewDashboard';
 import AdminSettings from '@/components/admin/AdminSettings';
+import DailyClaimAnalyticsCard from '@/components/admin/DailyClaimAnalyticsCard';
 import { 
   Users, BookOpen, Trophy, Settings, Shield, BarChart3, 
   Target, Megaphone, Bell, Database, Activity, Zap, 
@@ -498,7 +499,10 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
 
           {/* Overview Tab */}
           <TabsContent value="overview">
-            <AdminOverviewDashboard walletAddress={walletAddress} />
+            <div className="space-y-6">
+              <AdminOverviewDashboard walletAddress={walletAddress} />
+              <DailyClaimAnalyticsCard />
+            </div>
           </TabsContent>
 
           {/* Bounties Tab */}
