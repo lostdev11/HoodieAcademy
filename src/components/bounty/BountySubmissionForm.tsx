@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Image as ImageIcon, Wallet, AlertCircle, Star, Trophy, Gift } from 'lucide-react';
+import { Upload, Image as ImageIcon, Wallet, AlertCircle, Star, Trophy, Gift, Video, File } from 'lucide-react';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { bountyXPService } from '@/services/bounty-xp-service';
 import Link from 'next/link';
@@ -30,13 +30,16 @@ export interface BountySubmissionData {
   bountyId?: string;
   file: File | null;
   imageUrl?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
   author?: string;
   walletAddress?: string;
 }
 
 export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: BountySubmissionFormProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mediaPreview, setMediaPreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
@@ -46,7 +49,9 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
     squad: '',
     description: '',
     courseRef: '',
-    imageUrl: ''
+    imageUrl: '',
+    mediaUrl: '',
+    mediaType: null as 'image' | 'video' | null
   });
   
   // Wallet connection state
@@ -74,28 +79,37 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
       setUploadError('');
       setUploadSuccess(false);
       
+      // Determine media type
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      setMediaType(isImage ? 'image' : isVideo ? 'video' : null);
+      
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
+        setMediaPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
       
-      // Auto-upload the image
-      await uploadImage(file);
+      // Auto-upload the media
+      await uploadMedia(file);
     }
   };
 
-  const uploadImage = async (file: File) => {
+  const uploadMedia = async (file: File) => {
     setIsUploading(true);
     setUploadError('');
     setUploadSuccess(false);
     
     try {
-      console.log('🔄 Starting image upload:', {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
+      console.log('🔄 Starting media upload:', {
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
+        mediaType: isImage ? 'image' : 'video',
         wallet: wallet
       });
 
@@ -106,7 +120,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
       
       console.log('📤 Sending upload request...');
       
-      const response = await fetch('/api/upload/moderated-image', {
+      const response = await fetch('/api/upload/moderated-media', {
         method: 'POST',
         body: formData,
       });
@@ -116,25 +130,30 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
       if (!response.ok) {
         const errorData = await response.json();
         console.error('❌ Upload failed:', errorData);
-        throw new Error(errorData.error || 'Failed to upload image');
+        throw new Error(errorData.error || 'Failed to upload media');
       }
       
       const result = await response.json();
-      console.log('✅ Image uploaded successfully:', result);
+      console.log('✅ Media uploaded successfully:', result);
       
-      // Store the uploaded image URL in form data
-      setFormData(prev => ({ ...prev, imageUrl: result.url }));
+      // Store the uploaded media URL and type in form data
+      setFormData(prev => ({ 
+        ...prev, 
+        imageUrl: result.url,
+        mediaUrl: result.url,
+        mediaType: result.mediaType
+      }));
       
       // Mark upload as successful
       setUploadSuccess(true);
       setUploadError(''); // Explicitly clear any errors
       
     } catch (error) {
-      console.error('❌ Error uploading image:', error);
-      setUploadError(error instanceof Error ? error.message : 'Failed to upload image');
+      console.error('❌ Error uploading media:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload media');
       setUploadSuccess(false);
       setSelectedFile(null);
-      setImagePreview(null);
+      setMediaPreview(null);
     } finally {
       setIsUploading(false);
     }
@@ -157,22 +176,27 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const file = files[0];
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
         setSelectedFile(file);
         setUploadError('');
         setUploadSuccess(false);
         
+        // Determine media type
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        setMediaType(isImage ? 'image' : isVideo ? 'video' : null);
+        
         // Create preview
         const reader = new FileReader();
         reader.onload = (e) => {
-          setImagePreview(e.target?.result as string);
+          setMediaPreview(e.target?.result as string);
         };
         reader.readAsDataURL(file);
         
-        // Auto-upload the image
-        await uploadImage(file);
+        // Auto-upload the media
+        await uploadMedia(file);
       } else {
-        setUploadError('Please drop an image file');
+        setUploadError('Please drop an image or video file');
         setUploadSuccess(false);
       }
     }
@@ -211,13 +235,16 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
       ...formData, 
       file: selectedFile,
       imageUrl: formData.imageUrl,
+      mediaUrl: formData.mediaUrl,
+      mediaType: formData.mediaType || undefined,
       walletAddress: wallet 
     });
     
     // Reset form
-    setFormData({ title: '', squad: '', description: '', courseRef: '', imageUrl: '' });
+    setFormData({ title: '', squad: '', description: '', courseRef: '', imageUrl: '', mediaUrl: '', mediaType: null });
     setSelectedFile(null);
-    setImagePreview(null);
+    setMediaPreview(null);
+    setMediaType(null);
     setUploadError('');
     setUploadSuccess(false);
   };
@@ -436,10 +463,10 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
           />
         </div>
 
-        {/* Image Upload Section - Always Available (Mobile-Optimized) */}
+        {/* Media Upload Section - Always Available (Mobile-Optimized) */}
         <div>
           <Label className="text-white block mb-3 text-sm sm:text-base">
-            {bountyData?.image_required ? 'Upload Image *' : 'Upload Image (Optional)'}
+            {bountyData?.image_required ? 'Upload Media *' : 'Upload Media (Optional)'}
           </Label>
             
             {/* Custom Upload Button with Drag & Drop - Mobile Friendly */}
@@ -447,7 +474,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
               <input
                 id="file"
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 onChange={handleFileChange}
                 className="hidden"
                 required={bountyData?.image_required}
@@ -486,19 +513,19 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
                   {isUploading ? (
                     <>
                       <div className="w-6 h-6 sm:w-5 sm:h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                      <span className="text-base sm:text-lg font-medium">Uploading Image...</span>
+                      <span className="text-base sm:text-lg font-medium">Uploading Media...</span>
                     </>
                   ) : selectedFile ? (
                     <>
-                      <ImageIcon className="w-8 h-8 sm:w-6 sm:h-6" />
-                      <span className="text-base sm:text-lg font-medium">Change Image</span>
+                      {mediaType === 'image' ? <ImageIcon className="w-8 h-8 sm:w-6 sm:h-6" /> : <Video className="w-8 h-8 sm:w-6 sm:h-6" />}
+                      <span className="text-base sm:text-lg font-medium">Change Media</span>
                     </>
                   ) : (
                     <>
                       <Upload className="w-8 h-8 sm:w-6 sm:h-6" />
                       <span className="text-base sm:text-lg font-medium text-center">
                         <span className="hidden sm:inline">Click to Upload or Drag & Drop</span>
-                        <span className="sm:hidden">Tap to Upload Image</span>
+                        <span className="sm:hidden">Tap to Upload</span>
                       </span>
                     </>
                   )}
@@ -506,7 +533,8 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
                 
                 {!selectedFile && !isUploading && (
                   <p className="text-xs sm:text-sm text-gray-400 mt-2">
-                    Supports: JPG, PNG, GIF (Max 10MB)
+                    Images: JPG, PNG, GIF, WebP (Max 10MB)<br/>
+                    Videos: MP4, WebM, MOV (Max 100MB)
                   </p>
                 )}
                 
@@ -531,7 +559,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
                 <div className="w-5 h-5 flex items-center justify-center">
                   <span className="text-lg">✓</span>
                 </div>
-                <span className="break-words">Image uploaded successfully! Pending admin review.</span>
+                <span className="break-words">Media uploaded successfully! Pending admin review.</span>
               </div>
             )}
             
@@ -551,15 +579,25 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
               </div>
             )}
             
-            {/* Image Preview - Mobile Optimized */}
-            {imagePreview && (
+            {/* Media Preview - Mobile Optimized */}
+            {mediaPreview && (
               <div className="mt-4">
                 <div className="relative inline-block group w-full sm:w-auto">
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="w-full sm:max-w-full h-40 sm:h-32 object-cover rounded-lg border border-gray-600"
-                  />
+                  {mediaType === 'image' ? (
+                    <img 
+                      src={mediaPreview} 
+                      alt="Preview" 
+                      className="w-full sm:max-w-full h-40 sm:h-32 object-cover rounded-lg border border-gray-600"
+                    />
+                  ) : (
+                    <video 
+                      src={mediaPreview} 
+                      controls
+                      className="w-full sm:max-w-full h-40 sm:h-48 object-cover rounded-lg border border-gray-600"
+                    >
+                      Your browser does not support video playback.
+                    </video>
+                  )}
                   <div className="absolute top-2 right-2 bg-green-500 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-lg shadow-lg">
                     ✓ Uploaded
                   </div>
@@ -567,8 +605,9 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
                     type="button"
                     onClick={() => {
                       setSelectedFile(null);
-                      setImagePreview(null);
-                      setFormData(prev => ({ ...prev, imageUrl: '' }));
+                      setMediaPreview(null);
+                      setMediaType(null);
+                      setFormData(prev => ({ ...prev, imageUrl: '', mediaUrl: '', mediaType: null }));
                       setUploadError('');
                       setUploadSuccess(false);
                     }}
@@ -587,7 +626,7 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
           className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {!wallet ? '🔒 Connect Wallet to Submit' : 
-           (bountyData?.image_required && (!selectedFile || !uploadSuccess || !formData.imageUrl)) ? '📷 Image Upload Required' :
+           (bountyData?.image_required && (!selectedFile || !uploadSuccess || !formData.imageUrl)) ? '📷 Media Upload Required' :
            '🚀 Submit Bounty Entry'}
         </Button>
       </form>
