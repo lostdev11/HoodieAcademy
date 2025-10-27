@@ -6,7 +6,7 @@ import { OptimizedLink } from '@/components/ui/optimized-link';
 import { StaggerChildren, StaggerItem, FadeInWhenVisible } from '@/components/ui/page-transition';
 import { useUserBounties } from '@/hooks/useUserBounties';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
-import { Target, Clock, Award, Users, EyeOff, Send, CheckCircle, Upload, Image as ImageIcon, AlertCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Target, Clock, Award, Users, EyeOff, Send, CheckCircle, Upload, Image as ImageIcon, AlertCircle, XCircle, RefreshCw, Video } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ExpandableDescription } from '@/components/ui/ExpandableDescription';
@@ -425,6 +425,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
   const [submissionText, setSubmissionText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
@@ -441,6 +442,11 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
       setUploadError('');
       setUploadSuccess(false);
       
+      // Determine media type
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      setMediaType(isImage ? 'image' : isVideo ? 'video' : null);
+      
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -448,17 +454,20 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
       };
       reader.readAsDataURL(file);
       
-      // Auto-upload the image
-      await uploadImage(file);
+      // Auto-upload the media
+      await uploadMedia(file);
     }
   };
 
-  const uploadImage = async (file: File) => {
+  const uploadMedia = async (file: File) => {
     setIsUploading(true);
     setUploadError('');
     setUploadSuccess(false);
     
     try {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+      
       // Get wallet address from localStorage
       const walletAddress = typeof window !== 'undefined' 
         ? localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet') || 'anonymous'
@@ -469,33 +478,35 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
       formData.append('walletAddress', walletAddress);
       formData.append('context', 'bounty_submission');
       
-      const response = await fetch('/api/upload/moderated-image', {
+      const response = await fetch('/api/upload/moderated-media', {
         method: 'POST',
         body: formData,
       });
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload image');
+        throw new Error(errorData.error || 'Failed to upload media');
       }
       
       const result = await response.json();
-      console.log('✅ Image uploaded successfully:', result);
+      console.log('✅ Media uploaded successfully:', result);
       
-      // Store the uploaded image URL
+      // Store the uploaded media URL and type
       setUploadedImageUrl(result.url);
+      setMediaType(result.mediaType);
       
       // Mark upload as successful
       setUploadSuccess(true);
       setUploadError(''); // Explicitly clear any errors
       
     } catch (error) {
-      console.error('❌ Error uploading image:', error);
-      setUploadError(error instanceof Error ? error.message : 'Failed to upload image');
+      console.error('❌ Error uploading media:', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload media');
       setUploadSuccess(false);
       setSelectedFile(null);
       setImagePreview(null);
       setUploadedImageUrl('');
+      setMediaType(null);
     } finally {
       setIsUploading(false);
     }
@@ -518,10 +529,15 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
     const files = e.dataTransfer.files;
     if (files.length > 0) {
       const file = files[0];
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
         setSelectedFile(file);
         setUploadError('');
         setUploadSuccess(false);
+        
+        // Determine media type
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+        setMediaType(isImage ? 'image' : isVideo ? 'video' : null);
         
         // Create preview
         const reader = new FileReader();
@@ -530,10 +546,10 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
         };
         reader.readAsDataURL(file);
         
-        // Auto-upload the image
-        await uploadImage(file);
+        // Auto-upload the media
+        await uploadMedia(file);
       } else {
-        setUploadError('Please drop an image file');
+        setUploadError('Please drop an image or video file');
         setUploadSuccess(false);
       }
     }
@@ -555,11 +571,11 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
         />
       </div>
 
-      {/* Image Upload Section */}
+      {/* Media Upload Section */}
       <div className="space-y-3">
         <label className="text-xs font-semibold text-cyan-400 flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-cyan-400" />
-          {bounty.image_required ? '📷 Upload Image (Required)' : '📷 Upload Image (Optional)'}
+          {bounty.image_required ? '📷 Upload Media (Required)' : '📷 Upload Media (Optional)'}
         </label>
           
           <div
@@ -581,7 +597,7 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
             <input
               id={`file-upload-${bounty.id}`}
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               onChange={handleFileChange}
               className="hidden"
               required={bounty.image_required}
@@ -592,21 +608,22 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
               {isUploading ? (
                 <div className="flex flex-col items-center gap-3 text-blue-400">
                   <div className="w-10 h-10 border-3 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm font-semibold">Uploading Image...</span>
+                  <span className="text-sm font-semibold">Uploading Media...</span>
                   <span className="text-xs text-blue-300">Please wait</span>
                 </div>
               ) : selectedFile ? (
                 <div className="flex flex-col items-center gap-2 text-green-400">
-                  <ImageIcon className="w-8 h-8" />
-                  <span className="text-sm font-bold">✅ Image Ready!</span>
+                  {mediaType === 'image' ? <ImageIcon className="w-8 h-8" /> : <Video className="w-8 h-8" />}
+                  <span className="text-sm font-bold">✅ Media Ready!</span>
                   <span className="text-xs text-green-300 opacity-80">Click to change</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2 text-purple-400">
                   <Upload className="w-8 h-8" />
-                  <span className="text-sm font-bold">📷 Upload Image</span>
+                  <span className="text-sm font-bold">📷 Upload Media</span>
                   <span className="text-xs text-purple-300">Click to browse or drag & drop</span>
-                  <span className="text-xs text-gray-500">JPG, PNG, GIF (Max 10MB)</span>
+                  <span className="text-xs text-gray-500">Images: JPG, PNG, GIF (Max 10MB)</span>
+                  <span className="text-xs text-gray-500">Videos: MP4, WebM (Max 100MB)</span>
                 </div>
               )}
             </label>
@@ -635,14 +652,24 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
             </div>
           )}
 
-          {/* Image Preview */}
+          {/* Media Preview */}
           {imagePreview && (
             <div className="relative rounded-lg overflow-hidden border-2 border-green-500/50 shadow-md">
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="w-full h-32 object-cover"
-              />
+              {mediaType === 'image' ? (
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-32 object-cover"
+                />
+              ) : (
+                <video
+                  src={imagePreview}
+                  controls
+                  className="w-full h-48 object-cover"
+                >
+                  Your browser does not support video playback.
+                </video>
+              )}
               <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
                 <span>✓</span>
                 <span>Uploaded</span>
