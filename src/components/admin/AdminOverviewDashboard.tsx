@@ -32,7 +32,7 @@ export default function AdminOverviewDashboard({ className = '', walletAddress }
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(5000); // 5 seconds for testing
+  const [refreshInterval, setRefreshInterval] = useState(60000); // 60 seconds - more reasonable interval
   const [refreshCount, setRefreshCount] = useState(0);
 
   const fetchData = useCallback(async () => {
@@ -56,21 +56,19 @@ export default function AdminOverviewDashboard({ className = '', walletAddress }
     fetchData();
   }, [fetchData]);
 
-  // Auto-refresh functionality
+  // Auto-refresh functionality (quiet mode - no excessive logging)
   useEffect(() => {
     if (!autoRefresh) return;
 
-    console.log('Setting up auto-refresh with interval:', refreshInterval);
     const interval = setInterval(() => {
-      console.log('Auto-refreshing data...');
       fetchData();
     }, refreshInterval);
 
     return () => {
-      console.log('Clearing auto-refresh interval');
       clearInterval(interval);
     };
-  }, [autoRefresh, refreshInterval, fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRefresh, refreshInterval]); // Removed fetchData from deps to prevent constant re-creation
 
   if (loading && !data) {
     return (
