@@ -220,6 +220,15 @@ async function awardXpAndEmitEvents(
     const newLevel = Math.floor(newTotalXP / 1000) + 1;
     const levelUp = newLevel > previousLevel;
 
+    console.log('🔍 [DAILY LOGIN] XP Calculation:', {
+      userXP_from_db: userXP?.total_xp || 0,
+      user_from_db: user?.total_xp || 0,
+      previousXP,
+      xpAmount,
+      newTotalXP,
+      wallet: walletAddress.slice(0, 10) + '...'
+    });
+
   // Update XP in user_xp table (upsert)
     const { error: xpError } = await supabase
       .from('user_xp')
@@ -251,14 +260,22 @@ async function awardXpAndEmitEvents(
       userToUpsert.created_at = new Date().toISOString();
     }
 
-    const { error: usersError } = await supabase
+    const { error: usersError, data: updatedUserData } = await supabase
       .from('users')
       .upsert(userToUpsert, {
         onConflict: 'wallet_address'
-      });
+      })
+      .select();
 
     if (usersError) {
-      console.warn('⚠️ [DAILY LOGIN] Error updating users table (non-critical):', usersError);
+      console.error('❌ [DAILY LOGIN] Error updating users table:', usersError);
+    } else {
+      console.log('✅ [DAILY LOGIN] Users table updated:', {
+        wallet: walletAddress.slice(0, 10) + '...',
+        newXP: newTotalXP,
+        newLevel,
+        updated_at: new Date().toISOString()
+      });
     }
 
     // Record activity in user_activity table

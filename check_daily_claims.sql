@@ -51,3 +51,30 @@ WHERE NOT EXISTS (
 GROUP BY u.wallet_address, u.display_name, u.total_xp, u.level
 ORDER BY last_claim_date DESC NULLS LAST;
 
+-- 5. Verify XP was properly updated after daily claim
+-- This checks if users have XP after claiming today
+SELECT 
+  d.wallet_address,
+  u.display_name,
+  d.xp_awarded,
+  u.total_xp as user_total_xp,
+  d.created_at as claimed_at,
+  CASE 
+    WHEN u.total_xp >= d.xp_awarded THEN '✅ XP Updated'
+    ELSE '❌ XP NOT Updated'
+  END as status_check
+FROM daily_logins d
+JOIN users u ON d.wallet_address = u.wallet_address
+WHERE DATE(d.created_at) = CURRENT_DATE
+ORDER BY d.created_at DESC;
+
+-- 6. Check for duplicate claims today (should not happen)
+SELECT 
+  wallet_address,
+  COUNT(*) as claim_count,
+  COUNT(DISTINCT DATE(created_at)) as days_claimed
+FROM daily_logins
+WHERE DATE(created_at) = CURRENT_DATE
+GROUP BY wallet_address
+HAVING COUNT(*) > 1;
+
