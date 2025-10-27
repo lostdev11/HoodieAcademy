@@ -200,20 +200,27 @@ async function awardXpAndEmitEvents(
   newLevel: number;
   levelUp: boolean;
 }> {
-    // Get current user XP
+    // Get current user data from both tables to ensure consistency
     const { data: userXP } = await supabase
       .from('user_xp')
       .select('wallet_address, total_xp, level')
       .eq('wallet_address', walletAddress)
       .maybeSingle();
 
-    const previousXP = userXP?.total_xp || 0;
-    const previousLevel = userXP?.level || 1;
+    const { data: user } = await supabase
+      .from('users')
+      .select('wallet_address, total_xp, level')
+      .eq('wallet_address', walletAddress)
+      .maybeSingle();
+
+    // Use the highest XP value from either table as the source of truth
+    const previousXP = Math.max(userXP?.total_xp || 0, user?.total_xp || 0);
+    const previousLevel = Math.max(userXP?.level || 1, user?.level || 1);
     const newTotalXP = previousXP + xpAmount;
     const newLevel = Math.floor(newTotalXP / 1000) + 1;
     const levelUp = newLevel > previousLevel;
 
-  // Update XP (upsert)
+  // Update XP in user_xp table (upsert)
     const { error: xpError } = await supabase
       .from('user_xp')
       .upsert({
@@ -226,8 +233,32 @@ async function awardXpAndEmitEvents(
       });
 
     if (xpError) {
-      console.error('❌ [DAILY LOGIN] Error updating XP:', xpError);
-    throw new Error('Failed to update XP');
+      console.error('❌ [DAILY LOGIN] Error updating user_xp:', xpError);
+    throw new Error('Failed to update user_xp');
+    }
+
+    // Also update users table to keep in sync
+    const userToUpsert: any = {
+      wallet_address: walletAddress,
+      total_xp: newTotalXP,
+      level: newLevel,
+      updated_at: new Date().toISOString()
+    };
+
+    // If user doesn't exist, create them with basic info
+    if (!user) {
+      userToUpsert.display_name = `User ${walletAddress.slice(0, 6)}...`;
+      userToUpsert.created_at = new Date().toISOString();
+    }
+
+    const { error: usersError } = await supabase
+      .from('users')
+      .upsert(userToUpsert, {
+        onConflict: 'wallet_address'
+      });
+
+    if (usersError) {
+      console.warn('⚠️ [DAILY LOGIN] Error updating users table (non-critical):', usersError);
     }
 
     // Record activity in user_activity table
