@@ -13,6 +13,7 @@ import {
   MoreVertical, Download, Trash2, AlertCircle, CheckCircle, Clock, Trophy, TrendingUp
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { LinkifyText } from "./LinkifyText";
 
 interface Submission {
   id: string;
@@ -500,7 +501,7 @@ export function SubmissionsManager({ walletAddress }: SubmissionsManagerProps) {
                       </div>
                       
                       <p className="text-sm text-slate-300 mb-3 line-clamp-2">
-                        {submission.description}
+                        <LinkifyText text={submission.description} />
                       </p>
                       
                       <div className="flex items-center gap-4 text-xs text-slate-400 mb-3">
@@ -564,7 +565,7 @@ export function SubmissionsManager({ walletAddress }: SubmissionsManagerProps) {
                             <div>
                               <h4 className="font-semibold mb-2">Description</h4>
                               <p className="text-sm text-slate-300 whitespace-pre-wrap">
-                                {submission.description}
+                                <LinkifyText text={submission.description} />
                               </p>
                             </div>
                             

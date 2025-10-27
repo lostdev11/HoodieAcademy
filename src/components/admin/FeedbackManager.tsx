@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Sparkles
 } from 'lucide-react';
+import { LinkifyText } from "./LinkifyText";
 
 interface FeedbackUpdate {
   id: string;
@@ -325,7 +326,9 @@ export default function FeedbackManager({ walletAddress }: FeedbackManagerProps)
                       </Badge>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-400 mb-3">{update.description}</p>
+                  <p className="text-sm text-gray-400 mb-3">
+                    <LinkifyText text={update.description} />
+                  </p>
                   <div className="flex items-center space-x-3 text-xs">
                     <Badge variant="outline">{update.category.replace('_', ' ')}</Badge>
                     <Badge variant="outline">{update.status.replace('_', ' ')}</Badge>

@@ -18,6 +18,7 @@ import {
   XCircle,
   Eye
 } from 'lucide-react';
+import { LinkifyText } from "./LinkifyText";
 
 interface UserFeedback {
   id: string;
@@ -261,7 +262,9 @@ export default function UserFeedbackManager({ walletAddress }: UserFeedbackManag
                       </Badge>
                     </div>
 
-                    <p className="text-xs text-gray-400 mb-3 line-clamp-2">{submission.description}</p>
+                    <p className="text-xs text-gray-400 mb-3 line-clamp-2">
+                      <LinkifyText text={submission.description} />
+                    </p>
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3 text-xs">
@@ -311,7 +314,9 @@ export default function UserFeedbackManager({ walletAddress }: UserFeedbackManag
             <CardContent className="space-y-4">
               <div>
                 <h3 className="text-lg font-semibold text-white mb-2">{selectedFeedback.title}</h3>
-                <p className="text-gray-300 whitespace-pre-wrap">{selectedFeedback.description}</p>
+                <p className="text-gray-300 whitespace-pre-wrap">
+                  <LinkifyText text={selectedFeedback.description} />
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
