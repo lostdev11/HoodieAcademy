@@ -29,11 +29,22 @@ export function useWalletSupabase() {
     if (typeof window !== 'undefined' && !isInitialized) {
       const storedWallet = localStorage.getItem('hoodie_academy_wallet');
       const storedAdmin = localStorage.getItem('hoodie_academy_is_admin');
+      let timeoutId: NodeJS.Timeout | null = null;
+      
+      // Set admin status from localStorage immediately
+      if (storedAdmin === 'true') {
+        setIsAdmin(true);
+      }
       
       if (storedWallet) {
         setWallet(storedWallet);
         
-        // Validate with API
+        // Validate with API (with timeout to prevent hanging)
+        timeoutId = setTimeout(() => {
+          setLoading(false);
+          setIsInitialized(true);
+        }, 5000); // 5 second timeout
+        
         fetch('/api/wallet/validate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -41,22 +52,30 @@ export function useWalletSupabase() {
         })
           .then(res => res.json())
           .then(data => {
+            if (timeoutId) clearTimeout(timeoutId);
             if (!data.valid) {
               // Server says wallet is invalid (banned, etc.)
               setWallet(null);
               localStorage.removeItem('hoodie_academy_wallet');
             }
+            setLoading(false);
+            setIsInitialized(true);
           })
           .catch(err => {
+            if (timeoutId) clearTimeout(timeoutId);
             // On API error, keep the localStorage value (fail open)
+            setLoading(false);
+            setIsInitialized(true);
           });
+      } else {
+        setLoading(false);
+        setIsInitialized(true);
       }
       
-      if (storedAdmin === 'true') {
-        setIsAdmin(true);
-      }
-      
-      setIsInitialized(true);
+      // Cleanup function
+      return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+      };
     }
   }, [isInitialized]);
 
