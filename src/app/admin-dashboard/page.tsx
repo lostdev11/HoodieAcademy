@@ -629,10 +629,10 @@ export default function AdminDashboardPage() {
   // Debug logging
   useEffect(() => {
     console.log('🔍 Admin Dashboard State:', {
-      walletAddress,
+      walletAddress: walletAddress || 'null',
       isAdmin,
       walletLoading,
-      walletError
+      walletError: walletError || 'null'
     });
   }, [walletAddress, isAdmin, walletLoading, walletError]);
 
