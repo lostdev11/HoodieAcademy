@@ -624,14 +624,25 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
 
 // Main export with wallet and notification provider
 export default function AdminDashboardPage() {
-  const { wallet: walletAddress, isAdmin, connectWallet, loading: walletLoading } = useWalletSupabase();
+  const { wallet: walletAddress, isAdmin, connectWallet, loading: walletLoading, error: walletError } = useWalletSupabase();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 Admin Dashboard State:', {
+      walletAddress,
+      isAdmin,
+      walletLoading,
+      walletError
+    });
+  }, [walletAddress, isAdmin, walletLoading, walletError]);
 
   if (walletLoading) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
         <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
           <h1 className="text-2xl font-bold mb-4">Loading...</h1>
-          <p>Connecting wallet...</p>
+          <p className="text-slate-300">Connecting wallet...</p>
         </div>
       </div>
     );
@@ -640,11 +651,32 @@ export default function AdminDashboardPage() {
   if (!walletAddress || !isAdmin) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md px-4">
           <Shield className="w-16 h-16 text-blue-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-4">Admin Access Required</h1>
           <p className="mb-4 text-slate-300">Please connect your admin wallet</p>
-          <Button onClick={connectWallet}>Connect Wallet</Button>
+          {walletAddress && !isAdmin && (
+            <p className="mb-4 text-red-400 text-sm">
+              This wallet is not authorized as an admin
+            </p>
+          )}
+          {walletError && (
+            <p className="mb-4 text-red-400 text-sm">
+              Error: {walletError}
+            </p>
+          )}
+          <div className="space-y-2">
+            <Button onClick={connectWallet} className="w-full">
+              Connect Wallet
+            </Button>
+            <Button 
+              onClick={() => window.location.href = '/'} 
+              variant="outline"
+              className="w-full"
+            >
+              Back to Home
+            </Button>
+          </div>
         </div>
       </div>
     );

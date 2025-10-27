@@ -112,7 +112,13 @@ export function NotificationProvider({
   // Initial fetch
   useEffect(() => {
     if (walletAddress) {
-      refreshCounts();
+      try {
+        refreshCounts();
+      } catch (error) {
+        console.error('Error in initial notification fetch:', error);
+        // Set loading to false even on error
+        setIsLoading(false);
+      }
     }
   }, [walletAddress, refreshCounts]);
 
