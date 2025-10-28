@@ -6,6 +6,10 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 /**
  * DELETE /api/admin/users/delete
  * Delete a user and all their associated data (admin only)
