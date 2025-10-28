@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Users, Search, Filter, Eye, Edit, RefreshCw, 
+  Users, Search, Filter, Eye, EyeOff, Edit, RefreshCw, 
   Calendar, User, Target, ChevronLeft, ChevronRight,
   MoreVertical, Download, Award, BookOpen, Trophy, 
   TrendingUp, Star, CheckCircle, Clock, XCircle, FileText,
@@ -53,6 +53,9 @@ interface EnhancedUser {
   created_at: string;
   last_active: string;
   updated_at: string;
+  hidden?: boolean;
+  hidden_at?: string;
+  hidden_by?: string;
   submissions: UserSubmission[];
   submissionStats: {
     total: number;
@@ -92,6 +95,7 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<EnhancedUser | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [showHiddenUsers, setShowHiddenUsers] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<EnhancedUser | null>(null);
   const [editForm, setEditForm] = useState({
@@ -114,7 +118,10 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const url = walletAddress ? `/api/admin/users?wallet=${walletAddress}` : '/api/admin/users';
+      const params = new URLSearchParams();
+      if (walletAddress) params.append('wallet', walletAddress);
+      if (showHiddenUsers) params.append('showHidden', 'true');
+      const url = `/api/admin/users?${params.toString()}`;
       const response = await fetch(url);
       
       if (!response.ok) {
@@ -177,17 +184,89 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
     }
   };
 
-  // Delete user
+  // Hide user
+  const handleHideUser = async (user: EnhancedUser) => {
+    if (!walletAddress) return;
+
+    const confirmHide = confirm(
+      `Hide user ${user.displayName}?\n\n` +
+      `The user will be hidden from the user list but their data will be preserved. ` +
+      `You can unhide them later if needed.`
+    );
+
+    if (!confirmHide) return;
+
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_wallet: walletAddress,
+          target_wallet: user.wallet_address,
+          action: 'hide'
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(`Error: ${data.error || 'Failed to hide user'}`);
+        return;
+      }
+
+      alert(`User ${user.displayName} has been hidden`);
+      await fetchUsers();
+
+    } catch (error) {
+      console.error('Error hiding user:', error);
+      alert('Failed to hide user. Please try again.');
+    }
+  };
+
+  // Unhide user
+  const handleUnhideUser = async (user: EnhancedUser) => {
+    if (!walletAddress) return;
+
+    try {
+      const response = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_wallet: walletAddress,
+          target_wallet: user.wallet_address,
+          action: 'unhide'
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(`Error: ${data.error || 'Failed to unhide user'}`);
+        return;
+      }
+
+      alert(`User ${user.displayName} has been unhidden`);
+      await fetchUsers();
+
+    } catch (error) {
+      console.error('Error unhiding user:', error);
+      alert('Failed to unhide user. Please try again.');
+    }
+  };
+
+  // Delete user permanently
   const handleDeleteUser = async (user: EnhancedUser) => {
     if (!walletAddress) return;
 
     const confirmDelete = confirm(
-      `Are you sure you want to delete user ${user.displayName}?\n\n` +
+      `⚠️ PERMANENT DELETE ⚠️\n\n` +
+      `Are you sure you want to PERMANENTLY delete user ${user.displayName}?\n\n` +
       `This will permanently remove:\n` +
       `- User profile and data\n` +
       `- All submissions and activity\n` +
       `- XP and progress\n\n` +
-      `This action cannot be undone!`
+      `This action CANNOT be undone!\n\n` +
+      `Consider hiding the user instead to preserve data.`
     );
 
     if (!confirmDelete) return;
@@ -198,7 +277,8 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           admin_wallet: walletAddress,
-          target_wallet: user.wallet_address
+          target_wallet: user.wallet_address,
+          action: 'delete'
         })
       });
 
@@ -209,9 +289,7 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
         return;
       }
 
-      alert(`User ${user.displayName} has been deleted successfully`);
-      
-      // Refresh users data
+      alert(`User ${user.displayName} has been permanently deleted`);
       await fetchUsers();
 
     } catch (error) {
@@ -236,7 +314,7 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+  }, [fetchUsers, showHiddenUsers]);
 
   // Auto-refresh functionality
   useEffect(() => {
@@ -646,8 +724,19 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
               </SelectContent>
             </Select>
 
-            <div className="text-sm text-slate-400 flex items-center">
-              Showing {filteredUsers.length} users
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-slate-400">
+                Showing {filteredUsers.length} users
+              </div>
+              <Button
+                variant={showHiddenUsers ? "default" : "outline"}
+                onClick={() => setShowHiddenUsers(!showHiddenUsers)}
+                className="flex items-center gap-2"
+                size="sm"
+              >
+                {showHiddenUsers ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                {showHiddenUsers ? 'Hide Hidden' : 'Show Hidden'}
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -679,10 +768,16 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
           ) : (
             <div className="space-y-4">
               {currentUsers.map((user) => (
-                <div key={user.id} className="border border-slate-700 rounded-lg p-4 hover:bg-slate-700/30 transition-colors">
+                <div key={user.id} className={`border rounded-lg p-4 hover:bg-slate-700/30 transition-colors ${user.hidden ? 'border-orange-700/50 bg-orange-900/10' : 'border-slate-700'}`}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
+                        {user.hidden && (
+                          <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-500/50">
+                            <EyeOff className="w-3 h-3 mr-1" />
+                            Hidden
+                          </Badge>
+                        )}
                         <div className="w-12 h-12 bg-slate-600 rounded-full flex items-center justify-center">
                           {user.profile_picture ? (
                             <img 
@@ -976,12 +1071,30 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
                             <Trophy className="w-4 h-4 mr-2" />
                             Award Badge
                           </DropdownMenuItem>
+                          <DropdownMenuItem className="h-px w-full my-1 p-0 bg-slate-700" />
+                          {user.hidden ? (
+                            <DropdownMenuItem 
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              onClick={() => handleUnhideUser(user)}
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Unhide User
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem 
+                              className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                              onClick={() => handleHideUser(user)}
+                            >
+                              <EyeOff className="w-4 h-4 mr-2" />
+                              Hide User
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem 
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={() => handleDeleteUser(user)}
                           >
                             <XCircle className="w-4 h-4 mr-2" />
-                            Delete User
+                            Delete Permanently
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

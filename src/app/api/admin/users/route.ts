@@ -31,9 +31,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Get filter parameter for hidden users
+    const showHidden = searchParams.get('showHidden') === 'true';
+
     // Fetch all users with their basic information
     // Only select columns that actually exist in the database
-    const { data: users, error: usersError } = await supabase
+    let query = supabase
       .from('users')
       .select(`
         id,
@@ -44,9 +47,18 @@ export async function GET(request: NextRequest) {
         total_xp,
         level,
         created_at,
-        updated_at
-      `)
-      .order('created_at', { ascending: false });
+        updated_at,
+        hidden,
+        hidden_at,
+        hidden_by
+      `);
+
+    // Filter out hidden users unless showHidden is true
+    if (!showHidden) {
+      query = query.or('hidden.is.null,hidden.eq.false');
+    }
+
+    const { data: users, error: usersError } = await query.order('created_at', { ascending: false });
 
     if (usersError) {
       console.error('[ADMIN USERS API] Error fetching users:', usersError);
@@ -122,6 +134,9 @@ export async function GET(request: NextRequest) {
         created_at: user.created_at,
         last_active: user.updated_at, // Use updated_at as last_active
         updated_at: user.updated_at,
+        hidden: user.hidden || false,
+        hidden_at: user.hidden_at || null,
+        hidden_by: user.hidden_by || null,
         submissions: [], // TODO: Add detailed submission data if needed
         submissionStats: submissionStats,
         recentActivity: [], // TODO: Add activity tracking
@@ -185,11 +200,12 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
-    const { admin_wallet, target_wallet } = body;
+    const { admin_wallet, target_wallet, action = 'delete' } = body;
 
-    console.log('[USER DELETE] Request:', {
+    console.log('[USER DELETE/HIDE] Request:', {
       admin_wallet,
-      target_wallet
+      target_wallet,
+      action
     });
 
     const supabase = createClient(
@@ -227,10 +243,10 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Get user details before deletion for logging
+    // Get user details before deletion/hiding for logging
     const { data: targetUser, error: fetchError } = await supabase
       .from('users')
-      .select('wallet_address, display_name, username, total_xp')
+      .select('wallet_address, display_name, username, total_xp, hidden')
       .eq('wallet_address', target_wallet)
       .single();
 
@@ -241,7 +257,68 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete user from database
+    // Handle hide/unhide action
+    if (action === 'hide' || action === 'unhide') {
+      const isHidden = action === 'hide';
+      
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          hidden: isHidden,
+          hidden_at: isHidden ? new Date().toISOString() : null,
+          hidden_by: isHidden ? admin_wallet : null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('wallet_address', target_wallet);
+
+      if (updateError) {
+        console.error('Error hiding/unhiding user:', updateError);
+        return NextResponse.json(
+          { error: `Failed to ${action} user`, details: updateError.message },
+          { status: 500 }
+        );
+      }
+
+      // Log the hide/unhide activity
+      try {
+        await supabase
+          .from('user_activity')
+          .insert({
+            wallet_address: admin_wallet,
+            activity_type: isHidden ? 'user_hidden' : 'user_unhidden',
+            metadata: {
+              target_user: target_wallet,
+              target_user_name: targetUser.display_name || targetUser.username,
+              action: action,
+              hidden_by: admin_wallet,
+              timestamp: new Date().toISOString()
+            },
+            created_at: new Date().toISOString()
+          });
+      } catch (logError) {
+        console.warn('Failed to log user hide/unhide:', logError);
+      }
+
+      console.log(`[USER ${action.toUpperCase()}]`, {
+        target_wallet,
+        action_by: admin_wallet,
+        user_name: targetUser.display_name || targetUser.username
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `User ${targetUser.display_name || targetUser.username || 'user'} has been ${isHidden ? 'hidden' : 'unhidden'}`,
+        action: action,
+        user: {
+          wallet_address: targetUser.wallet_address,
+          display_name: targetUser.display_name,
+          username: targetUser.username,
+          hidden: isHidden
+        }
+      });
+    }
+
+    // Default action: Delete user permanently
     const { error: deleteError } = await supabase
       .from('users')
       .delete()
