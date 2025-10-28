@@ -193,7 +193,7 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch('/api/admin/users/delete', {
+      const response = await fetch('/api/admin/users', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
