@@ -205,6 +205,12 @@ const sidebarItems: SidebarItem[] = [
     href: '/'
   },
   {
+    id: 'preview',
+    label: 'Preview',
+    icon: <BookOpen className="w-5 h-5" />,
+    href: '/preview'
+  },
+  {
     id: 'dashboard',
     label: 'Dashboard',
     icon: <BarChart3 className="w-5 h-5" />,

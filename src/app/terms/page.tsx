@@ -164,6 +164,20 @@ export default function TermsOfService() {
             >
               Bounties
             </a>
+            <span className="text-gray-500">•</span>
+            <a 
+              href="/preview" 
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              Preview
+            </a>
+            <span className="text-gray-500">•</span>
+            <a 
+              href="/faq" 
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              FAQ
+            </a>
           </div>
           <div className="text-center mt-4 text-gray-500 text-sm">
             © {new Date().getFullYear()} Hoodie Academy. All rights reserved.

@@ -4,8 +4,9 @@ import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Wallet, ChevronDown } from 'lucide-react';
+import { Wallet, ChevronDown, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { logUserActivity, logWalletConnection, logNftVerification } from '@/lib/activity-logger';
 import { hasSolflare, getSolflareProvider } from '@/lib/walletChecks';
 import { useDevice } from '@/hooks/use-device';
@@ -778,6 +779,21 @@ export default function TokenGate({ children }: TokenGateProps) {
               Get WifHoodie NFT
             </a>
           </div>
+        </div>
+        
+        {/* Preview Academy Button */}
+        <div className="mt-6 px-4">
+          <Link href="/preview">
+            <Button
+              className="group relative overflow-hidden w-full min-h-[48px] font-semibold text-white rounded-xl shadow-lg ring-1 ring-white/20 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 transition-all duration-200"
+            >
+              <span className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-white/30 to-transparent opacity-70 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <span className="relative z-10 flex items-center justify-center gap-3">
+                <BookOpen size={20} />
+                <span>Preview the Academy</span>
+              </span>
+            </Button>
+          </Link>
         </div>
       </motion.div>
 
