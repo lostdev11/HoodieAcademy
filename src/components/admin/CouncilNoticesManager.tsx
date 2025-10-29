@@ -185,6 +185,50 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
     }
   };
 
+  // Function to convert URLs in text to clickable links
+  const renderContentWithLinks = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = urlRegex.exec(text)) !== null) {
+      // Add text before the URL
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+
+      // Get the full URL
+      let url = match[0];
+      // Add https:// if it's a www. URL
+      if (url.startsWith('www.')) {
+        url = 'https://' + url;
+      }
+
+      // Add the link
+      parts.push(
+        <a
+          key={match.index}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 underline break-all"
+        >
+          {match[0]}
+        </a>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
   if (loading) {
     return (
       <Card className="bg-slate-800/50 border-blue-500/30">
@@ -326,7 +370,7 @@ export default function CouncilNoticesManager({ walletAddress }: { walletAddress
                             </span>
                           )}
                         </div>
-                        <p className="text-sm mb-2 whitespace-pre-wrap">{notice.content}</p>
+                        <p className="text-sm mb-2 whitespace-pre-wrap">{renderContentWithLinks(notice.content)}</p>
                         {notice.directive_date && (
                           <p className="text-xs opacity-75">📅 {notice.directive_date}</p>
                         )}

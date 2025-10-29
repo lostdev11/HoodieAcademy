@@ -51,6 +51,50 @@ export default function CouncilNoticeDisplay() {
     }
   };
 
+  // Function to convert URLs in text to clickable links
+  const renderContentWithLinks = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = urlRegex.exec(text)) !== null) {
+      // Add text before the URL
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+
+      // Get the full URL
+      let url = match[0];
+      // Add https:// if it's a www. URL
+      if (url.startsWith('www.')) {
+        url = 'https://' + url;
+      }
+
+      // Add the link
+      parts.push(
+        <a
+          key={match.index}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 underline break-all"
+        >
+          {match[0]}
+        </a>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
   return (
     <Card className={`border-2 ${getPriorityStyles(notice.priority)} shadow-lg`}>
       <CardContent className="p-6">
@@ -75,7 +119,9 @@ export default function CouncilNoticeDisplay() {
               )}
             </div>
             <h3 className="text-xl font-bold text-white mb-3">{notice.title}</h3>
-            <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">{notice.content}</p>
+            <p className="text-gray-200 leading-relaxed whitespace-pre-wrap">
+              {renderContentWithLinks(notice.content)}
+            </p>
           </div>
         </div>
       </CardContent>

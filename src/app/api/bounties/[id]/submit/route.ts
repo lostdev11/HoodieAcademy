@@ -48,6 +48,19 @@ export async function POST(
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Detect links in submission content for moderation
+    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
+    const detectedLinks = [];
+    let match;
+    while ((match = urlRegex.exec(submission)) !== null) {
+      detectedLinks.push(match[0]);
+    }
+    
+    if (detectedLinks.length > 0) {
+      console.log('⚠️ [LINK MODERATION] Submission contains', detectedLinks.length, 'link(s):', detectedLinks);
+      console.log('⚠️ [LINK MODERATION] Links require admin review before approval');
+    }
+
     // Check if bounty exists and is active
     const { data: bounty, error: bountyError } = await supabase
       .from('bounties')

@@ -186,6 +186,82 @@ export default function SubmissionApproval({ walletAddress }: SubmissionApproval
     }
   };
 
+  // Function to detect URLs in text
+  const detectLinks = (text: string): Array<{ url: string; original: string; startIndex: number }> => {
+    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)/gi;
+    const links: Array<{ url: string; original: string; startIndex: number }> = [];
+    let match;
+
+    while ((match = urlRegex.exec(text)) !== null) {
+      let url = match[0];
+      if (url.startsWith('www.')) {
+        url = 'https://' + url;
+      }
+      links.push({
+        url,
+        original: match[0],
+        startIndex: match.index
+      });
+    }
+
+    return links;
+  };
+
+  // Function to render content with clickable links and moderation warnings
+  const renderContentWithLinks = (text: string, showModerationWarning: boolean = false) => {
+    const links = detectLinks(text);
+    
+    if (links.length === 0) {
+      return <p className="text-gray-300 text-sm whitespace-pre-wrap">{text}</p>;
+    }
+
+    const parts: Array<string | JSX.Element> = [];
+    let lastIndex = 0;
+
+    links.forEach((link, index) => {
+      // Add text before the link
+      if (link.startIndex > lastIndex) {
+        parts.push(text.substring(lastIndex, link.startIndex));
+      }
+
+      // Add the link with moderation warning
+      parts.push(
+        <span key={`link-${index}`} className="inline-flex items-center gap-1">
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`underline break-all ${
+              showModerationWarning 
+                ? 'text-yellow-400 hover:text-yellow-300' 
+                : 'text-blue-400 hover:text-blue-300'
+            }`}
+          >
+            {link.original}
+          </a>
+          {showModerationWarning && (
+            <span className="px-1.5 py-0.5 text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded">
+              ⚠️ Link requires moderation
+            </span>
+          )}
+        </span>
+      );
+
+      lastIndex = link.startIndex + link.original.length;
+    });
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return (
+      <p className="text-gray-300 text-sm whitespace-pre-wrap">
+        {parts}
+      </p>
+    );
+  };
+
   const pendingSubmissions = submissions.filter(sub => sub.status === 'pending');
   const approvedSubmissions = submissions.filter(sub => sub.status === 'approved');
   const rejectedSubmissions = submissions.filter(sub => sub.status === 'rejected');
@@ -303,9 +379,15 @@ export default function SubmissionApproval({ walletAddress }: SubmissionApproval
                         </div>
 
                         <div className="mb-4">
-                          <p className="text-gray-300 text-sm">
-                            {submission.submission?.description || 'No description provided'}
-                          </p>
+                          {renderContentWithLinks(
+                            submission.submission?.description || 'No description provided',
+                            submission.status === 'pending' && detectLinks(submission.submission?.description || '').length > 0
+                          )}
+                          {submission.status === 'pending' && detectLinks(submission.submission?.description || '').length > 0 && (
+                            <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-400">
+                              ⚠️ This submission contains {detectLinks(submission.submission?.description || '').length} link(s). Please review before approving.
+                            </div>
+                          )}
                         </div>
 
                         {submission.submission?.image_url && (
