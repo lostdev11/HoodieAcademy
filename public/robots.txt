@@ -1,6 +1,4 @@
 User-agent: *
-Allow: /
-
 Sitemap: https://hoodieacademy.com/sitemap.xml
 
 # Disallow admin and private areas
