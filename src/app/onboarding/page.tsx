@@ -11,6 +11,7 @@ import { ArrowRight, User, Trophy, CheckCircle, Users, BookOpen } from 'lucide-r
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { initializeUserInLeaderboard } from '@/lib/utils';
+import { useDisplayName } from '@/hooks/use-display-name';
 
 interface OnboardingStep {
   id: string;
@@ -23,6 +24,7 @@ export default function OnboardingPage() {
   const [displayName, setDisplayName] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
   const router = useRouter();
+  const { updateDisplayName } = useDisplayName();
 
   // Check if user has already completed onboarding
   useEffect(() => {
@@ -34,24 +36,36 @@ export default function OnboardingPage() {
     }
   }, []);
 
-  const handleCompleteProfile = () => {
-    if (displayName.trim()) {
-      localStorage.setItem('userDisplayName', displayName.trim());
-      localStorage.setItem('onboardingCompleted', 'true');
-      sessionStorage.setItem('justCompletedOnboarding', 'true');
-      
-      // Initialize user in leaderboard system
+  const handleCompleteProfile = async () => {
+    const trimmed = displayName.trim();
+    if (!trimmed) return;
+
+    // Mark onboarding complete flags
+    localStorage.setItem('onboardingCompleted', 'true');
+    sessionStorage.setItem('justCompletedOnboarding', 'true');
+
+    // Update global display name (updates localStorage + broadcasts)
+    updateDisplayName(trimmed);
+
+    // Persist to backend user record
+    try {
       const walletAddress = localStorage.getItem('walletAddress') || 'demo-wallet';
-      const displayNameValue = displayName.trim();
-      
-      initializeUserInLeaderboard(walletAddress, displayNameValue, undefined);
-      
-      setIsCompleted(true);
-      // Redirect to dashboard after a short delay
-      setTimeout(() => {
-        router.push('/');
-      }, 2000);
+      await fetch('/api/users/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress, displayName: trimmed, activityType: 'onboarding_complete' })
+      });
+      // Initialize user in leaderboard system
+      initializeUserInLeaderboard(walletAddress, trimmed, undefined);
+    } catch (e) {
+      // Non-blocking; UI already updated via hook
+      console.error('Failed to persist display name during onboarding:', e);
     }
+
+    setIsCompleted(true);
+    setTimeout(() => {
+      router.push('/');
+    }, 2000);
   };
 
   const steps: OnboardingStep[] = [

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import SquadBadge from '@/components/SquadBadge';
 import { recordPlacementTest } from '@/lib/supabase';
+import { useDisplayNameReadOnly } from '@/hooks/use-display-name';
 
 interface QuizOption {
   id: string;
@@ -64,6 +65,7 @@ export default function SquadTestPage() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 3;
+  const { displayName } = useDisplayNameReadOnly();
 
   // Simple error boundary for SquadBadge
   const renderSquadBadge = (squadName: string) => {
@@ -415,13 +417,13 @@ export default function SquadTestPage() {
     
     // Get wallet address and display name
     const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
-    const displayName = localStorage.getItem('userDisplayName');
+    const currentDisplayName = displayName || localStorage.getItem('userDisplayName');
     
     // Sync with Supabase
     if (walletAddress) {
       try {
         console.log('Attempting to sync with Supabase...');
-        await recordPlacementTest(walletAddress, pendingSquad.name, displayName || undefined);
+        await recordPlacementTest(walletAddress, pendingSquad.name, currentDisplayName || undefined);
         console.log('Successfully synced placement test with Supabase');
       } catch (error) {
         console.error('Error syncing placement test with Supabase:', error);

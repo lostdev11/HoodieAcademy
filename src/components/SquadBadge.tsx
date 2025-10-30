@@ -155,13 +155,13 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
     <div className="text-center">
       <Image
         src={badgePath}
-        alt={`${normalizedSquad} Badge`}
+        alt={`${normalizedSquad} Squad`}
         width={160}
         height={160}
         className="mx-auto rounded-xl shadow-xl"
         onError={() => setImageError(true)}
       />
-      <p className="mt-3 text-lg font-bold">{normalizedSquad} Badge</p>
+      <p className="mt-3 text-lg font-bold">{normalizedSquad} Squad</p>
     </div>
   );
 } 

@@ -55,7 +55,7 @@ export default function StudentOfWeekBanner() {
     <div className="bg-gradient-to-br from-yellow-900/40 via-orange-900/40 to-amber-900/40 border-2 border-yellow-500 rounded-lg p-6 shadow-xl">
       <div className="flex items-center space-x-2 mb-4">
         <span className="text-3xl">🌟</span>
-        <h2 className="text-2xl font-bold text-yellow-400">Student of the Week</h2>
+        <h2 className="text-2xl font-bold text-yellow-400">Student of the Month</h2>
       </div>
 
       <div className="flex items-center space-x-6">

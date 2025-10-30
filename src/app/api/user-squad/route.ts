@@ -147,11 +147,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Check if squad is currently locked (only for non-renewals)
-    if (existingUser && existingUser.squad_lock_end_date && !renew) {
+    // Check if squad is currently locked (only for non-renewals and when changing squads)
+    // Allow first-time selection even if somehow there's a lock
+    // Only block if user is trying to CHANGE to a different squad while locked
+    const isFirstSelection = !existingUser || !existingUser.squad;
+    const isChangingSquad = existingUser && existingUser.squad && existingUser.squad !== squad;
+    
+    if (!isFirstSelection && isChangingSquad && existingUser.squad_lock_end_date && !renew) {
       const lockEndDate = new Date(existingUser.squad_lock_end_date);
       const now = new Date();
       
+      // Only block if lock is still active (in the future)
       if (now < lockEndDate) {
         const diffTime = lockEndDate.getTime() - now.getTime();
         const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

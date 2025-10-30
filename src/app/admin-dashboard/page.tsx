@@ -36,6 +36,7 @@ import StudentOfTheWeekManager from '@/components/admin/StudentOfTheWeekManager'
 import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
 import { NotificationBadge } from '@/components/notifications/NotificationBadge';
 import CourseManagementTab from '@/components/admin/CourseManagementTab';
+import PreviewSubmissionsManager from '@/components/admin/PreviewSubmissionsManager';
 
 interface Bounty {
   id?: string;
@@ -81,7 +82,8 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
       'mentorship': 'Mentorship',
       'governance': 'Governance',
       'courses': 'Courses',
-      'student-of-the-week': 'Student of the Week'
+      'student-of-the-week': 'Student of the Month',
+      'preview-academy': 'Preview Academy'
     };
     return tabNames[tab] || 'Select a section...';
   };
@@ -189,6 +191,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     {activeTab === 'governance' && <Vote className="w-4 h-4" />}
                     {activeTab === 'courses' && <BookOpen className="w-4 h-4" />}
                     {activeTab === 'student-of-the-week' && <Award className="w-4 h-4" />}
+                    {activeTab === 'preview-academy' && <BookOpen className="w-4 h-4" />}
                     <span>{getTabDisplayName(activeTab)}</span>
                   </div>
                 </SelectValue>
@@ -310,7 +313,13 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                 <SelectItem value="student-of-the-week">
                   <div className="flex items-center space-x-2">
                     <Award className="w-4 h-4" />
-                    <span>Student of the Week</span>
+                    <span>Student of the Month</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="preview-academy">
+                  <div className="flex items-center space-x-2">
+                    <BookOpen className="w-4 h-4" />
+                    <span>Preview Academy</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -493,7 +502,15 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               className="flex items-center space-x-2"
             >
               <Award className="w-4 h-4" />
-              <span>Student of the Week</span>
+              <span>Student of the Month</span>
+            </Button>
+            <Button
+              variant={activeTab === "preview-academy" ? "default" : "outline"}
+              onClick={() => setActiveTab("preview-academy")}
+              className="flex items-center space-x-2"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Preview Academy</span>
             </Button>
           </div>
 
@@ -619,6 +636,11 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
           {/* Student of the Week Tab */}
           <TabsContent value="student-of-the-week">
             <StudentOfTheWeekManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Preview Academy Tab */}
+          <TabsContent value="preview-academy">
+            <PreviewSubmissionsManager />
           </TabsContent>
         </Tabs>
       </div>

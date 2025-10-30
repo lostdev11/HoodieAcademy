@@ -86,10 +86,10 @@ export default function SocialFeedPage() {
           fetchUserXP(wallet);
         }
         
-        // Check trial post status
-        const trialKey = `trial_post_used_${wallet}`;
-        const hasUsed = localStorage.getItem(trialKey) === 'true';
-        setHasUsedTrialPost(hasUsed);
+    // Legacy flag kept for compatibility; no longer blocks posting
+    const trialKey = `trial_post_used_${wallet}`;
+    const hasUsed = localStorage.getItem(trialKey) === 'true';
+    setHasUsedTrialPost(hasUsed);
       }
 
       fetchPosts();
@@ -144,11 +144,7 @@ export default function SocialFeedPage() {
       return;
     }
 
-    // Check if trial user trying to post again
-    if (isTrialUser && hasUsedTrialPost) {
-      alert('You\'ve used your free trial post! Earn 1000 XP to unlock unlimited posting.');
-      return;
-    }
+    // Trial users can post multiple times until reaching 1,000 XP
 
     try {
       setPosting(true);
@@ -175,11 +171,8 @@ export default function SocialFeedPage() {
         // Add new post to the top of the feed
         setPosts([data.post, ...posts]);
         
-        // Mark trial as used for trial users
         if (isTrialUser) {
-          localStorage.setItem(`trial_post_used_${walletAddress}`, 'true');
-          setHasUsedTrialPost(true);
-          alert('🎉 Trial post created successfully! Your post is now visible on the feed.\n\nEarn 1000 XP to unlock unlimited posting.');
+          alert('🎉 Post created! You can keep posting until you reach 1,000 XP.');
         } else {
           alert('✅ Post created successfully! +1 XP\n\nYour post is now live on the feed.');
         }
@@ -252,9 +245,7 @@ export default function SocialFeedPage() {
                         <p className="text-sm font-semibold text-orange-400">
                           Trial Access • {userXP.toLocaleString()} / 1,000 XP
                         </p>
-                        <p className="text-xs text-gray-300">
-                          {hasUsedTrialPost ? 'Trial post used. Earn more XP to unlock full access!' : '1 free post available'}
-                        </p>
+                        <p className="text-xs text-gray-300">Post freely until you reach 1,000 XP.</p>
                       </div>
                     </div>
                     <Link href="/courses">
@@ -269,37 +260,22 @@ export default function SocialFeedPage() {
             )}
 
             {/* Create Post Card */}
-            <Card className={`bg-slate-800/50 ${isTrialUser && hasUsedTrialPost ? 'border-orange-500/50 opacity-60' : 'border-cyan-500/30'}`}>
+            <Card className={`bg-slate-800/50 ${isTrialUser ? 'border-cyan-500/30' : 'border-cyan-500/30'}`}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-cyan-400">✍️ Share Your Thoughts</CardTitle>
                   {isTrialUser && (
-                    <Badge className={hasUsedTrialPost ? 'bg-gray-600' : 'bg-pink-600'}>
-                      {hasUsedTrialPost ? 'Trial Used' : '1 Free Post'}
-                    </Badge>
+                    <Badge className="bg-pink-600">Trial Access</Badge>
                   )}
                 </div>
               </CardHeader>
               <CardContent>
-                {isTrialUser && hasUsedTrialPost ? (
-                  <div className="text-center py-8">
-                    <Lock className="w-12 h-12 text-orange-400 mx-auto mb-3" />
-                    <p className="text-orange-400 font-semibold mb-2">Trial Post Used</p>
-                    <p className="text-sm text-gray-400 mb-4">Earn {1000 - userXP} more XP to unlock unlimited posting</p>
-                    <Link href="/courses">
-                      <Button className="bg-gradient-to-r from-cyan-600 to-purple-600">
-                        <TrendingUp className="w-4 h-4 mr-2" />
-                        Start Earning XP
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <>
+                <>
                     <Textarea
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
                       placeholder={isTrialUser 
-                        ? "Try posting! You have 1 free trial post to experience the social feed..."
+                        ? "Trial access: you can post until you reach 1,000 XP..."
                         : "What's on your mind? Share your Web3 journey, ask questions, or start a discussion..."
                       }
                       className="min-h-[100px] bg-slate-700/50 border-slate-600 text-white resize-none"
@@ -307,16 +283,16 @@ export default function SocialFeedPage() {
                     />
                     <div className="flex justify-between items-center mt-3">
                       <div className="text-xs text-gray-400">
-                        {newPostContent.length}/{isTrialUser ? 500 : 5000} characters • 
-                        {isTrialUser ? (
-                          <span className="text-pink-400 font-semibold ml-1">1 free trial post</span>
-                        ) : (
-                          <span className="text-cyan-400 ml-1">Earn 1 XP per post</span>
-                        )}
+                      {newPostContent.length}/{isTrialUser ? 500 : 5000} characters • 
+                      {isTrialUser ? (
+                        <span className="text-pink-400 font-semibold ml-1">Trial access until 1,000 XP</span>
+                      ) : (
+                        <span className="text-cyan-400 ml-1">Earn 1 XP per post</span>
+                      )}
                       </div>
                       <Button
                         onClick={handleCreatePost}
-                        disabled={posting || !newPostContent.trim() || (isTrialUser && hasUsedTrialPost)}
+                      disabled={posting || !newPostContent.trim()}
                         className={isTrialUser ? 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700' : 'bg-cyan-600 hover:bg-cyan-700'}
                       >
                         {posting ? (
@@ -327,13 +303,12 @@ export default function SocialFeedPage() {
                         ) : (
                           <>
                             <Send className="w-4 h-4 mr-2" />
-                            {isTrialUser ? 'Post Trial' : 'Post'}
+                          {isTrialUser ? 'Post (Trial)' : 'Post'}
                           </>
                         )}
                       </Button>
                     </div>
-                  </>
-                )}
+                </>
               </CardContent>
             </Card>
 

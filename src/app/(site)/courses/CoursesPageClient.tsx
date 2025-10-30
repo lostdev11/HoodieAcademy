@@ -272,6 +272,12 @@ export default function CoursesPageClient({ initialCourses }: CoursesPageClientP
                   
                   {/* Course Metadata */}
                   <div className="flex flex-wrap gap-2">
+                    {/* Squad badge */}
+                    {((course as any).squad_name || (course as any).squad) && (
+                      <Badge variant="outline" className="text-xs">
+                        {(course as any).squad_name || (course as any).squad}
+                      </Badge>
+                    )}
                     <Badge variant="outline" className="text-xs">
                       {course.level}
                     </Badge>

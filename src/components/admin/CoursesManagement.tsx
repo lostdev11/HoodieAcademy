@@ -71,6 +71,7 @@ export default function CoursesManagement({
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [addingCourse, setAddingCourse] = useState(false);
+  const [bulkUpdating, setBulkUpdating] = useState(false);
   const [newCourse, setNewCourse] = useState({
     title: '',
     description: '',
@@ -221,6 +222,44 @@ export default function CoursesManagement({
     }
   };
 
+  const bulkUpdateVisibility = async (hideAll: boolean) => {
+    try {
+      setBulkUpdating(true);
+      const adminWallet = typeof window !== 'undefined' 
+        ? (localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet') || '')
+        : '';
+      if (!adminWallet) {
+        alert('Admin wallet not detected. Please connect your wallet.');
+        return;
+      }
+
+      const res = await fetch('/api/courses', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bulk: true,
+          scope: 'all',
+          admin_wallet: adminWallet,
+          is_hidden: hideAll
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Bulk update failed:', data);
+        alert(data.error || 'Failed to update courses');
+        return;
+      }
+
+      // Optimistically update local state
+      setCourses(prev => prev.map(c => ({ ...c, is_visible: !hideAll })));
+    } catch (e) {
+      console.error('Error in bulk visibility update:', e);
+      alert('Bulk update failed. Check console for details.');
+    } finally {
+      setBulkUpdating(false);
+    }
+  };
+
   const deleteCourse = async (courseId: string) => {
     if (!confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
       return;
@@ -287,10 +326,30 @@ export default function CoursesManagement({
           <h2 className="text-2xl font-bold text-white">Courses Management</h2>
           <p className="text-gray-400">Manage course visibility, completion tracking, and course data</p>
         </div>
-        <Button onClick={() => setShowAddForm(!showAddForm)} className="bg-cyan-600 hover:bg-cyan-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Course
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => bulkUpdateVisibility(true)}
+            disabled={bulkUpdating}
+            className="border-slate-600 text-slate-300"
+          >
+            <EyeOff className="w-4 h-4 mr-2" />
+            {bulkUpdating ? 'Updating...' : 'Hide All'}
+          </Button>
+          <Button 
+            variant="outline"
+            onClick={() => bulkUpdateVisibility(false)}
+            disabled={bulkUpdating}
+            className="border-slate-600 text-slate-300"
+          >
+            <Eye className="w-4 h-4 mr-2" />
+            {bulkUpdating ? 'Updating...' : 'Unhide All'}
+          </Button>
+          <Button onClick={() => setShowAddForm(!showAddForm)} className="bg-cyan-600 hover:bg-cyan-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Course
+          </Button>
+        </div>
       </div>
 
       {/* Add Course Form */}

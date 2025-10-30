@@ -514,13 +514,13 @@ export default function HoodieAcademy() {
               <FeedbackTrackerWidget limit={5} showTitle={true} />
             </Suspense>
 
-            {/* Student of the Week */}
+            {/* Student of the Month */}
             <Suspense fallback={
               <Card className="bg-slate-800/50 border-yellow-500/30">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
-                    <span className="ml-3 text-gray-400">Loading Student of the Week...</span>
+                    <span className="ml-3 text-gray-400">Loading Student of the Month...</span>
                   </div>
                 </CardContent>
               </Card>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 
@@ -96,8 +96,8 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
 
     window.addEventListener('storage', handleStorageChange);
     
-    // Also check periodically for changes
-    const interval = setInterval(checkWalletConnection, 1000);
+    // Also check periodically for changes (throttled to reduce console noise)
+    const interval = setInterval(checkWalletConnection, 10000);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -246,9 +246,9 @@ export default function PfpPicker({ selectedPfpUrl, onChange, userId }: Props) {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Select your wifhoodie</DialogTitle>
-            <p className="text-sm text-gray-500 mt-2">
+            <DialogDescription>
               Choose a WifHoodie NFT from your wallet to set as your profile picture. Only NFTs from the verified WifHoodie collection will be displayed.
-            </p>
+            </DialogDescription>
           </DialogHeader>
 
           {!connected && (

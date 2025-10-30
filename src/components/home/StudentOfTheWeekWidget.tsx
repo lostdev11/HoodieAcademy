@@ -70,7 +70,7 @@ export default function StudentOfTheWeekWidget({ className = "" }: StudentOfTheW
 
       if (error) {
         console.error('Error fetching current student:', error);
-        setError('Failed to load student of the week');
+        setError('Failed to load student of the month');
         return;
       }
 
@@ -82,7 +82,7 @@ export default function StudentOfTheWeekWidget({ className = "" }: StudentOfTheW
       }
     } catch (err) {
       console.error('Error fetching student of the week:', err);
-      setError('Failed to load student of the week');
+      setError('Failed to load student of the month');
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ export default function StudentOfTheWeekWidget({ className = "" }: StudentOfTheW
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
-            <span className="ml-3 text-gray-400">Loading Student of the Week...</span>
+            <span className="ml-3 text-gray-400">Loading Student of the Month...</span>
           </div>
         </CardContent>
       </Card>
@@ -137,7 +137,7 @@ export default function StudentOfTheWeekWidget({ className = "" }: StudentOfTheW
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-yellow-400 flex items-center gap-2">
               <Trophy className="w-5 h-5" />
-              Student of the Week
+              Student of the Month
             </h3>
             <Button 
               onClick={handleRefresh}
@@ -158,8 +158,8 @@ export default function StudentOfTheWeekWidget({ className = "" }: StudentOfTheW
             </h4>
             <p className="text-gray-400 mb-4">
               {!featureEnabled 
-                ? "The Student of the Week feature is currently disabled."
-                : "No student has been selected for this week yet."
+                ? "The Student of the Month feature is currently disabled."
+                : "No student has been selected for this month yet."
               }
             </p>
             <Button 
@@ -183,7 +183,7 @@ export default function StudentOfTheWeekWidget({ className = "" }: StudentOfTheW
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-yellow-400 flex items-center gap-2">
             <Trophy className="w-5 h-5" />
-            Student of the Week
+            Student of the Month
           </h3>
           <Button 
             onClick={handleRefresh}

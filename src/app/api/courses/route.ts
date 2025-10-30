@@ -79,23 +79,71 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Filter courses based on user's squad access
-    const accessibleCourses = courses?.filter(course => {
-      // Admins can see all courses
-      if (userIsAdmin) return true;
-      
-      // Users can only see courses for their squad or 'all' squad courses
-      return course.squad_id === userSquad || course.squad_id === 'all';
-    }) || [];
+    // Visibility filtering (handles mixed schemas: is_hidden / is_visible)
+    const visibilityFiltered = (courses || []).filter(course => {
+      if (userIsAdmin) {
+        // Admins can optionally hide hidden courses unless include_hidden=true
+        if (!includeHidden) {
+          if (course.is_hidden === true) return false;
+          if (course.is_visible === false) return false;
+        }
+        return true;
+      }
+      // Regular users: must be visible and published
+      if (course.is_hidden === true) return false;
+      if (course.is_visible === false) return false;
+      if (course.is_published === false) return false;
+      return true;
+    });
 
-    // Add course statistics for admin view
-    const courseStats = userIsAdmin ? {
-      total: courses?.length || 0,
-      published: courses?.filter(c => c.is_published).length || 0,
-      unpublished: courses?.filter(c => !c.is_published).length || 0,
-      visible: courses?.filter(c => !c.is_hidden).length || 0,
-      hidden: courses?.filter(c => c.is_hidden).length || 0
-    } : null;
+    // Filter courses based on user's squad access
+    const accessibleCourses = visibilityFiltered.filter(course => {
+      if (userIsAdmin) return true;
+      return course.squad_id === userSquad || course.squad_id === 'all';
+    });
+
+    // Add course statistics (always return for client simplicity)
+    const courseStats = (() => {
+      const all = courses || [];
+      const allPublished = all.filter(c => c.is_published === true).length;
+      const allUnpublished = all.filter(c => c.is_published === false).length;
+      const allVisible = all.filter(c => c.is_hidden !== true && c.is_visible !== false).length;
+      const allHidden = all.filter(c => c.is_hidden === true || c.is_visible === false).length;
+
+      // Stats for the list as currently filtered (visibility + squad)
+      const returned = accessibleCourses;
+      const returnedVisible = returned.filter(c => c.is_hidden !== true && c.is_visible !== false).length;
+      const returnedHidden = returned.filter(c => c.is_hidden === true || c.is_visible === false).length;
+      const returnedPublished = returned.filter(c => c.is_published === true).length;
+      const returnedUnpublished = returned.filter(c => c.is_published === false).length;
+
+      return {
+        // Overall across all courses in DB (for admin context/overview)
+        totalAll: all.length,
+        publishedAll: allPublished,
+        unpublishedAll: allUnpublished,
+        visibleAll: allVisible,
+        hiddenAll: allHidden,
+        // Counts for the set actually returned by this request
+        totalReturned: returned.length,
+        publishedReturned: returnedPublished,
+        unpublishedReturned: returnedUnpublished,
+        visibleReturned: returnedVisible,
+        hiddenReturned: returnedHidden,
+        // Backward-compatible fields (reflect returned subset so UI badges update immediately)
+        total: returned.length,
+        published: returnedPublished,
+        unpublished: returnedUnpublished,
+        visible: returnedVisible,
+        hidden: returnedHidden,
+        // Echo flags to explain filtering behavior on the client if needed
+        filters: {
+          include_hidden: includeHidden,
+          squad_id: squadId || null,
+          isAdmin: userIsAdmin
+        }
+      };
+    })();
 
     return NextResponse.json({
       courses: accessibleCourses,
@@ -156,6 +204,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+
     // Create course
     const { data: course, error } = await supabase
       .from('courses')
@@ -210,7 +259,11 @@ export async function PATCH(request: NextRequest) {
       admin_wallet,
       is_hidden,
       is_published,
-      order_index
+      order_index,
+      // Bulk controls
+      bulk,
+      scope, // 'all' | 'squad'
+      squad_id
     } = body;
 
     console.log('[COURSE UPDATE] Request:', {
@@ -220,10 +273,10 @@ export async function PATCH(request: NextRequest) {
       is_published
     });
 
-    // Validate required fields
-    if (!course_id || !admin_wallet) {
+    // Validate admin_wallet always present
+    if (!admin_wallet) {
       return NextResponse.json(
-        { error: 'course_id and admin_wallet are required' },
+        { error: 'admin_wallet is required' },
         { status: 400 }
       );
     }
@@ -248,7 +301,9 @@ export async function PATCH(request: NextRequest) {
     };
 
     if (is_hidden !== undefined) {
+      // Support both schemas: some places use is_hidden, others use is_visible
       updateData.is_hidden = is_hidden;
+      updateData.is_visible = !is_hidden;
     }
 
     if (is_published !== undefined) {
@@ -259,18 +314,167 @@ export async function PATCH(request: NextRequest) {
       updateData.order_index = order_index;
     }
 
-    // Update course
-    const { data: course, error } = await supabase
-      .from('courses')
-      .update(updateData)
-      .eq('id', course_id)
-      .select()
-      .single();
+    // Handle BULK update (hide/unhide/publish) when requested
+    if (bulk === true) {
+
+      // Validate scope when targeting a squad
+      if (scope === 'squad' && !squad_id) {
+        return NextResponse.json(
+          { error: 'squad_id is required when scope is "squad"' },
+          { status: 400 }
+        );
+      }
+
+      // Must provide at least one updatable field
+      if (Object.keys(updateData).length <= 1) {
+        return NextResponse.json(
+          { error: 'Provide at least one of is_hidden, is_published, order_index for bulk update' },
+          { status: 400 }
+        );
+      }
+
+      const attemptBulk = async (data: Record<string, any>) => {
+        let q = supabase.from('courses').update(data);
+        if (scope === 'squad' && squad_id) {
+          q = q.eq('squad_id', squad_id);
+        }
+        return await q.select('id');
+      };
+
+      // First attempt with both is_hidden/is_visible if present
+      let { data: updatedRows, error: bulkErr } = await attemptBulk(updateData);
+
+      // Fallback for schema differences: try permutations
+      if (bulkErr && (bulkErr.code === '42703' || (bulkErr.message && bulkErr.message.includes('column')))) {
+        // Attempt 1: only is_visible (plus other safe fields)
+        const onlyVisible: Record<string, any> = { updated_at: updateData.updated_at };
+        if (Object.prototype.hasOwnProperty.call(updateData, 'is_visible')) {
+          onlyVisible.is_visible = updateData.is_visible;
+        }
+        if (Object.prototype.hasOwnProperty.call(updateData, 'is_published')) {
+          onlyVisible.is_published = updateData.is_published;
+        }
+        if (Object.prototype.hasOwnProperty.call(updateData, 'order_index')) {
+          onlyVisible.order_index = updateData.order_index;
+        }
+        let res2 = await attemptBulk(onlyVisible);
+        updatedRows = res2.data as any;
+        bulkErr = res2.error;
+
+        // Attempt 2: only is_hidden (if Attempt 1 failed)
+        if (bulkErr && (bulkErr.code === '42703' || (bulkErr.message && bulkErr.message.includes('column')))) {
+          const onlyHidden: Record<string, any> = { updated_at: updateData.updated_at };
+          if (Object.prototype.hasOwnProperty.call(updateData, 'is_hidden')) {
+            onlyHidden.is_hidden = updateData.is_hidden;
+          }
+          if (Object.prototype.hasOwnProperty.call(updateData, 'is_published')) {
+            onlyHidden.is_published = updateData.is_published;
+          }
+          if (Object.prototype.hasOwnProperty.call(updateData, 'order_index')) {
+            onlyHidden.order_index = updateData.order_index;
+          }
+          const res3 = await attemptBulk(onlyHidden);
+          updatedRows = res3.data as any;
+          bulkErr = res3.error;
+        }
+      }
+
+      if (bulkErr) {
+        console.error('Error bulk updating courses:', bulkErr);
+        return NextResponse.json(
+          { error: 'Failed to bulk update courses', details: bulkErr.message, code: (bulkErr as any).code },
+          { status: 500 }
+        );
+      }
+
+      const updatedCount = (updatedRows || []).length;
+      return NextResponse.json({
+        success: true,
+        message: `Bulk update applied to ${updatedCount} course(s)`,
+        updatedCount,
+        scope: scope || 'all',
+        squad_id: squad_id || null,
+        changes: updateData
+      });
+    }
+
+    // Single-course update with fallback for schema differences
+    let course: any | null = null;
+    let error: any | null = null;
+
+    const attemptUpdate = async (data: Record<string, any>) => {
+      return await supabase
+        .from('courses')
+        .update(data)
+        .eq('id', course_id)
+        .select()
+        .single();
+    };
+
+    // Validate course_id for single update
+    if (!course_id) {
+      return NextResponse.json(
+        { error: 'course_id is required for single update (or pass bulk=true)' },
+        { status: 400 }
+      );
+    }
+
+    // First attempt: as-is
+    {
+      const res = await attemptUpdate(updateData);
+      course = res.data;
+      error = res.error;
+    }
+
+    // If column not found (42703), try fallback variants
+    if (error && (error.code === '42703' || (error.message && error.message.includes('column')))) {
+      console.warn('[COURSE UPDATE] Column mismatch, attempting fallback schema...', { updateData, code: error.code, message: error.message });
+
+      // Attempt 1: update with only is_visible
+      const onlyVisible: Record<string, any> = { updated_at: updateData.updated_at };
+      if (Object.prototype.hasOwnProperty.call(updateData, 'is_visible')) {
+        onlyVisible.is_visible = updateData.is_visible;
+      }
+      if (Object.prototype.hasOwnProperty.call(updateData, 'is_published')) {
+        onlyVisible.is_published = updateData.is_published;
+      }
+      if (Object.prototype.hasOwnProperty.call(updateData, 'order_index')) {
+        onlyVisible.order_index = updateData.order_index;
+      }
+      {
+        const res2 = await attemptUpdate(onlyVisible);
+        course = res2.data;
+        error = res2.error;
+      }
+
+      // Attempt 2: if still failing, try only is_hidden
+      if (error && (error.code === '42703' || (error.message && error.message.includes('column')))) {
+        const onlyHidden: Record<string, any> = { updated_at: updateData.updated_at };
+        if (Object.prototype.hasOwnProperty.call(updateData, 'is_hidden')) {
+          onlyHidden.is_hidden = updateData.is_hidden;
+        }
+        if (Object.prototype.hasOwnProperty.call(updateData, 'is_published')) {
+          onlyHidden.is_published = updateData.is_published;
+        }
+        if (Object.prototype.hasOwnProperty.call(updateData, 'order_index')) {
+          onlyHidden.order_index = updateData.order_index;
+        }
+        const res3 = await attemptUpdate(onlyHidden);
+        course = res3.data;
+        error = res3.error;
+      }
+    }
 
     if (error) {
       console.error('Error updating course:', error);
+      if ((error as any).code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Course not found', details: 'No course matched the provided course_id' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json(
-        { error: 'Failed to update course', details: error.message },
+        { error: 'Failed to update course', details: error.message, code: (error as any).code },
         { status: 500 }
       );
     }

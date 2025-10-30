@@ -179,7 +179,7 @@ export default function StudentOfTheWeekManager({ walletAddress }: StudentOfTheW
       console.log('✅ Setting update successful:', data);
       
       setFeatureEnabled(newValue);
-      setSuccess(`Student of the Week feature ${newValue ? 'enabled' : 'disabled'} successfully!`);
+      setSuccess(`Student of the Month feature ${newValue ? 'enabled' : 'disabled'} successfully!`);
     } catch (err: any) {
       console.error('❌ Toggle feature error:', err);
       setError(`Failed to update feature setting: ${err.message || 'Unknown error'}`);
@@ -199,7 +199,7 @@ export default function StudentOfTheWeekManager({ walletAddress }: StudentOfTheW
       if (error) throw error;
       setStudents(data || []);
     } catch (err) {
-      setError('Failed to fetch students of the week');
+      setError('Failed to fetch students of the month');
       console.error('Error fetching students:', err);
     } finally {
       setLoading(false);
@@ -274,7 +274,7 @@ export default function StudentOfTheWeekManager({ walletAddress }: StudentOfTheW
           .insert([studentData]);
 
         if (error) throw error;
-        setSuccess('Student of the Week created successfully!');
+        setSuccess('Student of the Month created successfully!');
       } else if (editingStudent) {
         const { error } = await supabase
           .from('student_of_the_week')
@@ -282,7 +282,7 @@ export default function StudentOfTheWeekManager({ walletAddress }: StudentOfTheW
           .eq('id', editingStudent.id);
 
         if (error) throw error;
-        setSuccess('Student of the Week updated successfully!');
+        setSuccess('Student of the Month updated successfully!');
       }
 
       await fetchStudents();
@@ -290,13 +290,13 @@ export default function StudentOfTheWeekManager({ walletAddress }: StudentOfTheW
       setIsEditing(false);
       setEditingStudent(null);
     } catch (err) {
-      setError('Failed to save student of the week');
+      setError('Failed to save student of the month');
       console.error('Error saving student:', err);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this Student of the Week entry?')) {
+    if (!confirm('Are you sure you want to delete this Student of the Month entry?')) {
       return;
     }
 
@@ -307,10 +307,10 @@ export default function StudentOfTheWeekManager({ walletAddress }: StudentOfTheW
         .eq('id', id);
 
       if (error) throw error;
-      setSuccess('Student of the Week deleted successfully!');
+      setSuccess('Student of the Month deleted successfully!');
       await fetchStudents();
     } catch (err) {
-      setError('Failed to delete student of the week');
+      setError('Failed to delete student of the month');
       console.error('Error deleting student:', err);
     }
   };
@@ -346,7 +346,7 @@ export default function StudentOfTheWeekManager({ walletAddress }: StudentOfTheW
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading students of the week...</p>
+          <p className="text-gray-400">Loading students of the month...</p>
         </div>
       </div>
     );
@@ -358,9 +358,9 @@ export default function StudentOfTheWeekManager({ walletAddress }: StudentOfTheW
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Trophy className="w-6 h-6 text-yellow-400" />
-            Student of the Week Management
+            Student of the Month Management
           </h2>
-          <p className="text-gray-400 mt-1">Manage weekly student recognition</p>
+          <p className="text-gray-400 mt-1">Manage monthly student recognition</p>
         </div>
         <div className="flex items-center gap-4">
           {/* Feature Toggle */}
@@ -415,18 +415,18 @@ export default function StudentOfTheWeekManager({ walletAddress }: StudentOfTheW
         <Alert className="border-orange-500/50 bg-orange-500/10">
           <AlertCircle className="h-4 w-4 text-orange-400" />
           <AlertDescription className="text-orange-400">
-            Student of the Week feature is currently disabled. The home page will show "Not currently selected" until you enable it.
+            Student of the Month feature is currently disabled. The home page will show "Not currently selected" until you enable it.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Current Student of the Week */}
+      {/* Current Student of the Month */}
       {getCurrentStudent() && (
         <Card className="bg-yellow-500/10 border-yellow-500/30">
           <CardHeader>
             <CardTitle className="text-yellow-400 flex items-center gap-2">
               <Award className="w-5 h-5" />
-              Current Student of the Week
+              Current Student of the Month
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -461,7 +461,7 @@ export default function StudentOfTheWeekManager({ walletAddress }: StudentOfTheW
         <Card className="bg-slate-800/50 border-cyan-500/30">
           <CardHeader>
             <CardTitle className="text-cyan-400">
-              {isCreating ? 'Create New Student of the Week' : 'Edit Student of the Week'}
+              {isCreating ? 'Create New Student of the Month' : 'Edit Student of the Month'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

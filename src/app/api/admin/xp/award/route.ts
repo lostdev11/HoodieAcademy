@@ -53,42 +53,96 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ [XP AWARD] Admin access verified');
 
-    // Get current user data
+    // Get current user data from both tables to ensure consistency
     console.log('🔍 [XP AWARD] Looking up user:', targetWallet);
+    
+    const { data: userXP } = await supabase
+      .from('user_xp')
+      .select('wallet_address, total_xp, level')
+      .eq('wallet_address', targetWallet)
+      .maybeSingle();
+
     const { data: currentUser, error: userError } = await supabase
       .from('users')
       .select('wallet_address, display_name, total_xp, level, is_admin')
       .eq('wallet_address', targetWallet)
-      .single();
+      .maybeSingle();
 
-    if (userError || !currentUser) {
+    if (userError && userError.code !== 'PGRST116') {
       console.error('❌ [XP AWARD] User lookup failed:', { userError, currentUser });
+      return NextResponse.json(
+        { error: 'User lookup failed', details: userError.message },
+        { status: 500 }
+      );
+    }
+
+    if (!currentUser && !userXP) {
+      console.error('❌ [XP AWARD] User not found in either table');
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
+
+    // Use the highest XP value from either table as the source of truth
+    const previousXP = Math.max(userXP?.total_xp || 0, currentUser?.total_xp || 0);
+    const previousLevel = Math.max(userXP?.level || 1, currentUser?.level || 1);
     
     console.log('✅ [XP AWARD] User found:', { 
-      wallet: currentUser.wallet_address, 
-      displayName: currentUser.display_name,
-      currentXP: currentUser.total_xp || 0,
-      currentLevel: currentUser.level || 1
+      wallet: currentUser?.wallet_address || userXP?.wallet_address || targetWallet, 
+      displayName: currentUser?.display_name || 'Unknown',
+      userXP_from_db: userXP?.total_xp || 0,
+      user_from_db: currentUser?.total_xp || 0,
+      previousXP,
+      previousLevel
     });
 
     // Calculate new XP and level
-    const newTotalXP = (currentUser.total_xp || 0) + xpAmount;
+    const newTotalXP = previousXP + xpAmount;
     const newLevel = Math.floor(newTotalXP / 1000) + 1; // 1000 XP per level
 
-    // Update user XP and level
-    const { data, error } = await supabase
-      .from('users')
-      .update({
+    // Update XP in user_xp table (upsert) - this is the source of truth for some views
+    const { error: xpError } = await supabase
+      .from('user_xp')
+      .upsert({
+        wallet_address: targetWallet,
         total_xp: newTotalXP,
         level: newLevel,
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'wallet_address'
+      });
+
+    if (xpError) {
+      console.error('❌ [XP AWARD] Error updating user_xp:', xpError);
+      return NextResponse.json(
+        { error: 'Failed to award XP', details: xpError.message },
+        { status: 500 }
+      );
+    }
+
+    // Also update users table to keep in sync
+    const userToUpsert: any = {
+      wallet_address: targetWallet,
+      total_xp: newTotalXP,
+      level: newLevel,
+      updated_at: new Date().toISOString()
+    };
+
+    // If user doesn't exist in users table, create them with basic info
+    if (!currentUser) {
+      userToUpsert.display_name = `User ${targetWallet.slice(0, 6)}...`;
+      userToUpsert.created_at = new Date().toISOString();
+    } else {
+      // Preserve existing display_name if updating
+      userToUpsert.display_name = currentUser.display_name;
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .upsert(userToUpsert, {
+        onConflict: 'wallet_address'
       })
-      .eq('wallet_address', targetWallet)
       .select()
       .single();
 
@@ -100,10 +154,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ [XP AWARD] Successfully updated user XP:', {
-      previousXP: currentUser.total_xp,
+    console.log('✅ [XP AWARD] Successfully updated user XP in both tables:', {
+      previousXP,
       newXP: newTotalXP,
-      previousLevel: currentUser.level,
+      previousLevel,
       newLevel: newLevel
     });
 
@@ -117,9 +171,9 @@ export async function POST(request: NextRequest) {
           xp_amount: xpAmount,
           reason: reason,
           awarded_by: awardedBy,
-          previous_xp: currentUser.total_xp || 0,
+          previous_xp: previousXP,
           new_total_xp: newTotalXP,
-          level_up: newLevel > (currentUser.level || 1)
+          level_up: newLevel > previousLevel
         },
         created_at: new Date().toISOString()
       });
@@ -136,7 +190,7 @@ export async function POST(request: NextRequest) {
       user: data,
       xpAwarded: xpAmount,
       newTotalXP: newTotalXP,
-      levelUp: newLevel > (currentUser.level || 1),
+      levelUp: newLevel > previousLevel,
       message: `Successfully awarded ${xpAmount} XP to user`,
       // Include data that frontend can use to trigger refresh
       refreshLeaderboard: true,

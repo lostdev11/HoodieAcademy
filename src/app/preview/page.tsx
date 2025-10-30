@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from "next/link";
 import Image from "next/image";
+import PreviewSubmissionForm from "@/components/preview/PreviewSubmissionForm";
 
 export const metadata: Metadata = {
   title: 'Explore Hoodie Academy | Free T100 Preview Course',
@@ -75,6 +76,11 @@ export default function PreviewPage() {
           >
             Start Learning
           </Link>
+        </div>
+
+        {/* Preview Submission Form */}
+        <div className="mt-8">
+          <PreviewSubmissionForm />
         </div>
 
         <div className="mt-12 text-sm text-gray-400">

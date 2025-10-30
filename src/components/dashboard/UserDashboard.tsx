@@ -42,6 +42,7 @@ import { useUserTracking } from "@/hooks/useUserTracking";
 import { useAutoDailyLogin } from "@/hooks/useAutoDailyLogin";
 import { useDisplayNameReadOnly } from "@/hooks/use-display-name";
 import { fetchUserSquad } from "@/utils/squad-api";
+import { getSquadName as getSquadNameFromCache } from "@/utils/squad-storage";
 import SquadBadge from "@/components/SquadBadge";
 import FeedbackTrackerWidget from "@/components/feedback/FeedbackTrackerWidget";
 import DailyLoginBonus from "@/components/xp/DailyLoginBonus";
@@ -112,11 +113,25 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
         squadName = squadData?.hasSquad && squadData?.squad?.name ? squadData.squad.name : 'Unassigned';
       }
       
+      // Final fallback: use cached/local squad if available
+      if (!squadName || squadName === 'Unassigned') {
+        const cachedSquad = getSquadNameFromCache();
+        if (cachedSquad) {
+          squadName = cachedSquad;
+          console.log('📦 Using cached squad from localStorage:', cachedSquad);
+        }
+      }
+      
       setUserSquad(squadName);
       return squadName;
     };
 
     const initializeDashboard = async () => {
+      // Show cached squad immediately while API loads
+      const cachedSquad = getSquadNameFromCache();
+      if (cachedSquad) {
+        setUserSquad(cachedSquad);
+      }
       try {
         console.log('🔄 UserDashboard: Initializing dashboard...', {
           walletAddress: walletAddress?.slice(0, 8) + '...',
@@ -709,7 +724,7 @@ const SquadSection = memo(function SquadSection({ userSquad, stats, walletAddres
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <SquadBadge squad={userSquad} />
+                    <SquadBadge squad={userSquad} walletAddress={walletAddress} />
                     <div>
                       <h3 className="text-xl font-bold text-white">{userSquad} Squad</h3>
                       <p className="text-gray-400">Your current squad assignment</p>
@@ -798,14 +813,18 @@ const SquadSection = memo(function SquadSection({ userSquad, stats, walletAddres
           ) : (
             <div className="text-center py-8">
               <div className="mb-6">
-                <SquadBadge squad="Unassigned" />
+                <SquadBadge squad={userSquad || 'Unassigned'} walletAddress={walletAddress} />
               </div>
-              <p className="text-gray-400 mb-2">You're currently an unassigned Academy Member</p>
+              <p className="text-gray-400 mb-2">
+                {userSquad && userSquad !== 'Unassigned' 
+                  ? `You're currently a member of ${userSquad} Squad` 
+                  : "You're currently an unassigned Academy Member"}
+              </p>
               <p className="text-sm text-gray-500 mb-4">Join a squad to unlock exclusive features and compete with your team!</p>
               <Link href="/choose-your-squad">
                 <Button className="bg-purple-600 hover:bg-purple-700">
                   <Users className="w-4 h-4 mr-2" />
-                  Choose Your Squad
+                  {userSquad && userSquad !== 'Unassigned' ? 'Change Your Squad' : 'Choose Your Squad'}
                 </Button>
               </Link>
             </div>
@@ -991,7 +1010,7 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
   const [postingTrial, setPostingTrial] = useState(false);
 
   useEffect(() => {
-    // Check if user has used their trial post
+    // Legacy flag retained for compatibility; does not block posting anymore
     const trialKey = `trial_post_used_${walletAddress}`;
     const hasUsed = localStorage.getItem(trialKey) === 'true';
     setHasUsedTrialPost(hasUsed);
@@ -1024,12 +1043,9 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
       if (data.success && data.post) {
         console.log('✅ Trial post saved successfully:', data.post);
         
-        // Mark trial as used
-        localStorage.setItem(`trial_post_used_${walletAddress}`, 'true');
-        setHasUsedTrialPost(true);
+        // Inform trial users; do not block future posts
         setTrialPostContent('');
-        
-        alert('🎉 Trial post created successfully!\n\n✅ Your post is now live on the social feed.\n📍 Visit the Social Feed tab to see it.\n🎯 Earn 1000 XP to unlock unlimited posting!');
+        alert('🎉 Post created! You can keep posting until you reach 1,000 XP.');
       } else {
         console.error('Trial post creation failed:', data);
         alert('Failed to create post: ' + (data.error || 'Unknown error'));
@@ -1146,17 +1162,17 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
                   </p>
 
                   {/* Trial Post Feature */}
-                  {!hasUsedTrialPost ? (
+                  {true ? (
                     <div className="bg-gradient-to-r from-pink-900/30 to-purple-900/30 rounded-lg p-4 border border-pink-500/30 mb-6">
                       <div className="flex items-center justify-center space-x-2 mb-3">
                         <SparklesIcon className="w-4 h-4 text-pink-400" />
-                        <p className="text-sm font-semibold text-pink-400">Try it now! 1 Free Post</p>
+                        <p className="text-sm font-semibold text-pink-400">Trial access: post until 1,000 XP</p>
                         <SparklesIcon className="w-4 h-4 text-pink-400" />
                       </div>
                       <Textarea
                         value={trialPostContent}
                         onChange={(e) => setTrialPostContent(e.target.value)}
-                        placeholder="Share your thoughts... (Try the social feed with 1 free post!)"
+                        placeholder="Share your thoughts... (You can keep posting until you reach 1,000 XP)"
                         className="min-h-[80px] bg-slate-700/50 border-pink-500/30 text-white mb-3 resize-none"
                         maxLength={500}
                       />
@@ -1181,9 +1197,7 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
                           )}
                         </Button>
                       </div>
-                      <p className="text-xs text-gray-400 mt-2">
-                        ✨ One-time trial to experience the social feed
-                      </p>
+                      <p className="text-xs text-gray-400 mt-2">✨ Trial posts don’t grant XP</p>
                     </div>
                   ) : (
                     <div className="bg-slate-700/50 rounded-lg p-4 border border-green-500/30 mb-6">

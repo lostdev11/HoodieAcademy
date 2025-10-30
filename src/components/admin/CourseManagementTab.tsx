@@ -46,6 +46,7 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
   const [squadFilter, setSquadFilter] = useState<string>('all');
   const [toggleLoading, setToggleLoading] = useState<string | null>(null);
   const [stats, setStats] = useState<CourseStats | null>(null);
+  const [bulkUpdating, setBulkUpdating] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -98,10 +99,12 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
     try {
       setToggleLoading(courseId);
       
-      const response = await fetch(`/api/courses/${courseId}/visibility`, {
-        method: 'POST',
+      // Use central PATCH /api/courses endpoint to avoid 404s from nested visibility route
+      const response = await fetch('/api/courses', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          course_id: courseId,
           admin_wallet: adminWallet,
           is_hidden: !currentlyHidden
         })
@@ -114,7 +117,7 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
         return;
       }
 
-      alert(data.message);
+      alert(data.message || `Course ${!currentlyHidden ? 'hidden' : 'shown'} successfully`);
       await fetchCourses();
 
     } catch (error) {
@@ -122,6 +125,34 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
       alert('Failed to update course visibility');
     } finally {
       setToggleLoading(null);
+    }
+  };
+
+  const bulkUpdateVisibility = async (hideAll: boolean) => {
+    try {
+      setBulkUpdating(true);
+      const response = await fetch('/api/courses', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bulk: true,
+          scope: squadFilter !== 'all' ? 'squad' : 'all',
+          squad_id: squadFilter !== 'all' ? squadFilter : undefined,
+          admin_wallet: adminWallet,
+          is_hidden: hideAll
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || 'Bulk update failed');
+        return;
+      }
+      await fetchCourses();
+    } catch (e) {
+      console.error('Bulk visibility update error:', e);
+      alert('Bulk update failed');
+    } finally {
+      setBulkUpdating(false);
     }
   };
 
@@ -167,7 +198,7 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
     }
   };
 
-  const getSquadBadge = (squadId?: string) => {
+  const getSquadBadge = (squadId?: string, squadName?: string) => {
     const colors: Record<string, string> = {
       'creators': 'bg-purple-500',
       'decoders': 'bg-blue-500',
@@ -178,7 +209,7 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
 
     return (
       <Badge className={`${colors[squadId || 'all'] || 'bg-gray-500'} text-white`}>
-        {squadId || 'All'}
+        {squadName || squadId || 'All Squads'}
       </Badge>
     );
   };
@@ -268,6 +299,24 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
+
+            <Button 
+              onClick={() => bulkUpdateVisibility(true)} 
+              variant="outline"
+              disabled={bulkUpdating}
+              className="md:ml-auto"
+            >
+              {bulkUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <EyeOff className="w-4 h-4 mr-2" />}
+              Hide All{squadFilter !== 'all' ? ` (${squadFilter})` : ''}
+            </Button>
+            <Button 
+              onClick={() => bulkUpdateVisibility(false)} 
+              variant="outline"
+              disabled={bulkUpdating}
+            >
+              {bulkUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Eye className="w-4 h-4 mr-2" />}
+              Unhide All{squadFilter !== 'all' ? ` (${squadFilter})` : ''}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -289,7 +338,7 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-lg font-semibold text-white">{course.title}</h3>
-                      {getSquadBadge(course.squad_id)}
+                      {getSquadBadge(course.squad_id, course.squad_name)}
                       {course.is_hidden && (
                         <Badge className="bg-red-500 text-white">
                           <EyeOff className="w-3 h-3 mr-1" />
