@@ -67,6 +67,11 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
       }
 
       const data = await response.json();
+      console.log('[COURSE TAB] API Response:', {
+        coursesCount: data.courses?.length || 0,
+        stats: data.stats,
+        sampleCourse: data.courses?.[0]
+      });
       setCourses(data.courses || []);
       setStats(data.stats || null);
     } catch (error) {
@@ -129,28 +134,46 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
   };
 
   const bulkUpdateVisibility = async (hideAll: boolean) => {
+    const scope = squadFilter !== 'all' ? squadFilter : 'all';
+    const courseCount = scope === 'all' ? courses.length : courses.filter(c => c.squad_id === squadFilter).length;
+    
+    const confirmMessage = hideAll
+      ? `Are you sure you want to HIDE all ${courseCount} course(s)${scope !== 'all' ? ` in the ${squadFilter} squad` : ''}?\n\nThis will make them invisible to all users.`
+      : `Are you sure you want to UNHIDE all ${courseCount} course(s)${scope !== 'all' ? ` in the ${squadFilter} squad` : ''}?\n\nThis will make them visible to all users.`;
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
     try {
       setBulkUpdating(true);
+      console.log('[ADMIN COURSES] Bulk update visibility start', { hideAll, squadFilter, adminWallet });
       const response = await fetch('/api/courses', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           bulk: true,
-          scope: squadFilter !== 'all' ? 'squad' : 'all',
-          squad_id: squadFilter !== 'all' ? squadFilter : undefined,
+          scope: scope === 'all' ? 'all' : 'squad',
+          squad_id: scope !== 'all' ? squadFilter : undefined,
           admin_wallet: adminWallet,
           is_hidden: hideAll
         })
       });
-      const data = await response.json();
-      if (!response.ok) {
-        alert(data.error || 'Bulk update failed');
+      console.log('[ADMIN COURSES] Bulk update response status', response.status);
+      const data = await response.json().catch(() => ({}));
+      console.log('[ADMIN COURSES] Bulk update response body', data);
+      if (!response.ok || (data && data.success === false)) {
+        const errMsg = (data && (data.message || data.error)) || 'Bulk update failed';
+        alert(`Error: ${errMsg}`);
         return;
       }
+      
+      const updatedCount = data.updatedCount || courseCount;
+      alert(`Success! ${updatedCount} course(s) ${hideAll ? 'hidden' : 'unhidden'} successfully.`);
       await fetchCourses();
     } catch (e) {
       console.error('Bulk visibility update error:', e);
-      alert('Bulk update failed');
+      alert(`Failed to ${hideAll ? 'hide' : 'unhide'} courses. Please check the console for details.`);
     } finally {
       setBulkUpdating(false);
     }
@@ -214,8 +237,22 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
     );
   };
 
-  const getVisibleCount = () => courses.filter(c => !c.is_hidden).length;
-  const getHiddenCount = () => courses.filter(c => c.is_hidden).length;
+  // Helper function to determine if a course is hidden (matches API logic)
+  const isCourseHidden = (course: Course): boolean => {
+    // Check is_hidden first (if it exists and is explicitly true, course is hidden)
+    if (course.is_hidden === true) return true;
+    // Check is_visible (if it exists and is explicitly false, course is hidden)
+    if (course.is_visible === false) return true;
+    // If is_hidden exists and is explicitly false, course is visible
+    if (course.is_hidden === false) return false;
+    // If is_visible exists and is explicitly true, course is visible
+    if (course.is_visible === true) return false;
+    // Default: if neither is explicitly set or both are null/undefined, assume visible
+    return false;
+  };
+
+  const getVisibleCount = () => courses.filter(c => !isCourseHidden(c)).length;
+  const getHiddenCount = () => courses.filter(c => isCourseHidden(c)).length;
 
   if (loading) {
     return (
@@ -244,7 +281,9 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
             <CardTitle className="text-sm font-medium text-slate-400">Visible</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-500">{stats?.visible || getVisibleCount()}</div>
+            <div className="text-2xl font-bold text-green-500">
+              {stats?.visible !== undefined ? stats.visible : getVisibleCount()}
+            </div>
           </CardContent>
         </Card>
 
@@ -253,7 +292,9 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
             <CardTitle className="text-sm font-medium text-slate-400">Hidden</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-500">{stats?.hidden || getHiddenCount()}</div>
+            <div className="text-2xl font-bold text-red-500">
+              {stats?.hidden !== undefined ? stats.hidden : getHiddenCount()}
+            </div>
           </CardContent>
         </Card>
 
@@ -300,23 +341,34 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
               Refresh
             </Button>
 
-            <Button 
-              onClick={() => bulkUpdateVisibility(true)} 
-              variant="outline"
-              disabled={bulkUpdating}
-              className="md:ml-auto"
-            >
-              {bulkUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <EyeOff className="w-4 h-4 mr-2" />}
-              Hide All{squadFilter !== 'all' ? ` (${squadFilter})` : ''}
-            </Button>
-            <Button 
-              onClick={() => bulkUpdateVisibility(false)} 
-              variant="outline"
-              disabled={bulkUpdating}
-            >
-              {bulkUpdating ? <Loader2 className="w-4 h-4 mr-2 animate-spin"/> : <Eye className="w-4 h-4 mr-2" />}
-              Unhide All{squadFilter !== 'all' ? ` (${squadFilter})` : ''}
-            </Button>
+            <div className="flex gap-2 md:ml-auto">
+              <Button 
+                onClick={() => bulkUpdateVisibility(true)} 
+                variant="destructive"
+                disabled={bulkUpdating || courses.length === 0}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {bulkUpdating ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
+                ) : (
+                  <EyeOff className="w-4 h-4 mr-2" />
+                )}
+                Hide All{squadFilter !== 'all' ? ` ${squadFilter}` : ''}
+              </Button>
+              <Button 
+                onClick={() => bulkUpdateVisibility(false)} 
+                variant="default"
+                disabled={bulkUpdating || courses.length === 0}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {bulkUpdating ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
+                ) : (
+                  <Eye className="w-4 h-4 mr-2" />
+                )}
+                Unhide All{squadFilter !== 'all' ? ` ${squadFilter}` : ''}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

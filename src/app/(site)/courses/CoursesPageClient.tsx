@@ -52,18 +52,30 @@ export default function CoursesPageClient({ initialCourses }: CoursesPageClientP
             const updatedCourse = payload.new as Course;
             const oldCourse = payload.old as Course;
             
-            // Check if visibility or published status changed
-            if (oldCourse.is_visible !== updatedCourse.is_visible || 
+            // Helper to check if course is hidden (handles both schemas)
+            const isCourseHidden = (course: Course): boolean => {
+              if (course.is_hidden === true) return true;
+              if (course.is_visible === false) return true;
+              return false;
+            };
+            
+            // Check if visibility, hidden status, or published status changed
+            const wasHidden = isCourseHidden(oldCourse);
+            const isHidden = isCourseHidden(updatedCourse);
+            
+            if (wasHidden !== isHidden ||
+                oldCourse.is_visible !== updatedCourse.is_visible || 
+                oldCourse.is_hidden !== updatedCourse.is_hidden ||
                 oldCourse.is_published !== updatedCourse.is_published) {
               
               setCourses(prevCourses => {
-                // If course is no longer visible or published, remove it
-                if (!updatedCourse.is_visible || !updatedCourse.is_published) {
+                // If course is now hidden or not published, remove it
+                if (isHidden || !updatedCourse.is_published) {
                   return prevCourses.filter(c => c.id !== updatedCourse.id);
                 }
                 
                 // If course became visible and published, add it
-                if (updatedCourse.is_visible && updatedCourse.is_published) {
+                if (!isHidden && updatedCourse.is_published) {
                   const exists = prevCourses.find(c => c.id === updatedCourse.id);
                   if (!exists) {
                     return [...prevCourses, updatedCourse].sort((a, b) => {
@@ -85,7 +97,10 @@ export default function CoursesPageClient({ initialCourses }: CoursesPageClientP
             );
           } else if (payload.eventType === 'INSERT') {
             const newCourse = payload.new as Course;
-            if (newCourse.is_visible && newCourse.is_published) {
+            // Helper to check if course is hidden
+            const isHidden = newCourse.is_hidden === true || newCourse.is_visible === false;
+            // Only add course if it's visible (not hidden) and published
+            if (!isHidden && newCourse.is_published) {
               setCourses(prevCourses => {
                 const exists = prevCourses.find(c => c.id === newCourse.id);
                 if (!exists) {

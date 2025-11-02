@@ -81,7 +81,9 @@ export async function GET(
       // Check access permissions
       if (!isAdmin) {
         // Check if course is published and not hidden
-        if (!dbCourse.is_published || dbCourse.is_hidden) {
+        // Handle both is_hidden and is_visible schemas
+        const isHidden = dbCourse.is_hidden === true || dbCourse.is_visible === false;
+        if (!dbCourse.is_published || isHidden) {
           return NextResponse.json(
             { error: 'Course not available' },
             { status: 403 }
