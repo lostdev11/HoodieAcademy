@@ -2,13 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { getSolana, getSolflareProvider, hasSolflare } from '@/utils/wallet-utils';
 import { Button } from "@/components/ui/button";
-import { Wallet, ChevronDown } from 'lucide-react';
+import { Wallet, ChevronDown, Twitter } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Image from 'next/image';
 
 interface WalletInfo {
   name: string;
@@ -20,12 +21,81 @@ interface WalletInfo {
   getPublicKey: () => string | null;
 }
 
+interface Founder {
+  name: string;
+  xHandle: string;
+  pfp: string;
+}
+
+// Founder Card Component with error handling
+function FounderCard({ founder }: { founder: Founder }) {
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState(founder.pfp);
+
+  const handleImageError = () => {
+    if (!imageError) {
+      setImageError(true);
+      setImageSrc(`https://ui-avatars.com/api/?name=${encodeURIComponent(founder.name)}&background=amber&color=000&size=64`);
+    }
+  };
+
+  return (
+    <a
+      href={`https://x.com/${founder.xHandle.replace('@', '')}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 border border-gray-700/50 hover:bg-gray-700/50 hover:border-amber-500/30 transition-all duration-200 group"
+    >
+      <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-amber-500/20 group-hover:ring-amber-500/40 transition-all">
+        <Image
+          src={imageSrc}
+          alt={founder.name}
+          fill
+          className="object-cover"
+          unoptimized={imageError}
+          onError={handleImageError}
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-200 truncate group-hover:text-amber-300 transition-colors">
+          {founder.name}
+        </p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <Twitter className="w-3.5 h-3.5 text-gray-400 group-hover:text-amber-400 transition-colors" />
+          <p className="text-xs text-gray-400 truncate group-hover:text-amber-400/80 transition-colors">
+            {founder.xHandle}
+          </p>
+        </div>
+      </div>
+    </a>
+  );
+}
+
 export default function WalletConnect() {
   const [isConnected, setIsConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [currentWallet, setCurrentWallet] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>('');
+
+  // Founders data - update with actual founder information
+  const founders: Founder[] = [
+    {
+      name: 'Founder 1',
+      xHandle: '@founder1',
+      pfp: '/api/placeholder/64/64', // Replace with actual profile picture URLs
+    },
+    {
+      name: 'Founder 2',
+      xHandle: '@founder2',
+      pfp: '/api/placeholder/64/64',
+    },
+    {
+      name: 'Founder 3',
+      xHandle: '@founder3',
+      pfp: '/api/placeholder/64/64',
+    },
+  ];
 
   // Wallet configurations
   const wallets: Record<string, WalletInfo> = {
@@ -179,7 +249,7 @@ export default function WalletConnect() {
   }
 
   return (
-    <div className="space-y-2 w-full">
+    <div className="space-y-4 w-full">
       {/* Debug info - remove this in production */}
       {debugInfo && (
         <div className="text-xs text-gray-500 mb-2">
@@ -239,6 +309,19 @@ export default function WalletConnect() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+      </div>
+
+      {/* Founders Section */}
+      <div className="mt-6 pt-6 border-t border-gray-700/50">
+        <h3 className="text-sm font-semibold text-gray-300 mb-4 flex items-center gap-2">
+          <span className="text-amber-400">✨</span>
+          Founders
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {founders.map((founder, index) => (
+            <FounderCard key={index} founder={founder} />
+          ))}
+        </div>
       </div>
     </div>
   );

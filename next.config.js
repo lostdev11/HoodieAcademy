@@ -40,7 +40,8 @@ const nextConfig = {
       'images.unsplash.com', 
       'via.placeholder.com', 
       'arweave.net',
-      'wifhoodie.s3.eu-north-1.amazonaws.com'
+      'wifhoodie.s3.eu-north-1.amazonaws.com',
+      'ui-avatars.com'
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,

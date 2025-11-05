@@ -4,7 +4,8 @@ import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Wallet, ChevronDown, BookOpen } from 'lucide-react';
+import { Wallet, ChevronDown, BookOpen, Twitter } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { logUserActivity, logWalletConnection, logNftVerification } from '@/lib/activity-logger';
@@ -31,6 +32,60 @@ interface TokenGateProps {
 type WalletProvider = 'phantom' | 'solflare';
 
 const VERIFICATION_SESSION_KEY = 'wifhoodie_verification';
+
+interface Founder {
+  name: string;
+  xHandle: string;
+  pfp: string;
+  role?: string;
+}
+
+// Founder Card Component with error handling
+function FounderCard({ founder }: { founder: Founder }) {
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState(founder.pfp);
+
+  const handleImageError = () => {
+    if (!imageError) {
+      setImageError(true);
+      setImageSrc(`https://ui-avatars.com/api/?name=${encodeURIComponent(founder.name)}&background=amber&color=000&size=64`);
+    }
+  };
+
+  return (
+    <a
+      href={`https://x.com/${founder.xHandle.replace('@', '')}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-amber-500/30 transition-all duration-200 group backdrop-blur-sm"
+    >
+      <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-amber-500/20 group-hover:ring-amber-500/40 transition-all">
+        <Image
+          src={imageSrc}
+          alt={founder.name}
+          fill
+          className="object-cover"
+          unoptimized={imageError}
+          onError={handleImageError}
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-white truncate group-hover:text-amber-300 transition-colors">
+          {founder.name}
+        </p>
+        {founder.role && (
+          <p className="text-xs text-gray-300 mt-0.5">{founder.role}</p>
+        )}
+        <div className="flex items-center gap-1.5 mt-1">
+          <Twitter className="w-3.5 h-3.5 text-gray-400 group-hover:text-amber-400 transition-colors" />
+          <p className="text-xs text-gray-400 truncate group-hover:text-amber-400/80 transition-colors">
+            @{founder.xHandle.replace('@', '')}
+          </p>
+        </div>
+      </div>
+    </a>
+  );
+}
 
 export default function TokenGate({ children }: TokenGateProps) {
   const router = useRouter()
@@ -781,6 +836,32 @@ export default function TokenGate({ children }: TokenGateProps) {
           </div>
         </div>
         
+        {/* Founders Section */}
+        <div className="mt-6 pt-6 border-t border-white/10 px-4">
+          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+            <span className="text-amber-400">✨</span>
+            Founders
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              {
+                name: 'Kong',
+                xHandle: 'kongnificent_',
+                pfp: '/images/founders/Kong.jpg',
+                role: 'Founder'
+              },
+              {
+                name: 'JupDad',
+                xHandle: 'jupdad',
+                pfp: '/images/founders/JupDad.jpg',
+                role: 'Co-Founder'
+              }
+            ].map((founder, index) => (
+              <FounderCard key={index} founder={founder} />
+            ))}
+          </div>
+        </div>
+
         {/* Preview Academy Button */}
         <div className="mt-6 px-4">
           <Link href="/preview">
