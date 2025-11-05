@@ -16,33 +16,39 @@ export function middleware(request: NextRequest) {
   
   // Check actual protocol from forwarded headers (for reverse proxies like Vercel)
   // This is critical for mobile devices and proper HTTPS detection
-  // When behind a reverse proxy, x-forwarded-proto is the source of truth
   const forwardedProto = request.headers.get('x-forwarded-proto');
-  
-  // Determine if request is HTTPS:
-  // 1. If x-forwarded-proto exists and is 'https', trust it (this is set by Vercel/load balancers)
-  // 2. If x-forwarded-proto is 'http', trust it
-  // 3. Otherwise, check url.protocol (for direct connections)
-  const isHttps = forwardedProto === 'https' || 
-                  (forwardedProto === null && url.protocol === 'https:');
   
   // Only do redirects in production
   if (process.env.NODE_ENV === 'production') {
-    // Normalize to non-www
-    // Only redirect if we're not already on the non-www version
+    // Normalize to non-www - only redirect www to non-www
     if (hostname.startsWith('www.')) {
       const nonWwwHostname = hostname.replace('www.', '');
       url.hostname = nonWwwHostname;
       url.protocol = 'https:';
-      return NextResponse.redirect(url, 301); // Permanent redirect
+      return NextResponse.redirect(url, 301);
     }
     
-    // Redirect HTTP to HTTPS
-    // Only redirect if we're definitely on HTTP (multiple checks to prevent loops)
-    if (forwardedProto === 'http' || (forwardedProto === null && url.protocol === 'http:')) {
-      url.protocol = 'https:';
-      return NextResponse.redirect(url, 301); // Permanent redirect
+    // If we're already on HTTPS (confirmed by forwarded header), skip HTTP redirect check
+    if (forwardedProto === 'https') {
+      // Already on HTTPS, no redirect needed - just continue
+      const response = NextResponse.next();
+      response.headers.set('X-Content-Type-Options', 'nosniff');
+      response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+      return response;
     }
+    
+    // Redirect HTTP to HTTPS - only if we're absolutely certain it's HTTP
+    // Check forwarded header first (most reliable), then fall back to URL protocol
+    if (forwardedProto === 'http') {
+      // Definitely HTTP, redirect to HTTPS
+      url.protocol = 'https:';
+      return NextResponse.redirect(url, 301);
+    } else if (forwardedProto === null && url.protocol === 'http:') {
+      // No forwarded header but URL is HTTP, redirect to HTTPS
+      url.protocol = 'https:';
+      return NextResponse.redirect(url, 301);
+    }
+    // If url.protocol is 'https:', we're already on HTTPS, no redirect needed
   }
   
   // Add security headers for mobile browser compatibility
