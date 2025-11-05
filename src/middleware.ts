@@ -20,27 +20,29 @@ export function middleware(request: NextRequest) {
   const forwardedProto = request.headers.get('x-forwarded-proto');
   
   // Determine if request is HTTPS:
-  // 1. If x-forwarded-proto exists, trust it (this is set by Vercel/load balancers)
-  // 2. Otherwise, check url.protocol (for direct connections)
-  const isHttps = forwardedProto 
-    ? forwardedProto === 'https'
-    : url.protocol === 'https:';
+  // 1. If x-forwarded-proto exists and is 'https', trust it (this is set by Vercel/load balancers)
+  // 2. If x-forwarded-proto is 'http', trust it
+  // 3. Otherwise, check url.protocol (for direct connections)
+  const isHttps = forwardedProto === 'https' || 
+                  (forwardedProto === null && url.protocol === 'https:');
   
-  // Normalize to non-www (only for production)
-  // Only redirect if we're not already on the non-www version
-  if (hostname.startsWith('www.') && process.env.NODE_ENV === 'production') {
-    const nonWwwHostname = hostname.replace('www.', '');
-    url.hostname = nonWwwHostname;
-    url.protocol = 'https:';
-    return NextResponse.redirect(url, 301); // Permanent redirect
-  }
-  
-  // Redirect HTTP to HTTPS (only in production)
-  // Check both forwarded header and URL protocol to avoid redirect loops
-  // Also ensure we're not already on HTTPS to prevent loops
-  if (!isHttps && process.env.NODE_ENV === 'production' && url.protocol !== 'https:') {
-    url.protocol = 'https:';
-    return NextResponse.redirect(url, 301); // Permanent redirect
+  // Only do redirects in production
+  if (process.env.NODE_ENV === 'production') {
+    // Normalize to non-www
+    // Only redirect if we're not already on the non-www version
+    if (hostname.startsWith('www.')) {
+      const nonWwwHostname = hostname.replace('www.', '');
+      url.hostname = nonWwwHostname;
+      url.protocol = 'https:';
+      return NextResponse.redirect(url, 301); // Permanent redirect
+    }
+    
+    // Redirect HTTP to HTTPS
+    // Only redirect if we're definitely on HTTP (multiple checks to prevent loops)
+    if (forwardedProto === 'http' || (forwardedProto === null && url.protocol === 'http:')) {
+      url.protocol = 'https:';
+      return NextResponse.redirect(url, 301); // Permanent redirect
+    }
   }
   
   // Add security headers for mobile browser compatibility
