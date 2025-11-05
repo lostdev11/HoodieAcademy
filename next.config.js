@@ -70,25 +70,8 @@ const nextConfig = {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
           },
-          // Allow Phantom wallet injection - critical for mobile
-          // More permissive CSP for Phantom mobile browser compatibility
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://phantom.app https://*.phantom.app https:",
-              "style-src 'self' 'unsafe-inline' https:",
-              "img-src 'self' data: https: blob:",
-              "font-src 'self' data: https:",
-              "connect-src 'self' https: wss: ws:",
-              "frame-src 'self' https://phantom.app https://*.phantom.app https:",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'self'",
-              "upgrade-insecure-requests",
-            ].join('; '),
-          },
+          // CSP temporarily removed to debug mobile loading issues
+          // Will re-add with more permissive settings once mobile is confirmed working
         ],
       },
     ];
