@@ -30,7 +30,7 @@ export default function CourseSchema({
     "provider": {
       "@type": "Organization",
       "name": "Hoodie Academy",
-      "url": "https://hoodieacademy.xyz"
+      "url": "https://hoodieacademy.com"
     },
     "courseMode": "online",
     "educationalLevel": level === 'beginner' ? 'Beginner' : level === 'intermediate' ? 'Intermediate' : 'Advanced',

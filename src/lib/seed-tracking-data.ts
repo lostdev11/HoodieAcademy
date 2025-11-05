@@ -7,101 +7,42 @@ const supabase = createClient();
 
 /**
  * Seed script for generating test tracking data
- * This creates sample users, events, bounties, and submissions for testing
+ * 
+ * ⚠️ WARNING: This file is for DEVELOPMENT/TESTING only!
+ * Do not use mock/test users in production. Real users should be created
+ * automatically when they connect their wallets.
+ * 
+ * This creates sample events, bounties, and submissions for testing
+ * (without creating mock users)
  */
 
 export async function seedTrackingData(): Promise<{ success: boolean; error?: string }> {
   try {
     console.log('🌱 Starting tracking data seed...');
+    console.log('⚠️  WARNING: This function is for development/testing only!');
+    console.log('⚠️  Mock users have been removed. Only use real wallet addresses.');
 
-    // Sample admin wallets
-    const adminWallets = [
-      'AdminWallet1Test123456789',
-      'AdminWallet2Test123456789'
-    ];
-
-    // Insert admin wallets
-    for (const wallet of adminWallets) {
-      await supabase
-        .from('admin_wallets')
-        .upsert({
-          wallet_address: wallet,
-          label: `Admin Wallet ${adminWallets.indexOf(wallet) + 1}`
-        });
-    }
-
-    // Sample users
-    const sampleUsers = [
-      {
-        wallet_address: 'User1Test123456789',
-        display_name: 'Alice Johnson',
-        squad: 'Alpha',
-        profile_completed: true,
-        squad_test_completed: true,
-        placement_test_completed: true,
-        is_admin: false,
-        last_active_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-        created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days ago
-      },
-      {
-        wallet_address: 'User2Test123456789',
-        display_name: 'Bob Smith',
-        squad: 'Beta',
-        profile_completed: true,
-        squad_test_completed: false,
-        placement_test_completed: true,
-        is_admin: false,
-        last_active_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-        created_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days ago
-      },
-      {
-        wallet_address: 'User3Test123456789',
-        display_name: 'Charlie Brown',
-        squad: 'Gamma',
-        profile_completed: false,
-        squad_test_completed: false,
-        placement_test_completed: false,
-        is_admin: false,
-        last_active_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), // 8 days ago (inactive)
-        created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days ago
-      },
-      {
-        wallet_address: adminWallets[0],
-        display_name: 'Admin User',
-        squad: 'Admin',
-        profile_completed: true,
-        squad_test_completed: true,
-        placement_test_completed: true,
-        is_admin: true,
-        last_active_at: new Date().toISOString(), // Now
-        created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString() // 60 days ago
-      }
-    ];
-
-    // Insert users
-    const { data: users, error: usersError } = await supabase
+    // Get existing users from database (no mock users will be created)
+    const { data: existingUsers, error: usersError } = await supabase
       .from('users')
-      .upsert(sampleUsers, { onConflict: 'wallet_address' })
-      .select('id, wallet_address');
+      .select('id, wallet_address')
+      .limit(10);
 
     if (usersError) {
-      throw new Error(`Failed to insert users: ${usersError.message}`);
+      throw new Error(`Failed to fetch existing users: ${usersError.message}`);
     }
 
-    console.log(`✅ Created ${users.length} users`);
-
-    // Create wallets for users
-    for (const user of users) {
-      await supabase
-        .from('wallets')
-        .upsert({
-          user_id: user.id,
-          address: user.wallet_address,
-          is_primary: true,
-          connected_first_at: user.created_at,
-          connected_last_at: user.last_active_at
-        });
+    if (!existingUsers || existingUsers.length === 0) {
+      console.log('⚠️  No users found in database. Seed function requires real users.');
+      console.log('⚠️  Connect real wallets before seeding tracking data.');
+      return { 
+        success: false, 
+        error: 'No users found. Real users must be created by connecting wallets first.' 
+      };
     }
+
+    const users = existingUsers;
+    console.log(`✅ Using ${users.length} existing real users for seed data`);
 
     // Create sample bounties
     const sampleBounties = [

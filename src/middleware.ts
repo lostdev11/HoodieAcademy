@@ -2,9 +2,27 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  const hostname = request.headers.get('host') || '';
+  
+  // Normalize to non-www and HTTPS
+  // Redirect www to non-www
+  if (hostname.startsWith('www.')) {
+    const nonWwwHostname = hostname.replace('www.', '');
+    url.hostname = nonWwwHostname;
+    url.protocol = 'https:';
+    return NextResponse.redirect(url, 301); // Permanent redirect
+  }
+  
+  // Redirect HTTP to HTTPS (only if not already HTTPS)
+  if (url.protocol === 'http:') {
+    url.protocol = 'https:';
+    return NextResponse.redirect(url, 301); // Permanent redirect
+  }
+  
   // TEMPORARILY DISABLED TO FIX ADMIN ACCESS
   // This middleware was causing infinite redirect loops
-  return NextResponse.next();
+  // Admin routes are handled by the pages themselves now
   
   // Check if the request is for admin routes
   // if (request.nextUrl.pathname.startsWith('/admin') || 
@@ -23,12 +41,18 @@ export function middleware(request: NextRequest) {
   //   return NextResponse.redirect(new URL('/admin-auth-check', request.url));
   // }
   
-  // return NextResponse.next();
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/admin/:path*',
-    '/api/admin/:path*',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };

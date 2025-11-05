@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import TokenGate from '@/components/TokenGate';
+import CryptoPriceTicker from '@/components/CryptoPriceTicker';
 import { 
   EnhancedLeaderboardService, 
   LeaderboardUser, 
@@ -230,6 +231,7 @@ export default function EnhancedLeaderboardPage() {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
+          <CryptoPriceTicker />
           {/* Header */}
           <header className="bg-slate-800/50 border-b border-cyan-500/30 p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

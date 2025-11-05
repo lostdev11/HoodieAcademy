@@ -89,33 +89,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Convert to array and create user objects
-    let walletArray = Array.from(connectedWallets);
+    const walletArray = Array.from(connectedWallets);
     console.log(`[TOTAL] Found ${walletArray.length} unique connected wallets`);
-
-    // If no wallets found, create some test wallets for demonstration
-    if (walletArray.length === 0) {
-      console.log('[DEMO] Creating demo wallets for testing...');
-      walletArray = [
-        'JCUGres3WA8MbHgzoBNRqcKRcrfyCk31yK16bfzFUtoU',
-        'DemoWallet1234567890123456789012345678901234567890',
-        'TestWallet9876543210987654321098765432109876543210'
-      ];
-    }
 
     const users = walletArray.map((wallet, index) => ({
       id: `wallet_${index}`,
       wallet_address: wallet,
-      display_name: wallet.startsWith('Demo') || wallet.startsWith('Test') 
-        ? `Demo User ${index + 1}` 
-        : `User ${wallet.slice(0, 6)}...`,
+      display_name: `User ${wallet.slice(0, 6)}...`,
       username: `user_${index}`,
       squad: index % 3 === 0 ? 'hoodie-creators' : index % 3 === 1 ? 'hoodie-decoders' : 'hoodie-speakers',
       total_xp: Math.floor(Math.random() * 1000) + 100,
       level: Math.floor(Math.random() * 20) + 1,
       profile_picture: null,
-      bio: wallet.startsWith('Demo') || wallet.startsWith('Test') 
-        ? 'Demo user for testing purposes' 
-        : null,
+      bio: null,
       created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 30 days
       last_active: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 7 days
       updated_at: new Date().toISOString()

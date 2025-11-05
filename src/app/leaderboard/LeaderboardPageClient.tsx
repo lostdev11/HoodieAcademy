@@ -76,19 +76,45 @@ export default function LeaderboardPageClient() {
       }
 
       const response = await fetch(`/api/leaderboard?${params}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch leaderboard: ${response.statusText}`);
+      }
+
       const data = await response.json();
 
-      if (data.success) {
-        setLeaderboard(data.leaderboard || []);
+      if (data.success && data.leaderboard) {
+        // Ensure all required fields are present
+        const sanitizedLeaderboard = data.leaderboard.map((user: any) => ({
+          wallet_address: user.wallet_address || '',
+          display_name: user.display_name || `${user.wallet_address?.slice(0, 6)}...${user.wallet_address?.slice(-4)}` || 'Unknown',
+          total_xp: user.total_xp || 0,
+          level: user.level || Math.floor((user.total_xp || 0) / 1000) + 1,
+          squad: user.squad || undefined,
+          rank: user.rank || 0,
+          xpToNextLevel: user.xpToNextLevel || 1000,
+          progressToNextLevel: user.progressToNextLevel || 0
+        }));
+        
+        // Sort by rank to ensure correct order
+        sanitizedLeaderboard.sort((a: any, b: any) => a.rank - b.rank);
+        
+        setLeaderboard(sanitizedLeaderboard);
+      } else {
+        console.error('API returned unsuccessful response:', data);
+        setLeaderboard([]);
       }
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
+      setLeaderboard([]);
     } finally {
       setLoading(false);
     }
   };
 
   const fetchUserRank = async () => {
+    if (!walletAddress) return;
+    
     try {
       const params = new URLSearchParams({
         wallet: walletAddress
@@ -99,13 +125,38 @@ export default function LeaderboardPageClient() {
       }
 
       const response = await fetch(`/api/leaderboard?${params}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          // User not found in leaderboard
+          setCurrentUserRank(null);
+          return;
+        }
+        throw new Error(`Failed to fetch user rank: ${response.statusText}`);
+      }
+
       const data = await response.json();
 
-      if (data.success) {
-        setCurrentUserRank(data.user);
+      if (data.success && data.user) {
+        // Ensure all required fields are present
+        const sanitizedUser = {
+          wallet_address: data.user.wallet_address || walletAddress,
+          display_name: data.user.display_name || `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+          total_xp: data.user.total_xp || 0,
+          level: data.user.level || Math.floor((data.user.total_xp || 0) / 1000) + 1,
+          squad: data.user.squad || undefined,
+          rank: data.user.rank || 0,
+          xpToNextLevel: data.user.xpToNextLevel || 1000,
+          progressToNextLevel: data.user.progressToNextLevel || 0
+        };
+        
+        setCurrentUserRank(sanitizedUser);
+      } else {
+        setCurrentUserRank(null);
       }
     } catch (error) {
       console.error('Error fetching user rank:', error);
+      setCurrentUserRank(null);
     }
   };
 
@@ -124,7 +175,7 @@ export default function LeaderboardPageClient() {
     return 'from-slate-600 to-slate-700 border-slate-500';
   };
 
-  const squads = ['Decoders', 'Creators', 'Speakers', 'Raiders', 'Rangers'];
+  const squads = ['Creators', 'Decoders', 'Speakers', 'Raiders', 'Rangers'];
 
   return (
     <TokenGate>

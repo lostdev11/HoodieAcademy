@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import FeedbackTrackerWidget from '@/components/feedback/FeedbackTrackerWidget';
 import UserFeedbackForm from '@/components/feedback/UserFeedbackForm';
+import CommunitySubmissionsList from '@/components/feedback/CommunitySubmissionsList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sparkles, TrendingUp, Users, MessageCircle, ArrowLeft, Home } from 'lucide-react';
@@ -99,8 +100,11 @@ export default function FeedbackPage() {
           </Card>
         </div>
 
-        {/* Main Feedback Widget */}
+        {/* Main Feedback Widget - Admin Updates */}
         <FeedbackTrackerWidget limit={10} showTitle={true} />
+
+        {/* Community Submissions List */}
+        <CommunitySubmissionsList walletAddress={walletAddress} limit={10} showTitle={true} />
 
         {/* User Feedback Submission Form */}
         <UserFeedbackForm walletAddress={walletAddress} />

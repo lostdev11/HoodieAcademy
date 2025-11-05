@@ -14,7 +14,8 @@ import {
   Wrench,
   Palette,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  Users
 } from 'lucide-react';
 
 interface FeedbackUpdate {
@@ -27,6 +28,7 @@ interface FeedbackUpdate {
   fixed_date: string;
   upvotes: number;
   priority: number;
+  original_submission_id?: string; // Links to community submission
 }
 
 interface FeedbackTrackerWidgetProps {
@@ -210,7 +212,11 @@ export default function FeedbackTrackerWidget({
               return (
                 <div
                   key={update.id}
-                  className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/50 hover:border-green-500/50 transition-all duration-200 group"
+                  className={`p-4 bg-slate-700/30 rounded-lg border ${
+                    update.original_submission_id 
+                      ? 'border-cyan-500/50 hover:border-cyan-400' 
+                      : 'border-slate-600/50 hover:border-green-500/50'
+                  } transition-all duration-200 group`}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center space-x-2 flex-1">
@@ -218,9 +224,24 @@ export default function FeedbackTrackerWidget({
                         <CategoryIcon className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-white group-hover:text-green-400 transition-colors truncate">
-                          {update.title}
-                        </h4>
+                        <div className="flex items-center space-x-2">
+                          <h4 className={`text-sm font-semibold transition-colors truncate ${
+                            update.original_submission_id 
+                              ? 'text-white group-hover:text-cyan-400' 
+                              : 'text-white group-hover:text-green-400'
+                          }`}>
+                            {update.title}
+                          </h4>
+                          {update.original_submission_id && (
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs bg-cyan-500/20 text-cyan-400 border-cyan-500/50 px-2 py-0 flex items-center gap-1"
+                            >
+                              <Users className="w-3 h-3" />
+                              Community
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <Badge 

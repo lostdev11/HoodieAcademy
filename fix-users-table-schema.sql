@@ -39,68 +39,8 @@ CREATE INDEX IF NOT EXISTS idx_users_placement_test_completed ON users(placement
 CREATE INDEX IF NOT EXISTS idx_users_total_xp ON users(total_xp);
 CREATE INDEX IF NOT EXISTS idx_users_level ON users(level);
 
--- Insert some test users if the table is empty
-INSERT INTO users (
-  wallet_address, 
-  display_name, 
-  squad, 
-  is_admin, 
-  profile_completed, 
-  squad_test_completed, 
-  placement_test_completed,
-  total_xp,
-  level,
-  xp_total,
-  last_active,
-  last_seen,
-  created_at
-) VALUES 
-  (
-    'test-wallet-1',
-    'Test User 1',
-    'Alpha',
-    false,
-    true,
-    true,
-    true,
-    1500,
-    3,
-    1500,
-    NOW(),
-    NOW(),
-    NOW() - INTERVAL '7 days'
-  ),
-  (
-    'test-wallet-2', 
-    'Test User 2',
-    'Beta',
-    false,
-    true,
-    true,
-    false,
-    800,
-    2,
-    800,
-    NOW(),
-    NOW(),
-    NOW() - INTERVAL '3 days'
-  ),
-  (
-    'admin-wallet',
-    'Admin User',
-    'Gamma',
-    true,
-    true,
-    true,
-    true,
-    5000,
-    10,
-    5000,
-    NOW(),
-    NOW(),
-    NOW() - INTERVAL '30 days'
-  )
-ON CONFLICT (wallet_address) DO NOTHING;
+-- Note: Test users removed - only use real wallet addresses
+-- The users table will be populated automatically when real users connect their wallets
 
 -- Verify the table structure
 SELECT 

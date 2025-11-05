@@ -16,7 +16,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Eye
+  Eye,
+  FileText
 } from 'lucide-react';
 import { LinkifyText } from "./LinkifyText";
 
@@ -61,6 +62,7 @@ export default function UserFeedbackManager({ walletAddress }: UserFeedbackManag
   const [filterCategory, setFilterCategory] = useState('all');
   const [selectedFeedback, setSelectedFeedback] = useState<UserFeedback | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [creatingPatchNote, setCreatingPatchNote] = useState(false);
 
   const fetchSubmissions = async () => {
     try {
@@ -118,6 +120,59 @@ export default function UserFeedbackManager({ walletAddress }: UserFeedbackManag
       alert('Failed to update status: ' + (err instanceof Error ? err.message : 'Unknown error'));
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleCreatePatchNote = async (submission: UserFeedback) => {
+    if (!walletAddress) {
+      alert('Wallet not connected');
+      return;
+    }
+
+    setCreatingPatchNote(true);
+    try {
+      // Map submission category to patch note category
+      const categoryMap: Record<string, string> = {
+        'bug_report': 'bug_fix',
+        'feature_request': 'feature',
+        'improvement': 'improvement',
+        'ui_ux': 'ui_ux',
+        'performance': 'performance'
+      };
+
+      const response = await fetch('/api/feedback-updates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: submission.title,
+          description: submission.description,
+          category: categoryMap[submission.category] || 'improvement',
+          status: 'fixed',
+          requested_by: submission.wallet_address !== 'anonymous' ? submission.wallet_address : null,
+          priority: 8, // High priority for community submissions
+          original_submission_id: submission.id,
+          adminWallet: walletAddress
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create patch note');
+      }
+
+      alert('Patch note created successfully! It will appear in the "You Asked, We Fixed" section.');
+      
+      // Update the submission status to implemented if not already
+      if (submission.status !== 'implemented') {
+        await handleStatusUpdate(submission.id, 'implemented');
+      }
+
+    } catch (err) {
+      console.error('Error creating patch note:', err);
+      alert('Failed to create patch note: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    } finally {
+      setCreatingPatchNote(false);
     }
   };
 
@@ -355,24 +410,51 @@ export default function UserFeedbackManager({ walletAddress }: UserFeedbackManag
                 </div>
               )}
 
-              <div className="pt-4 border-t border-slate-600">
-                <p className="text-xs text-gray-500 mb-3">Update Status</p>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-                    <Button
-                      key={key}
-                      size="sm"
-                      onClick={() => handleStatusUpdate(selectedFeedback.id, key)}
-                      disabled={updating || selectedFeedback.status === key}
-                      className={`text-xs ${
-                        selectedFeedback.status === key
-                          ? 'bg-green-500/20 text-green-400 border-green-500'
-                          : 'bg-slate-700 text-gray-300 border-slate-600'
-                      }`}
-                    >
-                      {config.label}
-                    </Button>
-                  ))}
+              <div className="pt-4 border-t border-slate-600 space-y-3">
+                <div>
+                  <p className="text-xs text-gray-500 mb-3">Update Status</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(STATUS_CONFIG).map(([key, config]) => (
+                      <Button
+                        key={key}
+                        size="sm"
+                        onClick={() => handleStatusUpdate(selectedFeedback.id, key)}
+                        disabled={updating || selectedFeedback.status === key}
+                        className={`text-xs ${
+                          selectedFeedback.status === key
+                            ? 'bg-green-500/20 text-green-400 border-green-500'
+                            : 'bg-slate-700 text-gray-300 border-slate-600'
+                        }`}
+                      >
+                        {config.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Create Patch Note Button */}
+                <div className="pt-2 border-t border-slate-600">
+                  <Button
+                    size="sm"
+                    onClick={() => handleCreatePatchNote(selectedFeedback)}
+                    disabled={creatingPatchNote || updating}
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
+                  >
+                    {creatingPatchNote ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4 mr-2" />
+                        Create Patch Note
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Creates an entry in "You Asked, We Fixed" section and marks this as implemented
+                  </p>
                 </div>
               </div>
             </CardContent>

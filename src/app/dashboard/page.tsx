@@ -16,6 +16,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { MobileNavigation } from "@/components/dashboard/MobileNavigation";
 import TokenGate from "@/components/TokenGate";
 import SquadBadge from "@/components/SquadBadge";
+import CryptoPriceTicker from "@/components/CryptoPriceTicker";
 import { fetchUserSquad } from "@/utils/squad-api";
 import Image from "next/image";
 import { supabase } from "@/utils/supabase/client";
@@ -427,21 +428,22 @@ export default function HoodieAcademy() {
           "@type": "WebSite",
           "name": "Hoodie Academy",
           "description": "Master Web3, NFTs, and crypto trading with gamified learning. Join the Hoodie Academy community and become a Web3 expert.",
-          "url": "https://hoodieacademy.xyz",
+          "url": "https://hoodieacademy.com",
           "potentialAction": {
             "@type": "SearchAction",
-            "target": "https://hoodieacademy.xyz/courses?search={search_term_string}",
+            "target": "https://hoodieacademy.com/courses?search={search_term_string}",
             "query-input": "required name=search_term_string",
           },
           "publisher": {
             "@type": "Organization",
             "name": "Hoodie Academy",
-            "url": "https://hoodieacademy.xyz",
+            "url": "https://hoodieacademy.com",
           },
         }) }} />
         <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
           <DashboardSidebar isCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
           <div className="flex-1 flex flex-col">
+            <CryptoPriceTicker />
             <header className="bg-slate-800/50 border-b border-cyan-500/30 px-4 py-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center space-x-4 sm:space-x-6">

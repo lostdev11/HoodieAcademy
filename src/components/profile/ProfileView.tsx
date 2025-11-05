@@ -58,6 +58,134 @@ const getRealUserData = (walletAddress: string) => {
   return null;
 };
 
+// Friends Card Component
+function FriendsCard({ wallet }: { wallet: string }) {
+  const [friends, setFriends] = useState<any[]>([]);
+  const [stats, setStats] = useState({ followers: 0, following: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!wallet) return;
+    
+    const loadFriends = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch friends stats
+        const statsResponse = await fetch(`/api/friends/stats?wallet=${wallet}`);
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          if (statsData.success) {
+            setStats(statsData.stats);
+          }
+        }
+
+        // Fetch top followers
+        const friendsResponse = await fetch(`/api/friends?wallet=${wallet}&type=followers`);
+        if (friendsResponse.ok) {
+          const friendsData = await friendsResponse.json();
+          if (friendsData.success) {
+            setFriends(friendsData.friends.slice(0, 6)); // Top 6
+          }
+        }
+      } catch (error) {
+        console.error('Error loading friends:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFriends();
+  }, [wallet]);
+
+  const getSquadName = (squadId: string) => {
+    const squad = squadTracks.find(s => s.id === squadId);
+    return squad ? squad.name : squadId;
+  };
+
+  if (loading) {
+    return (
+      <Card className="w-full max-w-2xl bg-slate-800/60 border-purple-500/30 mb-8">
+        <CardHeader>
+          <CardTitle className="text-purple-400 flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            Friends
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mx-auto"></div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="w-full max-w-2xl bg-slate-800/60 border-purple-500/30 mb-8">
+      <CardHeader>
+        <CardTitle className="text-purple-400 flex items-center gap-2">
+          <Users className="w-5 h-5" />
+          Top Friends
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-4 bg-slate-700/30 rounded-lg">
+              <div className="text-2xl font-bold text-purple-400">{stats.followers}</div>
+              <div className="text-sm text-gray-400">Followers</div>
+            </div>
+            <div className="text-center p-4 bg-slate-700/30 rounded-lg">
+              <div className="text-2xl font-bold text-blue-400">{stats.following}</div>
+              <div className="text-sm text-gray-400">Following</div>
+            </div>
+          </div>
+
+          {/* Friends List */}
+          {friends.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {friends.map((friend: any) => {
+                const user = friend.follower_user;
+                if (!user) return null;
+                
+                return (
+                  <Link
+                    key={friend.id}
+                    href={`/profile/${user.wallet_address}`}
+                    className="block"
+                  >
+                    <Card className="bg-slate-700/30 border-slate-600/30 hover:border-purple-500/50 transition-all cursor-pointer">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl">
+                            {user.profile_picture || '🧑‍🎓'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-white truncate">
+                              {user.display_name || `User ${user.wallet_address.slice(0, 6)}...`}
+                            </p>
+                            {user.squad && (
+                              <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs mt-1">
+                                {getSquadName(user.squad)}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-400 text-center py-4">No followers yet</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ProfileView() {
   const [editMode, setEditMode] = useState(false);
   const [displayName, setDisplayName] = useState('');
@@ -483,7 +611,7 @@ export function ProfileView() {
           },
           body: JSON.stringify({
             owner: wallet,
-            assetId: nftData?.id || 'emoji',
+            assetId: nftData?.mint || 'emoji',
             imageUrl: imageUrl,
           }),
         });
@@ -1259,6 +1387,9 @@ export function ProfileView() {
             </CardContent>
           </Card>
         )}
+
+        {/* Friends Card */}
+        <FriendsCard wallet={wallet} />
 
         <Card className="w-full max-w-2xl bg-slate-800/60 border-green-500/30 mb-8">
           <CardHeader>

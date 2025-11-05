@@ -1,5 +1,18 @@
+import { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+
+export const metadata: Metadata = {
+  title: '404 - Page Not Found',
+  description: 'The page you are looking for does not exist.',
+  robots: {
+    index: false,
+    follow: true,
+    noarchive: true,
+    nosnippet: true,
+  },
+  // No canonical URL for 404 pages - they should not be indexed
+};
 
 export default function NotFound() {
   return (

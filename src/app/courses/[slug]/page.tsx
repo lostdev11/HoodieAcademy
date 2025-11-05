@@ -3,8 +3,17 @@ import { notFound } from 'next/navigation';
 import CoursePageClient from './CoursePageClient';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import BreadcrumbList from '@/components/SEO/BreadcrumbList';
+import { getCoursePaths } from '@/lib/getCoursePaths';
 import fs from 'fs';
 import path from 'path';
+
+// Generate static params for all course routes
+export async function generateStaticParams() {
+  const slugs = getCoursePaths();
+  return slugs.map((slug) => ({
+    slug: slug,
+  }));
+}
 
 // Function to get course data
 async function getCourseData(slug: string) {
@@ -14,7 +23,7 @@ async function getCourseData(slug: string) {
     // Use the API route to get course data
     const baseUrl = process.env.NODE_ENV === 'development' 
       ? 'http://localhost:3008' 
-      : 'https://hoodieacademy.xyz';
+      : 'https://hoodieacademy.com';
     
     const response = await fetch(`${baseUrl}/api/courses/${slug}`, {
       method: 'GET',
@@ -131,7 +140,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
         images: ['/images/hoodie-academy-courses.png'],
       },
       alternates: {
-        canonical: `/courses/${params.slug}`,
+        canonical: `https://hoodieacademy.com/courses/${params.slug}`,
       },
     };
   } catch (error) {

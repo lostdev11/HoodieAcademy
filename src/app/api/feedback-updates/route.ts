@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       status = 'fixed',
       requested_by,
       priority = 0,
+      original_submission_id,
       adminWallet 
     } = await request.json();
 
@@ -106,6 +107,7 @@ export async function POST(request: NextRequest) {
         status,
         requested_by,
         priority,
+        original_submission_id,
         is_active: true
       })
       .select()

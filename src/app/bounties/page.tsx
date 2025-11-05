@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     images: ['/images/hoodie-academy-bounties.png'],
   },
   alternates: {
-    canonical: '/bounties',
+    canonical: 'https://hoodieacademy.com/bounties',
   },
 };
 

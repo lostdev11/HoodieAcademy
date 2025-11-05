@@ -41,6 +41,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar"
 import { MobileNavigation } from "@/components/dashboard/MobileNavigation"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
+import CryptoPriceTicker from "@/components/CryptoPriceTicker"
 import { fetchUserSquad } from '@/utils/squad-api'
 import Image from 'next/image'
 
@@ -326,17 +327,38 @@ export default function HoodieAcademy() {
         }}
       />
       
-      <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        {/* Sidebar */}
-        <DashboardSidebar 
-          isCollapsed={sidebarCollapsed} 
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
-        />
+      <div className="relative flex min-h-screen">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: 'url(/images/library-background.png)',
+            backgroundSize: 'contain',
+            backgroundPosition: 'center center',
+            backgroundRepeat: 'repeat'
+          }}
+        >
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+          {/* Warm overlays to match library aesthetic */}
+          <div className="absolute inset-0 bg-[#3a2619]/40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#2a1a10]/30 via-[#3a2619]/40 to-[#4a2f1f]/50" />
+        </div>
+
+        {/* Content Wrapper */}
+        <div className="relative z-10 flex w-full">
+          {/* Sidebar */}
+          <DashboardSidebar 
+            isCollapsed={sidebarCollapsed} 
+            onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
+          />
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col">
+          {/* Crypto Price Ticker */}
+          <CryptoPriceTicker />
+          
           {/* Header */}
-          <header className="bg-slate-800/50 border-b border-cyan-500/30 px-4 py-6">
+          <header className="bg-slate-800/50 backdrop-blur-sm border-b border-cyan-500/30 px-4 py-6">
             <div className="flex flex-col gap-4">
               <div className="flex items-center space-x-4 sm:space-x-6">
                 {/* Mobile Navigation */}
@@ -660,6 +682,7 @@ export default function HoodieAcademy() {
             </Card>
           </main>
         </div>
+      </div>
       </div>
     </TokenGate>
   )

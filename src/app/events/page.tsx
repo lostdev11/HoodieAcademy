@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     title: 'Events - Hoodie Academy',
     description: 'Stay updated with the latest events, workshops, and meetups at Hoodie Academy.',
     type: 'website',
-    url: 'https://hoodieacademy.xyz/events',
+    url: 'https://hoodieacademy.com/events',
     images: [
       {
         url: '/images/hoodie-academy-events.png',
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     images: ['/images/hoodie-academy-events.png'],
   },
   alternates: {
-    canonical: '/events',
+    canonical: 'https://hoodieacademy.com/events',
   },
 };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useChat } from 'ai/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,59 +57,44 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const messagesRemaining = MESSAGE_LIMIT - messageCount;
 
   // Set initial position after component mounts to avoid hydration mismatch
+  // Make it visible on mobile by checking viewport size
   useEffect(() => {
+    const isMobile = window.innerWidth < 768;
     setPosition(prev => ({
       ...prev,
-      y: window.innerHeight - 80
+      y: isMobile ? Math.min(window.innerHeight - 80, window.innerHeight * 0.5) : window.innerHeight - 80,
+      x: isMobile ? 16 : 24 // Better mobile positioning
     }));
   }, []);
-
-  // Drag functionality
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!widgetRef.current) return;
-    
-    // Prevent opening chat when dragging
-    e.preventDefault();
-    
-    const rect = widgetRef.current.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-    setDragStart({
-      x: e.clientX,
-      y: e.clientY
-    });
-    setIsDragging(true);
-    setHasMoved(false); // Reset movement flag
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging) return;
-    
-    // Check if movement exceeds threshold before marking as moved
-    const deltaX = Math.abs(e.clientX - dragStart.x);
-    const deltaY = Math.abs(e.clientY - dragStart.y);
-    if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
-      setHasMoved(true); // Mark that we've moved beyond threshold
+  
+  // Adjust position when opening to ensure it's visible
+  useEffect(() => {
+    if (isOpen) {
+      const isMobile = window.innerWidth < 768;
+      const widgetHeight = isMinimized ? 64 : 600;
+      const widgetWidth = isOpen ? (isMinimized ? 320 : 384) : 56;
+      const buttonHeight = 56; // Height of the button (h-14 = 56px)
+      
+      // Check if widget would go off screen and adjust
+      const maxX = window.innerWidth - widgetWidth;
+      const maxY = window.innerHeight - widgetHeight;
+      
+      setPosition(prev => {
+        // Position chat box above the button (open upward)
+        // Calculate position: button top - chat box height - small gap
+        const newY = prev.y - widgetHeight - 8; // 8px gap between button and chat box
+        
+        return {
+          x: Math.min(prev.x, maxX),
+          // Ensure it doesn't go off screen at the top, and falls back to positioning below if needed
+          y: Math.max(8, Math.min(newY, maxY))
+        };
+      });
     }
-    
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
-    
-    // Keep widget within viewport bounds
-    const widgetWidth = isOpen ? (isMinimized ? 320 : 384) : 56; // 56px for button
-    const widgetHeight = isOpen ? (isMinimized ? 64 : 600) : 56; // 56px for button
-    const maxX = window.innerWidth - widgetWidth;
-    const maxY = window.innerHeight - widgetHeight;
-    
-    setPosition({
-      x: Math.max(0, Math.min(newX, maxX)),
-      y: Math.max(0, Math.min(newY, maxY))
-    });
-  };
+  }, [isOpen, isMinimized]);
 
-  const handleMouseUp = () => {
+  // Universal drag end handler for both mouse and touch
+  const handleDragEnd = useCallback(() => {
     setIsDragging(false);
     // Keep hasMoved flag active briefly to prevent click event from firing
     if (hasMoved) {
@@ -117,7 +102,97 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         setHasMoved(false);
       }, 100);
     }
-  };
+  }, [hasMoved]);
+
+  // Universal drag start handler for both mouse and touch
+  const handleDragStart = useCallback((clientX: number, clientY: number) => {
+    if (!widgetRef.current) return;
+    
+    const rect = widgetRef.current.getBoundingClientRect();
+    setDragOffset({
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    });
+    setDragStart({
+      x: clientX,
+      y: clientY
+    });
+    setIsDragging(true);
+    setHasMoved(false); // Reset movement flag
+  }, []);
+
+  // Universal drag handler for both mouse and touch
+  const handleDrag = useCallback((clientX: number, clientY: number) => {
+    if (!isDragging) return;
+    
+    setDragStart(prevStart => {
+      // Check if movement exceeds threshold before marking as moved
+      const deltaX = Math.abs(clientX - prevStart.x);
+      const deltaY = Math.abs(clientY - prevStart.y);
+      if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
+        setHasMoved(true); // Mark that we've moved beyond threshold
+      }
+      return prevStart;
+    });
+    
+    setDragOffset(prevOffset => {
+      const newX = clientX - prevOffset.x;
+      const newY = clientY - prevOffset.y;
+      
+      // Keep widget within viewport bounds
+      // For mobile, calculate actual widget width
+      const isMobile = window.innerWidth < 640;
+      const widgetWidth = isOpen 
+        ? (isMinimized ? 320 : (isMobile ? Math.min(window.innerWidth - 32, 384) : 384))
+        : 56; // 56px for button
+      const widgetHeight = isOpen ? (isMinimized ? 64 : 600) : 56; // 56px for button
+      const maxX = window.innerWidth - widgetWidth;
+      const maxY = window.innerHeight - widgetHeight;
+      
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      });
+      return prevOffset;
+    });
+  }, [isDragging, isOpen, isMinimized]);
+
+  // Mouse event handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Prevent opening chat when dragging
+    e.preventDefault();
+    handleDragStart(e.clientX, e.clientY);
+  }, [handleDragStart]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    handleDrag(e.clientX, e.clientY);
+  }, [handleDrag]);
+
+  const handleMouseUp = useCallback(() => {
+    handleDragEnd();
+  }, [handleDragEnd]);
+
+  // Touch event handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    
+    const touch = e.touches[0];
+    e.preventDefault(); // Prevent scrolling and other touch behaviors
+    handleDragStart(touch.clientX, touch.clientY);
+  }, [handleDragStart]);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    
+    const touch = e.touches[0];
+    e.preventDefault(); // Prevent scrolling
+    handleDrag(touch.clientX, touch.clientY);
+  }, [handleDrag]);
+
+  const handleTouchEnd = useCallback((e: TouchEvent) => {
+    e.preventDefault();
+    handleDragEnd();
+  }, [handleDragEnd]);
 
   const handleButtonClick = (e: React.MouseEvent) => {
     // Only open chat if we didn't just finish dragging
@@ -128,14 +203,25 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
 
   useEffect(() => {
     if (isDragging) {
+      // Add mouse event listeners
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
+      
+      // Add touch event listeners
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
+      
       return () => {
+        // Clean up mouse event listeners
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+        
+        // Clean up touch event listeners
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
       };
     }
-  }, [isDragging, dragOffset, dragStart, hasMoved]);
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
   if (!isOpen) {
     return (
@@ -143,11 +229,13 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         ref={widgetRef}
         onClick={handleButtonClick}
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
         style={{
           position: 'fixed',
           left: `${position.x}px`,
           top: `${position.y}px`,
-          zIndex: 50
+          zIndex: 50,
+          touchAction: 'none' // Prevent default touch behaviors
         }}
         className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         size="icon"
@@ -174,18 +262,20 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         position: 'fixed',
         left: `${position.x}px`,
         top: `${position.y}px`,
-        zIndex: 50
+        zIndex: 50,
+        touchAction: 'none' // Prevent default touch behaviors
       }}
       className={`shadow-2xl border-cyan-500/30 bg-slate-900/95 backdrop-blur-lg transition-all duration-300 ${
         isMinimized 
           ? 'w-80 h-16' 
-          : 'w-96 h-[600px]'
+          : 'w-full max-w-[384px] h-[600px] sm:w-96'
       } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
     >
       {/* Header */}
       <CardHeader 
         className="pb-3 border-b border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-purple-900/30"
         onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

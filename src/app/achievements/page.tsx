@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     images: ['/images/hoodie-academy-pixel-art-logo.png'],
   },
   alternates: {
-    canonical: '/achievements',
+    canonical: 'https://hoodieacademy.com/achievements',
   },
 };
 

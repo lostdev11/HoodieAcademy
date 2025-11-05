@@ -5,6 +5,7 @@ module.exports = {
   generateIndexSitemap: false,
   exclude: [
     '/admin*',
+    '/admin-auth-check',
     '/api/*',
     '/placement/*',
     '/_next/*',
@@ -28,17 +29,19 @@ module.exports = {
     '/tracking-demo',
     '/setup',
     '/feedback',
-    '/governance',
     '/mentorship',
     '/social',
-    '/events',
     '/squads/analytics',
     '/squads/tracker',
     '/wallet-wizardry/*',
+    '/wallet-wizardry',
     '/sns/*',
+    '/sns',
     '/sns-primary',
     '/retailstar-incentives',
-    '/login'
+    '/login',
+    '/media',
+    '/meme-coin-mania'
   ],
   additionalPaths: async (config) => {
     const fs = require('fs');

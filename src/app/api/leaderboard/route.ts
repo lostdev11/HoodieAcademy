@@ -76,13 +76,58 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Add rank to each user
-    const rankedUsers = users?.map((user, index) => ({
-      ...user,
-      rank: offset + index + 1,
-      xpToNextLevel: 1000 - (user.total_xp % 1000),
-      progressToNextLevel: ((user.total_xp % 1000) / 1000) * 100
-    })) || [];
+    // Calculate proper ranks based on XP position
+    // First, get all users to calculate ranks accurately (respecting filters)
+    let allUsersQuery = supabase
+      .from('users')
+      .select('total_xp')
+      .order('total_xp', { ascending: false });
+
+    if (squad) {
+      allUsersQuery = allUsersQuery.eq('squad', squad);
+    }
+
+    // Apply same timeframe filter
+    if (timeframe === 'weekly') {
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      allUsersQuery = allUsersQuery.gte('updated_at', oneWeekAgo);
+    } else if (timeframe === 'monthly') {
+      const oneMonthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      allUsersQuery = allUsersQuery.gte('updated_at', oneMonthAgo);
+    }
+
+    const { data: allUsers } = await allUsersQuery;
+    
+    // Create a map of XP to rank (handling ties correctly)
+    const xpToRank: Map<number, number> = new Map();
+    if (allUsers && allUsers.length > 0) {
+      let currentRank = 1;
+      let previousXP = allUsers[0].total_xp || 0;
+      xpToRank.set(previousXP, currentRank);
+      
+      for (let i = 1; i < allUsers.length; i++) {
+        const currentXP = allUsers[i].total_xp || 0;
+        if (currentXP < previousXP) {
+          currentRank = i + 1;
+          previousXP = currentXP;
+        }
+        // For users with same XP, use the same rank
+        if (!xpToRank.has(currentXP)) {
+          xpToRank.set(currentXP, currentRank);
+        }
+      }
+    }
+
+    // Add rank to each user based on their actual XP position
+    const rankedUsers = users?.map((user) => {
+      const rank = xpToRank.get(user.total_xp) || 1;
+      return {
+        ...user,
+        rank,
+        xpToNextLevel: 1000 - (user.total_xp % 1000),
+        progressToNextLevel: ((user.total_xp % 1000) / 1000) * 100
+      };
+    }) || [];
 
     // Get total user count for pagination
     const { count: totalUsers } = await supabase
@@ -162,7 +207,7 @@ async function getUserRank(supabase: any, walletAddress: string, squad?: string 
     const { data: nearbyUsers } = await contextQuery;
 
     // Add ranks to nearby users
-    const rankedNearbyUsers = nearbyUsers?.map((u, idx) => ({
+    const rankedNearbyUsers = nearbyUsers?.map((u: any, idx: number) => ({
       ...u,
       rank: startRank + idx,
       isCurrentUser: u.wallet_address === walletAddress

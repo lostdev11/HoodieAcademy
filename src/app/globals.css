@@ -13,6 +13,26 @@
   }
 }
 
+/* Crypto ticker scroll animation */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Crypto ticker animation */
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @layer base {
   :root {
     --background: 222.2 84% 4.9%; /* Dark bluish-gray */

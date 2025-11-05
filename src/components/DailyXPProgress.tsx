@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -27,14 +27,9 @@ export default function DailyXPProgress({
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (walletAddress) {
-      fetchDailyProgress();
-    }
-  }, [walletAddress]);
-
-  const fetchDailyProgress = async () => {
+  const fetchDailyProgress = useCallback(async () => {
     try {
+      console.log('🔍 [DailyXPProgress] Fetching daily progress for:', walletAddress);
       setLoading(true);
       const response = await fetch(`/api/xp/auto-reward?wallet=${walletAddress}`);
       
@@ -54,15 +49,19 @@ export default function DailyXPProgress({
       }
       
       const data = JSON.parse(text);
+      console.log('✅ [DailyXPProgress] Received data:', data);
 
       if (data.success) {
+        console.log('✅ [DailyXPProgress] Setting daily progress:', data.dailyProgress);
         setDailyProgress(data.dailyProgress);
         if (showRecent) {
           setRecentActivities(data.recentActivities || []);
         }
+      } else {
+        console.warn('⚠️ DailyXPProgress: API returned success=false');
       }
     } catch (error) {
-      console.error('Error fetching daily XP progress:', error);
+      console.error('❌ DailyXPProgress: Error fetching daily XP progress:', error);
       // Use default values on error
       setDailyProgress({
         earnedToday: 0,
@@ -74,7 +73,43 @@ export default function DailyXPProgress({
     } finally {
       setLoading(false);
     }
-  };
+  }, [walletAddress]);
+
+  // Initial fetch on mount and when wallet changes
+  useEffect(() => {
+    if (walletAddress) {
+      fetchDailyProgress();
+    }
+  }, [walletAddress, fetchDailyProgress]);
+
+  // Listen for XP award events to update in real time
+  useEffect(() => {
+    if (!walletAddress) return;
+
+    const handleXPAwarded = (event: CustomEvent) => {
+      const { targetWallet } = event.detail;
+      // If XP was awarded to this user, refresh immediately
+      if (targetWallet === walletAddress) {
+        console.log('🎯 [DailyXPProgress] XP awarded to this user, refreshing...');
+        fetchDailyProgress();
+      }
+    };
+
+    const handleForceRefresh = () => {
+      console.log('🔄 [DailyXPProgress] Force refresh triggered');
+      fetchDailyProgress();
+    };
+
+    window.addEventListener('xpAwarded', handleXPAwarded as EventListener);
+    window.addEventListener('xpUpdated', handleXPAwarded as EventListener);
+    window.addEventListener('forceXPRefresh', handleForceRefresh as EventListener);
+
+    return () => {
+      window.removeEventListener('xpAwarded', handleXPAwarded as EventListener);
+      window.removeEventListener('xpUpdated', handleXPAwarded as EventListener);
+      window.removeEventListener('forceXPRefresh', handleForceRefresh as EventListener);
+    };
+  }, [walletAddress, fetchDailyProgress]);
 
   if (loading) {
     return (

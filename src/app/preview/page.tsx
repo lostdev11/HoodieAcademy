@@ -18,6 +18,17 @@ export const metadata: Metadata = {
     'crypto trading basics',
     'free trading course'
   ],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
     title: 'Explore Hoodie Academy | Free T100 Preview Course',
     description: 'Get a taste of Hoodie Academy with our free T100 course on RSI, Bollinger Bands, Fibonacci, and candlestick basics. No wallet required.',
@@ -37,7 +48,7 @@ export const metadata: Metadata = {
     images: ['/images/hoodie-academy-pixel-art-logo.png'],
   },
   alternates: {
-    canonical: '/preview',
+    canonical: 'https://hoodieacademy.com/preview',
   },
 };
 

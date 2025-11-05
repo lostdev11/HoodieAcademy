@@ -18,6 +18,17 @@ export const metadata: Metadata = {
     'community building',
     'Hoodie Academy courses'
   ],
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
     title: 'Web3 Courses - Hoodie Academy',
     description: 'Master Web3, NFTs, and crypto trading with our comprehensive course library. From beginners to advanced traders.',
@@ -39,7 +50,7 @@ export const metadata: Metadata = {
     images: ['/images/hoodie-academy-courses.png'],
   },
   alternates: {
-    canonical: '/courses',
+    canonical: 'https://hoodieacademy.com/courses',
   },
 };
 

@@ -108,8 +108,40 @@ export async function GET(request: NextRequest) {
 
     console.log(`[ADMIN USERS API] Deduplicated: ${users.length} → ${deduplicatedUsers.length} users`);
 
+    // Filter out test/mock users
+    const isTestUser = (user: any) => {
+      const wallet = user.wallet_address?.toLowerCase() || '';
+      const displayName = user.display_name?.toLowerCase() || '';
+      
+      // Filter test wallet addresses
+      if (wallet.startsWith('test-') || 
+          wallet.startsWith('test-wallet') ||
+          wallet === 'admin-wallet' ||
+          wallet.includes('test123456789') ||
+          wallet.includes('usertest') ||
+          wallet.includes('demowallet') ||
+          wallet.includes('testwallet')) {
+        return true;
+      }
+      
+      // Filter test display names
+      if (displayName.includes('test user') ||
+          displayName === 'admin user' ||
+          displayName === 'alice johnson' ||
+          displayName === 'bob smith' ||
+          displayName === 'charlie brown' ||
+          displayName.startsWith('demo user')) {
+        return true;
+      }
+      
+      return false;
+    };
+
+    const realUsers = deduplicatedUsers.filter(user => !isTestUser(user));
+    console.log(`[ADMIN USERS API] Filtered test users: ${deduplicatedUsers.length} → ${realUsers.length} real users`);
+
     // Enrich users with basic data
-    const enrichedUsers = deduplicatedUsers.map(user => {
+    const enrichedUsers = realUsers.map(user => {
       // Calculate submission stats for this user
       const userSubmissions = submissions?.filter(sub => sub.wallet_address === user.wallet_address) || [];
       

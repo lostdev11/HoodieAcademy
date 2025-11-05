@@ -3,11 +3,13 @@ Sitemap: https://hoodieacademy.com/sitemap.xml
 
 # Disallow admin and private areas
 Disallow: /admin/
+Disallow: /admin-auth-check
 Disallow: /api/
 Disallow: /_next/
 Disallow: /placement/
 
-# User-specific pages
+# User-specific and redirecting pages
 Disallow: /profile
 Disallow: /dashboard
-Disallow: /onboarding 
+Disallow: /onboarding
+Disallow: /login 

@@ -6,13 +6,26 @@
 -- =====================================================
 
 -- Remove test users (identified by wallet addresses starting with 'TEST_' or containing 'test')
+-- Also removes specific mock users: admin-wallet, test-wallet-1, test-wallet-2, and related test data
 DELETE FROM users 
 WHERE wallet_address LIKE 'TEST_%' 
    OR wallet_address ILIKE '%test%'
+   OR wallet_address = 'admin-wallet'
+   OR wallet_address LIKE 'test-wallet%'
+   OR wallet_address LIKE 'TestWallet%'
+   OR wallet_address LIKE 'DemoWallet%'
+   OR wallet_address LIKE '%Test123456789%'
+   OR wallet_address LIKE 'AdminWallet%Test%'
+   OR wallet_address LIKE 'User%Test%'
    OR display_name ILIKE '%test%'
+   OR display_name = 'Test User 1'
+   OR display_name = 'Test User 2'
    OR display_name = 'Test User'
+   OR display_name = 'Alice Johnson'
    OR display_name = 'Alice'
+   OR display_name = 'Bob Smith'
    OR display_name = 'Bob'
+   OR display_name = 'Charlie Brown'
    OR display_name = 'Charlie'
    OR display_name = 'Admin User';
 
@@ -23,21 +36,27 @@ WHERE wallet_address LIKE 'TEST_%'
 -- Remove XP records for test users
 DELETE FROM user_xp 
 WHERE wallet_address LIKE 'TEST_%' 
-   OR wallet_address ILIKE '%test%';
+   OR wallet_address ILIKE '%test%'
+   OR wallet_address = 'admin-wallet'
+   OR wallet_address LIKE 'test-wallet%'
+   OR wallet_address LIKE 'TestWallet%'
+   OR wallet_address LIKE 'DemoWallet%'
+   OR wallet_address LIKE '%Test123456789%'
+   OR wallet_address LIKE 'AdminWallet%Test%'
+   OR wallet_address LIKE 'User%Test%';
 
 -- Remove XP events for test users
+-- Note: xp_events table uses wallet_address, not user_id
 DELETE FROM xp_events 
-WHERE user_id IN (
-  SELECT id FROM users 
-  WHERE wallet_address LIKE 'TEST_%' 
-     OR wallet_address ILIKE '%test%'
-     OR display_name ILIKE '%test%'
-     OR display_name = 'Test User'
-     OR display_name = 'Alice'
-     OR display_name = 'Bob'
-     OR display_name = 'Charlie'
-     OR display_name = 'Admin User'
-);
+WHERE wallet_address LIKE 'TEST_%' 
+   OR wallet_address ILIKE '%test%'
+   OR wallet_address = 'admin-wallet'
+   OR wallet_address LIKE 'test-wallet%'
+   OR wallet_address LIKE 'TestWallet%'
+   OR wallet_address LIKE 'DemoWallet%'
+   OR wallet_address LIKE '%Test123456789%'
+   OR wallet_address LIKE 'AdminWallet%Test%'
+   OR wallet_address LIKE 'User%Test%';
 
 -- =====================================================
 -- 3. REMOVE TEST USER ACTIVITY
@@ -47,6 +66,13 @@ WHERE user_id IN (
 DELETE FROM user_activity 
 WHERE wallet_address LIKE 'TEST_%' 
    OR wallet_address ILIKE '%test%'
+   OR wallet_address = 'admin-wallet'
+   OR wallet_address LIKE 'test-wallet%'
+   OR wallet_address LIKE 'TestWallet%'
+   OR wallet_address LIKE 'DemoWallet%'
+   OR wallet_address LIKE '%Test123456789%'
+   OR wallet_address LIKE 'AdminWallet%Test%'
+   OR wallet_address LIKE 'User%Test%'
    OR metadata->>'test' = 'true'
    OR metadata->>'source' = 'database_setup'
    OR metadata->>'source' = 'test_data';
@@ -59,6 +85,13 @@ WHERE wallet_address LIKE 'TEST_%'
 DELETE FROM bounty_submissions 
 WHERE wallet_address LIKE 'TEST_%' 
    OR wallet_address ILIKE '%test%'
+   OR wallet_address = 'admin-wallet'
+   OR wallet_address LIKE 'test-wallet%'
+   OR wallet_address LIKE 'TestWallet%'
+   OR wallet_address LIKE 'DemoWallet%'
+   OR wallet_address LIKE '%Test123456789%'
+   OR wallet_address LIKE 'AdminWallet%Test%'
+   OR wallet_address LIKE 'User%Test%'
    OR submission_text ILIKE '%test%'
    OR submission_text ILIKE '%sample%';
 
@@ -69,7 +102,14 @@ WHERE wallet_address LIKE 'TEST_%'
 -- Remove wallet connection records for test users
 DELETE FROM wallet_connections 
 WHERE wallet_address LIKE 'TEST_%' 
-   OR wallet_address ILIKE '%test%';
+   OR wallet_address ILIKE '%test%'
+   OR wallet_address = 'admin-wallet'
+   OR wallet_address LIKE 'test-wallet%'
+   OR wallet_address LIKE 'TestWallet%'
+   OR wallet_address LIKE 'DemoWallet%'
+   OR wallet_address LIKE '%Test123456789%'
+   OR wallet_address LIKE 'AdminWallet%Test%'
+   OR wallet_address LIKE 'User%Test%';
 
 -- =====================================================
 -- 6. REMOVE TEST SESSIONS
@@ -78,7 +118,14 @@ WHERE wallet_address LIKE 'TEST_%'
 -- Remove session records for test users
 DELETE FROM user_sessions 
 WHERE wallet_address LIKE 'TEST_%' 
-   OR wallet_address ILIKE '%test%';
+   OR wallet_address ILIKE '%test%'
+   OR wallet_address = 'admin-wallet'
+   OR wallet_address LIKE 'test-wallet%'
+   OR wallet_address LIKE 'TestWallet%'
+   OR wallet_address LIKE 'DemoWallet%'
+   OR wallet_address LIKE '%Test123456789%'
+   OR wallet_address LIKE 'AdminWallet%Test%'
+   OR wallet_address LIKE 'User%Test%';
 
 -- =====================================================
 -- 7. CLEAN UP ANY REMAINING TEST DATA
@@ -87,11 +134,25 @@ WHERE wallet_address LIKE 'TEST_%'
 -- Remove any remaining test data from other tables
 DELETE FROM user_progress 
 WHERE wallet_address LIKE 'TEST_%' 
-   OR wallet_address ILIKE '%test%';
+   OR wallet_address ILIKE '%test%'
+   OR wallet_address = 'admin-wallet'
+   OR wallet_address LIKE 'test-wallet%'
+   OR wallet_address LIKE 'TestWallet%'
+   OR wallet_address LIKE 'DemoWallet%'
+   OR wallet_address LIKE '%Test123456789%'
+   OR wallet_address LIKE 'AdminWallet%Test%'
+   OR wallet_address LIKE 'User%Test%';
 
 DELETE FROM user_achievements 
 WHERE wallet_address LIKE 'TEST_%' 
-   OR wallet_address ILIKE '%test%';
+   OR wallet_address ILIKE '%test%'
+   OR wallet_address = 'admin-wallet'
+   OR wallet_address LIKE 'test-wallet%'
+   OR wallet_address LIKE 'TestWallet%'
+   OR wallet_address LIKE 'DemoWallet%'
+   OR wallet_address LIKE '%Test123456789%'
+   OR wallet_address LIKE 'AdminWallet%Test%'
+   OR wallet_address LIKE 'User%Test%';
 
 -- =====================================================
 -- 8. VERIFICATION QUERIES

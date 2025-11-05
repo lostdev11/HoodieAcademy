@@ -98,6 +98,24 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
       );
     }
 
+    // Special handling for Academy Member - show logo instead of emoji
+    if (squadName === 'Unassigned') {
+      return (
+        <div className="text-center">
+          <div className={`w-40 h-40 rounded-xl border-2 ${colorMap[squadName] || 'bg-slate-500/20 border-slate-500/50'} shadow-xl overflow-hidden flex items-center justify-center bg-cyan-500/20 border-cyan-500/50`}>
+            <Image
+              src="/images/hoodie-academy-pixel-art-logo.png"
+              alt="Hoodie Academy Logo"
+              width={160}
+              height={160}
+              className="w-full h-full object-contain p-2"
+            />
+          </div>
+          <p className="mt-3 text-lg font-bold">{displayName}</p>
+        </div>
+      );
+    }
+
     return (
       <div className="text-center">
         <div className={`w-40 h-40 rounded-xl border-2 ${colorMap[squadName] || 'bg-slate-500/20 border-slate-500/50 text-slate-300'} flex items-center justify-center text-6xl shadow-xl`}>
@@ -110,10 +128,17 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
 
   // Normalize squad name to match badge map
   const normalizeSquadName = (squadName: string): string => {
+    if (!squadName) return 'Unassigned';
+    
     const normalized = squadName
       .replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '') // Remove emoji prefixes
       .replace(/^Hoodie\s+/, '') // Remove "Hoodie " prefix
       .trim();
+    
+    // Check if it's Unassigned (case-insensitive)
+    if (normalized.toLowerCase() === 'unassigned' || normalized === '' || normalized === null) {
+      return 'Unassigned';
+    }
     
     // Map to badge names - ensure consistency with quiz data
     const nameMap: Record<string, string> = {
@@ -136,13 +161,13 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
     Raiders: '/badges/badge_raiders.png',
     Speakers: '/badges/badge_speakers.png',
     Rangers: '/badges/badge_ranger.png',
-    Unassigned: '', // No image badge for unassigned - use fallback
+    Unassigned: '', // No image badge for unassigned - use fallback with logo
   };
 
   const badgePath = badgeMap[normalizedSquad];
   
-  // Always use fallback for Unassigned or if no badge path found
-  if (!badgePath || normalizedSquad === 'Unassigned') {
+  // Always use fallback (with logo) for Unassigned or if no badge path found
+  if (normalizedSquad === 'Unassigned' || !badgePath) {
     return getFallbackBadge(normalizedSquad);
   }
 

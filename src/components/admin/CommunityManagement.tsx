@@ -126,13 +126,13 @@ export default function CommunityManagement({ walletAddress }: CommunityManageme
         setReason('');
         toast({
           title: "Success",
-          description: "Student of the week updated successfully!"
+          description: "Student of the month updated successfully!"
         });
       } else {
         const error = await response.json();
         toast({
           title: "Error",
-          description: error.error || "Failed to update student of the week",
+          description: error.error || "Failed to update student of the month",
           variant: "destructive"
         });
       }
@@ -140,7 +140,7 @@ export default function CommunityManagement({ walletAddress }: CommunityManageme
       console.error('Error setting student of the week:', error);
       toast({
         title: "Error",
-        description: "Failed to update student of the week",
+        description: "Failed to update student of the month",
         variant: "destructive"
       });
     } finally {
@@ -149,7 +149,7 @@ export default function CommunityManagement({ walletAddress }: CommunityManageme
   };
 
   const handleRemoveStudent = async () => {
-    if (!confirm('Are you sure you want to remove the current student of the week?')) {
+    if (!confirm('Are you sure you want to remove the current student of the month?')) {
       return;
     }
 
@@ -163,13 +163,13 @@ export default function CommunityManagement({ walletAddress }: CommunityManageme
         setCurrentStudent(null);
         toast({
           title: "Success",
-          description: "Student of the week removed successfully!"
+          description: "Student of the month removed successfully!"
         });
       } else {
         const error = await response.json();
         toast({
           title: "Error",
-          description: error.error || "Failed to remove student of the week",
+          description: error.error || "Failed to remove student of the month",
           variant: "destructive"
         });
       }
@@ -177,7 +177,7 @@ export default function CommunityManagement({ walletAddress }: CommunityManageme
       console.error('Error removing student of the week:', error);
       toast({
         title: "Error",
-        description: "Failed to remove student of the week",
+        description: "Failed to remove student of the month",
         variant: "destructive"
       });
     } finally {
@@ -219,12 +219,12 @@ export default function CommunityManagement({ walletAddress }: CommunityManageme
 
   return (
     <div className="space-y-6">
-      {/* Current Student of the Week */}
+      {/* Current Student of the Month */}
       <Card className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 border-yellow-500/30">
         <CardHeader>
           <CardTitle className="text-yellow-400 flex items-center">
             <Trophy className="w-5 h-5 mr-2" />
-            Student of the Week
+            Student of the Month
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -278,7 +278,7 @@ export default function CommunityManagement({ walletAddress }: CommunityManageme
           ) : (
             <div className="text-center py-8">
               <Trophy className="w-12 h-12 text-gray-500 mx-auto mb-4" />
-              <p className="text-gray-400 mb-4">No student of the week selected</p>
+              <p className="text-gray-400 mb-4">No student of the month selected</p>
               <Button
                 onClick={() => setShowForm(true)}
                 className="bg-yellow-600 hover:bg-yellow-700"
@@ -297,7 +297,7 @@ export default function CommunityManagement({ walletAddress }: CommunityManageme
           <CardHeader>
             <CardTitle className="text-white flex items-center">
               <User className="w-5 h-5 mr-2" />
-              {currentStudent ? 'Update Student of the Week' : 'Select Student of the Week'}
+              {currentStudent ? 'Update Student of the Month' : 'Select Student of the Month'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

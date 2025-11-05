@@ -15,6 +15,16 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
   },
+  // Redirects for SEO: Normalize www to non-www and HTTP to HTTPS
+  // Note: These are handled by middleware, but added here as backup
+  // The middleware handles dynamic redirects based on the request
+  async redirects() {
+    return [
+      // Redirect www to non-www (handled by middleware, but here as fallback)
+      // Note: Middleware handles this dynamically, so this may not be needed
+      // but it's here as a backup for edge cases
+    ];
+  },
   // PERFORMANCE OPTIMIZATIONS
   swcMinify: true, // Use SWC for faster minification
   compiler: {
