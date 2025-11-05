@@ -5,8 +5,28 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const hostname = request.headers.get('host') || '';
   
-  // Normalize to non-www and HTTPS
-  // Redirect www to non-www
+  // Skip ALL redirects for localhost/development - allow HTTP to work
+  if (hostname.includes('localhost') || 
+      hostname.includes('127.0.0.1') || 
+      hostname.includes('0.0.0.0') ||
+      hostname.startsWith('localhost:') ||
+      hostname.startsWith('127.0.0.1:')) {
+    return NextResponse.next();
+  }
+  
+  // Check actual protocol from forwarded headers (for reverse proxies like Vercel)
+  // This is critical for mobile devices and proper HTTPS detection
+  // When behind a reverse proxy, x-forwarded-proto is the source of truth
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  
+  // Determine if request is HTTPS:
+  // 1. If x-forwarded-proto exists, trust it (this is set by Vercel/load balancers)
+  // 2. Otherwise, check url.protocol (for direct connections)
+  const isHttps = forwardedProto 
+    ? forwardedProto === 'https'
+    : url.protocol === 'https:';
+  
+  // Normalize to non-www (only for production)
   if (hostname.startsWith('www.')) {
     const nonWwwHostname = hostname.replace('www.', '');
     url.hostname = nonWwwHostname;
@@ -14,8 +34,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 301); // Permanent redirect
   }
   
-  // Redirect HTTP to HTTPS (only if not already HTTPS)
-  if (url.protocol === 'http:') {
+  // Redirect HTTP to HTTPS (only in production)
+  // Check both forwarded header and URL protocol to avoid redirect loops
+  if (!isHttps && process.env.NODE_ENV === 'production') {
     url.protocol = 'https:';
     return NextResponse.redirect(url, 301); // Permanent redirect
   }
