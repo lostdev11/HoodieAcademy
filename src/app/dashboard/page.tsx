@@ -333,7 +333,6 @@ export default function HoodieAcademy() {
       // Update state
       setWalletAddress(walletAddress);
       setSnsDomain(walletAddress);
-      setUserDisplayName(walletAddress);
       
       // Check admin status
       try {
@@ -406,7 +405,6 @@ export default function HoodieAcademy() {
     }
     setWalletAddress(null);
     setSnsDomain(null);
-    setUserDisplayName(null);
     setIsAdmin(false);
     setUserSquad(null);
   }, [walletAddress]);
@@ -440,17 +438,32 @@ export default function HoodieAcademy() {
             "url": "https://hoodieacademy.com",
           },
         }) }} />
-        <div className="flex min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-          <DashboardSidebar isCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
-          <div className="flex-1 flex flex-col">
+        <div className="flex min-h-screen relative">
+          {/* Background Image */}
+          <div className="fixed inset-0 -z-10" style={{ position: 'fixed' }}>
+            <div className="relative w-full h-full">
+              <Image
+                src="/images/Hoodie Dashbaord.png"
+                alt="Dashboard Background"
+                fill
+                priority
+                className="object-cover"
+              />
+            </div>
+          </div>
+          {/* Overlay for readability - lighter overlay to show pixel art */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/20 via-purple-900/10 to-slate-900/20 pointer-events-none"></div>
+          <div className="relative z-10 flex w-full">
+            <DashboardSidebar isCollapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+            <div className="flex-1 flex flex-col">
             <CryptoPriceTicker />
-            <header className="bg-slate-800/50 border-b border-cyan-500/30 px-4 py-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <header className="bg-slate-800/50 border-b border-cyan-500/30 px-6 py-8">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                 <div className="flex items-center space-x-4 sm:space-x-6">
                   <MobileNavigation userSquad={userSquad} isAdmin={isAdmin} />
                   <div>
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-cyan-400">🏛️ Hoodie Academy</h1>
-                    <p className="text-sm sm:text-base text-gray-300">
+                    <p className="text-sm sm:text-base text-gray-300 mt-1">
                       Home of elite Web3 scholars and the future of decentralized learning
                     </p>
                   </div>
@@ -462,7 +475,7 @@ export default function HoodieAcademy() {
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 w-full sm:w-auto">
                   {error && (
                     <div className="w-full sm:w-auto">
                       <p className="text-red-400 text-sm">{error}</p>
@@ -548,7 +561,7 @@ export default function HoodieAcademy() {
                 </div>
               </div>
             </header>
-            <main className="flex-1 px-4 py-6 space-y-6">
+            <main className="flex-1 px-6 py-8 space-y-8">
               {walletAddress ? (
                 <Suspense fallback={
                   <div className="space-y-6">
@@ -601,6 +614,7 @@ export default function HoodieAcademy() {
                 </div>
               )}
             </main>
+            </div>
           </div>
         </div>
       </TokenGate>
