@@ -21,6 +21,7 @@ import {
   Video,
   Vote
 } from 'lucide-react';
+import { getSquadNameFromCache, fetchUserSquad } from '@/utils/squad-api';
 
 interface NavigationItem {
   key: string;
@@ -103,6 +104,121 @@ export default function BottomNavigation() {
   const router = useRouter();
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [squadChatUrl, setSquadChatUrl] = useState<string>('/squads/hoodie-creators/chat');
+
+  // Helper function to get squad chat URL
+  const getSquadChatUrl = (squadName: string): string => {
+    if (!squadName) return '/squads/hoodie-creators/chat';
+    
+    // Map squad names to their URL paths (including emoji variations)
+    const squadUrlMapping: { [key: string]: string } = {
+      // Full names with emojis (from quiz.json)
+      '🎨 Hoodie Creators': 'hoodie-creators',
+      '🧠 Hoodie Decoders': 'hoodie-decoders',
+      '🎤 Hoodie Speakers': 'hoodie-speakers', 
+      '⚔️ Hoodie Raiders': 'hoodie-raiders',
+      '🦅 Hoodie Rangers': 'hoodie-rangers',
+      '🏦 Treasury Builders': 'treasury-builders',
+      // Full names without emojis
+      'Hoodie Creators': 'hoodie-creators',
+      'Hoodie Decoders': 'hoodie-decoders',
+      'Hoodie Speakers': 'hoodie-speakers',
+      'Hoodie Raiders': 'hoodie-raiders',
+      'Hoodie Rangers': 'hoodie-rangers',
+      'Treasury Builders': 'treasury-builders',
+      // Lowercase variations
+      'hoodie creators': 'hoodie-creators',
+      'hoodie decoders': 'hoodie-decoders',
+      'hoodie speakers': 'hoodie-speakers',
+      'hoodie raiders': 'hoodie-raiders',
+      'hoodie rangers': 'hoodie-rangers',
+      'treasury builders': 'treasury-builders',
+      // Squad IDs (fallback)
+      'creators': 'hoodie-creators',
+      'decoders': 'hoodie-decoders',
+      'speakers': 'hoodie-speakers',
+      'raiders': 'hoodie-raiders',
+      'rangers': 'hoodie-rangers',
+      'treasury': 'treasury-builders'
+    };
+
+    // Try exact match first
+    if (squadUrlMapping[squadName]) {
+      return `/squads/${squadUrlMapping[squadName]}/chat`;
+    }
+
+    // Try normalized match (remove emojis and normalize)
+    const normalized = squadName.replace(/^[🎨🧠🎤⚔️🦅🏦🔍🗣️]+\s*/, '').toLowerCase().trim();
+    if (squadUrlMapping[normalized]) {
+      return `/squads/${squadUrlMapping[normalized]}/chat`;
+    }
+
+    // Try squad ID match
+    const squadMapping: { [key: string]: string } = {
+      'hoodie creators': 'creators',
+      'hoodie decoders': 'decoders', 
+      'hoodie speakers': 'speakers',
+      'hoodie raiders': 'raiders',
+      'hoodie rangers': 'rangers',
+      'treasury builders': 'treasury'
+    };
+    const squadId = squadMapping[normalized] || normalized;
+    if (squadUrlMapping[squadId]) {
+      return `/squads/${squadUrlMapping[squadId]}/chat`;
+    }
+
+    // Fallback: convert to URL-friendly format
+    const urlFriendly = squadName
+      .toLowerCase()
+      .replace(/[🎨🧠🎤⚔️🦅🏦🔍🗣️]/g, '') // Remove emojis
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/[^a-z0-9-]/g, '') // Remove special characters
+      .trim();
+    
+    return `/squads/${urlFriendly}/chat`;
+  };
+
+  // Load user's squad and generate squad chat URL
+  useEffect(() => {
+    const loadUserSquad = async () => {
+      try {
+        // Get wallet address
+        const walletAddress = localStorage.getItem('hoodie_academy_wallet') || 
+                             localStorage.getItem('walletAddress') || 
+                             localStorage.getItem('connectedWallet');
+        
+        if (!walletAddress) {
+          return;
+        }
+
+        // Try to get squad from cache first
+        let userSquadName = getSquadNameFromCache();
+        
+        // If not in cache, fetch from database
+        if (!userSquadName) {
+          const squadData = await fetchUserSquad(walletAddress);
+          if (squadData?.hasSquad && squadData?.squad?.name) {
+            userSquadName = squadData.squad.name;
+          }
+        }
+
+        // Update squad chat URL if we have a squad
+        if (userSquadName) {
+          const newSquadChatUrl = getSquadChatUrl(userSquadName);
+          setSquadChatUrl(newSquadChatUrl);
+        }
+      } catch (error) {
+        console.error('Error loading user squad:', error);
+      }
+    };
+
+    loadUserSquad();
+    
+    // Set up interval to check for squad updates
+    const interval = setInterval(loadUserSquad, 10000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Check admin status on mount using hardcoded list
   useEffect(() => {
@@ -159,8 +275,27 @@ export default function BottomNavigation() {
 
   const currentActiveGroup = getActiveGroup();
 
+  // Create navigation groups with dynamic squad chat URL
+  const navigationGroupsWithDynamicUrl = navigationGroups.map(group => {
+    if (group.key === 'squad') {
+      return {
+        ...group,
+        items: group.items.map(item => {
+          if (item.key === 'squad-chat') {
+            return {
+              ...item,
+              href: squadChatUrl
+            };
+          }
+          return item;
+        })
+      };
+    }
+    return group;
+  });
+
   // Always show all navigation groups, but admin access will be restricted
-  const filteredNavigationGroups = navigationGroups;
+  const filteredNavigationGroups = navigationGroupsWithDynamicUrl;
 
   const handleMainButtonClick = (group: NavigationGroup) => {
     // Check if trying to access admin without permissions
@@ -221,6 +356,7 @@ export default function BottomNavigation() {
                     size="sm"
                     className="absolute top-0 right-0 h-6 w-6 p-0 bg-slate-700/50 hover:bg-slate-600/50"
                     onClick={(e) => handleDropdownToggle(group.key, e)}
+                    aria-label={`Toggle ${group.label} menu`}
                   >
                     <Menu className="h-3 w-3" />
                   </Button>

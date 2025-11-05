@@ -97,7 +97,7 @@ export default function CryptoPriceTicker() {
   };
 
   const getChangeColor = (change: number) =>
-    change === 0 ? 'text-gray-400' : change > 0 ? 'text-green-400' : 'text-red-400';
+    change === 0 ? 'text-gray-300' : change > 0 ? 'text-green-400' : 'text-red-400';
 
   const PriceItem = ({ crypto }: { crypto: CryptoPrice }) => (
     <div className={`shrink-0 whitespace-nowrap flex items-center ${crypto.color}`}>
@@ -142,6 +142,7 @@ export default function CryptoPriceTicker() {
               onClick={() => setIsDialogOpen(true)}
               className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 h-8 w-8 p-0"
               title="What's this?"
+              aria-label="What's this? Learn about cryptocurrency price ticker"
             >
               <HelpCircle className="w-4 h-4" />
             </Button>
@@ -170,7 +171,7 @@ export default function CryptoPriceTicker() {
                       <span className="text-2xl">🟣</span>
                       <div>
                         <p className="font-semibold text-purple-400">Solana (SOL)</p>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-gray-300">
                           The blockchain powering Hoodie Academy. Fast, affordable, and Web3-native.
                         </p>
                       </div>
@@ -180,7 +181,7 @@ export default function CryptoPriceTicker() {
                       <span className="text-2xl">🟠</span>
                       <div>
                         <p className="font-semibold text-orange-400">Bitcoin (BTC)</p>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-gray-300">
                           The original cryptocurrency that started the digital asset revolution.
                         </p>
                       </div>
@@ -190,7 +191,7 @@ export default function CryptoPriceTicker() {
                       <span className="text-2xl">🔵</span>
                       <div>
                         <p className="font-semibold text-blue-400">Ethereum (ETH)</p>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-gray-300">
                           The smart contract platform that enabled DeFi and NFTs at scale.
                         </p>
                       </div>
@@ -200,7 +201,7 @@ export default function CryptoPriceTicker() {
                       <span className="text-2xl">💛</span>
                       <div>
                         <p className="font-semibold text-yellow-400">Binance Coin (BNB)</p>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-gray-300">
                           The native token of the Binance ecosystem, used for fees and utilities.
                         </p>
                       </div>
@@ -211,7 +212,7 @@ export default function CryptoPriceTicker() {
                     <p className="text-sm">
                       <span className="font-semibold">Data Source:</span> CoinGecko API
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-gray-300 mt-1">
                       Prices update every minute. 24h change shows the percentage difference from the previous day.
                     </p>
                   </div>

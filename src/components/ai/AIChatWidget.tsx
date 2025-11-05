@@ -36,6 +36,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hasMoved, setHasMoved] = useState(false);
   const widgetRef = useRef<HTMLDivElement>(null);
+  const hasMovedRef = useRef(false); // Ref to track movement synchronously for touch handlers
   const MESSAGE_LIMIT = 50; // Limit messages per session
   const DRAG_THRESHOLD = 5; // Minimum pixels to move before considering it a drag
 
@@ -100,7 +101,10 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     if (hasMoved) {
       setTimeout(() => {
         setHasMoved(false);
+        hasMovedRef.current = false;
       }, 100);
+    } else {
+      hasMovedRef.current = false;
     }
   }, [hasMoved]);
 
@@ -119,6 +123,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     });
     setIsDragging(true);
     setHasMoved(false); // Reset movement flag
+    hasMovedRef.current = false; // Reset ref as well
   }, []);
 
   // Universal drag handler for both mouse and touch
@@ -131,6 +136,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
       const deltaY = Math.abs(clientY - prevStart.y);
       if (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD) {
         setHasMoved(true); // Mark that we've moved beyond threshold
+        hasMovedRef.current = true; // Also update ref for synchronous access
       }
       return prevStart;
     });
@@ -177,7 +183,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     if (e.touches.length !== 1) return;
     
     const touch = e.touches[0];
-    e.preventDefault(); // Prevent scrolling and other touch behaviors
+    // Don't prevent default immediately - let click work if no drag occurs
     handleDragStart(touch.clientX, touch.clientY);
   }, [handleDragStart]);
 
@@ -185,21 +191,38 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     if (e.touches.length !== 1) return;
     
     const touch = e.touches[0];
-    e.preventDefault(); // Prevent scrolling
+    // Only prevent default if we're actually dragging
+    if (isDragging) {
+      e.preventDefault(); // Prevent scrolling
+    }
     handleDrag(touch.clientX, touch.clientY);
-  }, [handleDrag]);
+  }, [handleDrag, isDragging]);
 
   const handleTouchEnd = useCallback((e: TouchEvent) => {
-    e.preventDefault();
+    // Only prevent default if we were dragging
+    if (isDragging) {
+      e.preventDefault();
+    }
     handleDragEnd();
-  }, [handleDragEnd]);
+  }, [handleDragEnd, isDragging]);
 
   const handleButtonClick = (e: React.MouseEvent) => {
     // Only open chat if we didn't just finish dragging
-    if (!hasMoved) {
+    if (!hasMoved && !isDragging) {
       setIsOpen(true);
     }
   };
+
+  // Handle touch end on button specifically for mobile
+  const handleButtonTouchEnd = useCallback((e: React.TouchEvent) => {
+    // Use ref for synchronous check - if we didn't drag, it was a tap - open the chat
+    if (!hasMovedRef.current) {
+      e.preventDefault();
+      setIsOpen(true);
+    }
+    // Always call handleDragEnd to clean up dragging state
+    handleDragEnd();
+  }, [handleDragEnd]);
 
   useEffect(() => {
     if (isDragging) {
@@ -230,12 +253,13 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         onClick={handleButtonClick}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
+        onTouchEnd={handleButtonTouchEnd}
         style={{
           position: 'fixed',
           left: `${position.x}px`,
           top: `${position.y}px`,
           zIndex: 50,
-          touchAction: 'none' // Prevent default touch behaviors
+          touchAction: 'manipulation' // Allow taps but prevent double-tap zoom
         }}
         className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         size="icon"
@@ -302,6 +326,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
               size="icon"
               className="h-7 w-7 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
               onClick={() => setIsMinimized(!isMinimized)}
+              aria-label={isMinimized ? "Maximize chat window" : "Minimize chat window"}
             >
               {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
             </Button>
@@ -310,6 +335,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
               size="icon"
               className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
               onClick={() => setIsOpen(false)}
+              aria-label="Close chat window"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -370,7 +396,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
                     <Loader2 className="h-4 w-4 text-white animate-spin" />
                   </div>
                   <div className="flex-1 rounded-lg p-3 bg-gradient-to-br from-slate-800/80 to-slate-700/80 border border-cyan-500/30">
-                    <p className="text-sm text-gray-400">Thinking...</p>
+                    <p className="text-sm text-gray-300">Thinking...</p>
                   </div>
                 </div>
               )}
@@ -418,6 +444,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
                     size="icon"
                     disabled={isLoading || !input.trim() || hasReachedLimit}
                     className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 disabled:opacity-50 transition-all duration-200"
+                    aria-label="Send message"
                   >
                     {isLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -427,7 +454,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
                   </Button>
                 </div>
                 <div className="flex justify-between items-center mt-2">
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-300">
                     💡 Ask me to explain code, debug errors, or learn Web3!
                   </p>
                   {messageCount > MESSAGE_LIMIT * 0.7 && (

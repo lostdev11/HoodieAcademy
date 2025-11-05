@@ -410,6 +410,7 @@ export default function HoodieAcademy() {
                           }}
                           className="h-4 w-4 p-0 text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10 flex-shrink-0"
                           title="Refresh SNS resolution"
+                          aria-label="Refresh SNS resolution"
                         >
                           🔄
                         </Button>
@@ -470,7 +471,7 @@ export default function HoodieAcademy() {
           <main className="flex-1 px-4 py-6 space-y-6 max-w-full overflow-x-hidden">
             {/* Welcome Header */}
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-cyan-400 mb-2">🏛️ Welcome to Hoodie Academy</h1>
+              <h2 className="text-3xl font-bold text-cyan-400 mb-2">🏛️ Welcome to Hoodie Academy</h2>
               <p className="text-muted-foreground text-lg">Your entry into the elite Web3 scholars campus</p>
             </div>
 
