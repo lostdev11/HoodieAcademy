@@ -117,26 +117,46 @@ export default function BountyManagerSimple({ bounties, onBountiesChange, wallet
     setError(null);
 
     try {
-      const bountyData = {
-        ...formData,
-        squad_tag: formData.squad_tag === 'none' ? null : formData.squad_tag,
+      // Clean up form data - only send valid fields
+      const bountyData: any = {
+        title: formData.title,
+        short_desc: formData.short_desc,
+        reward: formData.reward,
+        reward_type: formData.reward_type,
+        squad_tag: formData.squad_tag === 'none' || !formData.squad_tag ? null : formData.squad_tag,
         start_date: formData.start_date ? new Date(formData.start_date).toISOString() : null,
         deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
+        status: formData.status,
+        hidden: formData.hidden,
         walletAddress
       };
+
+      // Add NFT fields only if reward type is NFT
+      if (formData.reward_type === 'NFT') {
+        bountyData.nft_prize = formData.nft_prize || null;
+        bountyData.nft_prize_image = formData.nft_prize_image || null;
+        bountyData.nft_prize_description = formData.nft_prize_description || null;
+      }
 
       const url = editingBounty ? `/api/bounties/${editingBounty.id}` : '/api/bounties';
       const method = editingBounty ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Wallet-Address': walletAddress
+        },
         body: JSON.stringify(bountyData)
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save bounty');
+        console.error('❌ Bounty save error:', errorData);
+        const errorMessage = errorData.details 
+          ? `${errorData.error}: ${JSON.stringify(errorData.details)}`
+          : errorData.error || 'Failed to save bounty';
+        throw new Error(errorMessage);
       }
 
       const responseData = await response.json();
@@ -377,7 +397,20 @@ export default function BountyManagerSimple({ bounties, onBountiesChange, wallet
 
                 {/* End Date */}
                 <div>
-                  <Label htmlFor="deadline">End Date</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="deadline">End Date</Label>
+                    {formData.deadline && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormData({ ...formData, deadline: '' })}
+                        className="text-xs text-slate-400 hover:text-slate-200 h-6 px-2"
+                      >
+                        No Deadline
+                      </Button>
+                    )}
+                  </div>
                   <Input
                     id="deadline"
                     type="date"

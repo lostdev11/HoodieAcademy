@@ -26,13 +26,14 @@ const BountyUpdate = z.object({
   short_desc: z.string().optional(),
   reward: z.string().optional(),
   reward_type: z.enum(['XP', 'SOL', 'NFT']).optional(),
-  deadline: z.string().optional(),
+  start_date: z.string().nullable().or(z.literal('')).transform(val => val === '' ? null : val).optional(),
+  deadline: z.string().nullable().or(z.literal('')).transform(val => val === '' ? null : val).optional(),
   status: z.enum(['active', 'completed', 'expired']).optional(),
-  squad_tag: z.string().optional(),
+  squad_tag: z.string().nullable().or(z.literal('')).transform(val => val === '' || val === 'none' ? null : val).optional(),
   hidden: z.boolean().optional(),
-  nft_prize: z.string().optional(),
-  nft_prize_image: z.string().optional(),
-  nft_prize_description: z.string().optional(),
+  nft_prize: z.string().nullable().optional(),
+  nft_prize_image: z.string().nullable().optional(),
+  nft_prize_description: z.string().nullable().optional(),
   submissions: z.number().int().min(0).optional()
 }).strip();
 
@@ -81,9 +82,13 @@ export async function PATCH(
     const supabase = getSupabaseClient();
     console.log('🔍 [BOUNTY UPDATE] PATCH request for bounty:', params.id);
     
+    // Parse request body first to get wallet address if needed
+    const body = await req.json();
+    console.log('📦 [BOUNTY UPDATE] Request body:', JSON.stringify(body, null, 2));
+    
     // Get wallet address from request header or body for wallet-based auth
-    const walletAddress = req.headers.get('X-Wallet-Address') || req.headers.get('x-wallet-address');
-    console.log('🔍 [BOUNTY UPDATE] Wallet address from header:', walletAddress);
+    const walletAddress = req.headers.get('X-Wallet-Address') || req.headers.get('x-wallet-address') || body.walletAddress;
+    console.log('🔍 [BOUNTY UPDATE] Wallet address from header/body:', walletAddress);
     console.log('🔍 [BOUNTY UPDATE] All headers:', Object.fromEntries(req.headers.entries()));
     
     // Check admin permissions - either via Supabase Auth or wallet-based
@@ -131,16 +136,17 @@ export async function PATCH(
     
     console.log('✅ [BOUNTY UPDATE] Admin check passed');
     
-    // Parse request body
-    const body = await req.json();
-    console.log('📦 [BOUNTY UPDATE] Request body:', JSON.stringify(body, null, 2));
+    // Remove walletAddress from body before validation (it's not part of the bounty schema)
+    const { walletAddress: _, ...bountyData } = body;
     
-    const parsed = BountyUpdate.safeParse(body);
+    const parsed = BountyUpdate.safeParse(bountyData);
     if (!parsed.success) {
-      console.error('❌ [BOUNTY UPDATE] Validation failed:', parsed.error.flatten());
+      console.error('❌ [BOUNTY UPDATE] Validation failed:', parsed.error.errors);
+      console.error('❌ [BOUNTY UPDATE] Received data:', JSON.stringify(bountyData, null, 2));
       return NextResponse.json({ 
         error: 'Invalid request data', 
-        details: parsed.error.flatten() 
+        details: parsed.error.errors,
+        received: Object.keys(bountyData)
       }, { status: 400 });
     }
     
