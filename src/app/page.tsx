@@ -2,10 +2,13 @@
 
 import { useState, useEffect, lazy, Suspense } from "react"
 import { useDisplayNameReadOnly } from '@/hooks/use-display-name'
+import { useLevel } from "@/hooks/useLevel"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { Skeleton } from "@/components/ui/skeleton"
 import { 
   Trophy, 
   Users, 
@@ -101,6 +104,18 @@ const milestones = [
   }
 ];
 
+type BountyHighlight = {
+  id: string | number;
+  title: string;
+  short_desc?: string | null;
+  reward?: string | null;
+  reward_type?: string | null;
+  deadline?: string | null;
+  squad_tag?: string | null;
+  status?: string | null;
+  submissions?: number | null;
+};
+
 const mediaWall = [
   {
     type: "meme",
@@ -139,8 +154,33 @@ export default function HoodieAcademy() {
   const [currentSpotlightIndex, setCurrentSpotlightIndex] = useState(0);
   const [snsDomain, setSnsDomain] = useState<string | null>(null);
   const [isLoadingSns, setIsLoadingSns] = useState(false);
+  const [userXP, setUserXP] = useState<number>(0);
+  const [isLoadingXP, setIsLoadingXP] = useState(true);
+  const [bountyHighlights, setBountyHighlights] = useState<BountyHighlight[]>([]);
+  const [isLoadingBounties, setIsLoadingBounties] = useState(true);
+  const [bountiesError, setBountiesError] = useState<string | null>(null);
   // Use the global display name hook
   const { displayName: userDisplayName } = useDisplayNameReadOnly();
+  const levelData = useLevel(userXP);
+
+  const fetchUserXPOnly = async (wallet: string) => {
+    try {
+      const response = await fetch(`/api/xp?wallet=${wallet}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch XP: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data) {
+        const totalXP = data.totalXP ?? data.xp ?? 0;
+        setUserXP(typeof totalXP === "number" ? totalXP : parseInt(totalXP, 10) || 0);
+      }
+    } catch (error) {
+      console.error("❌ Home: Error fetching user XP fallback:", error);
+    } finally {
+      setIsLoadingXP(false);
+    }
+  };
 
   useEffect(() => {
     // Get wallet address from localStorage
@@ -150,6 +190,8 @@ export default function HoodieAcademy() {
       // Set SNS domain immediately without async resolution
       setSnsDomain(storedWallet);
       setIsLoadingSns(false);
+    } else {
+      setIsLoadingXP(false);
     }
 
     // Check cached admin status first (non-blocking)
@@ -212,6 +254,10 @@ export default function HoodieAcademy() {
         if (profileData.success && profileData.profile) {
           const squadName = profileData.profile.squad?.name || 'Unassigned';
           setUserSquad(squadName);
+          const profileXP = profileData.profile.totalXP ?? profileData.profile.total_xp ?? 0;
+          setUserXP(typeof profileXP === "number" ? profileXP : parseInt(profileXP, 10) || 0);
+          setIsDemoWallet(Boolean(profileData.profile.is_demo_wallet || profileData.profile.isDemoWallet));
+          setIsLoadingXP(false);
           
           // Check if squad lock has expired
           if (profileData.profile.squad?.isLocked) {
@@ -219,9 +265,12 @@ export default function HoodieAcademy() {
           } else if (profileData.profile.squad) {
             setSquadLockExpired(true);
           }
+        } else {
+          await fetchUserXPOnly(storedWallet);
         }
       } catch (error) {
         console.error('❌ Home: Error fetching squad data:', error);
+        await fetchUserXPOnly(storedWallet);
       }
     };
     
@@ -247,6 +296,62 @@ export default function HoodieAcademy() {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('squadUpdated', handleSquadUpdate);
     };
+  }, []);
+
+  useEffect(() => {
+    const fetchBounties = async () => {
+      try {
+        setIsLoadingBounties(true);
+        setBountiesError(null);
+
+        const response = await fetch('/api/bounties?status=active');
+        if (!response.ok) {
+          throw new Error(`Failed to load bounties: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          const highlights = data
+            .filter((bounty) => !bounty.hidden)
+            .slice(0, 8)
+            .map((bounty) => {
+              const normalizedId = bounty.slug || bounty.id || bounty.uuid;
+              const rawSummary = bounty.short_desc || bounty.shortDescription || '';
+              const summary = typeof rawSummary === 'string' ? rawSummary.replace(/<[^>]+>/g, '') : '';
+              const rawSubmissions = bounty.submissions ?? bounty.submission_count ?? null;
+              const submissionCount = typeof rawSubmissions === 'number'
+                ? rawSubmissions
+                : rawSubmissions !== null
+                ? parseInt(rawSubmissions, 10)
+                : null;
+              return {
+                id: typeof normalizedId === 'string' ? normalizedId : String(normalizedId ?? ''),
+                title: bounty.title || 'Untitled Bounty',
+                short_desc: summary,
+                reward: bounty.reward ?? null,
+                reward_type: bounty.reward_type || bounty.rewardType || null,
+                deadline: bounty.deadline || bounty.due_date || null,
+                squad_tag: bounty.squad_tag || bounty.squadTag || null,
+                status: bounty.status || null,
+                submissions: Number.isFinite(submissionCount) ? submissionCount : null
+              } as BountyHighlight;
+            })
+            .filter((bounty) => bounty.id !== '');
+
+          setBountyHighlights(highlights);
+        } else {
+          setBountyHighlights([]);
+        }
+      } catch (error) {
+        console.error('❌ Home: Error loading bounties:', error);
+        setBountiesError('Unable to load bounties right now. Please try again later.');
+        setBountyHighlights([]);
+      } finally {
+        setIsLoadingBounties(false);
+      }
+    };
+
+    fetchBounties();
   }, []);
 
   useEffect(() => {
@@ -299,6 +404,59 @@ export default function HoodieAcademy() {
 
   const normalizeSquadNameForUrl = (name: string): string => {
     return name.replace(/^[🎨🧠🎤⚔️🦅]+\s*/, '').toLowerCase().trim().replace(/\s+/g, '-');
+  };
+
+  const formatBountyDeadline = (deadline?: string | null) => {
+    if (!deadline) return 'Open now';
+    const parsed = new Date(deadline);
+    if (Number.isNaN(parsed.getTime())) return 'Open now';
+    return parsed.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getBountyStatusBadgeColor = (status?: string | null) => {
+    switch ((status || 'active').toLowerCase()) {
+      case 'completed':
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+      case 'expired':
+        return 'bg-red-500/20 text-red-300 border-red-500/40';
+      default:
+        return 'bg-green-500/20 text-green-300 border-green-500/40';
+    }
+  };
+
+  const getBountySquadBadgeStyle = (squad?: string | null) => {
+    switch ((squad || '').toLowerCase()) {
+      case 'creators':
+        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40';
+      case 'decoders':
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/40';
+      case 'speakers':
+        return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+      case 'raiders':
+        return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+      default:
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/40';
+    }
+  };
+
+  const formatBountyReward = (reward?: string | null, rewardType?: string | null) => {
+    if (reward && reward.trim().length > 0) {
+      return reward;
+    }
+
+    if (!rewardType) {
+      return 'Reward TBD';
+    }
+
+    const normalizedType = rewardType.toUpperCase();
+    if (normalizedType === 'XP') {
+      return 'XP Reward';
+    }
+
+    return `${normalizedType} reward`;
   };
 
   return (
@@ -464,6 +622,43 @@ export default function HoodieAcademy() {
                   <div className="text-sm text-cyan-400 font-mono">{currentTime}</div>
                 </div>
               </div>
+              <div className="w-full">
+                {isLoadingXP ? (
+                  <Skeleton className="h-16 w-full bg-slate-700/50 border border-purple-500/20" />
+                ) : walletAddress ? (
+                  <div className="bg-slate-900/60 border border-purple-500/30 rounded-xl px-4 py-3 flex flex-col gap-3 shadow-inner">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-purple-200">
+                        <Sparkles className="w-4 h-4 text-purple-400" />
+                        <span className="font-semibold text-sm sm:text-base">
+                          Level {levelData.level} {levelData.title ? `• ${levelData.title}` : ''}
+                        </span>
+                      </div>
+                      <Badge variant="outline" className="border-purple-500/40 text-purple-300 text-xs sm:text-sm">
+                        {levelData.isMaxLevel
+                          ? `${levelData.currentXP.toLocaleString()} XP`
+                          : `${levelData.currentXP.toLocaleString()} / ${levelData.nextXP.toLocaleString()} XP`}
+                      </Badge>
+                    </div>
+                    <Progress value={levelData.progress} className="h-2 bg-slate-800" />
+                    <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm text-gray-300 gap-2">
+                      <span>
+                        {userDisplayName ? `${userDisplayName}'s journey` : 'Keep the streak going'}
+                      </span>
+                      <span className="text-purple-200">
+                        {levelData.isMaxLevel
+                          ? 'Max level reached!'
+                          : `${levelData.xpNeeded.toLocaleString()} XP until Level ${levelData.level + 1}`}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-slate-900/60 border border-purple-500/30 rounded-xl px-4 py-3 flex items-center gap-3 text-sm text-gray-200">
+                    <Sparkles className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                    <span>Connect your wallet to start earning XP and level up your Hoodie Academy profile.</span>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
 
@@ -474,6 +669,103 @@ export default function HoodieAcademy() {
               <h2 className="text-3xl font-bold text-cyan-400 mb-2">🏛️ Welcome to Hoodie Academy</h2>
               <p className="text-muted-foreground text-lg">Your entry into the elite Web3 scholars campus</p>
             </div>
+
+            {/* Featured Bounties */}
+            <section className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-cyan-300">
+                  <Target className="w-5 h-5" />
+                  <h3 className="text-xl font-semibold text-cyan-300">Quick Bounties</h3>
+                </div>
+                <Link href="/bounties" className="text-sm text-cyan-200 hover:text-cyan-100 flex items-center gap-1">
+                  Explore all bounties
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <p className="text-sm text-gray-300">
+                Short, mobile-friendly quests to earn rewards and XP. Tap a bounty to dive in.
+              </p>
+              <ScrollArea className="w-full">
+                <div className="flex gap-4 pb-4">
+                  {isLoadingBounties ? (
+                    Array.from({ length: 3 }).map((_, idx) => (
+                      <div key={`bounty-skeleton-${idx}`} className="min-w-[260px] max-w-[280px] flex-shrink-0">
+                        <Skeleton className="h-48 w-full bg-slate-800/60 border border-cyan-500/10 rounded-2xl" />
+                      </div>
+                    ))
+                  ) : bountyHighlights.length > 0 ? (
+                    bountyHighlights.map((bounty) => (
+                      <Link
+                        key={bounty.id}
+                        href={`/bounties/${bounty.id}`}
+                        className="min-w-[260px] max-w-[320px] flex-shrink-0 group"
+                      >
+                        <Card className="h-full bg-slate-900/70 border border-cyan-500/20 group-hover:border-cyan-400/50 transition-colors duration-200 rounded-2xl">
+                          <CardContent className="p-5 space-y-4">
+                            <div className="flex items-center justify-between gap-2">
+                              <Badge className={`${getBountyStatusBadgeColor(bounty.status)} text-[11px]`}>
+                                {(bounty.status || 'active').toUpperCase()}
+                              </Badge>
+                              {bounty.squad_tag && (
+                                <Badge className={`${getBountySquadBadgeStyle(bounty.squad_tag)} text-[11px]`}>
+                                  {bounty.squad_tag}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="space-y-1.5">
+                              <h4 className="text-base font-semibold text-white leading-tight line-clamp-2">
+                                {bounty.title}
+                              </h4>
+                              {bounty.short_desc && (
+                                <p className="text-xs text-gray-300 line-clamp-3">
+                                  {bounty.short_desc}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between text-xs text-gray-300">
+                              <span className="flex items-center gap-1 text-cyan-200">
+                                <Award className="w-4 h-4" />
+                                {formatBountyReward(bounty.reward, bounty.reward_type)}
+                              </span>
+                              <span className="flex items-center gap-1 text-gray-300">
+                                <Calendar className="w-4 h-4" />
+                                {formatBountyDeadline(bounty.deadline)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] text-gray-400">
+                              <span className="flex items-center gap-1">
+                                <Users className="w-3.5 h-3.5" />
+                                {typeof bounty.submissions === 'number' ? `${bounty.submissions} submissions` : 'New bounty'}
+                              </span>
+                              <span className="flex items-center gap-1 text-cyan-200 group-hover:text-cyan-100">
+                                View details
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))
+                  ) : (
+                    <Card className="min-w-[260px] max-w-[320px] flex-shrink-0 bg-slate-900/60 border border-cyan-500/20">
+                      <CardContent className="p-6 flex flex-col gap-3 text-center text-sm text-gray-300">
+                        <Megaphone className="w-6 h-6 text-cyan-300 mx-auto" />
+                        <span>No active bounties right now. Check back soon or submit one!</span>
+                        <Link href="/bounties/create">
+                          <Button size="sm" variant="outline" className="border-cyan-500/40 text-cyan-200">
+                            Propose a bounty
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+                <ScrollBar orientation="horizontal" />
+              </ScrollArea>
+              {bountiesError && (
+                <p className="text-xs text-red-300">{bountiesError}</p>
+              )}
+            </section>
 
             {/* Squad Assignment CTA - Only show if user hasn't been assigned a squad */}
             {!userSquad && (
