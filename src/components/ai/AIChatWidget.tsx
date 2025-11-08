@@ -35,8 +35,10 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [hasMoved, setHasMoved] = useState(false);
+  const [ignoreOpen, setIgnoreOpen] = useState(false);
   const widgetRef = useRef<HTMLDivElement>(null);
   const hasMovedRef = useRef(false); // Ref to track movement synchronously for touch handlers
+  const ignoreTimeoutRef = useRef<number | null>(null);
   const MESSAGE_LIMIT = 50; // Limit messages per session
   const DRAG_THRESHOLD = 5; // Minimum pixels to move before considering it a drag
 
@@ -208,7 +210,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
 
   const handleButtonClick = (e: React.MouseEvent) => {
     // Only open chat if we didn't just finish dragging
-    if (!hasMoved && !isDragging) {
+    if (!ignoreOpen && !hasMoved && !isDragging) {
       setIsOpen(true);
     }
   };
@@ -216,13 +218,36 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   // Handle touch end on button specifically for mobile
   const handleButtonTouchEnd = useCallback((e: React.TouchEvent) => {
     // Use ref for synchronous check - if we didn't drag, it was a tap - open the chat
-    if (!hasMovedRef.current) {
+    if (!ignoreOpen && !hasMovedRef.current) {
       e.preventDefault();
       setIsOpen(true);
     }
     // Always call handleDragEnd to clean up dragging state
     handleDragEnd();
-  }, [handleDragEnd]);
+  }, [handleDragEnd, ignoreOpen]);
+
+  const closeChat = useCallback((event?: { preventDefault?: () => void; stopPropagation?: () => void }) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    setIsOpen(false);
+    setIgnoreOpen(true);
+    if (ignoreTimeoutRef.current) {
+      window.clearTimeout(ignoreTimeoutRef.current);
+    }
+    ignoreTimeoutRef.current = window.setTimeout(() => {
+      setIgnoreOpen(false);
+      ignoreTimeoutRef.current = null;
+    }, 250);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (ignoreTimeoutRef.current) {
+        window.clearTimeout(ignoreTimeoutRef.current);
+        ignoreTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isDragging) {
@@ -334,7 +359,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-              onClick={() => setIsOpen(false)}
+              onClick={closeChat}
               aria-label="Close chat window"
             >
               <X className="h-4 w-4" />
