@@ -46,18 +46,31 @@ export function useSquadMembers(squadName: string | null) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/squads/members?squad=${squadName}&sortBy=xp`);
+      const response = await fetch(`/api/squads/members?squad=${squadName}&sortBy=xp&limit=1000`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
 
       if (data.success) {
+        console.log(`✅ [useSquadMembers] Fetched ${data.members?.length || 0} members for squad "${squadName}"`);
         setMembers(data.members || []);
         setStats(data.statistics || null);
+        
+        // Log debug info if available
+        if (data.debug) {
+          console.log(`📊 [useSquadMembers] Debug info:`, data.debug);
+        }
       } else {
-        setError(data.error || 'Failed to fetch squad members');
+        const errorMsg = data.error || 'Failed to fetch squad members';
+        console.error(`❌ [useSquadMembers] Error for squad "${squadName}":`, errorMsg);
+        setError(errorMsg);
       }
-    } catch (err) {
-      console.error('Error fetching squad members:', err);
-      setError('Failed to fetch squad members');
+    } catch (err: any) {
+      console.error(`❌ [useSquadMembers] Error fetching squad members for "${squadName}":`, err);
+      setError(err.message || 'Failed to fetch squad members');
     } finally {
       setLoading(false);
     }

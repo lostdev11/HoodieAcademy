@@ -262,15 +262,9 @@ const sidebarItems: SidebarItem[] = [
       dynamic: true
     },
     {
-      id: 'squad-analytics',
-      label: 'Squad Analytics',
-      icon: <TrendingUp className="w-5 h-5" />,
-      href: '/squads/analytics'
-    },
-    {
       id: 'squad-tracker',
-      label: 'Squad Tracker',
-      icon: <Users className="w-5 h-5" />,
+      label: 'Squad Analytics & Tracker',
+      icon: <TrendingUp className="w-5 h-5" />,
       href: '/squads/tracker'
     },
   {

@@ -44,49 +44,59 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabaseClient();
 
-    // Get all users in the squad with their XP data
-    const { data: members, error: membersError } = await supabase
+    // Get all users in the squad with their XP data directly from users table
+    // Use a more permissive query to catch all users, then filter in memory
+    // Use minimal required fields first to avoid column errors
+    const { data: allUsers, error: membersError } = await supabase
       .from('users')
-      .select(`
-        wallet_address,
-        display_name,
-        squad,
-        squad_selected_at,
-        squad_lock_end_date,
-        created_at,
-        last_active
-      `)
-      .eq('squad', squadName)
-      .order('created_at', { ascending: false });
+      .select('wallet_address, display_name, squad, squad_id, total_xp, level, squad_selected_at, squad_lock_end_date, created_at, last_active, updated_at');
 
     if (membersError) {
-      console.error('Error fetching squad members:', membersError);
+      console.error('Error fetching users:', membersError);
       return NextResponse.json(
-        { error: 'Failed to fetch squad members' },
+        { error: 'Failed to fetch squad members', details: membersError.message },
         { status: 500 }
       );
     }
 
-    // Get XP data for all members
-    const walletAddresses = members?.map(m => m.wallet_address) || [];
-    
-    let xpData: any[] = [];
-    if (walletAddresses.length > 0) {
-      const { data: xpRecords } = await supabase
-        .from('user_xp')
-        .select('wallet_address, total_xp, level')
-        .in('wallet_address', walletAddresses);
-      
-      xpData = xpRecords || [];
+    // Filter users with matching squad name (case-insensitive, trimmed)
+    const members = allUsers?.filter(user => 
+      user.squad && 
+      user.squad.trim() !== '' && 
+      user.squad.trim().toLowerCase() === squadName.trim().toLowerCase()
+    ) || [];
+
+    console.log(`📊 [Squad Members API] Found ${members.length} members for squad "${squadName}" out of ${allUsers?.length || 0} total users`);
+
+    if (members.length === 0) {
+      console.log(`⚠️ [Squad Members API] No members found for squad "${squadName}"`);
+      return NextResponse.json({
+        success: true,
+        squad: squadName,
+        statistics: {
+          totalMembers: 0,
+          activeMembers: 0,
+          totalSquadXP: 0,
+          avgXPPerMember: 0,
+          lockedMembers: 0,
+          topContributor: null
+        },
+        members: [],
+        sortedBy: sortBy,
+        timestamp: new Date().toISOString(),
+        debug: {
+          totalUsersInDB: allUsers?.length || 0,
+          membersFound: 0,
+          squadNamesInDB: [...new Set(allUsers?.filter(u => u.squad).map(u => u.squad.trim()) || [])]
+        }
+      });
     }
 
-    // Combine member data with XP data
-    const enrichedMembers = members?.map(member => {
-      const xpInfo = xpData.find(xp => xp.wallet_address === member.wallet_address);
-      
+    // Enrich members with calculated data
+    const enrichedMembers = members.map(member => {
       // Calculate days in squad
       const joinedDate = new Date(member.squad_selected_at || member.created_at);
-      const daysInSquad = Math.floor((Date.now() - joinedDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysInSquad = Math.max(0, Math.floor((Date.now() - joinedDate.getTime()) / (1000 * 60 * 60 * 24)));
       
       // Calculate if squad is locked
       const lockEndDate = member.squad_lock_end_date ? new Date(member.squad_lock_end_date) : null;
@@ -97,8 +107,9 @@ export async function GET(request: NextRequest) {
         walletAddress: member.wallet_address,
         displayName: member.display_name || `User ${member.wallet_address.slice(0, 6)}...`,
         squad: member.squad,
-        totalXP: xpInfo?.total_xp || 0,
-        level: xpInfo?.level || 1,
+        totalXP: member.total_xp || 0,
+        level: member.level || 1,
+        streak: (member as any).streak || 0, // streak may not exist in all schemas
         joinedSquadAt: member.squad_selected_at || member.created_at,
         daysInSquad,
         lastActive: member.last_active,
@@ -106,7 +117,7 @@ export async function GET(request: NextRequest) {
         daysUntilUnlock,
         createdAt: member.created_at
       };
-    }) || [];
+    });
 
     // Sort based on sortBy parameter
     enrichedMembers.sort((a, b) => {
@@ -137,6 +148,8 @@ export async function GET(request: NextRequest) {
     const topContributor = enrichedMembers[0] || null;
     const lockedMembers = enrichedMembers.filter(m => m.squadLocked).length;
 
+    console.log(`✅ [Squad Members API] Returning ${limitedMembers.length} members (of ${totalMembers} total) for squad "${squadName}"`);
+
     return NextResponse.json({
       success: true,
       squad: squadName,
@@ -154,13 +167,27 @@ export async function GET(request: NextRequest) {
       },
       members: limitedMembers,
       sortedBy: sortBy,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      debug: {
+        totalMembersInSquad: totalMembers,
+        membersReturned: limitedMembers.length,
+        limitApplied: limit
+      }
     });
 
-  } catch (error) {
-    console.error('Error in squads/members API:', error);
+  } catch (error: any) {
+    console.error('❌ [Squad Members API] Error:', error);
+    console.error('❌ [Squad Members API] Error details:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name
+    });
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error?.message || 'Unknown error',
+        squad: squadName || 'unknown'
+      },
       { status: 500 }
     );
   }

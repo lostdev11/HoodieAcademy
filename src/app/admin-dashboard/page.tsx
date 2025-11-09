@@ -19,7 +19,7 @@ import {
   Users, BookOpen, Trophy, Settings, Shield, BarChart3, 
   Target, Megaphone, Bell, Database, Activity, Zap, 
   FileText, Star, CheckCircle, Sparkles, MessageSquare,
-  Crown, ScrollText, Flag, Video, Vote, Award
+  Crown, ScrollText, Flag, Video, Vote, Award, Gift
 } from 'lucide-react';
 import CouncilNoticesManager from '@/components/admin/CouncilNoticesManager';
 import AnnouncementsManager from '@/components/admin/AnnouncementsManager';
@@ -37,6 +37,7 @@ import { NotificationProvider, useNotifications } from '@/contexts/NotificationC
 import { NotificationBadge } from '@/components/notifications/NotificationBadge';
 import CourseManagementTab from '@/components/admin/CourseManagementTab';
 import PreviewSubmissionsManager from '@/components/admin/PreviewSubmissionsManager';
+import StarterPackManager from '@/components/admin/StarterPackManager';
 
 interface Bounty {
   id?: string;
@@ -83,7 +84,8 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
       'governance': 'Governance',
       'courses': 'Courses',
       'student-of-the-week': 'Student of the Month',
-      'preview-academy': 'Preview Academy'
+      'preview-academy': 'Preview Academy',
+      'starter-pack': 'Starter Pack'
     };
     return tabNames[tab] || 'Select a section...';
   };
@@ -192,6 +194,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     {activeTab === 'courses' && <BookOpen className="w-4 h-4" />}
                     {activeTab === 'student-of-the-week' && <Award className="w-4 h-4" />}
                     {activeTab === 'preview-academy' && <BookOpen className="w-4 h-4" />}
+                    {activeTab === 'starter-pack' && <Gift className="w-4 h-4" />}
                     <span>{getTabDisplayName(activeTab)}</span>
                   </div>
                 </SelectValue>
@@ -320,6 +323,12 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                   <div className="flex items-center space-x-2">
                     <BookOpen className="w-4 h-4" />
                     <span>Preview Academy</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="starter-pack">
+                  <div className="flex items-center space-x-2">
+                    <Gift className="w-4 h-4" />
+                    <span>Starter Pack</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -512,6 +521,14 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               <BookOpen className="w-4 h-4" />
               <span>Preview Academy</span>
             </Button>
+            <Button
+              variant={activeTab === "starter-pack" ? "default" : "outline"}
+              onClick={() => setActiveTab("starter-pack")}
+              className="flex items-center space-x-2"
+            >
+              <Gift className="w-4 h-4" />
+              <span>Starter Pack</span>
+            </Button>
           </div>
 
           {/* Overview Tab */}
@@ -641,6 +658,11 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
           {/* Preview Academy Tab */}
           <TabsContent value="preview-academy">
             <PreviewSubmissionsManager />
+          </TabsContent>
+
+          {/* Starter Pack Tab */}
+          <TabsContent value="starter-pack">
+            <StarterPackManager adminWallet={walletAddress} />
           </TabsContent>
         </Tabs>
       </div>

@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS daily_claim_analytics (
 CREATE INDEX IF NOT EXISTS idx_daily_claim_analytics_timestamp ON daily_claim_analytics(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_daily_claim_analytics_event_type ON daily_claim_analytics(event_type);
 CREATE INDEX IF NOT EXISTS idx_daily_claim_analytics_wallet ON daily_claim_analytics(wallet_address);
-CREATE INDEX IF NOT EXISTS idx_daily_claim_analytics_date ON daily_claim_analytics(DATE(timestamp));
+CREATE INDEX IF NOT EXISTS idx_daily_claim_analytics_date ON daily_claim_analytics(((timestamp AT TIME ZONE 'UTC')::DATE));
 CREATE INDEX IF NOT EXISTS idx_daily_claim_analytics_success ON daily_claim_analytics(event_type, timestamp) WHERE event_type = 'claim_success';
 
 -- Add comments

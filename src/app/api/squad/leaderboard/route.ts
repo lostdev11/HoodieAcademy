@@ -35,18 +35,27 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabaseClient();
 
     // Get all users with squads
-    const { data: users, error } = await supabase
+    // Use a more permissive query to catch all users, then filter in memory
+    const { data: allUsers, error } = await supabase
       .from('users')
-      .select('wallet_address, display_name, squad, total_xp, level, streak, last_active')
-      .not('squad', 'is', null);
+      .select('wallet_address, display_name, squad, total_xp, level, last_active');
 
     if (error) {
       console.error('Error fetching users:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch squad data' },
+        { error: 'Failed to fetch squad data', details: error.message },
         { status: 500 }
       );
     }
+
+    // Filter users with valid squads (not null, not empty string)
+    const users = allUsers?.filter(user => 
+      user.squad && 
+      user.squad.trim() !== '' && 
+      user.squad !== null
+    ) || [];
+
+    console.log(`📊 [Squad Leaderboard] Found ${users.length} users with squads out of ${allUsers?.length || 0} total users`);
 
     // Group by squad and calculate stats
     const squadStatsMap: Record<string, any> = {};
@@ -83,10 +92,10 @@ export async function GET(request: NextRequest) {
       if (includeMembers) {
         squad.members.push({
           walletAddress: user.wallet_address,
-          displayName: user.display_name,
+          displayName: user.display_name || `User ${user.wallet_address.slice(0, 6)}...`,
           totalXP: user.total_xp || 0,
           level: user.level || 1,
-          streak: user.streak || 0
+          streak: (user as any).streak || 0 // streak may not exist in all schemas
         });
       }
     });
@@ -124,10 +133,18 @@ export async function GET(request: NextRequest) {
       generatedAt: new Date().toISOString()
     });
 
-  } catch (error) {
-    console.error('Error in GET /api/squad/leaderboard:', error);
+  } catch (error: any) {
+    console.error('❌ [Squad Leaderboard API] Error:', error);
+    console.error('❌ [Squad Leaderboard API] Error details:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name
+    });
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error?.message || 'Unknown error'
+      },
       { status: 500 }
     );
   }

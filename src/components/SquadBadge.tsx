@@ -84,7 +84,7 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
       Unassigned: 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400', // New: Cyan for unassigned
     };
 
-    const displayName = squadName === 'Unassigned' ? 'Academy Member' : `${squadName} Squad`;
+    const displayName = squadName === 'Unassigned' ? '' : `${squadName} Squad`;
 
     // Special handling for Academy Member with PFP
     if (squadName === 'Unassigned' && showPfpForAcademyMember && userPfp) {
@@ -93,7 +93,6 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
           <div className="w-40 h-40 rounded-xl border-2 bg-cyan-500/20 border-cyan-500/50 shadow-xl overflow-hidden">
             <ProfileAvatar pfpUrl={userPfp} size={160} />
           </div>
-          <p className="mt-3 text-lg font-bold">{displayName}</p>
         </div>
       );
     }
@@ -111,7 +110,6 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
               className="w-full h-full object-contain p-2"
             />
           </div>
-          <p className="mt-3 text-lg font-bold">{displayName}</p>
         </div>
       );
     }

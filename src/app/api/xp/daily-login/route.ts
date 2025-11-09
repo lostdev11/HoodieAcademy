@@ -3,11 +3,20 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
 // Initialize Supabase client
+export const runtime = 'nodejs';
+
 function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseServiceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
   
   if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('❌ [DAILY LOGIN] Supabase configuration missing', {
+      hasUrl: Boolean(supabaseUrl),
+      hasServiceKey: Boolean(supabaseServiceKey)
+    });
     throw new Error('Supabase configuration missing');
   }
   
@@ -43,7 +52,14 @@ async function logAnalyticsEvent(
   supabase: ReturnType<typeof getSupabaseClient>,
   params: {
     walletAddress: string;
-    eventType: 'claim_success' | 'claim_rejected_already_claimed' | 'signature_invalid' | 'rate_limited' | 'nonce_invalid' | 'nonce_expired' | 'nonce_used';
+    eventType:
+      | 'claim_success'
+      | 'claim_rejected_already_claimed'
+      | 'signature_invalid'
+      | 'rate_limited'
+      | 'nonce_invalid'
+      | 'nonce_expired'
+      | 'nonce_used';
     xpAwarded?: number;
     streakDays?: number;
     levelUp?: boolean;
@@ -84,20 +100,43 @@ async function logAnalyticsEvent(
       }
     }
     
-    await supabase.rpc('log_daily_claim_event', {
-      p_wallet_address: params.walletAddress,
-      p_event_type: params.eventType,
-      p_xp_awarded: params.xpAwarded || null,
-      p_streak_days: params.streakDays || null,
-      p_time_since_midnight_minutes: timeSinceMidnight,
-      p_level_up: params.levelUp || false,
-      p_new_level: params.newLevel || null,
-      p_device_info: deviceInfo,
-      p_ip_hash: ipHash,
-      p_user_agent: userAgent,
-      p_rejection_reason: params.rejectionReason || null,
-      p_processing_time_ms: params.processingTimeMs || null
+    const payload = {
+      wallet_address: params.walletAddress,
+      event_type: params.eventType,
+      xp_awarded: params.xpAwarded ?? null,
+      streak_days: params.streakDays ?? null,
+      time_since_midnight_minutes: timeSinceMidnight,
+      level_up: params.levelUp ?? false,
+      new_level: params.newLevel ?? null,
+      device_info: deviceInfo,
+      ip_hash: ipHash,
+      user_agent: userAgent,
+      rejection_reason: params.rejectionReason ?? null,
+      processing_time_ms: params.processingTimeMs ?? null
+    };
+
+    const { error: rpcError } = await supabase.rpc('log_daily_claim_event', {
+      p_wallet_address: payload.wallet_address,
+      p_event_type: payload.event_type,
+      p_xp_awarded: payload.xp_awarded,
+      p_streak_days: payload.streak_days,
+      p_time_since_midnight_minutes: payload.time_since_midnight_minutes,
+      p_level_up: payload.level_up,
+      p_new_level: payload.new_level,
+      p_device_info: payload.device_info,
+      p_ip_hash: payload.ip_hash,
+      p_user_agent: payload.user_agent,
+      p_rejection_reason: payload.rejection_reason,
+      p_processing_time_ms: payload.processing_time_ms
     });
+
+    if (rpcError) {
+      console.warn('⚠️ [ANALYTICS] RPC logging failed, attempting direct insert:', rpcError.message);
+      const { error: insertError } = await supabase.from('daily_claim_analytics').insert(payload);
+      if (insertError) {
+        console.error('❌ [ANALYTICS] Direct insert failed:', insertError.message);
+      }
+    }
     
     console.log('📊 [ANALYTICS] Logged event:', params.eventType);
   } catch (error) {

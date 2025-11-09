@@ -19,6 +19,7 @@ import { MobileNavigation } from '@/components/dashboard/MobileNavigation';
 import TokenGate from '@/components/TokenGate';
 import SquadMembersList from '@/components/squads/SquadMembersList';
 import SquadRankingsCard from '@/components/squads/SquadRankingsCard';
+import SquadActivityCard from '@/components/squad/SquadActivityCard';
 import SquadBadge from '@/components/SquadBadge';
 
 const SQUADS = [
@@ -31,9 +32,12 @@ const SQUADS = [
 
 export default function SquadTrackerPage() {
   const [selectedSquad, setSelectedSquad] = useState<string>('Creators');
+  const [selectedSquadForActivity, setSelectedSquadForActivity] = useState<string>('Creators');
   const [userSquad, setUserSquad] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [squads, setSquads] = useState<any[]>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
 
   useEffect(() => {
     // Get wallet and squad from localStorage
@@ -43,9 +47,13 @@ export default function SquadTrackerPage() {
       fetchUserSquad(wallet);
     }
 
+    // Fetch squad leaderboard
+    fetchSquadLeaderboard();
+
     // Listen for squad updates
     const handleSquadUpdate = () => {
       if (wallet) fetchUserSquad(wallet);
+      fetchSquadLeaderboard();
     };
 
     window.addEventListener('squadUpdated', handleSquadUpdate);
@@ -66,10 +74,34 @@ export default function SquadTrackerPage() {
         const squad = data.profile.squad.name;
         setUserSquad(squad);
         setSelectedSquad(squad); // Auto-select user's squad
+        setSelectedSquadForActivity(squad); // Auto-select for activity view too
       }
     } catch (error) {
       console.error('Error fetching user squad:', error);
     }
+  };
+
+  const fetchSquadLeaderboard = async () => {
+    try {
+      setLoadingLeaderboard(true);
+      const response = await fetch('/api/squad/leaderboard?limit=10&includeMembers=true');
+      const data = await response.json();
+
+      if (data.success) {
+        setSquads(data.squads || []);
+      }
+    } catch (error) {
+      console.error('Error fetching squad leaderboard:', error);
+    } finally {
+      setLoadingLeaderboard(false);
+    }
+  };
+
+  const getRankBadge = (rank: number) => {
+    if (rank === 1) return '🥇';
+    if (rank === 2) return '🥈';
+    if (rank === 3) return '🥉';
+    return `#${rank}`;
   };
 
   return (
@@ -90,10 +122,10 @@ export default function SquadTrackerPage() {
                 <MobileNavigation userSquad={userSquad} isAdmin={false} />
                 <div>
                   <h1 className="text-2xl md:text-3xl font-bold text-purple-400">
-                    🏆 Squad Tracker
+                    📊 Squad Analytics & Tracker
                   </h1>
                   <p className="text-sm text-gray-300">
-                    Track squad performance, members, and rankings
+                    Track squad performance, members, rankings, and detailed analytics
                   </p>
                 </div>
               </div>
@@ -125,7 +157,7 @@ export default function SquadTrackerPage() {
             </Card>
 
             <Tabs defaultValue="rankings" className="space-y-4">
-              <TabsList className="grid grid-cols-2 md:grid-cols-3 w-full md:w-auto bg-slate-800/50">
+              <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full md:w-auto bg-slate-800/50">
                 <TabsTrigger value="rankings" className="flex items-center space-x-2">
                   <Trophy className="w-4 h-4" />
                   <span>Rankings</span>
@@ -134,9 +166,13 @@ export default function SquadTrackerPage() {
                   <Users className="w-4 h-4" />
                   <span>Members</span>
                 </TabsTrigger>
+                <TabsTrigger value="activity" className="flex items-center space-x-2">
+                  <Activity className="w-4 h-4" />
+                  <span>Activity</span>
+                </TabsTrigger>
                 <TabsTrigger value="analytics" className="flex items-center space-x-2">
                   <BarChart3 className="w-4 h-4" />
-                  <span>Analytics</span>
+                  <span>Overview</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -181,8 +217,107 @@ export default function SquadTrackerPage() {
                 <SquadMembersList squadName={selectedSquad} maxHeight="600px" />
               </TabsContent>
 
-              {/* Analytics Tab */}
+              {/* Activity Tab - Detailed squad activity */}
+              <TabsContent value="activity" className="space-y-4">
+                {/* Squad Selector for Activity */}
+                <Card className="bg-slate-800/50 border-cyan-500/30">
+                  <CardContent className="p-4">
+                    <div className="flex flex-wrap gap-2">
+                      {SQUADS.map((squad) => (
+                        <Button
+                          key={squad.id}
+                          variant={selectedSquadForActivity === squad.name ? 'default' : 'outline'}
+                          onClick={() => setSelectedSquadForActivity(squad.name)}
+                          className={`${
+                            selectedSquadForActivity === squad.name
+                              ? 'bg-purple-600 hover:bg-purple-700'
+                              : ''
+                          } ${
+                            userSquad === squad.name
+                              ? 'border-cyan-500/50 border-2'
+                              : ''
+                          }`}
+                        >
+                          <span className="mr-2">{squad.emoji}</span>
+                          {squad.name}
+                          {userSquad === squad.name && (
+                            <Badge className="ml-2 bg-cyan-600 text-white text-xs">Your Squad</Badge>
+                          )}
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Squad Activity Card */}
+                <SquadActivityCard squad={selectedSquadForActivity} period="week" />
+              </TabsContent>
+
+              {/* Analytics Tab - Quick overview stats */}
               <TabsContent value="analytics" className="space-y-4">
+                {/* Leaderboard View */}
+                <Card className="bg-slate-800/50 border-purple-500/30">
+                  <CardHeader>
+                    <CardTitle className="text-purple-400 flex items-center">
+                      <BarChart3 className="w-5 h-5 mr-2" />
+                      Squad Rankings Overview
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {loadingLeaderboard ? (
+                      <div className="text-center py-8">
+                        <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-purple-400" />
+                        <p className="text-gray-400">Loading squad rankings...</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {squads.map((squad) => (
+                          <div
+                            key={squad.name}
+                            className={`p-4 rounded-lg border ${
+                              squad.name === userSquad
+                                ? 'bg-purple-900/30 border-purple-500'
+                                : 'bg-slate-700/30 border-slate-600'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-4">
+                                <div className="text-3xl">{getRankBadge(squad.rank)}</div>
+                                <div>
+                                  <h3 className="text-lg font-bold text-white">{squad.name}</h3>
+                                  <div className="flex items-center space-x-3 text-sm text-gray-400">
+                                    <span className="flex items-center">
+                                      <Users className="w-3 h-3 mr-1" />
+                                      {squad.memberCount} members
+                                    </span>
+                                    <span className="flex items-center">
+                                      <Target className="w-3 h-3 mr-1" />
+                                      {squad.activeMembers} active
+                                    </span>
+                                    <span className="text-green-400">
+                                      {squad.activeMemberRate}% active rate
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-2xl font-bold text-yellow-400">
+                                  {squad.totalXP.toLocaleString()}
+                                </p>
+                                <p className="text-xs text-gray-400">Total XP</p>
+                                <Badge variant="outline" className="mt-1 text-xs">
+                                  Avg: {squad.averageXP.toLocaleString()} XP
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Quick Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {SQUADS.map((squad) => (
                     <SquadStatsCard key={squad.id} squadName={squad.name} />

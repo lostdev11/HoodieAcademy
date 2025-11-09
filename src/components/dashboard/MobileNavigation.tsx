@@ -19,7 +19,8 @@ import {
   Target,
   Sparkles,
   Vote,
-  MessageSquare
+  MessageSquare,
+  TrendingUp
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
 import { getSquadNameFromCache, fetchUserSquad } from '@/utils/squad-api';
@@ -209,8 +210,8 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
     },
     {
       id: 'squad-tracker',
-      label: 'Squad Tracker',
-      icon: <Users className="w-5 h-5" />,
+      label: 'Squad Analytics & Tracker',
+      icon: <TrendingUp className="w-5 h-5" />,
       href: '/squads/tracker'
     },
     // Only include Admin tab if isAdmin is true

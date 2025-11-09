@@ -364,36 +364,31 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-8 ${className}`}>
       {/* XP Notification System - Handles all XP toast notifications */}
       <XPNotification walletAddress={walletAddress} />
       
       {/* Welcome Header */}
       <Card className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-blue-500/30">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-blue-500/20 rounded-full">
-                <Crown className="w-8 h-8 text-blue-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-blue-400 mb-1">
-                  Welcome back, {displayNameLoading ? '...' : (displayName || 'Scholar')}!
-                </h1>
-                <p className="text-gray-300">
-                  Ready to continue your Web3 journey?
-                </p>
-              </div>
+        <CardContent className="p-8">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-blue-500/20 rounded-full">
+              <Crown className="w-8 h-8 text-blue-400" />
             </div>
-            <div className="flex-shrink-0">
-              <SquadBadge squad={userSquad || 'Unassigned'} walletAddress={walletAddress} />
+            <div>
+              <h1 className="text-2xl font-bold text-blue-400 mb-1">
+                Welcome back, {displayNameLoading ? '...' : (displayName || 'Scholar')}!
+              </h1>
+              <p className="text-gray-300">
+                Ready to continue your Web3 journey?
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-slate-800/50 border-cyan-500/30">
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
