@@ -1,4 +1,4 @@
-"use client"
+'use client';
 
 import { useState, useEffect, lazy, Suspense } from "react"
 import { useDisplayNameReadOnly } from '@/hooks/use-display-name'
@@ -697,7 +697,7 @@ export default function HoodieAcademy() {
                     bountyHighlights.map((bounty) => (
                       <Link
                         key={bounty.id}
-                        href={`/bounties/${bounty.id}`}
+                        href={`/bounties?highlight=${bounty.id}`}
                         className="min-w-[260px] max-w-[320px] flex-shrink-0 group"
                       >
                         <Card className="h-full bg-slate-900/70 border border-cyan-500/20 group-hover:border-cyan-400/50 transition-colors duration-200 rounded-2xl">
