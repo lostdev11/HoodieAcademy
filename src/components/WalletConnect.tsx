@@ -25,17 +25,23 @@ interface Founder {
   name: string;
   xHandle: string;
   pfp: string;
+  shape?: 'circle' | 'square';
 }
 
 // Founder Card Component with error handling
 function FounderCard({ founder }: { founder: Founder }) {
   const [imageError, setImageError] = useState(false);
   const [imageSrc, setImageSrc] = useState(founder.pfp);
+  const [shouldUnoptimize, setShouldUnoptimize] = useState(() =>
+    founder.pfp.toLowerCase().endsWith('.svg')
+  );
+  const isSquare = founder.shape === 'square';
 
   const handleImageError = () => {
     if (!imageError) {
       setImageError(true);
       setImageSrc(`https://ui-avatars.com/api/?name=${encodeURIComponent(founder.name)}&background=amber&color=000&size=64`);
+      setShouldUnoptimize(false);
     }
   };
 
@@ -46,13 +52,17 @@ function FounderCard({ founder }: { founder: Founder }) {
       rel="noopener noreferrer"
       className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50 border border-gray-700/50 hover:bg-gray-700/50 hover:border-amber-500/30 transition-all duration-200 group"
     >
-      <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-amber-500/20 group-hover:ring-amber-500/40 transition-all">
+      <div
+        className={`relative flex-shrink-0 overflow-hidden ring-2 ring-amber-500/20 group-hover:ring-amber-500/40 transition-all ${
+          isSquare ? 'w-14 h-14 rounded-xl bg-gray-900/60' : 'w-12 h-12 rounded-full'
+        }`}
+      >
         <Image
           src={imageSrc}
           alt={founder.name}
           fill
           className="object-cover"
-          unoptimized={imageError}
+          unoptimized={shouldUnoptimize}
           onError={handleImageError}
         />
       </div>
@@ -77,6 +87,13 @@ export default function WalletConnect() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [currentWallet, setCurrentWallet] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>('');
+
+  const hoodieAcademyX: Founder = {
+    name: 'Hoodie Academy',
+    xHandle: '@HoodieAcademy',
+    pfp: '/images/founders/Hoodie%20Academy%20Logo.png',
+    shape: 'square',
+  };
 
   // Founders data - update with actual founder information
   const founders: Founder[] = [
@@ -315,10 +332,10 @@ export default function WalletConnect() {
       <div className="mt-6 pt-6 border-t border-gray-700/50">
         <h3 className="text-sm font-semibold text-gray-300 mb-4 flex items-center gap-2">
           <span className="text-amber-400">✨</span>
-          Founders
+          Founders & Official X
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {founders.map((founder, index) => (
+          {[hoodieAcademyX, ...founders].map((founder, index) => (
             <FounderCard key={index} founder={founder} />
           ))}
         </div>

@@ -38,17 +38,23 @@ interface Founder {
   xHandle: string;
   pfp: string;
   role?: string;
+  shape?: 'circle' | 'square';
 }
 
 // Founder Card Component with error handling
 function FounderCard({ founder }: { founder: Founder }) {
   const [imageError, setImageError] = useState(false);
   const [imageSrc, setImageSrc] = useState(founder.pfp);
+  const [shouldUnoptimize, setShouldUnoptimize] = useState(() =>
+    founder.pfp.toLowerCase().endsWith('.svg')
+  );
+  const isSquare = founder.shape === 'square';
 
   const handleImageError = () => {
     if (!imageError) {
       setImageError(true);
       setImageSrc(`https://ui-avatars.com/api/?name=${encodeURIComponent(founder.name)}&background=amber&color=000&size=64`);
+      setShouldUnoptimize(false);
     }
   };
 
@@ -59,13 +65,17 @@ function FounderCard({ founder }: { founder: Founder }) {
       rel="noopener noreferrer"
       className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-amber-500/30 transition-all duration-200 group backdrop-blur-sm"
     >
-      <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-amber-500/20 group-hover:ring-amber-500/40 transition-all">
+      <div
+        className={`relative flex-shrink-0 overflow-hidden ring-2 ring-amber-500/20 group-hover:ring-amber-500/40 transition-all ${
+          isSquare ? 'w-14 h-14 rounded-xl bg-white/10' : 'w-12 h-12 rounded-full'
+        }`}
+      >
         <Image
           src={imageSrc}
           alt={founder.name}
           fill
           className="object-cover"
-          unoptimized={imageError}
+          unoptimized={shouldUnoptimize}
           onError={handleImageError}
         />
       </div>
@@ -840,10 +850,17 @@ export default function TokenGate({ children }: TokenGateProps) {
         <div className="mt-6 pt-6 border-t border-white/10 px-4">
           <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
             <span className="text-amber-400">✨</span>
-            Founders
+            Founders & Official X
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
+              {
+                name: 'Hoodie Academy',
+                xHandle: 'HoodieAcademy',
+                pfp: '/images/founders/Hoodie%20Academy%20Logo.png',
+                role: 'Official X',
+                shape: 'square'
+              },
               {
                 name: 'Kong',
                 xHandle: 'kongnificent_',
@@ -862,7 +879,7 @@ export default function TokenGate({ children }: TokenGateProps) {
           </div>
         </div>
 
-        {/* Preview Academy Button */}
+        {/* Free Course Button */}
         <div className="mt-6 px-4">
           <Link href="/preview">
             <Button
@@ -871,7 +888,7 @@ export default function TokenGate({ children }: TokenGateProps) {
               <span className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-white/30 to-transparent opacity-70 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
               <span className="relative z-10 flex items-center justify-center gap-3">
                 <BookOpen size={20} />
-                <span>Preview the Academy</span>
+                <span>Free Course</span>
               </span>
             </Button>
           </Link>

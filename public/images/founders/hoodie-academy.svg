@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 768">
+  <defs>
+    <radialGradient id="bgGradient" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#2ce5f4"/>
+      <stop offset="60%" stop-color="#2747f7" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#090018"/>
+    </radialGradient>
+    <linearGradient id="hoodieGradient" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#45f0f0"/>
+      <stop offset="45%" stop-color="#3f7dff"/>
+      <stop offset="100%" stop-color="#9237ff"/>
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#53f4f5"/>
+      <stop offset="50%" stop-color="#4b7dff"/>
+      <stop offset="100%" stop-color="#9a3bff"/>
+    </linearGradient>
+    <path id="topArc" d="M154,215 a230,230 0 0,1 460,0" fill="none"/>
+    <path id="bottomArc" d="M614,553 a230,230 0 0,1 -460,0" fill="none"/>
+    <path id="star" d="M0,-22 L6.5,-6.5 22,0 6.5,6.5 0,22 -6.5,6.5 -22,0 -6.5,-6.5 Z" />
+  </defs>
+
+  <rect width="768" height="768" fill="#070015"/>
+  <circle cx="384" cy="384" r="310" fill="url(#bgGradient)" opacity="0.9"/>
+
+  <g fill="url(#textGradient)" font-family="'Futura PT','Montserrat','Poppins',sans-serif" font-weight="700" letter-spacing="16">
+    <text font-size="84">
+      <textPath href="#topArc" startOffset="50%" text-anchor="middle">HOODIE</textPath>
+    </text>
+    <text font-size="84">
+      <textPath href="#bottomArc" startOffset="50%" text-anchor="middle">ACADEMY</textPath>
+    </text>
+  </g>
+
+  <g transform="translate(178 212)" fill="url(#hoodieGradient)">
+    <path d="M206 0c-67 0-122 55-122 122v20c-42 28-72 73-84 123l-4 17c-4 17 7 35 24 39s34-6 38-24l3-14c17-64 71-108 135-108s118 44 135 108l3 14c4 17 21 28 38 24s28-22 24-39l-4-17c-12-50-42-95-84-123v-20C328 55 273 0 206 0z"/>
+    <path d="M206 128c-43 0-82 21-104 56 27 17 58 26 90 26h28c32 0 63-9 90-26-22-35-61-56-104-56z"/>
+    <path d="M153 224l-40 138c-4 15 5 31 21 35s31-5 35-21l36-125h44l36 125c4 15 20 25 35 21s25-20 21-35l-40-138c-3-10-12-17-23-17h-127c-10 0-20 7-23 17z"/>
+  </g>
+
+  <g fill="url(#textGradient)">
+    <use href="#star" transform="translate(176 384) scale(1.1)"/>
+    <use href="#star" transform="translate(592 384) scale(1.1)"/>
+  </g>
+</svg>
+
