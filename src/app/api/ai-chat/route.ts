@@ -5,10 +5,18 @@ import Groq from 'groq-sdk';
 
 export const runtime = 'edge';
 
-// Initialize Groq with Llama 3 (FREE!)
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY || '',
-});
+const groqApiKey = process.env.GROQ_API_KEY;
+const groq = groqApiKey
+  ? new Groq({
+      apiKey: groqApiKey,
+    })
+  : null;
+
+if (!groqApiKey) {
+  console.warn(
+    '[AI Chat] GROQ_API_KEY is not configured. The Hoodie AI Assistant will be disabled until the key is added.',
+  );
+}
 
 const systemPrompt = `You are the Hoodie Academy AI Assistant - a helpful, knowledgeable guide for students learning Web3, Solana, NFTs, and cryptocurrency. You know EVERYTHING about the academy and can answer any questions about how it works.
 
@@ -215,6 +223,20 @@ export async function POST(req: Request) {
       ...groqMessages,
     ];
 
+    if (!groq) {
+      return new Response(
+        JSON.stringify({
+          error: 'AI chat is not configured',
+          details:
+            'The server is missing the GROQ_API_KEY environment variable. Please add a valid key from https://console.groq.com/keys.',
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
     // Call Groq API
     const completion = await groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile', // FREE and FAST!
@@ -252,6 +274,26 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error('AI Chat Error:', error);
+
+    const apiKeyError =
+      error?.status === 401 ||
+      error?.code === 'invalid_api_key' ||
+      error?.message?.toLowerCase?.().includes('invalid api key');
+
+    if (apiKeyError) {
+      return new Response(
+        JSON.stringify({
+          error: 'AI chat configuration error',
+          details:
+            'The GROQ_API_KEY is missing or invalid. Update the environment variable with a valid key from https://console.groq.com/keys.',
+        }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+    }
+
     return new Response(
       JSON.stringify({ 
         error: 'Failed to process chat request',

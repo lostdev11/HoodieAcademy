@@ -45,7 +45,7 @@ import { MobileNavigation } from "@/components/dashboard/MobileNavigation"
 import TokenGate from "@/components/TokenGate"
 import SquadBadge from "@/components/SquadBadge"
 import CryptoPriceTicker from "@/components/CryptoPriceTicker"
-import { fetchUserSquad } from '@/utils/squad-api'
+import { getSquadNameFromCache, isSquadLockedFromCache } from '@/utils/squad-api'
 import Image from 'next/image'
 
 // Lazy load heavy components
@@ -190,6 +190,13 @@ export default function HoodieAcademy() {
       // Set SNS domain immediately without async resolution
       setSnsDomain(storedWallet);
       setIsLoadingSns(false);
+
+      // Use cached squad info for instant UI feedback
+      const cachedSquadName = getSquadNameFromCache();
+      if (cachedSquadName) {
+        setUserSquad(cachedSquadName);
+        setSquadLockExpired(!isSquadLockedFromCache());
+      }
     } else {
       setIsLoadingXP(false);
     }

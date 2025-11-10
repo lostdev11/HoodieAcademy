@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   ArrowLeft, 
   ChevronLeft, 
@@ -17,7 +18,8 @@ import {
   CheckCircle,
   Circle,
   Award,
-  Clock
+  Clock,
+  Info
 } from 'lucide-react';
 import TokenGate from "@/components/TokenGate";
 import { useUserXP } from '@/hooks/useUserXP';
@@ -65,6 +67,10 @@ interface CoursePageClientProps {
 export default function CoursePageClient({ course }: CoursePageClientProps) {
   const router = useRouter();
   const supabase = getSupabaseBrowser();
+  const requiresPreviewUnlock = course?.id === 't100-chart-literacy';
+  const [previewRequirementStatus, setPreviewRequirementStatus] = useState<'loading' | 'unlocked' | 'locked'>(
+    requiresPreviewUnlock ? 'loading' : 'unlocked'
+  );
   const [activeModule, setActiveModule] = useState(0);
   const [activeLesson, setActiveLesson] = useState(0);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
@@ -73,8 +79,46 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const { completeCourse } = useUserXP();
 
+  useEffect(() => {
+    if (!requiresPreviewUnlock) {
+      setPreviewRequirementStatus('unlocked');
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const stored = window.localStorage.getItem('hoodie_preview_submission');
+    if (!stored) {
+      setPreviewRequirementStatus('locked');
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(stored) as {
+        firstName?: string;
+        lastName?: string;
+        email?: string | null;
+        walletAddress?: string | null;
+      };
+
+      const hasNames = Boolean(parsed?.firstName?.trim()) && Boolean(parsed?.lastName?.trim());
+      const hasContact = Boolean(parsed?.email?.trim()) || Boolean(parsed?.walletAddress?.trim());
+
+      setPreviewRequirementStatus(hasNames && hasContact ? 'unlocked' : 'locked');
+    } catch (error) {
+      console.warn('CoursePageClient: Failed to parse preview submission cache', error);
+      setPreviewRequirementStatus('locked');
+    }
+  }, [requiresPreviewUnlock]);
+
   // Debug logging
   useEffect(() => {
+    if (previewRequirementStatus !== 'unlocked') {
+      return;
+    }
+
     console.log('CoursePageClient: Component mounted with course:', course);
     console.log('CoursePageClient: Course modules:', course?.modules);
     console.log('CoursePageClient: Supabase client:', supabase);
@@ -124,9 +168,13 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
     if (currentModule && activeLesson >= currentModule.lessons.length) {
       setActiveLesson(0);
     }
-  }, [course, activeModule, activeLesson]);
+  }, [course, activeModule, activeLesson, previewRequirementStatus]);
 
   useEffect(() => {
+    if (previewRequirementStatus !== 'unlocked') {
+      return;
+    }
+
     let mounted = true;
     console.log('CoursePageClient: Loading course progress...');
     
@@ -210,10 +258,14 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
       mounted = false; 
       clearTimeout(timeoutId);
     };
-  }, [course?.id, course?.modules, supabase]);
+  }, [course?.id, course?.modules, supabase, previewRequirementStatus]);
 
   // Real-time subscription for course progress
   useEffect(() => {
+    if (previewRequirementStatus !== 'unlocked') {
+      return;
+    }
+
     if (!course?.id || !course?.modules || course.modules.length === 0) {
       console.log('CoursePageClient: Skipping real-time subscription - no valid course data');
       return;
@@ -238,10 +290,14 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [course?.id, supabase]);
+  }, [course?.id, supabase, previewRequirementStatus]);
 
   // Award XP when course is completed
   useEffect(() => {
+    if (previewRequirementStatus !== 'unlocked') {
+      return;
+    }
+
     if (!course?.modules || course.modules.length === 0) {
       console.log('CoursePageClient: Skipping XP award - no valid course modules');
       return;
@@ -254,7 +310,7 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
       // Award XP for course completion
       completeCourse(course.id, 100);
     }
-  }, [completedLessons, course, completeCourse]);
+  }, [completedLessons, course, completeCourse, previewRequirementStatus]);
 
   const currentModule = course?.modules?.[activeModule];
   const currentLesson = currentModule?.lessons?.[activeLesson];
@@ -313,6 +369,63 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
     activeModule < course.modules.length - 1 || 
     (activeModule === course.modules.length - 1 && activeLesson < currentModule!.lessons.length - 1)
   );
+
+  if (requiresPreviewUnlock && previewRequirementStatus === 'loading') {
+    return <LoadingSpinner message="Checking access requirements..." />;
+  }
+
+  if (requiresPreviewUnlock && previewRequirementStatus === 'locked') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4 py-12">
+        <Card className="max-w-xl w-full bg-slate-900/80 border-indigo-500/30">
+          <CardHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Badge className="bg-indigo-600/30 text-indigo-200 border-indigo-400/40">
+                Free Course Access
+              </Badge>
+              <Badge variant="outline" className="text-xs text-slate-300">
+                T100 Preview
+              </Badge>
+            </div>
+            <CardTitle className="text-2xl text-indigo-100">
+              Share your details to unlock this course
+            </CardTitle>
+            <Alert className="bg-indigo-500/10 border-indigo-400/40 text-indigo-100">
+              <Info className="h-4 w-4" />
+              <AlertTitle className="text-indigo-100">Action required</AlertTitle>
+              <AlertDescription className="text-indigo-100/80">
+                To continue, head to the preview page and enter your first and last name along with either an email address or a wallet address. 
+                Once submitted, this course will unlock automatically.
+              </AlertDescription>
+            </Alert>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-slate-300 leading-relaxed">
+              We use this info to keep you updated on new lessons, drops, and live sessions. 
+              It only takes a minute and ensures you get the full Hoodie Academy experience.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                asChild
+                className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white"
+              >
+                <Link href="/preview">
+                  Go to Preview Form
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 border-slate-600 text-slate-200 hover:bg-slate-700/50"
+                onClick={() => router.push('/')}
+              >
+                Return Home
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <>

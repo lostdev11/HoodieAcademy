@@ -38,6 +38,7 @@ import { NotificationBadge } from '@/components/notifications/NotificationBadge'
 import CourseManagementTab from '@/components/admin/CourseManagementTab';
 import PreviewSubmissionsManager from '@/components/admin/PreviewSubmissionsManager';
 import StarterPackManager from '@/components/admin/StarterPackManager';
+import FreeCourseParticipantsManager from '@/components/admin/FreeCourseParticipantsManager';
 
 interface Bounty {
   id?: string;
@@ -84,7 +85,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
       'governance': 'Governance',
       'courses': 'Courses',
       'student-of-the-week': 'Student of the Month',
-      'preview-academy': 'Preview Academy',
+      'preview-academy': 'Free Course',
       'starter-pack': 'Starter Pack'
     };
     return tabNames[tab] || 'Select a section...';
@@ -322,7 +323,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                 <SelectItem value="preview-academy">
                   <div className="flex items-center space-x-2">
                     <BookOpen className="w-4 h-4" />
-                    <span>Preview Academy</span>
+                    <span>Free Course</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="starter-pack">
@@ -519,7 +520,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               className="flex items-center space-x-2"
             >
               <BookOpen className="w-4 h-4" />
-              <span>Preview Academy</span>
+              <span>Free Course</span>
             </Button>
             <Button
               variant={activeTab === "starter-pack" ? "default" : "outline"}
@@ -655,9 +656,12 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
             <StudentOfTheWeekManager walletAddress={walletAddress} />
           </TabsContent>
 
-          {/* Preview Academy Tab */}
+          {/* Free Course Tab */}
           <TabsContent value="preview-academy">
-            <PreviewSubmissionsManager />
+            <div className="space-y-6">
+              <PreviewSubmissionsManager />
+              <FreeCourseParticipantsManager />
+            </div>
           </TabsContent>
 
           {/* Starter Pack Tab */}

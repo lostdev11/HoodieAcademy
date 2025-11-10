@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Mail, Wallet, Calendar, Search, Download, Users } from 'lucide-react';
+import { Mail, Wallet, Calendar, Search, Download, Users, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PreviewSubmission {
   id: string;
+  first_name: string | null;
+  last_name: string | null;
   email: string | null;
   wallet_address: string | null;
   submitted_at: string;
@@ -43,10 +45,13 @@ export default function PreviewSubmissionsManager() {
     }
   };
 
+  const loweredSearch = searchTerm.toLowerCase();
   const filteredSubmissions = submissions.filter(sub => {
+    const fullName = [sub.first_name, sub.last_name].filter(Boolean).join(' ').toLowerCase();
     const matchesSearch = 
-      (sub.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (sub.wallet_address?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+      (sub.email?.toLowerCase().includes(loweredSearch) || false) ||
+      (sub.wallet_address?.toLowerCase().includes(loweredSearch) || false) ||
+      (fullName.includes(loweredSearch) && fullName.length > 0);
 
     const matchesFilter = 
       filter === 'all' ||
@@ -57,8 +62,10 @@ export default function PreviewSubmissionsManager() {
   });
 
   const exportToCSV = () => {
-    const headers = ['Email', 'Wallet Address', 'Submitted At'];
+    const headers = ['First Name', 'Last Name', 'Email', 'Wallet Address', 'Submitted At'];
     const rows = filteredSubmissions.map(sub => [
+      sub.first_name || '',
+      sub.last_name || '',
       sub.email || '',
       sub.wallet_address || '',
       new Date(sub.submitted_at).toLocaleString()
@@ -88,7 +95,7 @@ export default function PreviewSubmissionsManager() {
       <Card className="bg-slate-800/50 border-blue-500/30">
         <CardContent className="pt-6 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading preview submissions...</p>
+          <p className="text-slate-400">Loading Free Course submissions...</p>
         </CardContent>
       </Card>
     );
@@ -104,9 +111,9 @@ export default function PreviewSubmissionsManager() {
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <Users className="w-6 h-6 text-blue-400" />
-            Preview Academy Submissions
+            Free Course Submissions
           </h2>
-          <p className="text-slate-400">Track users interested in preview access</p>
+          <p className="text-slate-400">Track users interested in Free Course access</p>
         </div>
       </div>
 
@@ -216,6 +223,14 @@ export default function PreviewSubmissionsManager() {
                   <CardContent className="pt-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex-1 space-y-2">
+                        {(submission.first_name || submission.last_name) && (
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-slate-300" />
+                            <span className="text-white">
+                              {[submission.first_name, submission.last_name].filter(Boolean).join(' ')}
+                            </span>
+                          </div>
+                        )}
                         {submission.email && (
                           <div className="flex items-center gap-2">
                             <Mail className="w-4 h-4 text-blue-400" />

@@ -1,6 +1,8 @@
--- Create table for preview academy submissions
+-- Create table for Free Course submissions
 CREATE TABLE IF NOT EXISTS preview_submissions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  first_name TEXT,
+  last_name TEXT,
   email TEXT,
   wallet_address TEXT,
   submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

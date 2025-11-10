@@ -116,18 +116,21 @@ export default function StarterPackPage() {
   }, []);
 
   useEffect(() => {
-    if (ripVideoError && ripGifError && showRipReveal) {
-      const timer = setTimeout(() => setShowRipReveal(false), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [ripVideoError, ripGifError, showRipReveal]);
+    if (!showRipReveal) return;
 
-  useEffect(() => {
-    if (ripVideoError && !ripGifError && showRipReveal) {
-      const timer = setTimeout(() => setShowRipReveal(false), 3000);
+    // If video is available, let onEnded handle hiding.
+    if (USE_SUCCESS_VIDEO && !ripVideoError) return;
+
+    // If using GIF fallback, hide after a short delay.
+    if (USE_SUCCESS_GIF && !ripGifError) {
+      const timer = setTimeout(() => setShowRipReveal(false), 3500);
       return () => clearTimeout(timer);
     }
-  }, [ripVideoError, ripGifError, showRipReveal]);
+
+    // If both assets failed, hide quickly.
+    const timer = setTimeout(() => setShowRipReveal(false), 2000);
+    return () => clearTimeout(timer);
+  }, [showRipReveal, ripVideoError, ripGifError]);
 
   // Check claim status
   const checkClaimStatus = async (wallet: string) => {

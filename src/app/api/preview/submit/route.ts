@@ -17,10 +17,27 @@ export async function POST(request: NextRequest) {
     );
 
     const body = await request.json();
-    const { email, wallet_address } = body;
+    const {
+      email,
+      wallet_address,
+      first_name,
+      last_name,
+    } = body;
+
+    const trimmedFirstName = typeof first_name === 'string' ? first_name.trim() : '';
+    const trimmedLastName = typeof last_name === 'string' ? last_name.trim() : '';
+    const trimmedEmail = typeof email === 'string' ? email.trim() : '';
+    const trimmedWallet = typeof wallet_address === 'string' ? wallet_address.trim() : '';
+
+    if (!trimmedFirstName || !trimmedLastName) {
+      return NextResponse.json(
+        { error: 'First and last name are required' },
+        { status: 400 }
+      );
+    }
 
     // Validate that at least one field is provided
-    if (!email && !wallet_address) {
+    if (!trimmedEmail && !trimmedWallet) {
       return NextResponse.json(
         { error: 'Either email or wallet address must be provided' },
         { status: 400 }
@@ -28,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate email format if provided
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
         { status: 400 }
@@ -39,19 +56,19 @@ export async function POST(request: NextRequest) {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     
     let duplicateCheck = null;
-    if (email) {
+    if (trimmedEmail) {
       const { data } = await supabase
         .from('preview_submissions')
         .select('id')
-        .eq('email', email)
+        .eq('email', trimmedEmail)
         .gte('submitted_at', oneDayAgo)
         .single();
       duplicateCheck = data;
-    } else if (wallet_address) {
+    } else if (trimmedWallet) {
       const { data } = await supabase
         .from('preview_submissions')
         .select('id')
-        .eq('wallet_address', wallet_address)
+        .eq('wallet_address', trimmedWallet)
         .gte('submitted_at', oneDayAgo)
         .single();
       duplicateCheck = data;
@@ -68,8 +85,10 @@ export async function POST(request: NextRequest) {
     const { data, error } = await supabase
       .from('preview_submissions')
       .insert({
-        email: email || null,
-        wallet_address: wallet_address || null,
+        first_name: trimmedFirstName,
+        last_name: trimmedLastName,
+        email: trimmedEmail || null,
+        wallet_address: trimmedWallet || null,
       })
       .select()
       .single();
