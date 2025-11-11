@@ -4,7 +4,7 @@ import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { Wallet, ChevronDown, BookOpen, Twitter } from 'lucide-react';
+import { Wallet, ChevronDown, BookOpen, Twitter, Newspaper } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -879,16 +879,16 @@ export default function TokenGate({ children }: TokenGateProps) {
           </div>
         </div>
 
-        {/* Free Course Button */}
+        {/* Visit The Academy Blog Button */}
         <div className="mt-6 px-4">
-          <Link href="/preview">
+          <Link href="/blog">
             <Button
               className="group relative overflow-hidden w-full min-h-[48px] font-semibold text-white rounded-xl shadow-lg ring-1 ring-white/20 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 transition-all duration-200"
             >
               <span className="pointer-events-none absolute -inset-1 bg-gradient-to-r from-white/30 to-transparent opacity-70 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
               <span className="relative z-10 flex items-center justify-center gap-3">
-                <BookOpen size={20} />
-                <span>Free Course</span>
+                <Newspaper size={20} />
+                <span>Visit The Academy Blog</span>
               </span>
             </Button>
           </Link>
