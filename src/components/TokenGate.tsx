@@ -33,6 +33,22 @@ type WalletProvider = 'phantom' | 'solflare';
 
 const VERIFICATION_SESSION_KEY = 'wifhoodie_verification';
 
+type SolanaProvider = NonNullable<Window['solana']>;
+
+const getPhantomProvider = (): SolanaProvider | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const provider = window.phantom?.solana ?? window.solana ?? null;
+
+  if (provider?.isPhantom && !window.solana) {
+    (window as any).solana = provider;
+  }
+
+  return provider;
+};
+
 interface Founder {
   name: string;
   xHandle: string;
@@ -115,49 +131,89 @@ export default function TokenGate({ children }: TokenGateProps) {
   const [isPhantomInstalled, setIsPhantomInstalled] = useState(false);
   const [showWelcomeTutorial, setShowWelcomeTutorial] = useState(false);
 
-  // Check for Phantom wallet availability with retries
+  // Check for Phantom wallet availability with retries and event fallback
   useEffect(() => {
-    const checkPhantomAvailability = async () => {
-      let retries = 0;
-      const maxRetries = 5;
-      
-      while (retries < maxRetries) {
-        // Debug: Log what we're actually checking
-        console.log('🔍 Debug wallet check:', {
-          windowExists: typeof window !== 'undefined',
-          solanaExists: typeof window !== 'undefined' && !!window.solana,
-          isPhantom: typeof window !== 'undefined' && window.solana?.isPhantom,
-          solanaKeys: typeof window !== 'undefined' && window.solana ? Object.keys(window.solana) : 'N/A',
-          userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'N/A'
-        });
-        
-        if (typeof window !== 'undefined' && window.solana?.isPhantom) {
-          console.log('✅ Phantom wallet detected');
-          setIsPhantomInstalled(true);
-          return;
-        }
-        
-        console.log(`⏳ Checking for Phantom wallet, attempt ${retries + 1}/${maxRetries}`);
-        retries++;
-        
-        if (retries < maxRetries) {
-          // Wait 1 second before retry
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    let cancelled = false;
+    let listenerRegistered = false;
+
+    const logProviderDetails = (provider: SolanaProvider) => ({
+      keys: Object.keys(provider ?? {}),
+      isPhantom: provider?.isPhantom ?? false,
+      isConnected: provider?.isConnected ?? false
+    });
+
+    const markProviderFound = (provider: SolanaProvider | null) => {
+      if (cancelled || !provider) {
+        return false;
       }
-      
-      console.log('❌ Phantom wallet not found after all retries');
-      
-      // Check if any Solana wallet is available as fallback
-      if (typeof window !== 'undefined' && window.solana && !window.solana.isPhantom) {
-        console.log('⚠️ Solana wallet detected but not Phantom:', window.solana);
-        setIsPhantomInstalled(true); // Allow connection attempt
+
+      if (provider.isPhantom) {
+        console.log('✅ Phantom wallet detected', logProviderDetails(provider));
       } else {
-        setIsPhantomInstalled(false);
+        console.log('⚠️ Solana wallet detected but not Phantom', logProviderDetails(provider));
+      }
+
+      setIsPhantomInstalled(true);
+      return true;
+    };
+
+    const detectProvider = () => {
+      const provider = getPhantomProvider();
+      return markProviderFound(provider);
+    };
+
+    const onInitialized: EventListener = () => {
+      console.log('🔔 Received solana#initialized event');
+      if (detectProvider() && listenerRegistered) {
+        window.removeEventListener('solana#initialized', onInitialized as EventListener);
+        listenerRegistered = false;
       }
     };
 
-    checkPhantomAvailability();
+    if (!detectProvider()) {
+      window.addEventListener('solana#initialized', onInitialized);
+      listenerRegistered = true;
+
+      (async () => {
+        let retries = 0;
+        const maxRetries = 5;
+
+        while (!cancelled && retries < maxRetries) {
+          console.log(`⏳ Checking for Phantom wallet, attempt ${retries + 1}/${maxRetries}`);
+          if (detectProvider()) {
+            if (listenerRegistered) {
+              window.removeEventListener('solana#initialized', onInitialized);
+              listenerRegistered = false;
+            }
+            return;
+          }
+          retries++;
+
+          if (retries < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+
+        if (!cancelled) {
+          console.log('❌ Phantom wallet not found after all retries');
+          const fallbackProvider = getPhantomProvider();
+          if (!markProviderFound(fallbackProvider)) {
+            setIsPhantomInstalled(false);
+          }
+        }
+      })();
+    }
+
+    return () => {
+      cancelled = true;
+      if (listenerRegistered) {
+        window.removeEventListener('solana#initialized', onInitialized);
+      }
+    };
   }, []);
 
   // Debug logging
@@ -481,15 +537,16 @@ export default function TokenGate({ children }: TokenGateProps) {
     
     console.log("🔌 Debug: Starting wallet connection for provider:", providerName);
     
-    let provider;
+    let provider: SolanaProvider | null = null;
     if (providerName === 'phantom') {
       // Wait for Phantom to be available with retry mechanism
       let retries = 0;
       const maxRetries = 3;
       
       while (retries < maxRetries) {
-        if (window.solana?.isPhantom) {
-          provider = window.solana;
+        const phantomProvider = getPhantomProvider();
+        if (phantomProvider?.isPhantom) {
+          provider = phantomProvider;
           console.log("✅ Debug: Phantom wallet found and available");
           break;
         }
@@ -505,9 +562,13 @@ export default function TokenGate({ children }: TokenGateProps) {
       
       if (!provider) {
         // Check if any Solana wallet is available as fallback
-        if (typeof window !== 'undefined' && window.solana) {
-          console.log("⚠️ Using fallback Solana wallet:", window.solana);
-          provider = window.solana;
+        const fallbackProvider = getPhantomProvider();
+        if (fallbackProvider) {
+          console.log("⚠️ Using fallback Solana wallet:", {
+            keys: Object.keys(fallbackProvider ?? {}),
+            isPhantom: fallbackProvider?.isPhantom ?? false
+          });
+          provider = fallbackProvider;
         } else {
           const errorMsg = isMobile 
             ? "Please open this page in the Phantom app browser"
