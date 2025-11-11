@@ -70,10 +70,35 @@ export default function PreviewPage() {
       <div className="absolute inset-0 bg-black/60 z-10"></div>
       
       <div className="relative z-20 px-6 py-12 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-4">🎓 Preview Hoodie Academy</h1>
-        <p className="text-lg text-gray-300 mb-8">
-          Not ready to connect your wallet yet? No problem. Here's one free course to explore what Hoodie Academy is all about.
-        </p>
+        {/* Navigation Header */}
+        <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">🎓 Preview Hoodie Academy</h1>
+            <p className="text-lg text-gray-300">
+              Not ready to connect your wallet yet? No problem. Here's one free course to explore what Hoodie Academy is all about.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full hover:from-indigo-500 hover:to-purple-500 transition-all duration-200 font-semibold text-sm"
+            >
+              🏛️ Login to Academy
+            </Link>
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-300 rounded-full hover:bg-gray-800 transition-all duration-200 text-sm"
+            >
+              📝 Blog
+            </Link>
+            <Link
+              href="/faq"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-300 rounded-full hover:bg-gray-800 transition-all duration-200 text-sm"
+            >
+              ❓ FAQ
+            </Link>
+          </div>
+        </div>
 
         <div className="border border-gray-700 rounded-xl p-6 bg-[#1a1a1a]/80 backdrop-blur-sm">
           <h2 className="text-2xl font-semibold mb-1">T100 🎯 Intro to Indicators</h2>
@@ -94,9 +119,33 @@ export default function PreviewPage() {
           <PreviewSubmissionForm />
         </div>
 
-        <div className="mt-12 text-sm text-gray-400">
-          👀 Want to learn more? Check out our <Link href="/faq" className="underline text-indigo-300">FAQ</Link> or <Link href="/" className="underline text-indigo-300">login to the Academy</Link> to unlock full access.
-        </div>
+        {/* Footer Navigation */}
+        <footer className="mt-16 pt-8 border-t border-gray-800">
+          <div className="flex flex-wrap justify-center gap-6 text-sm mb-4">
+            <Link href="/" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              Home
+            </Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/preview" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              Preview
+            </Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/faq" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              FAQ
+            </Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/blog" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              Blog
+            </Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/courses" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              Courses
+            </Link>
+          </div>
+          <div className="text-center text-gray-500 text-xs">
+            © {new Date().getFullYear()} Hoodie Academy. All rights reserved.
+          </div>
+        </footer>
       </div>
     </div>
   );

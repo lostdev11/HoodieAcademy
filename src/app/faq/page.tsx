@@ -57,7 +57,15 @@ export default function FaqPage() {
       <div className="absolute inset-0 bg-black/60 z-10"></div>
       
       <div className="relative z-20 px-6 py-12 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-6">❓ Hoodie Academy FAQ</h1>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+          <h1 className="text-4xl font-bold">❓ Hoodie Academy FAQ</h1>
+          <Link
+            href="/blog"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full hover:from-indigo-500 hover:to-purple-500 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+          >
+            📝 View Blog
+          </Link>
+        </div>
 
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2">What is Hoodie Academy?</h2>
@@ -87,9 +95,36 @@ export default function FaqPage() {
           </p>
         </div>
 
-        <div className="mt-12 border-t border-gray-700 pt-8 text-sm text-gray-500">
-          Need more help? DM us on X or hop in our Discord.
-        </div>
+        {/* Footer Navigation */}
+        <footer className="mt-16 pt-8 border-t border-gray-800">
+          <div className="flex flex-wrap justify-center gap-6 text-sm mb-4">
+            <Link href="/" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              Home
+            </Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/preview" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              Preview
+            </Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/faq" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              FAQ
+            </Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/blog" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              Blog
+            </Link>
+            <span className="text-gray-500">•</span>
+            <Link href="/courses" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              Courses
+            </Link>
+          </div>
+          <div className="text-center text-gray-500 text-xs mb-4">
+            © {new Date().getFullYear()} Hoodie Academy. All rights reserved.
+          </div>
+          <div className="text-center text-sm text-gray-500">
+            Need more help? DM us on X or hop in our Discord.
+          </div>
+        </footer>
       </div>
     </div>
   );
