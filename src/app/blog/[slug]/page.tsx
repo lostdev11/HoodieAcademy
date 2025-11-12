@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { ArrowLeft } from 'lucide-react';
 import BlogPostContent from './BlogPostContent';
 import CoverImage from './CoverImage';
+import AuthorCard from './AuthorCard';
 
 interface PostMeta {
   title: string;
@@ -207,6 +208,14 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
 
         {/* Post Content */}
         <BlogPostContent content={post.content} />
+
+        {/* Author Footer - Show for specific posts */}
+        {(params.slug === 'is-crypto-a-scam' || params.slug === 'wallet-setup-and-security') && (
+          <div className="mt-12 pt-8 border-t border-gray-800">
+            <h3 className="text-lg font-semibold text-gray-300 mb-4">About the Author</h3>
+            <AuthorCard />
+          </div>
+        )}
 
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-gray-800">
