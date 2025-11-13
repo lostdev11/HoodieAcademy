@@ -48,6 +48,7 @@ import FeedbackTrackerWidget from "@/components/feedback/FeedbackTrackerWidget";
 import DailyLoginBonus from "@/components/xp/DailyLoginBonus";
 import XPNotification from "@/components/xp/XPNotification";
 import DailyXPProgress from "@/components/DailyXPProgress";
+import OnboardingOverlay from "@/components/onboarding/OnboardingOverlay";
 
 interface UserDashboardProps {
   walletAddress: string;
@@ -365,6 +366,9 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
 
   return (
     <div className={`space-y-8 ${className}`}>
+      {/* Onboarding Overlay - Shows on first login */}
+      <OnboardingOverlay walletAddress={walletAddress} />
+      
       {/* XP Notification System - Handles all XP toast notifications */}
       <XPNotification walletAddress={walletAddress} />
       
