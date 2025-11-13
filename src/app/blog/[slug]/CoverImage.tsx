@@ -25,7 +25,7 @@ export default function CoverImage({ src, alt }: CoverImageProps) {
         src={imageSrc}
         alt={alt}
         fill
-        className="object-cover"
+        className="object-cover scale-105"
         priority
         onError={handleError}
       />
