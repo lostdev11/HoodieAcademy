@@ -96,6 +96,125 @@ export async function GET(request: NextRequest) {
       console.warn('[ADMIN USERS API] Error fetching submissions:', submissionsError);
     }
 
+    // Fetch wallet connections data for all users
+    // Try to fetch all records first to understand the schema
+    let walletConnections: any[] = [];
+    
+    // Try fetching with all possible column combinations
+    // First try with connection_type and connection_timestamp (standard schema)
+    let connectionsQuery = supabase
+      .from('wallet_connections')
+      .select('*')
+      .limit(1000); // Get a reasonable batch to analyze
+
+    const { data: connectionsData, error: connectionsError } = await connectionsQuery;
+    
+    if (connectionsError) {
+      console.warn('[ADMIN USERS API] Error fetching wallet connections:', connectionsError);
+      console.warn('[ADMIN USERS API] Error details:', JSON.stringify(connectionsError, null, 2));
+    } else {
+      walletConnections = connectionsData || [];
+      console.log(`[ADMIN USERS API] Successfully fetched ${walletConnections.length} wallet connections`);
+      
+      // Log sample connection to understand structure
+      if (walletConnections.length > 0) {
+        console.log('[ADMIN USERS API] Sample connection:', JSON.stringify(walletConnections[0], null, 2));
+      }
+    }
+
+    // Filter connections to only count successful connection events
+    // Accept 'connect', 'verification_success', or records where success=true
+    // Exclude 'disconnect' and 'verification_failed'
+    const validConnections = walletConnections.filter((conn: any) => {
+      // If connection_type exists, use it
+      if (conn.connection_type) {
+        return conn.connection_type === 'connect' || 
+               conn.connection_type === 'verification_success' ||
+               (conn.connection_type !== 'disconnect' && conn.connection_type !== 'verification_failed');
+      }
+      // If action exists (older schema), use it
+      if (conn.action) {
+        return conn.action === 'connect' || 
+               (conn.success !== false); // Include if success is true or null
+      }
+      // If success field exists, use it
+      if (conn.success !== undefined) {
+        return conn.success === true;
+      }
+      // Default: include if no filtering field exists
+      return true;
+    });
+
+    walletConnections = validConnections;
+    console.log(`[ADMIN USERS API] Filtered to ${walletConnections.length} valid connections (excluding disconnects)`);
+
+    // Group connections by wallet_address and calculate stats
+    const connectionStatsByWallet = new Map<string, {
+      totalConnections: number;
+      firstConnection: string | null;
+      lastConnection: string | null;
+      hasVerifiedNFT: boolean;
+      connectionHistory: any[];
+    }>();
+
+    walletConnections.forEach((conn: any) => {
+      const wallet = conn.wallet_address;
+      // Try all possible timestamp column names
+      const timestamp = conn.connection_timestamp || 
+                       conn.connected_at || 
+                       conn.created_at ||
+                       null;
+      
+      if (!connectionStatsByWallet.has(wallet)) {
+        connectionStatsByWallet.set(wallet, {
+          totalConnections: 0,
+          firstConnection: null,
+          lastConnection: null,
+          hasVerifiedNFT: false,
+          connectionHistory: []
+        });
+      }
+
+      const stats = connectionStatsByWallet.get(wallet)!;
+      stats.totalConnections++;
+      
+      if (timestamp) {
+        // Update first connection (earliest)
+        if (!stats.firstConnection || new Date(timestamp) < new Date(stats.firstConnection)) {
+          stats.firstConnection = timestamp;
+        }
+        
+        // Update last connection (latest)
+        if (!stats.lastConnection || new Date(timestamp) > new Date(stats.lastConnection)) {
+          stats.lastConnection = timestamp;
+        }
+        
+        // Store connection in history (keep last 10)
+        stats.connectionHistory.push({
+          connection_type: conn.connection_type || conn.action || 'connect',
+          timestamp: timestamp,
+          verification_result: conn.verification_result || conn.metadata || {}
+        });
+        stats.connectionHistory = stats.connectionHistory
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 10);
+      }
+      
+      // Check if user has verified NFT
+      // Try both verification_result and metadata fields
+      const verification = conn.verification_result || conn.metadata || {};
+      if (verification && typeof verification === 'object') {
+        // Check various possible NFT verification indicators
+        if (verification.wifhoodie_found === true ||
+            verification.hasNFT === true ||
+            verification.nft_count > 0 ||
+            verification.verified === true ||
+            verification.verification_success === true) {
+          stats.hasVerifiedNFT = true;
+        }
+      }
+    });
+
     // Deduplicate users by wallet_address (keep most recent)
     const uniqueUsersMap = new Map();
     users.forEach(user => {
@@ -152,6 +271,23 @@ export async function GET(request: NextRequest) {
         rejected: userSubmissions.filter(sub => sub.status === 'rejected').length
       };
 
+      // Get connection data for this user
+      const connectionStats = connectionStatsByWallet.get(user.wallet_address) || {
+        totalConnections: 0,
+        firstConnection: null,
+        lastConnection: null,
+        hasVerifiedNFT: false,
+        connectionHistory: []
+      };
+
+      // Format connection dates
+      const firstConnectionFormatted = connectionStats.firstConnection
+        ? new Date(connectionStats.firstConnection).toLocaleDateString()
+        : 'Never';
+      const lastConnectionFormatted = connectionStats.lastConnection
+        ? new Date(connectionStats.lastConnection).toLocaleDateString()
+        : 'Never';
+
       return {
         id: user.id,
         wallet_address: user.wallet_address,
@@ -173,18 +309,18 @@ export async function GET(request: NextRequest) {
         submissionStats: submissionStats,
         recentActivity: [], // TODO: Add activity tracking
         connectionData: {
-          firstConnection: null,
-          lastConnection: null,
-          totalConnections: 0,
-          hasVerifiedNFT: false,
-          connectionHistory: []
+          firstConnection: connectionStats.firstConnection,
+          lastConnection: connectionStats.lastConnection,
+          totalConnections: connectionStats.totalConnections,
+          hasVerifiedNFT: connectionStats.hasVerifiedNFT,
+          connectionHistory: connectionStats.connectionHistory
         },
         displayName: user.display_name || `User ${user.wallet_address.slice(0, 6)}...`,
         formattedWallet: `${user.wallet_address.slice(0, 8)}...${user.wallet_address.slice(-6)}`,
         lastActiveFormatted: user.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'Never',
         joinedFormatted: new Date(user.created_at).toLocaleDateString(),
-        firstConnectionFormatted: 'Never',
-        lastConnectionFormatted: 'Never'
+        firstConnectionFormatted: firstConnectionFormatted,
+        lastConnectionFormatted: lastConnectionFormatted
       };
     });
 
@@ -193,8 +329,9 @@ export async function GET(request: NextRequest) {
     const avgLevel = enrichedUsers.length > 0 ? Math.round(enrichedUsers.reduce((sum, user) => sum + user.level, 0) / enrichedUsers.length) : 0;
     const totalSubmissions = enrichedUsers.reduce((sum, user) => sum + user.submissionStats.total, 0);
     const pendingSubmissions = enrichedUsers.reduce((sum, user) => sum + user.submissionStats.pending, 0);
-    const totalConnections = 0; // Default to 0 since connection tracking doesn't exist yet
-    const usersWithVerifiedNFTs = 0; // Default to 0 since NFT verification tracking doesn't exist yet
+    const totalConnections = enrichedUsers.reduce((sum, user) => sum + user.connectionData.totalConnections, 0);
+    const usersWithVerifiedNFTs = enrichedUsers.filter(user => user.connectionData.hasVerifiedNFT).length;
+    const avgConnectionsPerUser = enrichedUsers.length > 0 ? Math.round(totalConnections / enrichedUsers.length * 100) / 100 : 0;
     const activeUsers = enrichedUsers.filter(user => {
       const lastActive = user.last_active ? new Date(user.last_active) : new Date(0);
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -216,7 +353,7 @@ export async function GET(request: NextRequest) {
         pendingSubmissions: pendingSubmissions,
         totalConnections: totalConnections,
         usersWithVerifiedNFTs: usersWithVerifiedNFTs,
-        avgConnectionsPerUser: 0
+        avgConnectionsPerUser: avgConnectionsPerUser
       }
     });
 
