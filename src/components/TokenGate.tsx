@@ -362,6 +362,9 @@ export default function TokenGate({ children }: TokenGateProps) {
         localStorage.setItem('walletAddress', wallet);
         localStorage.setItem('connectedWallet', wallet);
         console.log('Wallet verified and synced to all storage systems:', wallet);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('walletConnected', { detail: { wallet } }));
+        }
         
         setHasBeenConnected(true);
         
@@ -502,6 +505,9 @@ export default function TokenGate({ children }: TokenGateProps) {
     localStorage.removeItem('walletAddress');
     localStorage.removeItem('connectedWallet');
     localStorage.removeItem('hoodie_academy_is_admin');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('walletDisconnected', { detail: { wallet: walletAddress ?? null } }));
+    }
     
     // Disconnect from wallet providers safely
     const sol = typeof window !== 'undefined' ? window.solana : undefined;

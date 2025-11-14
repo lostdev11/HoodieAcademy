@@ -13,6 +13,17 @@ import {
   Plus, Edit, Trash2, Eye, EyeOff, Calendar, Award, Target, 
   X, Save, AlertCircle, CheckCircle 
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Bounty {
   id?: string;
@@ -40,10 +51,13 @@ interface BountyManagerProps {
 }
 
 export default function BountyManagerSimple({ bounties, onBountiesChange, walletAddress }: BountyManagerProps) {
+  const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingBounty, setEditingBounty] = useState<Bounty | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [bountyToDelete, setBountyToDelete] = useState<string | null>(null);
 
   // Form state - initialize with default values
   const [formData, setFormData] = useState<Partial<Bounty>>({
@@ -181,11 +195,16 @@ export default function BountyManagerSimple({ bounties, onBountiesChange, wallet
   };
 
   const handleDelete = async (bountyId: string) => {
-    if (!confirm('Are you sure you want to delete this bounty?')) return;
+    setBountyToDelete(bountyId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!bountyToDelete) return;
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/bounties/${bountyId}?walletAddress=${walletAddress}`, {
+      const response = await fetch(`/api/bounties/${bountyToDelete}?walletAddress=${walletAddress}`, {
         method: 'DELETE'
       });
 
@@ -193,9 +212,19 @@ export default function BountyManagerSimple({ bounties, onBountiesChange, wallet
         throw new Error('Failed to delete bounty');
       }
 
-      onBountiesChange(bounties.filter(b => b.id !== bountyId));
+      onBountiesChange(bounties.filter(b => b.id !== bountyToDelete));
+      toast({
+        title: 'Bounty Deleted',
+        description: 'The bounty has been deleted successfully',
+      });
+      setShowDeleteDialog(false);
+      setBountyToDelete(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete bounty');
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to delete bounty',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -604,6 +633,22 @@ export default function BountyManagerSimple({ bounties, onBountiesChange, wallet
           ))
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Bounty</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this bounty? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

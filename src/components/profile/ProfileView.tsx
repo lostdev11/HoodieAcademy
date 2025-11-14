@@ -20,6 +20,7 @@ import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { useUserXP } from '@/hooks/useUserXP';
 import { useUserBounties } from '@/hooks/useUserBounties';
 import { useDisplayName } from '@/hooks/use-display-name';
+import { useToast } from '@/hooks/use-toast';
 
 // Real data functions
 const getRealUserData = (walletAddress: string) => {
@@ -265,15 +266,25 @@ export function ProfileView() {
     error: bountyError
   } = useUserBounties(wallet);
 
+  const { toast } = useToast();
+
   // Handle bounty submission from profile page
   const handleBountySubmit = async (data: BountySubmissionData) => {
     if (!wallet) {
-      alert('Please connect your wallet first');
+      toast({
+        title: 'Wallet Not Connected',
+        description: 'Please connect your wallet first',
+        variant: 'destructive',
+      });
       return;
     }
 
     if (!data.bountyId) {
-      alert('Please select a bounty to submit to. Go to the Bounties page and click Submit Entry on a specific bounty.');
+      toast({
+        title: 'No Bounty Selected',
+        description: 'Please select a bounty to submit to. Go to the Bounties page and click Submit Entry on a specific bounty.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -296,15 +307,25 @@ export function ProfileView() {
       const result = await response.json();
       
       if (response.ok) {
-        alert('✅ Bounty submitted successfully! Go to the admin dashboard to review it.');
+        toast({
+          title: 'Bounty Submitted',
+          description: 'Bounty submitted successfully! Go to the admin dashboard to review it.',
+        });
         // Reload to show updated submissions
         window.location.reload();
       } else {
-        alert(`❌ ${result.error || 'Failed to submit bounty'}`);
+        toast({
+          title: 'Submission Failed',
+          description: result.error || 'Failed to submit bounty',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
-      console.error('Error submitting bounty:', error);
-      alert('❌ Failed to submit bounty. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to submit bounty. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -390,6 +411,38 @@ export function ProfileView() {
     setSaveProgress('');
   };
 
+  // Load current squad from API
+  const loadCurrentSquad = async (walletAddress: string) => {
+    try {
+      console.log('🔄 Loading current squad for wallet:', walletAddress.slice(0, 8) + '...');
+      
+      const response = await fetch(`/api/user-squad?wallet_address=${walletAddress}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('📊 Squad data loaded:', data);
+        
+        if (data.hasSquad && data.squad) {
+          setSquad(data.squad.name);
+          setUserSquad({
+            name: data.squad.name,
+            id: data.squad.id,
+            selectedAt: data.squad.selectedAt,
+            lockEndDate: data.squad.lockEndDate,
+            changeCount: data.squad.changeCount,
+            isLocked: data.isLocked,
+            remainingDays: data.remainingDays
+          });
+        } else {
+          // No squad assigned
+          setSquad('Unassigned');
+          setUserSquad(null);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading squad data:', error);
+    }
+  };
+
   // Load profile data from API (for squad and other data, not display name)
   const loadProfileData = async (walletAddress: string) => {
     try {
@@ -409,7 +462,8 @@ export function ProfileView() {
         //   console.log('✅ Loaded saved display name:', savedDisplayName);
         // }
         
-        if (data.user && data.user.squad) {
+        // Squad is now loaded from /api/user-squad, but keep this as fallback
+        if (data.user && data.user.squad && !userSquad) {
           setSquad(data.user.squad);
         }
       }
@@ -429,6 +483,11 @@ export function ProfileView() {
       console.log('ProfileView: Detected wallet:', currentWallet);
       setWallet(currentWallet);
 
+      // Load current squad from API (primary source)
+      if (currentWallet) {
+        await loadCurrentSquad(currentWallet);
+      }
+
       // Load profile data from API
       if (currentWallet) {
         await loadProfileData(currentWallet);
@@ -446,8 +505,8 @@ export function ProfileView() {
               //   setDisplayName(userData.display_name);
               //   setOriginalDisplayName(userData.display_name);
               // }
-              if (userData.squad) {
-                // Set squad from Supabase
+              // Squad is now loaded from /api/user-squad, but keep this as fallback
+              if (userData.squad && !userSquad) {
                 setSquad(userData.squad);
                 setUserSquad({ name: userData.squad });
               }
@@ -485,7 +544,31 @@ export function ProfileView() {
       const realData = getRealUserData(wallet);
       setUserData(realData);
       setIsInitializing(false);
+      
+      // Reload squad when wallet changes
+      loadCurrentSquad(wallet);
     }
+  }, [wallet]);
+
+  // Listen for squad update events
+  useEffect(() => {
+    const handleSquadUpdate = () => {
+      if (wallet) {
+        console.log('🔄 Squad update event detected, reloading squad...');
+        loadCurrentSquad(wallet);
+      }
+    };
+
+    // Listen for storage events (when squad is updated in other tabs/components)
+    window.addEventListener('storage', handleSquadUpdate);
+    
+    // Listen for custom squad update events
+    window.addEventListener('squad-updated', handleSquadUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleSquadUpdate);
+      window.removeEventListener('squad-updated', handleSquadUpdate);
+    };
   }, [wallet]);
 
   // Add timeout fallback to prevent infinite loading
@@ -528,24 +611,48 @@ export function ProfileView() {
   };
 
   const getSquadDescription = () => {
+    // First try to get from userSquad object
     if (userSquad && typeof userSquad === 'object' && userSquad.description) {
       return userSquad.description;
-    } else {
-      const squadData = squadTracks.find(s => s.id === squad);
-      return squadData ? squadData.description : '';
     }
+    
+    // Otherwise, look up from squadTracks using squad ID or name
+    const squadId = userSquad && typeof userSquad === 'object' ? userSquad.id : squad;
+    const squadData = squadTracks.find(s => s.id === squadId || s.name === squadId);
+    return squadData ? squadData.description : '';
   };
 
   const getSquadSpecialties = () => {
+    // First try to get from userSquad object
     if (userSquad && typeof userSquad === 'object' && userSquad.specialties) {
       return userSquad.specialties;
-    } else {
-      return [];
     }
+    
+    // Otherwise, look up from squadTracks using squad ID or name
+    const squadId = userSquad && typeof userSquad === 'object' ? userSquad.id : squad;
+    const squadData = squadTracks.find(s => s.id === squadId || s.name === squadId);
+    return squadData ? squadData.specialties || [] : [];
   };
 
   const getSquadLockInfo = () => {
-    // Mock data for now - in real implementation, this would come from the database
+    // Use real data from userSquad if available
+    if (userSquad && typeof userSquad === 'object' && userSquad.lockEndDate) {
+      const lockEndDate = new Date(userSquad.lockEndDate);
+      const now = new Date();
+      const timeRemaining = Math.max(0, lockEndDate.getTime() - now.getTime());
+      const daysRemaining = Math.ceil(timeRemaining / (24 * 60 * 60 * 1000));
+      const progressPercent = Math.max(0, Math.min(100, ((30 - daysRemaining) / 30) * 100));
+      
+      return {
+        isLocked: userSquad.isLocked || timeRemaining > 0,
+        daysRemaining: userSquad.remainingDays || daysRemaining,
+        progressPercent,
+        lockEndDate: lockEndDate.toLocaleDateString(),
+        squadSelectedAt: userSquad.selectedAt ? new Date(userSquad.selectedAt).toLocaleDateString() : 'Unknown'
+      };
+    }
+    
+    // Fallback to mock data if no real data available
     const squadSelectedAt = userData?.squad_selected_at || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days ago
     const lockEndDate = new Date(new Date(squadSelectedAt).getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from selection
     const now = new Date();

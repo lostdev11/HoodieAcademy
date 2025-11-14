@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { LineChart, ArrowLeft, CheckCircle, XCircle, Award, AlertTriangle, Wallet, ChevronDown, ChevronUp } from 'lucide-react';
 import { fetchCourseProgress, updateCourseProgress, getCachedLessonStatus, LessonStatus } from '@/utils/course-progress-api';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -125,6 +126,7 @@ const COURSE_SLUG = 'technical-analysis';
 
 export default function TechnicalAnalysisPage() {
   const { wallet: walletAddress } = useWalletSupabase();
+  const { toast } = useToast();
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [lessonStatus, setLessonStatus] = useState<Array<'locked' | 'unlocked' | 'completed'>>(
     lessonsData.map((_, index) => (index === 0 ? 'unlocked' : 'locked'))
@@ -270,14 +272,27 @@ export default function TechnicalAnalysisPage() {
 
           setWalletAlertConfig({ title: successTitle, description: `Successfully connected: ${solAccount.slice(0, 4)}...${solAccount.slice(-4)}` });
           
-          if (providerName === 'jup') setTimeout(() => alert("Simulating Jupiter Swap interaction: You can now trade tokens! (Mock)"), 500);
-          if (providerName === 'magic-eden') setTimeout(() => alert("Simulating Magic Eden interaction: You can now browse NFTs! (Mock)"), 500);
+          if (providerName === 'jup') {
+            setTimeout(() => {
+              toast({
+                title: 'Jupiter Swap Ready',
+                description: 'Simulating Jupiter Swap interaction: You can now trade tokens! (Mock)',
+              });
+            }, 500);
+          }
+          if (providerName === 'magic-eden') {
+            setTimeout(() => {
+              toast({
+                title: 'Magic Eden Ready',
+                description: 'Simulating Magic Eden interaction: You can now browse NFTs! (Mock)',
+              });
+            }, 500);
+          }
           break;
         default:
           setWalletAlertConfig({ title: "Unsupported Wallet", description: "This wallet provider is not yet supported." });
       }
     } catch (error: any) {
-      console.error("Wallet connection error:", error);
       let description = `Failed to connect ${providerName}. Please try again.`;
        if (error.code === 4001 || error.message?.includes('User rejected the request')) { 
           description = 'Connection request rejected. Please approve in your wallet.';

@@ -18,6 +18,9 @@ import {
   Sparkles 
 } from 'lucide-react';
 import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 interface AIChatWidgetProps {
   initialOpen?: boolean;
@@ -42,8 +45,48 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const MESSAGE_LIMIT = 50; // Limit messages per session
   const DRAG_THRESHOLD = 5; // Minimum pixels to move before considering it a drag
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
+  // Get wallet address from localStorage
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+
+  // Fetch user profile for personalization
+  const { profile } = useUserProfile(walletAddress);
+
+  // Load wallet address from localStorage
+  useEffect(() => {
+    const loadWalletAddress = () => {
+      if (typeof window !== 'undefined') {
+        const wallet = localStorage.getItem('walletAddress') || 
+                       localStorage.getItem('hoodie_academy_wallet');
+        setWalletAddress(wallet);
+      }
+    };
+
+    loadWalletAddress();
+
+    // Listen for wallet connection changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'walletAddress' || e.key === 'hoodie_academy_wallet') {
+        loadWalletAddress();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange);
+      // Also check periodically for changes
+      const interval = setInterval(loadWalletAddress, 2000);
+      
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(interval);
+      };
+    }
+  }, []);
+
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error, setMessages } = useChat({
     api: '/api/ai-chat',
+    body: {
+      walletAddress: walletAddress || undefined,
+    },
     initialMessages: [
       {
         id: 'welcome',
@@ -55,6 +98,23 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
       setMessageCount(prev => prev + 1);
     },
   });
+
+  // Update welcome message when profile loads
+  useEffect(() => {
+    if (profile && messages.length === 1 && messages[0].id === 'welcome') {
+      const name = profile.displayName || 'there';
+      const squad = profile.squad?.name ? ` 🎨 ${profile.squad.name}` : '';
+      const level = profile.level > 1 ? ` Level ${profile.level}` : '';
+      const personalizedWelcome = `Hey ${name}! 👋 Welcome back${squad}${level}! I'm your Hoodie Academy AI Assistant. I can see you have ${profile.totalXP} XP and ${profile.completedCourses?.length || 0} completed course${profile.completedCourses?.length !== 1 ? 's' : ''}. How can I help you today?`;
+      
+      // Update the welcome message
+      setMessages([{
+        id: 'welcome',
+        role: 'assistant',
+        content: personalizedWelcome,
+      }]);
+    }
+  }, [profile, messages.length, setMessages]);
 
   const hasReachedLimit = messageCount >= MESSAGE_LIMIT;
   const messagesRemaining = MESSAGE_LIMIT - messageCount;
@@ -408,9 +468,57 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
                         : 'bg-gradient-to-br from-slate-800/80 to-slate-700/80 border border-cyan-500/30'
                     }`}
                   >
-                    <p className="text-sm text-gray-100 whitespace-pre-wrap leading-relaxed font-medium">
-                      {message.content}
-                    </p>
+                    <div className="text-sm text-gray-100 leading-relaxed font-medium prose prose-invert prose-sm max-w-none">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0 text-gray-100">{children}</p>,
+                          h1: ({ children }) => <h1 className="text-lg font-bold text-cyan-400 mb-2">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-base font-bold text-purple-400 mb-2">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-sm font-semibold text-green-400 mb-1">{children}</h3>,
+                          code: ({ children, className }) => {
+                            const isInline = !className;
+                            return isInline ? (
+                              <code className="bg-slate-900/50 text-cyan-300 px-1 py-0.5 rounded text-xs font-mono">
+                                {children}
+                              </code>
+                            ) : (
+                              <code className="block bg-slate-900 text-cyan-300 p-2 rounded text-xs font-mono overflow-x-auto border border-slate-700 mb-2">
+                                {children}
+                              </code>
+                            );
+                          },
+                          pre: ({ children }) => (
+                            <pre className="bg-slate-900 border border-slate-700 rounded p-2 overflow-x-auto mb-2 text-xs">
+                              {children}
+                            </pre>
+                          ),
+                          blockquote: ({ children }) => (
+                            <blockquote className="border-l-4 border-purple-500 pl-3 py-1 bg-purple-900/20 rounded-r mb-2 italic text-purple-200">
+                              {children}
+                            </blockquote>
+                          ),
+                          ul: ({ children }) => <ul className="list-disc list-inside mb-2 space-y-1 text-gray-100">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-100">{children}</ol>,
+                          li: ({ children }) => <li className="text-gray-100">{children}</li>,
+                          a: ({ children, href }) => (
+                            <a 
+                              href={href} 
+                              className="text-cyan-400 hover:text-cyan-300 underline decoration-cyan-500/50" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              {children}
+                            </a>
+                          ),
+                          strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                          em: ({ children }) => <em className="italic text-gray-200">{children}</em>,
+                          hr: () => <hr className="border-slate-700 my-2" />,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               ))}

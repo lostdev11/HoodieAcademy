@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, lazy, Suspense } from "react"
+import { useState, useEffect, useCallback, lazy, Suspense } from "react"
 import { useDisplayNameReadOnly } from '@/hooks/use-display-name'
 import { useLevel } from "@/hooks/useLevel"
 import { Button } from "@/components/ui/button"
@@ -163,7 +163,50 @@ export default function HoodieAcademy() {
   const { displayName: userDisplayName } = useDisplayNameReadOnly();
   const levelData = useLevel(userXP);
 
-  const fetchUserXPOnly = async (wallet: string) => {
+  const syncWalletStorage = useCallback((wallet: string) => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("walletAddress", wallet);
+    localStorage.setItem("connectedWallet", wallet);
+    localStorage.setItem("hoodie_academy_wallet", wallet);
+  }, []);
+
+  const getStoredWalletAddress = useCallback(() => {
+    if (typeof window === "undefined") return null;
+
+    const wallet =
+      localStorage.getItem("walletAddress") ||
+      localStorage.getItem("hoodie_academy_wallet") ||
+      localStorage.getItem("connectedWallet");
+
+    if (wallet) {
+      syncWalletStorage(wallet);
+    }
+
+    return wallet;
+  }, [syncWalletStorage]);
+
+  const initializeWalletState = useCallback(() => {
+    const wallet = getStoredWalletAddress();
+
+    if (!wallet) {
+      setIsLoadingXP(false);
+      return null;
+    }
+
+    setWalletAddress(wallet);
+    setSnsDomain(wallet);
+    setIsLoadingSns(false);
+
+    const cachedSquadName = getSquadNameFromCache();
+    if (cachedSquadName) {
+      setUserSquad(cachedSquadName);
+      setSquadLockExpired(!isSquadLockedFromCache());
+    }
+
+    return wallet;
+  }, [getStoredWalletAddress]);
+
+  const fetchUserXPOnly = useCallback(async (wallet: string) => {
     try {
       const response = await fetch(`/api/xp?wallet=${wallet}`);
       if (!response.ok) {
@@ -180,130 +223,162 @@ export default function HoodieAcademy() {
     } finally {
       setIsLoadingXP(false);
     }
-  };
+  }, []);
+
+  const fetchSquadData = useCallback(async (wallet: string) => {
+    if (!wallet) return;
+
+    try {
+      const profileResponse = await fetch(`/api/user-profile?wallet=${wallet}`);
+      const profileData = await profileResponse.json();
+
+      if (profileData.success && profileData.profile) {
+        const squadName = profileData.profile.squad?.name || "Unassigned";
+        setUserSquad(squadName);
+
+        const profileXP = profileData.profile.totalXP ?? profileData.profile.total_xp ?? 0;
+        setUserXP(typeof profileXP === "number" ? profileXP : parseInt(profileXP, 10) || 0);
+
+        setIsDemoWallet(Boolean(profileData.profile.is_demo_wallet || profileData.profile.isDemoWallet));
+        setIsLoadingXP(false);
+
+        if (profileData.profile.squad?.isLocked) {
+          setSquadLockExpired(false);
+        } else if (profileData.profile.squad) {
+          setSquadLockExpired(true);
+        } else {
+          setSquadLockExpired(false);
+        }
+      } else {
+        setUserSquad(null);
+        setSquadLockExpired(false);
+        setIsDemoWallet(false);
+        await fetchUserXPOnly(wallet);
+      }
+    } catch (error) {
+      console.error("❌ Home: Error fetching squad data:", error);
+      setUserSquad(null);
+      setSquadLockExpired(false);
+      setIsDemoWallet(false);
+      await fetchUserXPOnly(wallet);
+    }
+  }, [fetchUserXPOnly]);
+
+  const refreshSquadData = useCallback(async () => {
+    const wallet = getStoredWalletAddress();
+    if (!wallet) return;
+    await fetchSquadData(wallet);
+  }, [fetchSquadData, getStoredWalletAddress]);
 
   useEffect(() => {
-    // Get wallet address from localStorage
-    const storedWallet = typeof window !== 'undefined' ? localStorage.getItem('walletAddress') : null;
-    if (storedWallet) {
-      setWalletAddress(storedWallet);
-      // Set SNS domain immediately without async resolution
-      setSnsDomain(storedWallet);
-      setIsLoadingSns(false);
-
-      // Use cached squad info for instant UI feedback
-      const cachedSquadName = getSquadNameFromCache();
-      if (cachedSquadName) {
-        setUserSquad(cachedSquadName);
-        setSquadLockExpired(!isSquadLockedFromCache());
-      }
-    } else {
-      setIsLoadingXP(false);
+    const wallet = initializeWalletState();
+    if (wallet) {
+      fetchSquadData(wallet);
     }
 
-    // Check cached admin status first (non-blocking)
-    const cachedAdminStatus = typeof window !== 'undefined' ? localStorage.getItem('hoodie_academy_is_admin') : null;
-    if (cachedAdminStatus === 'true') {
+    const cachedAdminStatus =
+      typeof window !== "undefined" ? localStorage.getItem("hoodie_academy_is_admin") : null;
+    if (cachedAdminStatus === "true") {
       setIsAdmin(true);
     }
 
-    // Then verify admin status in background (don't block rendering)
     const checkAdminStatus = async () => {
       try {
-        const walletAddress = localStorage.getItem('walletAddress') || localStorage.getItem('connectedWallet');
+        const walletAddress = getStoredWalletAddress();
         if (!walletAddress) {
           setIsAdmin(false);
           return;
         }
-        
-        // Check cache timestamp to avoid excessive API calls
+
         const cacheKey = `admin_check_${walletAddress}`;
         const cacheTimestampKey = `${cacheKey}_timestamp`;
         const cachedResult = localStorage.getItem(cacheKey);
         const cacheTimestamp = localStorage.getItem(cacheTimestampKey);
-        
-        // Use cache if less than 5 minutes old
+
         if (cachedResult && cacheTimestamp) {
           const age = Date.now() - parseInt(cacheTimestamp);
-          if (age < 5 * 60 * 1000) { // 5 minutes
-            setIsAdmin(cachedResult === 'true');
+          if (age < 5 * 60 * 1000) {
+            setIsAdmin(cachedResult === "true");
             return;
           }
         }
-        
-        // Use direct admin check in background
-        const { checkAdminStatusDirect } = await import('@/lib/admin-check');
+
+        const { checkAdminStatusDirect } = await import("@/lib/admin-check");
         const adminStatus = await checkAdminStatusDirect(walletAddress);
-        
-        // Cache the result
-        localStorage.setItem(cacheKey, adminStatus ? 'true' : 'false');
+
+        localStorage.setItem(cacheKey, adminStatus ? "true" : "false");
         localStorage.setItem(cacheTimestampKey, Date.now().toString());
-        localStorage.setItem('hoodie_academy_is_admin', adminStatus ? 'true' : 'false');
-        
+        localStorage.setItem("hoodie_academy_is_admin", adminStatus ? "true" : "false");
+
         setIsAdmin(adminStatus);
       } catch (error) {
-        console.error('Error checking admin status:', error);
+        console.error("Error checking admin status:", error);
         setIsAdmin(false);
       }
     };
-    
-    // Run admin check in background without blocking
+
     setTimeout(() => checkAdminStatus(), 0);
 
-    // Fetch squad from database API
-    const fetchSquadData = async () => {
-      if (!storedWallet) return;
-      
-      try {
-        const profileResponse = await fetch(`/api/user-profile?wallet=${storedWallet}`);
-        const profileData = await profileResponse.json();
-        
-        if (profileData.success && profileData.profile) {
-          const squadName = profileData.profile.squad?.name || 'Unassigned';
-          setUserSquad(squadName);
-          const profileXP = profileData.profile.totalXP ?? profileData.profile.total_xp ?? 0;
-          setUserXP(typeof profileXP === "number" ? profileXP : parseInt(profileXP, 10) || 0);
-          setIsDemoWallet(Boolean(profileData.profile.is_demo_wallet || profileData.profile.isDemoWallet));
-          setIsLoadingXP(false);
-          
-          // Check if squad lock has expired
-          if (profileData.profile.squad?.isLocked) {
-            setSquadLockExpired(false);
-          } else if (profileData.profile.squad) {
-            setSquadLockExpired(true);
-          }
-        } else {
-          await fetchUserXPOnly(storedWallet);
+    const handleStorageChange = (event: StorageEvent) => {
+      if (!event.key || ["walletAddress", "hoodie_academy_wallet", "connectedWallet"].includes(event.key)) {
+        const nextWallet = initializeWalletState();
+        if (nextWallet) {
+          fetchSquadData(nextWallet);
         }
-      } catch (error) {
-        console.error('❌ Home: Error fetching squad data:', error);
-        await fetchUserXPOnly(storedWallet);
+        return;
+      }
+
+      if (event.key === "userSquad") {
+        refreshSquadData();
       }
     };
-    
-    // Fetch immediately
-    fetchSquadData();
-    
-    // Listen for storage events (when squad is updated on squad selection page)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'userSquad' || e.key === null) {
-        fetchSquadData();
-      }
-    };
-    
-    // Listen for custom squad update events
+
     const handleSquadUpdate = () => {
-      fetchSquadData();
+      refreshSquadData();
     };
-    
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('squadUpdated', handleSquadUpdate);
-    
+
+    const handleWalletConnected = (event: Event) => {
+      const detail = (event as CustomEvent<{ wallet?: string } | string>).detail;
+      const walletFromEvent = typeof detail === "string" ? detail : detail?.wallet;
+
+      if (walletFromEvent) {
+        syncWalletStorage(walletFromEvent);
+      }
+
+      const nextWallet = initializeWalletState();
+      if (nextWallet) {
+        fetchSquadData(nextWallet);
+      }
+    };
+
+    const handleWalletDisconnected = () => {
+      setWalletAddress("");
+      setSnsDomain(null);
+      setIsLoadingSns(false);
+      setUserSquad(null);
+      setSquadLockExpired(false);
+      setIsDemoWallet(false);
+      setIsLoadingXP(false);
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("squadUpdated", handleSquadUpdate);
+    window.addEventListener("walletConnected", handleWalletConnected);
+    window.addEventListener("walletDisconnected", handleWalletDisconnected);
+
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('squadUpdated', handleSquadUpdate);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("squadUpdated", handleSquadUpdate);
+      window.removeEventListener("walletConnected", handleWalletConnected);
+      window.removeEventListener("walletDisconnected", handleWalletDisconnected);
     };
-  }, []);
+  }, [
+    fetchSquadData,
+    getStoredWalletAddress,
+    initializeWalletState,
+    refreshSquadData,
+    syncWalletStorage
+  ]);
 
   useEffect(() => {
     const fetchBounties = async () => {

@@ -200,14 +200,12 @@ export default function BountiesGridOptimized({
           [bountyId]: result.submission
         }));
         
-        alert('✅ Bounty submitted successfully!');
+        // Toast will be shown by parent component
       } else {
-        console.error('❌ API returned error:', result);
-        alert(`❌ ${result.error || 'Failed to submit bounty'}`);
+        // Error toast will be shown by parent component
       }
     } catch (error) {
-      console.error('❌ Network error submitting bounty:', error);
-      alert(`❌ Failed to submit bounty: ${error instanceof Error ? error.message : 'Network error'}`);
+      // Error toast will be shown by parent component
     } finally {
       setSubmittingBounty(null);
     }

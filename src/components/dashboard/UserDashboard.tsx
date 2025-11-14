@@ -9,6 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Trophy,
   Target,
   Users,
@@ -1007,6 +1015,9 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
   const [hasUsedTrialPost, setHasUsedTrialPost] = useState(false);
   const [trialPostContent, setTrialPostContent] = useState('');
   const [postingTrial, setPostingTrial] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogMessage, setDialogMessage] = useState('');
 
   useEffect(() => {
     // Legacy flag retained for compatibility; does not block posting anymore
@@ -1017,7 +1028,9 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
 
   const handleTrialPost = async () => {
     if (!trialPostContent.trim()) {
-      alert('Please write something!');
+      setDialogTitle('⚠️ Missing Content');
+      setDialogMessage('Please write something before posting!');
+      setDialogOpen(true);
       return;
     }
 
@@ -1039,19 +1052,41 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
       
       console.log('📝 Trial post response:', data);
 
+      if (!response.ok) {
+        // Handle XP requirement error
+        if (response.status === 403 && data.requiresXP) {
+          setDialogTitle('🚫 Post Limit Reached!');
+          setDialogMessage(`You've already made your first post.\n\nCurrent XP: ${data.currentXP || 0}\nRequired XP: ${data.requiredXP || 1000}\n\nKeep earning XP to unlock more posts!`);
+          setDialogOpen(true);
+          return;
+        }
+        
+        console.error('Trial post creation failed:', data);
+        setDialogTitle('❌ Post Failed');
+        setDialogMessage(data.error || 'Unknown error occurred. Please try again.');
+        setDialogOpen(true);
+        return;
+      }
+
       if (data.success && data.post) {
         console.log('✅ Trial post saved successfully:', data.post);
         
         // Inform trial users; do not block future posts
         setTrialPostContent('');
-        alert('🎉 Post created! You can keep posting until you reach 1,000 XP.');
+        setDialogTitle('🎉 Post Created!');
+        setDialogMessage('🎉 Trial post created! After this free post, you won\'t be able to post again until you reach 1,000 XP.');
+        setDialogOpen(true);
       } else {
         console.error('Trial post creation failed:', data);
-        alert('Failed to create post: ' + (data.error || 'Unknown error'));
+        setDialogTitle('❌ Post Failed');
+        setDialogMessage(data.error || 'Unknown error occurred. Please try again.');
+        setDialogOpen(true);
       }
     } catch (error) {
       console.error('Error creating trial post:', error);
-      alert('Failed to create post. Please try again.');
+      setDialogTitle('❌ Error');
+      setDialogMessage('Failed to create post. Please try again.');
+      setDialogOpen(true);
     } finally {
       setPostingTrial(false);
     }
@@ -1165,13 +1200,13 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
                     <div className="bg-gradient-to-r from-pink-900/30 to-purple-900/30 rounded-lg p-4 border border-pink-500/30 mb-6">
                       <div className="flex items-center justify-center space-x-2 mb-3">
                         <SparklesIcon className="w-4 h-4 text-pink-400" />
-                        <p className="text-sm font-semibold text-pink-400">Trial access: post until 1,000 XP</p>
+                        <p className="text-sm font-semibold text-pink-400">Trial access: 1 free post, then unlock at 1,000 XP</p>
                         <SparklesIcon className="w-4 h-4 text-pink-400" />
                       </div>
                       <Textarea
                         value={trialPostContent}
                         onChange={(e) => setTrialPostContent(e.target.value)}
-                        placeholder="Share your thoughts... (You can keep posting until you reach 1,000 XP)"
+                        placeholder="Share your thoughts... (1 free post, then unlock at 1,000 XP)"
                         className="min-h-[80px] bg-slate-700/50 border-pink-500/30 text-white mb-3 resize-none"
                         maxLength={500}
                       />
@@ -1278,6 +1313,26 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
               </div>
             </div>
           )}
+
+          {/* Dialog Modal */}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent className="bg-slate-800 border-cyan-500/30 text-white">
+              <DialogHeader>
+                <DialogTitle className="text-cyan-400">{dialogTitle}</DialogTitle>
+                <DialogDescription className="text-gray-300 whitespace-pre-line">
+                  {dialogMessage}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button 
+                  onClick={() => setDialogOpen(false)}
+                  className="bg-cyan-600 hover:bg-cyan-700"
+                >
+                  OK
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>

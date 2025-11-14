@@ -1,6 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +50,7 @@ interface CourseStats {
 }
 
 export default function CourseManagementTab({ adminWallet }: CourseManagementTabProps) {
+  const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +59,10 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
   const [toggleLoading, setToggleLoading] = useState<string | null>(null);
   const [stats, setStats] = useState<CourseStats | null>(null);
   const [bulkUpdating, setBulkUpdating] = useState(false);
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [bulkAction, setBulkAction] = useState<{ hideAll: boolean } | null>(null);
+  const [courseToDelete, setCourseToDelete] = useState<{ id: string; title: string } | null>(null);
 
   useEffect(() => {
     fetchCourses();
@@ -118,16 +134,27 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Error: ${data.error || 'Failed to update course'}`);
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to update course',
+          variant: 'destructive',
+        });
         return;
       }
 
-      alert(data.message || `Course ${!currentlyHidden ? 'hidden' : 'shown'} successfully`);
+      toast({
+        title: 'Success',
+        description: data.message || `Course ${!currentlyHidden ? 'hidden' : 'shown'} successfully`,
+      });
       await fetchCourses();
 
     } catch (error) {
       console.error('Error toggling course visibility:', error);
-      alert('Failed to update course visibility');
+      toast({
+        title: 'Error',
+        description: 'Failed to update course visibility',
+        variant: 'destructive',
+      });
     } finally {
       setToggleLoading(null);
     }
@@ -137,13 +164,15 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
     const scope = squadFilter !== 'all' ? squadFilter : 'all';
     const courseCount = scope === 'all' ? courses.length : courses.filter(c => c.squad_id === squadFilter).length;
     
-    const confirmMessage = hideAll
-      ? `Are you sure you want to HIDE all ${courseCount} course(s)${scope !== 'all' ? ` in the ${squadFilter} squad` : ''}?\n\nThis will make them invisible to all users.`
-      : `Are you sure you want to UNHIDE all ${courseCount} course(s)${scope !== 'all' ? ` in the ${squadFilter} squad` : ''}?\n\nThis will make them visible to all users.`;
-    
-    if (!confirm(confirmMessage)) {
-      return;
-    }
+    setBulkAction({ hideAll });
+    setShowBulkDialog(true);
+  };
+
+  const confirmBulkUpdate = async () => {
+    if (!bulkAction) return;
+    const { hideAll } = bulkAction;
+    const scope = squadFilter !== 'all' ? squadFilter : 'all';
+    const courseCount = scope === 'all' ? courses.length : courses.filter(c => c.squad_id === squadFilter).length;
 
     try {
       setBulkUpdating(true);
@@ -164,32 +193,46 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
       console.log('[ADMIN COURSES] Bulk update response body', data);
       if (!response.ok || (data && data.success === false)) {
         const errMsg = (data && (data.message || data.error)) || 'Bulk update failed';
-        alert(`Error: ${errMsg}`);
+        toast({
+          title: 'Error',
+          description: errMsg,
+          variant: 'destructive',
+        });
+        setShowBulkDialog(false);
+        setBulkAction(null);
         return;
       }
       
       const updatedCount = data.updatedCount || courseCount;
-      alert(`Success! ${updatedCount} course(s) ${hideAll ? 'hidden' : 'unhidden'} successfully.`);
+      toast({
+        title: 'Success',
+        description: `${updatedCount} course(s) ${hideAll ? 'hidden' : 'unhidden'} successfully.`,
+      });
       await fetchCourses();
+      setShowBulkDialog(false);
+      setBulkAction(null);
     } catch (e) {
       console.error('Bulk visibility update error:', e);
-      alert(`Failed to ${hideAll ? 'hide' : 'unhide'} courses. Please check the console for details.`);
+      toast({
+        title: 'Error',
+        description: `Failed to ${hideAll ? 'hide' : 'unhide'} courses. Please check the console for details.`,
+        variant: 'destructive',
+      });
+      setShowBulkDialog(false);
+      setBulkAction(null);
     } finally {
       setBulkUpdating(false);
     }
   };
 
   const deleteCourse = async (courseId: string, courseTitle: string) => {
-    const confirmDelete = confirm(
-      `Are you sure you want to permanently delete "${courseTitle}"?\n\n` +
-      `This will remove:\n` +
-      `- The course and all its content\n` +
-      `- All course progress data\n` +
-      `- All related submissions\n\n` +
-      `This action cannot be undone!`
-    );
+    setCourseToDelete({ id: courseId, title: courseTitle });
+    setShowDeleteDialog(true);
+  };
 
-    if (!confirmDelete) return;
+  const confirmDeleteCourse = async () => {
+    if (!courseToDelete) return;
+    const { id: courseId, title: courseTitle } = courseToDelete;
 
     try {
       setToggleLoading(courseId);
@@ -476,6 +519,49 @@ export default function CourseManagementTab({ adminWallet }: CourseManagementTab
           ))
         )}
       </div>
+
+      {/* Bulk Update Confirmation Dialog */}
+      <AlertDialog open={showBulkDialog} onOpenChange={setShowBulkDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{bulkAction?.hideAll ? 'Hide All Courses' : 'Unhide All Courses'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkAction && (() => {
+                const scope = squadFilter !== 'all' ? squadFilter : 'all';
+                const courseCount = scope === 'all' ? courses.length : courses.filter(c => c.squad_id === squadFilter).length;
+                return `Are you sure you want to ${bulkAction.hideAll ? 'HIDE' : 'UNHIDE'} all ${courseCount} course(s)${scope !== 'all' ? ` in the ${squadFilter} squad` : ''}? ${bulkAction.hideAll ? 'This will make them invisible to all users.' : 'This will make them visible to all users.'}`;
+              })()}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmBulkUpdate}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Course Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Course</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete "{courseToDelete?.title}"?
+              <br /><br />
+              This will remove:
+              <br />- The course and all its content
+              <br />- All course progress data
+              <br />- All related submissions
+              <br /><br />
+              This action cannot be undone!
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteCourse} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

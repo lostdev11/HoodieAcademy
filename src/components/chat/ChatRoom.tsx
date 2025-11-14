@@ -8,12 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Loader2 } from 'lucide-react';
 import { useSNSResolution } from '@/hooks/use-sns-resolution';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatRoomProps {
   squad: string;
 }
 
 export default function ChatRoom({ squad }: ChatRoomProps) {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -123,7 +125,11 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
 
         if (testError) {
           console.error('Supabase connection test failed:', testError);
-          alert('Unable to connect to chat service. Please try again later.');
+          toast({
+            title: 'Connection Error',
+            description: 'Unable to connect to chat service. Please try again later.',
+            variant: 'destructive',
+          });
           setIsLoading(false);
           return;
         }
@@ -137,7 +143,11 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         if (error) {
           console.error('Error loading messages:', error);
           console.error('Error details:', error.message, error.details, error.hint);
-          alert(`Error loading messages: ${error.message}`);
+          toast({
+            title: 'Error Loading Messages',
+            description: error.message || 'Failed to load messages',
+            variant: 'destructive',
+          });
         } else {
           setMessages(data || []);
           
@@ -152,7 +162,11 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         }
       } catch (error) {
         console.error('Error loading messages:', error);
-        alert('Unexpected error loading messages. Please try again.');
+        toast({
+          title: 'Error',
+          description: 'Unexpected error loading messages. Please try again.',
+          variant: 'destructive',
+        });
       } finally {
         setIsLoading(false);
       }
@@ -202,7 +216,11 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
 
     // Additional validation: Check if user is authorized for this squad
     if (!currentUser) {
-      alert('Please connect your wallet to send messages.');
+      toast({
+        title: 'Wallet Not Connected',
+        description: 'Please connect your wallet to send messages.',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -226,7 +244,11 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
 
       if (testError) {
         console.error('Connection test failed before sending:', testError);
-        alert('Connection lost. Please refresh the page and try again.');
+        toast({
+          title: 'Connection Lost',
+          description: 'Please refresh the page and try again.',
+          variant: 'destructive',
+        });
         return;
       }
 
@@ -241,7 +263,11 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
         
         // Provide more specific error messages
         if (error.message.includes('row-level security policy')) {
-          alert('Database permission error: Row-level security policy is blocking message insertion. Please contact the administrator to configure database permissions.');
+          toast({
+            title: 'Database Permission Error',
+            description: 'Row-level security policy is blocking message insertion. Please contact the administrator to configure database permissions.',
+            variant: 'destructive',
+          });
           
           // Fallback: Store message locally
           const localMessage: Message = {
@@ -256,20 +282,40 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
           
           setMessages(prev => [...prev, localMessage]);
           setNewMessage('');
-          alert('Message stored locally. Database permissions need to be configured for persistent storage.');
+          toast({
+            title: 'Message Stored Locally',
+            description: 'Database permissions need to be configured for persistent storage.',
+            variant: 'default',
+          });
         } else if (error.message.includes('permission')) {
-          alert('Permission denied. You may not have access to send messages in this squad.');
+          toast({
+            title: 'Permission Denied',
+            description: 'You may not have access to send messages in this squad.',
+            variant: 'destructive',
+          });
         } else if (error.message.includes('network')) {
-          alert('Network error. Please check your connection and try again.');
+          toast({
+            title: 'Network Error',
+            description: 'Please check your connection and try again.',
+            variant: 'destructive',
+          });
         } else {
-          alert(`Failed to send message: ${error.message}`);
+          toast({
+            title: 'Failed to Send Message',
+            description: error.message || 'An error occurred while sending the message',
+            variant: 'destructive',
+          });
         }
       } else {
         setNewMessage('');
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Unexpected error sending message. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Unexpected error sending message. Please try again.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSending(false);
     }

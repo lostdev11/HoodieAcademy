@@ -102,6 +102,7 @@ export default function StarterPackPage() {
   const [ripGifError, setRipGifError] = useState(!USE_SUCCESS_GIF);
   const [claimStatus, setClaimStatus] = useState<ClaimStatus | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const { toast } = useToast();
 
   // Check for existing wallet connection
@@ -111,7 +112,11 @@ export default function StarterPackPage() {
                         localStorage.getItem('connectedWallet');
     if (storedWallet) {
       setWalletAddress(storedWallet);
+      setHasInitialized(true);
+      // Check status in background - won't affect pack visibility unless claim exists
       checkClaimStatus(storedWallet);
+    } else {
+      setHasInitialized(true);
     }
   }, []);
 
@@ -139,10 +144,22 @@ export default function StarterPackPage() {
       const response = await fetch(`/api/starter-pack/claim?walletAddress=${wallet}`);
       const data = await response.json();
       if (data.claim) {
+        // Only set claim status - don't affect pack visibility
+        // Pack will hide automatically because claimStatus will be truthy
         setClaimStatus(data.claim);
+      } else {
+        // Explicitly set to null if no claim exists
+        // Pack should remain visible
+        setClaimStatus(null);
       }
     } catch (error) {
-      console.error('Error checking claim status:', error);
+      // On error, assume no claim exists so pack can show
+      setClaimStatus(null);
+      toast({
+        title: 'Status Check Failed',
+        description: 'Unable to check claim status. Please refresh the page.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoadingStatus(false);
     }
@@ -169,6 +186,8 @@ export default function StarterPackPage() {
         const address = provider.publicKey.toString();
         setWalletAddress(address);
         localStorage.setItem('hoodie_academy_wallet', address);
+        setHasInitialized(true);
+        // Check status in background - won't affect pack visibility unless claim exists
         checkClaimStatus(address);
         setIsConnecting(false);
         return;
@@ -190,6 +209,8 @@ export default function StarterPackPage() {
       const address = publicKey?.toString ? publicKey.toString() : String(publicKey);
       setWalletAddress(address);
       localStorage.setItem('hoodie_academy_wallet', address);
+      setHasInitialized(true);
+      // Check status in background - won't affect pack visibility unless claim exists
       checkClaimStatus(address);
 
       toast({
@@ -197,7 +218,6 @@ export default function StarterPackPage() {
         description: `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`,
       });
     } catch (error) {
-      console.error('Error connecting wallet:', error);
       toast({
         title: 'Connection Failed',
         description: error instanceof Error ? error.message : 'Failed to connect wallet',
@@ -235,8 +255,6 @@ export default function StarterPackPage() {
       blockhash = blockhashResult.blockhash;
     } catch (error: any) {
       // If RPC fails, try alternative endpoints
-      console.error('RPC error, trying fallback:', error);
-      
       // Try Helius if available
       if (process.env.NEXT_PUBLIC_HELIUS_RPC_URL) {
         const heliusConnection = new Connection(process.env.NEXT_PUBLIC_HELIUS_RPC_URL, 'confirmed');
@@ -323,7 +341,6 @@ export default function StarterPackPage() {
       // Hide pack hover and show rip reveal
       setShowPackHover(false);
     } catch (error) {
-      console.error('Error claiming starter pack:', error);
       setShowRipReveal(false);
       setShowPackHover(true); // Show pack hover again on error
       const description = getClaimErrorMessage(error);
@@ -386,7 +403,7 @@ export default function StarterPackPage() {
   return (
     <div className="min-h-screen text-white relative overflow-hidden">
       {/* Background matching pack colors - only show when pack is visible */}
-      {showPackHover && !showRipReveal && walletAddress && !claimStatus ? (
+      {showPackHover && !showRipReveal && walletAddress && !claimStatus && hasInitialized ? (
         <div className="fixed inset-0 bg-gradient-to-br from-purple-900 via-pink-800 to-purple-900 z-0">
           <motion.div
             animate={{
@@ -405,7 +422,7 @@ export default function StarterPackPage() {
       )}
       {/* Pack Floating in Center */}
       <AnimatePresence>
-        {showPackHover && !showRipReveal && walletAddress && !claimStatus && (
+        {showPackHover && !showRipReveal && walletAddress && !claimStatus && hasInitialized && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -453,7 +470,7 @@ export default function StarterPackPage() {
 
       {/* Overlay with Claim Button */}
       <AnimatePresence>
-        {showPackHover && !showRipReveal && walletAddress && !claimStatus && (
+        {showPackHover && !showRipReveal && walletAddress && !claimStatus && hasInitialized && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -519,10 +536,16 @@ export default function StarterPackPage() {
                   playsInline
                   className="w-[360px] h-[360px] md:w-[480px] md:h-[480px] object-contain drop-shadow-[0_0_40px_rgba(236,72,153,0.6)]"
                   onEnded={handleRipAnimationEnd}
-                  onError={() => setRipVideoError(true)}
+                  onError={() => {
+                    setRipVideoError(true);
+                    toast({
+                      title: 'Video Error',
+                      description: 'Unable to play success animation. Showing fallback instead.',
+                      variant: 'default',
+                    });
+                  }}
                 >
                   <source src={SUCCESS_VIDEO_PATH} type="video/mp4" />
-                  Your browser does not support the video tag.
                 </video>
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -594,8 +617,8 @@ export default function StarterPackPage() {
         )}
       </AnimatePresence>
 
-      {/* Main Content - Only show when pack is not visible */}
-      {(!showPackHover || showRipReveal || !walletAddress || claimStatus) && (
+      {/* Main Content - Only show when pack is not visible and rip reveal is not showing */}
+      {!(showPackHover && !showRipReveal && walletAddress && !claimStatus && hasInitialized) && !showRipReveal && (
         <div className="container mx-auto px-4 py-16 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

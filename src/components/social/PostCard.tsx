@@ -18,6 +18,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 interface Post {
   id: string;
@@ -57,9 +58,10 @@ interface PostCardProps {
   post: Post;
   currentWallet: string;
   onDelete: (postId: string) => void;
+  isAdmin?: boolean;
 }
 
-export default function PostCard({ post, currentWallet, onDelete }: PostCardProps) {
+export default function PostCard({ post, currentWallet, onDelete, isAdmin = false }: PostCardProps) {
   const [userReaction, setUserReaction] = useState<string | null>(null);
   const [localLikes, setLocalLikes] = useState(post.likes_count);
   const [localDislikes, setLocalDislikes] = useState(post.dislikes_count);
@@ -70,6 +72,7 @@ export default function PostCard({ post, currentWallet, onDelete }: PostCardProp
   const [posting, setPosting] = useState(false);
 
   const isAuthor = currentWallet === post.wallet_address;
+  const canDelete = isAuthor || isAdmin;
 
   useEffect(() => {
     // Fetch user's reaction
@@ -182,10 +185,10 @@ export default function PostCard({ post, currentWallet, onDelete }: PostCardProp
       if (data.success) {
         setComments([...comments, data.comment]);
         setNewComment('');
-        alert('Comment posted! +3 XP');
+        // Toast will be handled by parent component if needed
       }
     } catch (error) {
-      console.error('Error posting comment:', error);
+      // Error handling will be done by parent component
     } finally {
       setPosting(false);
     }
@@ -226,12 +229,13 @@ export default function PostCard({ post, currentWallet, onDelete }: PostCardProp
             </div>
           </div>
 
-          {isAuthor && (
+          {canDelete && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onDelete(post.id)}
               className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              title={isAdmin && !isAuthor ? 'Admin: Delete post' : 'Delete your post'}
             >
               <Trash2 className="w-4 h-4" />
             </Button>

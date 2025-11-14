@@ -28,6 +28,26 @@ import { Lock, Sparkles } from 'lucide-react';
 import { fetchUserSquad } from '@/utils/squad-api';
 import Link from 'next/link';
 import VoiceChatWidget from '@/components/voice/VoiceChatWidget';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useAdminStatus } from '@/lib/admin-check';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 interface Post {
   id: string;
@@ -50,9 +70,12 @@ interface Post {
 }
 
 export default function SocialFeedPage() {
+  const { toast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
   const [newPostContent, setNewPostContent] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'trending'>('newest');
   const [filterSquad, setFilterSquad] = useState<string | null>(null);
@@ -63,6 +86,12 @@ export default function SocialFeedPage() {
   const [hasUsedTrialPost, setHasUsedTrialPost] = useState(false);
   const [isTrialUser, setIsTrialUser] = useState(false);
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState('');
+  const [dialogMessage, setDialogMessage] = useState('');
+
+  // Check admin status
+  const { isAdmin } = useAdminStatus(walletAddress);
 
   useEffect(() => {
     const loadData = async () => {
@@ -140,7 +169,9 @@ export default function SocialFeedPage() {
 
   const handleCreatePost = async () => {
     if (!newPostContent.trim() || !walletAddress) {
-      alert('Please write something!');
+      setDialogTitle('⚠️ Missing Content');
+      setDialogMessage('Please write something before posting!');
+      setDialogOpen(true);
       return;
     }
 
@@ -162,6 +193,22 @@ export default function SocialFeedPage() {
 
       const data = await response.json();
 
+      if (!response.ok) {
+        // Handle XP requirement error
+        if (response.status === 403 && data.requiresXP) {
+          setDialogTitle('🚫 Post Limit Reached!');
+          setDialogMessage(`You've already made your first post.\n\nCurrent XP: ${data.currentXP || 0}\nRequired XP: ${data.requiredXP || 1000}\n\nKeep earning XP to unlock more posts!`);
+          setDialogOpen(true);
+          return;
+        }
+        
+        console.error('Post creation failed:', data);
+        setDialogTitle('❌ Post Failed');
+        setDialogMessage(data.error || 'Unknown error occurred. Please try again.');
+        setDialogOpen(true);
+        return;
+      }
+
       if (data.success && data.post) {
         console.log('✅ Post created successfully:', data.post);
         
@@ -172,41 +219,68 @@ export default function SocialFeedPage() {
         setPosts([data.post, ...posts]);
         
         if (isTrialUser) {
-          alert('🎉 Post created! You can keep posting until you reach 1,000 XP.');
+          setDialogTitle('🎉 Post Created!');
+          setDialogMessage('🎉 Trial post created! After this free post, you won\'t be able to post again until you reach 1,000 XP.');
         } else {
-          alert('✅ Post created successfully! +1 XP\n\nYour post is now live on the feed.');
+          setDialogTitle('✅ Post Created Successfully!');
+          setDialogMessage('+1 XP\n\nYour post is now live on the feed.');
         }
+        setDialogOpen(true);
         
         // Refresh the feed to show the new post with updated counts
         setTimeout(() => fetchPosts(), 1000);
       } else {
         console.error('Post creation failed:', data);
-        alert('Failed to create post: ' + (data.error || 'Unknown error'));
+        setDialogTitle('❌ Post Failed');
+        setDialogMessage(data.error || 'Unknown error occurred. Please try again.');
+        setDialogOpen(true);
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      alert('Failed to create post. Please try again.');
+      setDialogTitle('❌ Error');
+      setDialogMessage('Failed to create post. Please try again.');
+      setDialogOpen(true);
     } finally {
       setPosting(false);
     }
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!confirm('Are you sure you want to delete this post?')) return;
+    setPostToDelete(postId);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeletePost = async () => {
+    if (!postToDelete || !walletAddress) return;
 
     try {
-      const response = await fetch(`/api/social/posts?id=${postId}&wallet=${walletAddress}`, {
+      const response = await fetch(`/api/social/posts?id=${postToDelete}&wallet=${walletAddress}`, {
         method: 'DELETE'
       });
 
       const data = await response.json();
 
       if (data.success) {
-        setPosts(posts.filter(p => p.id !== postId));
-        alert('Post deleted');
+        setPosts(posts.filter(p => p.id !== postToDelete));
+        toast({
+          title: 'Post Deleted',
+          description: 'Your post has been deleted successfully',
+        });
+        setShowDeleteDialog(false);
+        setPostToDelete(null);
+      } else {
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to delete post',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
-      console.error('Error deleting post:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete post. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -245,7 +319,7 @@ export default function SocialFeedPage() {
                         <p className="text-sm font-semibold text-orange-400">
                           Trial Access • {userXP.toLocaleString()} / 1,000 XP
                         </p>
-                        <p className="text-xs text-gray-300">Post freely until you reach 1,000 XP.</p>
+                        <p className="text-xs text-gray-300">After your free post, you won't be able to post again until you reach 1,000 XP.</p>
                       </div>
                     </div>
                     <Link href="/courses">
@@ -275,7 +349,7 @@ export default function SocialFeedPage() {
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
                       placeholder={isTrialUser 
-                        ? "Trial access: you can post until you reach 1,000 XP..."
+                        ? "Trial access: 1 free post, then unlock at 1,000 XP..."
                         : "What's on your mind? Share your Web3 journey, ask questions, or start a discussion..."
                       }
                       className="min-h-[100px] bg-slate-700/50 border-slate-600 text-white resize-none"
@@ -285,7 +359,7 @@ export default function SocialFeedPage() {
                       <div className="text-xs text-gray-400">
                       {newPostContent.length}/{isTrialUser ? 500 : 5000} characters • 
                       {isTrialUser ? (
-                        <span className="text-pink-400 font-semibold ml-1">Trial access until 1,000 XP</span>
+                        <span className="text-pink-400 font-semibold ml-1">1 free post, then unlock at 1,000 XP</span>
                       ) : (
                         <span className="text-cyan-400 ml-1">Earn 1 XP per post</span>
                       )}
@@ -407,12 +481,29 @@ export default function SocialFeedPage() {
                     post={post}
                     currentWallet={walletAddress}
                     onDelete={handleDeletePost}
+                    isAdmin={isAdmin}
                   />
                 ))}
               </div>
             )}
           </main>
         </div>
+
+        {/* Delete Post Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Post</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this post? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeletePost}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Voice Chat Widget */}
         {walletAddress && userXP >= 1000 && (
@@ -421,6 +512,26 @@ export default function SocialFeedPage() {
             userSquad={userSquad || undefined}
           />
         )}
+
+        {/* Dialog Modal */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="bg-slate-800 border-cyan-500/30 text-white">
+            <DialogHeader>
+              <DialogTitle className="text-cyan-400">{dialogTitle}</DialogTitle>
+              <DialogDescription className="text-gray-300 whitespace-pre-line">
+                {dialogMessage}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button 
+                onClick={() => setDialogOpen(false)}
+                className="bg-cyan-600 hover:bg-cyan-700"
+              >
+                OK
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </TokenGate>
   );

@@ -189,17 +189,19 @@ export async function POST(request: NextRequest) {
     let today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Get all XP earned today
+    // Get all XP earned today from ALL activity types
     const { data: todayXP, error: dailyCapError } = await supabase
       .from('user_activity')
       .select('metadata')
       .eq('wallet_address', walletAddress)
-      .eq('activity_type', 'xp_awarded')
+      .in('activity_type', ['xp_awarded', 'daily_login_bonus', 'course_completion', 'xp_bounty', 'bounty_completion'])
       .gte('created_at', today.toISOString());
 
     if (!dailyCapError && todayXP) {
+      // Handle both xp_amount (auto-reward) and xp_awarded (daily login) field names
       const totalXPToday = todayXP.reduce((sum, activity) => {
-        return sum + (activity.metadata?.xp_amount || 0);
+        const xpAmount = activity.metadata?.xp_amount || activity.metadata?.xp_awarded || 0;
+        return sum + xpAmount;
       }, 0);
 
       const xpRemaining = DAILY_XP_CAP - totalXPToday;
@@ -335,11 +337,13 @@ export async function POST(request: NextRequest) {
       .from('user_activity')
       .select('metadata')
       .eq('wallet_address', walletAddress)
-      .eq('activity_type', 'xp_awarded')
+      .in('activity_type', ['xp_awarded', 'daily_login_bonus', 'course_completion', 'xp_bounty', 'bounty_completion'])
       .gte('created_at', today.toISOString());
 
+    // Handle both xp_amount (auto-reward) and xp_awarded (daily login) field names
     const newTotalXPToday = updatedTodayXP?.reduce((sum, activity) => {
-      return sum + (activity.metadata?.xp_amount || 0);
+      const xpAmount = activity.metadata?.xp_amount || activity.metadata?.xp_awarded || 0;
+      return sum + xpAmount;
     }, 0) || 0;
 
     const xpRemainingToday = Math.max(0, DAILY_XP_CAP - newTotalXPToday);
@@ -410,11 +414,13 @@ export async function GET(request: NextRequest) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // Query ALL activity types that award XP
+        // Include: xp_awarded, daily_login_bonus, course_completion, xp_bounty, bounty_completion
         const { data: todayXP, error } = await supabase
           .from('user_activity')
-          .select('metadata, created_at')
+          .select('metadata, created_at, activity_type')
           .eq('wallet_address', walletAddress)
-          .eq('activity_type', 'xp_awarded')
+          .in('activity_type', ['xp_awarded', 'daily_login_bonus', 'course_completion', 'xp_bounty', 'bounty_completion'])
           .gte('created_at', today.toISOString())
           .order('created_at', { ascending: false });
 
@@ -435,8 +441,11 @@ export async function GET(request: NextRequest) {
           });
         }
 
+        // Calculate total XP from all sources
+        // Handle both xp_amount (auto-reward) and xp_awarded (daily login) field names
         const totalXPToday = todayXP?.reduce((sum, activity) => {
-          return sum + (activity.metadata?.xp_amount || 0);
+          const xpAmount = activity.metadata?.xp_amount || activity.metadata?.xp_awarded || 0;
+          return sum + xpAmount;
         }, 0) || 0;
 
         const xpRemaining = Math.max(0, DAILY_XP_CAP - totalXPToday);
@@ -452,9 +461,9 @@ export async function GET(request: NextRequest) {
             capReached: totalXPToday >= DAILY_XP_CAP
           },
           recentActivities: todayXP?.map(activity => ({
-            action: activity.metadata?.action,
-            xpAmount: activity.metadata?.xp_amount,
-            reason: activity.metadata?.reason,
+            action: activity.metadata?.action || activity.activity_type,
+            xpAmount: activity.metadata?.xp_amount || activity.metadata?.xp_awarded || 0,
+            reason: activity.metadata?.reason || activity.metadata?.description || `XP from ${activity.activity_type}`,
             timestamp: activity.created_at
           })).slice(0, 10) || []
         });

@@ -17,6 +17,17 @@ import {
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface UserSubmission {
   id: string;
@@ -85,6 +96,7 @@ interface EnhancedUsersManagerProps {
 }
 
 export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: EnhancedUsersManagerProps) {
+  const { toast } = useToast();
   const [users, setUsers] = useState<EnhancedUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<EnhancedUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,6 +110,9 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
   const [showHiddenUsers, setShowHiddenUsers] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<EnhancedUser | null>(null);
+  const [showHideDialog, setShowHideDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [userToAction, setUserToAction] = useState<EnhancedUser | null>(null);
   const [editForm, setEditForm] = useState({
     display_name: '',
     username: '',
@@ -187,14 +202,12 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
   // Hide user
   const handleHideUser = async (user: EnhancedUser) => {
     if (!walletAddress) return;
+    setUserToAction(user);
+    setShowHideDialog(true);
+  };
 
-    const confirmHide = confirm(
-      `Hide user ${user.displayName}?\n\n` +
-      `The user will be hidden from the user list but their data will be preserved. ` +
-      `You can unhide them later if needed.`
-    );
-
-    if (!confirmHide) return;
+  const confirmHideUser = async () => {
+    if (!walletAddress || !userToAction) return;
 
     try {
       const response = await fetch('/api/admin/users', {
@@ -202,7 +215,7 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           admin_wallet: walletAddress,
-          target_wallet: user.wallet_address,
+          target_wallet: userToAction.wallet_address,
           action: 'hide'
         })
       });
@@ -210,16 +223,28 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Error: ${data.error || 'Failed to hide user'}`);
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to hide user',
+          variant: 'destructive',
+        });
         return;
       }
 
-      alert(`User ${user.displayName} has been hidden`);
+      toast({
+        title: 'User Hidden',
+        description: `User ${userToAction.displayName} has been hidden`,
+      });
       await fetchUsers();
+      setShowHideDialog(false);
+      setUserToAction(null);
 
     } catch (error) {
-      console.error('Error hiding user:', error);
-      alert('Failed to hide user. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to hide user. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -241,35 +266,38 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Error: ${data.error || 'Failed to unhide user'}`);
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to unhide user',
+          variant: 'destructive',
+        });
         return;
       }
 
-      alert(`User ${user.displayName} has been unhidden`);
+      toast({
+        title: 'User Unhidden',
+        description: `User ${user.displayName} has been unhidden`,
+      });
       await fetchUsers();
 
     } catch (error) {
-      console.error('Error unhiding user:', error);
-      alert('Failed to unhide user. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to unhide user. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
   // Delete user permanently
   const handleDeleteUser = async (user: EnhancedUser) => {
     if (!walletAddress) return;
+    setUserToAction(user);
+    setShowDeleteDialog(true);
+  };
 
-    const confirmDelete = confirm(
-      `⚠️ PERMANENT DELETE ⚠️\n\n` +
-      `Are you sure you want to PERMANENTLY delete user ${user.displayName}?\n\n` +
-      `This will permanently remove:\n` +
-      `- User profile and data\n` +
-      `- All submissions and activity\n` +
-      `- XP and progress\n\n` +
-      `This action CANNOT be undone!\n\n` +
-      `Consider hiding the user instead to preserve data.`
-    );
-
-    if (!confirmDelete) return;
+  const confirmDeleteUser = async () => {
+    if (!walletAddress || !userToAction) return;
 
     try {
       const response = await fetch('/api/admin/users', {
@@ -277,7 +305,7 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           admin_wallet: walletAddress,
-          target_wallet: user.wallet_address,
+          target_wallet: userToAction.wallet_address,
           action: 'delete'
         })
       });
@@ -285,16 +313,29 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Error: ${data.error || 'Failed to delete user'}`);
+        toast({
+          title: 'Error',
+          description: data.error || 'Failed to delete user',
+          variant: 'destructive',
+        });
         return;
       }
 
-      alert(`User ${user.displayName} has been permanently deleted`);
+      toast({
+        title: 'User Deleted',
+        description: `User ${userToAction.displayName} has been permanently deleted`,
+        variant: 'destructive',
+      });
       await fetchUsers();
+      setShowDeleteDialog(false);
+      setUserToAction(null);
 
     } catch (error) {
-      console.error('Error deleting user:', error);
-      alert('Failed to delete user. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to delete user. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -1248,6 +1289,52 @@ export function EnhancedUsersManager({ walletAddress, onViewUserSubmissions }: E
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Hide User Confirmation Dialog */}
+      <AlertDialog open={showHideDialog} onOpenChange={setShowHideDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hide User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hide user {userToAction?.displayName}?
+              <br /><br />
+              The user will be hidden from the user list but their data will be preserved.
+              You can unhide them later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmHideUser}>Hide User</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ PERMANENT DELETE ⚠️</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to PERMANENTLY delete user {userToAction?.displayName}?
+              <br /><br />
+              This will permanently remove:
+              <br />- User profile and data
+              <br />- All submissions and activity
+              <br />- XP and progress
+              <br /><br />
+              This action CANNOT be undone!
+              <br /><br />
+              Consider hiding the user instead to preserve data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteUser} className="bg-red-600 hover:bg-red-700">
+              Delete Permanently
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

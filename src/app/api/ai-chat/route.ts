@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk';
+import { createClient } from '@supabase/supabase-js';
 
 // IMPORTANT: Get FREE Groq API key from https://console.groq.com/keys
 // Add to .env.local: GROQ_API_KEY=your-groq-key-here
@@ -18,7 +19,9 @@ if (!groqApiKey) {
   );
 }
 
-const systemPrompt = `You are the Hoodie Academy AI Assistant - a helpful, knowledgeable guide for students learning Web3, Solana, NFTs, and cryptocurrency. You know EVERYTHING about the academy and can answer any questions about how it works.
+// Generate personalized system prompt based on user profile
+function generatePersonalizedSystemPrompt(userProfile: any): string {
+  const basePrompt = `You are the Hoodie Academy AI Assistant - a helpful, knowledgeable guide for students learning Web3, Solana, NFTs, and cryptocurrency. You know EVERYTHING about the academy and can answer any questions about how it works.
 
 === HOODIE ACADEMY OVERVIEW ===
 Hoodie Academy is an elite Web3 education platform with gamified learning. Students connect their Solana wallets, choose a squad, complete courses, earn XP, and participate in bounties to level up their skills and rewards.
@@ -168,6 +171,53 @@ TONE:
 
 Remember: You're not just an AI - you're part of the Hoodie Academy team, helping students become Web3 experts! 🏛️`;
 
+  if (!userProfile) {
+    return basePrompt;
+  }
+
+  // Build personalized context
+  const personalization = `
+=== CURRENT USER CONTEXT ===
+${userProfile.displayName ? `Name: ${userProfile.displayName}` : 'Name: Not set'}
+Level: ${userProfile.level}
+Total XP: ${userProfile.totalXP}
+${userProfile.squad?.name ? `Squad: ${userProfile.squad.name}` : 'Squad: Not assigned'}
+${userProfile.completedCourses?.length > 0 ? `Completed Courses: ${userProfile.completedCourses.join(', ')}` : 'Completed Courses: None yet'}
+${userProfile.badges?.length > 0 ? `Badges: ${userProfile.badges.join(', ')}` : 'Badges: None yet'}
+${userProfile.streak > 0 ? `Login Streak: ${userProfile.streak} days` : ''}
+${userProfile.bio ? `Bio: ${userProfile.bio}` : ''}
+
+=== PERSONALIZATION INSTRUCTIONS ===
+- Address the user by their display name when appropriate
+- Reference their squad when relevant (they're in ${userProfile.squad?.name || 'no squad'})
+- Acknowledge their progress (Level ${userProfile.level}, ${userProfile.totalXP} XP)
+- If they've completed courses, reference them when giving advice
+- Recommend courses relevant to their squad if they're in one
+- Encourage them based on their current level and progress
+- If they haven't completed many courses, gently guide them to get started
+${userProfile.squad?.name ? `- Focus on ${userProfile.squad.name} squad content and courses when relevant` : '- Help them choose a squad if they ask about it'}
+`;
+
+  return basePrompt + personalization;
+}
+
+// Get Supabase client for fetching user profile
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return null;
+  }
+  
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
+
 // Simple in-memory rate limiting (resets on server restart)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT = 100; // Max messages per hour per IP
@@ -209,7 +259,61 @@ export async function POST(req: Request) {
       );
     }
 
-    const { messages } = await req.json();
+    const { messages, walletAddress } = await req.json();
+
+    // Fetch user profile if wallet address is provided
+    let userProfile = null;
+    if (walletAddress) {
+      try {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          // Fetch user data from database
+          const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('wallet_address', walletAddress)
+            .single();
+
+          if (!userError && user) {
+            // Calculate level from XP
+            const level = Math.floor((user.total_xp || 0) / 1000) + 1;
+
+            // Prepare squad data
+            const squadData = user.squad ? {
+              name: user.squad,
+              id: user.squad_id || user.squad,
+              selectedAt: user.squad_selected_at,
+              lockEndDate: user.squad_lock_end_date,
+              changeCount: user.squad_change_count || 0,
+              isLocked: user.squad_lock_end_date ? new Date(user.squad_lock_end_date) > new Date() : false,
+              remainingDays: user.squad_lock_end_date 
+                ? Math.ceil((new Date(user.squad_lock_end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+                : 0
+            } : null;
+
+            userProfile = {
+              displayName: user.display_name,
+              level,
+              totalXP: user.total_xp || 0,
+              streak: user.streak || 0,
+              isAdmin: user.is_admin || false,
+              squad: squadData,
+              hasSquad: !!user.squad,
+              completedCourses: user.completed_courses || [],
+              badges: user.badges || [],
+              bio: user.bio || null,
+              nftCount: user.nft_count || 0
+            };
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user profile for personalization:', error);
+        // Continue without personalization if fetch fails
+      }
+    }
+
+    // Generate personalized system prompt
+    const personalizedSystemPrompt = generatePersonalizedSystemPrompt(userProfile);
 
     // Convert messages to Groq format
     const groqMessages = messages.map((msg: any) => ({
@@ -217,9 +321,9 @@ export async function POST(req: Request) {
       content: msg.content,
     }));
 
-    // Add system message
+    // Add personalized system message
     const allMessages = [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: personalizedSystemPrompt },
       ...groqMessages,
     ];
 

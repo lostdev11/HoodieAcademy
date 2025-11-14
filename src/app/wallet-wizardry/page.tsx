@@ -7,6 +7,7 @@ import Web3 from 'web3';
 import { Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { motion } from 'framer-motion';
 import { LockKeyhole, AlertTriangle, ArrowLeft, CheckCircle, Award, Wallet, BookOpen } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,6 +66,7 @@ const WIFHOODIE_COLLECTION_ADDRESS = "6bRhotj6T2ducLXdMneXCXUYW1ye4bRZCTHatxZKut
 
 
 export default function WalletWizardryPage() {
+  const { toast } = useToast();
   const [tierStatus, setTierStatus] = useState<Array<'locked' | 'unlocked' | 'completed'>>(
     tiers.map((_, index) => (index === 0 ? 'unlocked' : 'locked'))
   );
@@ -200,17 +202,26 @@ export default function WalletWizardryPage() {
           setCourseWalletAlertConfig({ title: successTitle, description: `Successfully connected: ${solAccount.slice(0, 4)}...${solAccount.slice(-4)}` });
 
           if (providerName === 'jup') {
-            setTimeout(() => alert("Simulating Jupiter Swap interaction: You can now trade tokens! (Mock)"), 500);
+            setTimeout(() => {
+              toast({
+                title: 'Jupiter Swap Ready',
+                description: 'Simulating Jupiter Swap interaction: You can now trade tokens! (Mock)',
+              });
+            }, 500);
           }
           if (providerName === 'magic-eden') {
-            setTimeout(() => alert("Simulating Magic Eden interaction: You can now browse NFTs! (Mock)"), 500);
+            setTimeout(() => {
+              toast({
+                title: 'Magic Eden Ready',
+                description: 'Simulating Magic Eden interaction: You can now browse NFTs! (Mock)',
+              });
+            }, 500);
           }
           break;
         default:
           setCourseWalletAlertConfig({ title: "Unsupported Wallet", description: "This wallet provider is not yet supported." });
       }
     } catch (error: any) {
-      console.error("Course wallet connection error:", error);
       let description = `Failed to connect ${providerName}. Please try again.`;
       if (error.code === 4001 || error.message?.includes('User rejected the request')) {
           description = 'Connection request rejected. Please approve in your wallet.';

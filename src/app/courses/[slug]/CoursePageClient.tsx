@@ -71,6 +71,8 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
   const [previewRequirementStatus, setPreviewRequirementStatus] = useState<'loading' | 'unlocked' | 'locked'>(
     requiresPreviewUnlock ? 'loading' : 'unlocked'
   );
+  const [previewSubmissionId, setPreviewSubmissionId] = useState<string | null>(null);
+  const [hasAuthenticatedUser, setHasAuthenticatedUser] = useState(false);
   const [activeModule, setActiveModule] = useState(0);
   const [activeLesson, setActiveLesson] = useState(0);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
@@ -82,6 +84,7 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
   useEffect(() => {
     if (!requiresPreviewUnlock) {
       setPreviewRequirementStatus('unlocked');
+      setPreviewSubmissionId(null);
       return;
     }
 
@@ -92,6 +95,7 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
     const stored = window.localStorage.getItem('hoodie_preview_submission');
     if (!stored) {
       setPreviewRequirementStatus('locked');
+      setPreviewSubmissionId(null);
       return;
     }
 
@@ -101,17 +105,88 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
         lastName?: string;
         email?: string | null;
         walletAddress?: string | null;
+        submissionId?: string | null;
       };
 
       const hasNames = Boolean(parsed?.firstName?.trim()) && Boolean(parsed?.lastName?.trim());
-      const hasContact = Boolean(parsed?.email?.trim()) || Boolean(parsed?.walletAddress?.trim());
+      const emailValue = parsed?.email?.trim() || null;
+      const walletValue = parsed?.walletAddress?.trim() || null;
+      const hasContact = Boolean(emailValue) || Boolean(walletValue);
+      const submissionId =
+        typeof parsed?.submissionId === 'string' && parsed?.submissionId.length > 0
+          ? parsed.submissionId
+          : null;
 
-      setPreviewRequirementStatus(hasNames && hasContact ? 'unlocked' : 'locked');
+      if (hasNames && hasContact) {
+        setPreviewRequirementStatus('unlocked');
+        if (submissionId) {
+          setPreviewSubmissionId(submissionId);
+        } else if (emailValue || walletValue) {
+          (async () => {
+            try {
+              const params = new URLSearchParams();
+              if (emailValue) params.set('email', emailValue);
+              if (walletValue) params.set('wallet_address', walletValue);
+
+              const response = await fetch(`/api/preview/lookup?${params.toString()}`);
+              if (!response.ok) {
+                console.warn('CoursePageClient: Failed to lookup preview submission id', await response.text());
+                setPreviewSubmissionId(null);
+                return;
+              }
+
+              const payload = await response.json();
+              const lookedUpId: string | null = payload?.submission?.id ?? null;
+
+              if (lookedUpId) {
+                setPreviewSubmissionId(lookedUpId);
+                window.localStorage.setItem('hoodie_preview_submission', JSON.stringify({
+                  ...parsed,
+                  submissionId: lookedUpId,
+                }));
+              } else {
+                setPreviewSubmissionId(null);
+              }
+            } catch (lookupError) {
+              console.error('CoursePageClient: Error looking up preview submission id', lookupError);
+              setPreviewSubmissionId(null);
+            }
+          })();
+        } else {
+          setPreviewSubmissionId(null);
+        }
+      } else {
+        setPreviewRequirementStatus('locked');
+        setPreviewSubmissionId(null);
+      }
     } catch (error) {
       console.warn('CoursePageClient: Failed to parse preview submission cache', error);
       setPreviewRequirementStatus('locked');
+      setPreviewSubmissionId(null);
     }
   }, [requiresPreviewUnlock]);
+
+  useEffect(() => {
+    if (!requiresPreviewUnlock) {
+      return;
+    }
+
+    supabase.auth.getUser()
+      .then(({ data: { user }, error }) => {
+        if (error) {
+          console.error('CoursePageClient: Error checking authenticated user for preview unlock:', error);
+          return;
+        }
+
+        if (user) {
+          setHasAuthenticatedUser(true);
+          setPreviewRequirementStatus('unlocked');
+        }
+      })
+      .catch((err) => {
+        console.error('CoursePageClient: Unexpected error verifying authenticated user:', err);
+      });
+  }, [requiresPreviewUnlock, supabase]);
 
   // Debug logging
   useEffect(() => {
@@ -213,33 +288,56 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
         if (userError) {
           console.error('CoursePageClient: Error getting user:', userError);
         }
+
+        setHasAuthenticatedUser(Boolean(user));
         
-        if (!user) { 
-          console.log('CoursePageClient: No user found, setting empty completed lessons');
-          setCompletedLessons([]); 
-          setLoadingProgress(false); 
-          clearTimeout(timeoutId);
-          return; 
-        }
+        if (user) {
+          console.log('CoursePageClient: User found:', user.id);
+          console.log('CoursePageClient: Fetching progress for course:', course.id);
 
-        console.log('CoursePageClient: User found:', user.id);
-        console.log('CoursePageClient: Fetching progress for course:', course.id);
+          const { data, error } = await supabase
+            .from("course_progress")
+            .select("completed_lessons")
+            .eq("user_id", user.id)
+            .eq("course_id", course.id)
+            .maybeSingle();
 
-        const { data, error } = await supabase
-          .from("course_progress")
-          .select("completed_lessons")
-          .eq("user_id", user.id)
-          .eq("course_id", course.id)
-          .maybeSingle();
+          if (!mounted) return;
+          
+          if (error) {
+            console.error("CoursePageClient: Load progress error:", error);
+            setCompletedLessons([]);
+          } else {
+            console.log('CoursePageClient: Progress data loaded:', data);
+            setCompletedLessons(Array.isArray(data?.completed_lessons) ? data!.completed_lessons : []);
+          }
+        } else if (requiresPreviewUnlock && previewSubmissionId) {
+          console.log('CoursePageClient: Loading preview submission progress', {
+            submissionId: previewSubmissionId,
+            courseId: course.id,
+          });
 
-        if (!mounted) return;
-        
-        if (error) {
-          console.error("CoursePageClient: Load progress error:", error);
-          setCompletedLessons([]);
+          try {
+            const response = await fetch(`/api/preview/progress?submission_id=${previewSubmissionId}&course_id=${course.id}`);
+            if (response.ok) {
+              const payload = await response.json();
+              const previewProgress = payload?.progress;
+              setCompletedLessons(
+                Array.isArray(previewProgress?.completed_lessons)
+                  ? previewProgress.completed_lessons
+                  : []
+              );
+            } else {
+              console.error('CoursePageClient: Failed to load preview progress', await response.text());
+              setCompletedLessons([]);
+            }
+          } catch (fetchError) {
+            console.error('CoursePageClient: Error fetching preview progress', fetchError);
+            setCompletedLessons([]);
+          }
         } else {
-          console.log('CoursePageClient: Progress data loaded:', data);
-          setCompletedLessons(Array.isArray(data?.completed_lessons) ? data!.completed_lessons : []);
+          console.log('CoursePageClient: No authenticated user or preview submission. Defaulting progress to empty.');
+          setCompletedLessons([]);
         }
       } catch (err) {
         console.error('CoursePageClient: Unexpected error loading progress:', err);
@@ -258,7 +356,7 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
       mounted = false; 
       clearTimeout(timeoutId);
     };
-  }, [course?.id, course?.modules, supabase, previewRequirementStatus]);
+  }, [course?.id, course?.modules, supabase, previewRequirementStatus, requiresPreviewUnlock, previewSubmissionId]);
 
   // Real-time subscription for course progress
   useEffect(() => {
@@ -294,7 +392,7 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
 
   // Award XP when course is completed
   useEffect(() => {
-    if (previewRequirementStatus !== 'unlocked') {
+    if (!hasAuthenticatedUser) {
       return;
     }
 
@@ -310,7 +408,7 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
       // Award XP for course completion
       completeCourse(course.id, 100);
     }
-  }, [completedLessons, course, completeCourse, previewRequirementStatus]);
+  }, [completedLessons, course, completeCourse, hasAuthenticatedUser]);
 
   const currentModule = course?.modules?.[activeModule];
   const currentLesson = currentModule?.lessons?.[activeLesson];
@@ -321,7 +419,11 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
 
   const markLessonComplete = async (lessonId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { return; }
+    setHasAuthenticatedUser(Boolean(user));
+
+    if (!user && !(requiresPreviewUnlock && previewSubmissionId)) {
+      return;
+    }
 
     const newCompleted = completedLessons.includes(lessonId)
       ? completedLessons.filter(id => id !== lessonId)
@@ -329,20 +431,39 @@ export default function CoursePageClient({ course }: CoursePageClientProps) {
 
     setCompletedLessons(newCompleted); // optimistic UI
 
-    // Upsert into course_progress
-    const { error } = await supabase
-      .from("course_progress")
-      .upsert({
-        user_id: user.id,
-        course_id: course.id,
-        completed_lessons: newCompleted,
-        updated_at: new Date().toISOString(),
-      });
+    if (user) {
+      const { error } = await supabase
+        .from("course_progress")
+        .upsert({
+          user_id: user.id,
+          course_id: course.id,
+          completed_lessons: newCompleted,
+          updated_at: new Date().toISOString(),
+        });
 
-    if (error) {
-      console.error("save progress error:", error);
-      // Optional: rollback UI if you want
-      // setCompletedLessons(prev => completedLessons);
+      if (error) {
+        console.error("save progress error:", error);
+      }
+    } else if (requiresPreviewUnlock && previewSubmissionId) {
+      const percentValue = totalLessons > 0 ? Math.min(100, Math.max(0, (newCompleted.length / totalLessons) * 100)) : 0;
+      try {
+        const response = await fetch('/api/preview/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            submission_id: previewSubmissionId,
+            course_id: course.id,
+            completed_lessons: newCompleted,
+            percent: percentValue,
+          }),
+        });
+
+        if (!response.ok) {
+          console.error('CoursePageClient: Failed to save preview progress', await response.text());
+        }
+      } catch (error) {
+        console.error('CoursePageClient: Error saving preview progress', error);
+      }
     }
   };
 

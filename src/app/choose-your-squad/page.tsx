@@ -9,6 +9,7 @@ import { ArrowLeft, Target, Users, Trophy, CheckCircle, ArrowRight, Clock, Alert
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -115,6 +116,7 @@ const squads: SquadInfo[] = [
 ];
 
 export default function ChooseYourSquadPage() {
+  const { toast } = useToast();
   const [selectedSquad, setSelectedSquad] = useState<SquadInfo | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [currentSquad, setCurrentSquad] = useState<SquadInfo | null>(null);
@@ -298,7 +300,10 @@ export default function ChooseYourSquadPage() {
       }));
       
       // Show success message
-      alert(`🎉 Success! You've joined ${selectedSquad.name}!\n\n✅ Squad saved to database\n🎯 +30 XP for joining a squad\n🔒 Locked for 30 days\n\nYour squad selection is now active!`);
+        toast({
+          title: 'Squad Joined!',
+          description: `You've joined ${selectedSquad.name}! Squad saved to database, +30 XP for joining a squad, locked for 30 days. Your squad selection is now active!`,
+        });
       
       // Scroll to top to show the updated squad card
       window.scrollTo({ top: 0, behavior: 'smooth' });

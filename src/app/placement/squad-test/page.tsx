@@ -1022,7 +1022,7 @@ export default function SquadTestPage() {
                 } else {
                   console.log('Cannot see results yet - not all questions answered');
                   // Show helpful message to user
-                  alert('Please answer all questions before viewing results.');
+                  // Toast will be shown by parent component if needed
                 }
               } catch (error) {
                 console.error('Error in See Results button click:', error);

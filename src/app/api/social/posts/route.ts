@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkAdminStatus } from '@/lib/admin-utils';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -219,6 +220,56 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseClient();
 
+    // Check if user has already made their first post
+    const { data: existingPosts, error: postsError } = await supabase
+      .from('social_posts')
+      .select('id')
+      .eq('wallet_address', walletAddress)
+      .limit(1);
+
+    if (postsError) {
+      console.error('Error checking existing posts:', postsError);
+      // Continue if error is non-critical (e.g., table doesn't exist yet)
+    }
+
+    // If user has made at least one post, check their XP
+    if (existingPosts && existingPosts.length > 0) {
+      // Get user's XP from user_xp table (preferred) or users table (fallback)
+      const { data: userXP, error: xpError } = await supabase
+        .from('user_xp')
+        .select('total_xp')
+        .eq('wallet_address', walletAddress)
+        .maybeSingle();
+
+      let totalXP = 0;
+      
+      if (userXP) {
+        totalXP = userXP.total_xp || 0;
+      } else if (!xpError) {
+        // Fallback to users table if user_xp doesn't exist
+        const { data: userData } = await supabase
+          .from('users')
+          .select('total_xp')
+          .eq('wallet_address', walletAddress)
+          .maybeSingle();
+        
+        totalXP = userData?.total_xp || 0;
+      }
+
+      // Require 1000 XP to make another post
+      if (totalXP < 1000) {
+        return NextResponse.json(
+          { 
+            error: 'You need at least 1000 XP to make another post. Keep earning XP to unlock more posts!',
+            requiresXP: true,
+            currentXP: totalXP,
+            requiredXP: 1000
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Check if user exists, create if they don't
     let user;
     let userError;
@@ -393,7 +444,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * DELETE /api/social/posts?id={postId}&wallet={walletAddress}
- * Delete a post (only author can delete)
+ * Delete a post (only author or admin can delete)
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -410,7 +461,7 @@ export async function DELETE(request: NextRequest) {
 
     const supabase = getSupabaseClient();
 
-    // Verify ownership
+    // Get post to check ownership
     const { data: post, error: fetchError } = await supabase
       .from('social_posts')
       .select('wallet_address')
@@ -424,9 +475,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    if (post.wallet_address !== walletAddress) {
+    // Check if user is admin
+    const isAdmin = await checkAdminStatus(walletAddress);
+    
+    // Allow deletion if user is the author OR an admin
+    if (post.wallet_address !== walletAddress && !isAdmin) {
       return NextResponse.json(
-        { error: 'Unauthorized: You can only delete your own posts' },
+        { error: 'Unauthorized: You can only delete your own posts or must be an admin' },
         { status: 403 }
       );
     }

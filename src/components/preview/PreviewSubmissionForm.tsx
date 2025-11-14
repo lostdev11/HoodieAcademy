@@ -63,6 +63,8 @@ export default function PreviewSubmissionForm() {
         throw new Error(data.error || 'Failed to submit');
       }
 
+      const submissionId: string | undefined = data?.submission?.id;
+
       if (typeof window !== 'undefined') {
         const submissionRecord = {
           firstName: trimmedFirstName,
@@ -70,6 +72,7 @@ export default function PreviewSubmissionForm() {
           email: trimmedEmail || null,
           walletAddress: trimmedWallet || null,
           submittedAt: new Date().toISOString(),
+          submissionId: submissionId || null,
         };
         localStorage.setItem('hoodie_preview_submission', JSON.stringify(submissionRecord));
       }
