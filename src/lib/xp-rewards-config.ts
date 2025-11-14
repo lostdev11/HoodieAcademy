@@ -1,6 +1,14 @@
 /**
  * XP Rewards Configuration System
  * Centralized configuration for automatic XP awards across the platform
+ * 
+ * IMPORTANT: The bounty-xp-service.ts implementation is the active XP system.
+ * This config file mirrors those values to maintain consistency across the codebase.
+ * 
+ * Bounty XP System (source of truth: src/services/bounty-xp-service.ts):
+ * - Participation: 10 XP per submission (max 3 submissions = 30 XP per bounty)
+ * - Winner bonuses: 1st = 250 XP, 2nd = 100 XP, 3rd = 50 XP
+ * - Level threshold: 1000 XP per level
  */
 
 export interface XPRewardConfig {
@@ -17,6 +25,20 @@ export interface XPRewardConfig {
  * XP Reward Action Types
  * Add new action types here as you expand the system
  */
+/**
+ * Bounty XP Constants (matching bounty-xp-service.ts)
+ * These constants are exported for reference but the service is the source of truth
+ */
+export const BOUNTY_XP_CONSTANTS = {
+  PARTICIPATION_XP: 10,
+  MAX_SUBMISSIONS_PER_BOUNTY: 3,
+  MAX_PARTICIPATION_XP: 30, // 10 XP × 3 submissions
+  WINNER_FIRST: 250,
+  WINNER_SECOND: 100,
+  WINNER_THIRD: 50,
+  LEVEL_THRESHOLD: 1000 // XP per level
+} as const;
+
 export const XP_REWARDS: Record<string, XPRewardConfig> = {
   // ===== FEEDBACK & CONTRIBUTIONS =====
   FEEDBACK_SUBMITTED: {
@@ -87,27 +109,36 @@ export const XP_REWARDS: Record<string, XPRewardConfig> = {
   },
 
   // ===== BOUNTIES =====
+  // NOTE: Bounty XP values match bounty-xp-service.ts (source of truth)
   BOUNTY_SUBMITTED: {
     action: 'bounty_submitted',
-    xpAmount: 15,
+    xpAmount: 10, // Participation XP per submission
     category: 'contribution',
-    description: 'Submitting a bounty',
+    description: 'Submitting a bounty submission',
     enabled: true
   },
   
-  BOUNTY_APPROVED: {
-    action: 'bounty_approved',
-    xpAmount: 200,
+  BOUNTY_WINNER_FIRST: {
+    action: 'bounty_winner_first',
+    xpAmount: 250,
     category: 'achievement',
-    description: 'Bounty submission approved',
+    description: 'Winning 1st place in a bounty competition',
     enabled: true
   },
   
-  BOUNTY_WINNER: {
-    action: 'bounty_winner',
-    xpAmount: 500,
+  BOUNTY_WINNER_SECOND: {
+    action: 'bounty_winner_second',
+    xpAmount: 100,
     category: 'achievement',
-    description: 'Winning a bounty competition',
+    description: 'Winning 2nd place in a bounty competition',
+    enabled: true
+  },
+  
+  BOUNTY_WINNER_THIRD: {
+    action: 'bounty_winner_third',
+    xpAmount: 50,
+    category: 'achievement',
+    description: 'Winning 3rd place in a bounty competition',
     enabled: true
   },
 

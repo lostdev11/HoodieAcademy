@@ -18,10 +18,12 @@ export const XP_REWARDS = {
   COURSE_SECTION_COMPLETION: 20,
   EXAM_PASS: 150,
   
-  // Bounty activities
-  BOUNTY_SUBMISSION: 50,
-  BOUNTY_APPROVED: 200,
-  BOUNTY_WINNER: 500,
+  // Bounty activities (matching bounty-xp-service.ts)
+  // NOTE: The bounty-xp-service.ts is the source of truth for bounty XP values
+  BOUNTY_SUBMISSION: 10, // Participation XP per submission (max 3 = 30 XP per bounty)
+  BOUNTY_WINNER_FIRST: 250, // 1st place bonus
+  BOUNTY_WINNER_SECOND: 100, // 2nd place bonus
+  BOUNTY_WINNER_THIRD: 50, // 3rd place bonus
   
   // Mentorship activities
   ATTEND_SESSION: 75,
@@ -110,26 +112,30 @@ export async function awardCourseCompletionXP(
 }
 
 /**
- * Award XP for bounty approval
+ * Award XP for bounty winner placement
+ * NOTE: Use bounty-xp-service.ts for actual bounty XP awards (this is legacy)
+ * @param placement - 'first', 'second', or 'third'
  */
-export async function awardBountyApprovalXP(
+export async function awardBountyWinnerXP(
   walletAddress: string,
   bountyId: string,
   bountyTitle: string,
-  isWinner: boolean = false
+  placement: 'first' | 'second' | 'third'
 ): Promise<boolean> {
-  const xpAmount = isWinner 
-    ? XP_REWARDS.BOUNTY_WINNER 
-    : XP_REWARDS.BOUNTY_APPROVED;
+  const xpAmount = placement === 'first' 
+    ? XP_REWARDS.BOUNTY_WINNER_FIRST
+    : placement === 'second'
+    ? XP_REWARDS.BOUNTY_WINNER_SECOND
+    : XP_REWARDS.BOUNTY_WINNER_THIRD;
 
   return awardXP({
     wallet_address: walletAddress,
     xp_amount: xpAmount,
-    activity_type: isWinner ? 'bounty_winner' : 'bounty_approved',
+    activity_type: `bounty_winner_${placement}`,
     metadata: {
       bounty_id: bountyId,
       bounty_title: bountyTitle,
-      is_winner: isWinner,
+      placement,
       xp_type: 'bounty'
     }
   });

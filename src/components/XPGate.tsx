@@ -157,7 +157,7 @@ export default function XPGate({
                 <Trophy className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-white font-semibold">Submit Bounties</p>
-                  <p className="text-gray-400">15-500 XP per bounty</p>
+                  <p className="text-gray-400">10-280 XP per bounty</p>
                 </div>
               </div>
               <div className="flex items-start space-x-2">

@@ -1268,7 +1268,7 @@ const SocialFeedPreview = memo(function SocialFeedPreview({ stats, walletAddress
                     <div className="bg-slate-700/50 rounded p-3 text-left">
                       <Trophy className="w-4 h-4 text-yellow-400 mb-1" />
                       <p className="text-white font-semibold">Bounties</p>
-                      <p className="text-gray-400">15-500 XP</p>
+                      <p className="text-gray-400">10-280 XP</p>
                     </div>
                   </div>
 
