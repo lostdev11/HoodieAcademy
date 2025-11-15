@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trophy, Users, TrendingUp, Activity, Crown, Target } from 'lucide-react';
 import { useSquadRankings } from '@/hooks/useSquadTracking';
 import { Progress } from '@/components/ui/progress';
+import { getSquadBadgeImage } from '@/lib/squad-utils';
 
 interface SquadRankingsCardProps {
   highlightSquad?: string;
@@ -139,6 +141,7 @@ export default function SquadRankingsCard({ highlightSquad, compact = false }: S
         {/* Rankings */}
         <div className="space-y-2">
           {rankings.map((squad) => {
+            const badgeSrc = getSquadBadgeImage(squad.squad);
             const value = 
               metric === 'xp' ? squad.totalXP :
               metric === 'members' ? squad.totalMembers :
@@ -182,7 +185,20 @@ export default function SquadRankingsCard({ highlightSquad, compact = false }: S
                     {/* Squad Name */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
-                        <span className="text-lg">{squad.emoji}</span>
+                        {badgeSrc ? (
+                          <div className="relative w-10 h-10 flex-shrink-0">
+                            <Image
+                              src={badgeSrc}
+                              alt={`${squad.squad} badge`}
+                              fill
+                              sizes="40px"
+                              className="object-contain drop-shadow-md"
+                              priority={squad.rank <= 3}
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-lg">{squad.emoji}</span>
+                        )}
                         <span className={`font-semibold truncate ${
                           isHighlighted ? 'text-cyan-300' : 'text-white'
                         }`}>

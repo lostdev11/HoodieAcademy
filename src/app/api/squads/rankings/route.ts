@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { OFFICIAL_SQUADS, buildSquadFilterClauses, getSquadEmoji } from '@/lib/squad-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,8 +19,6 @@ function getSupabaseClient() {
     }
   });
 }
-
-const SQUAD_NAMES = ['Creators', 'Decoders', 'Speakers', 'Raiders', 'Rangers'];
 
 /**
  * GET /api/squads/rankings
@@ -46,12 +45,14 @@ export async function GET(request: NextRequest) {
     }
 
     const squadRankings = await Promise.all(
-      SQUAD_NAMES.map(async (squadName) => {
+      OFFICIAL_SQUADS.map(async (squadName) => {
+        const filterClauses = buildSquadFilterClauses(squadName);
+
         // Get all members of this squad
         const { data: members } = await supabase
           .from('users')
           .select('wallet_address, created_at, last_active')
-          .eq('squad', squadName);
+          .or(filterClauses.join(','));
 
         const memberCount = members?.length || 0;
         const walletAddresses = members?.map(m => m.wallet_address) || [];
@@ -142,8 +143,8 @@ export async function GET(request: NextRequest) {
         totalUsers,
         totalXP,
         totalActiveUsers: totalActive,
-        totalSquads: SQUAD_NAMES.length,
-        avgUsersPerSquad: Math.round(totalUsers / SQUAD_NAMES.length),
+        totalSquads: OFFICIAL_SQUADS.length,
+        avgUsersPerSquad: OFFICIAL_SQUADS.length > 0 ? Math.round(totalUsers / OFFICIAL_SQUADS.length) : 0,
         mostPopularSquad: rankedSquads.reduce((prev, current) => 
           current.totalMembers > prev.totalMembers ? current : prev
         , rankedSquads[0]),
@@ -159,16 +160,5 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-function getSquadEmoji(squadName: string): string {
-  const emojiMap: { [key: string]: string } = {
-    'Creators': '🎨',
-    'Decoders': '🧠',
-    'Speakers': '🎤',
-    'Raiders': '⚔️',
-    'Rangers': '🦅'
-  };
-  return emojiMap[squadName] || '🏆';
 }
 

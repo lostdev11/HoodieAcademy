@@ -392,7 +392,7 @@ export default function SquadChatClient({ params }: PageProps) {
                   variant="outline"
                   className="border-cyan-500/30 text-cyan-400 hover:text-cyan-300"
                 >
-                  <Link href="/choose-your-squad">
+                  <Link href="https://hoodieacademy.com/choose-your-squad">
                     {userSquad ? 'Change Squad' : 'Choose Squad'}
                   </Link>
                 </Button>
@@ -483,7 +483,7 @@ export default function SquadChatClient({ params }: PageProps) {
                 </Button>
                 
                 <Button asChild variant="outline" className="w-full border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/20">
-                  <Link href="/choose-your-squad">
+                  <Link href="https://hoodieacademy.com/choose-your-squad">
                     Choose Your Squad
                   </Link>
                 </Button>

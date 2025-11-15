@@ -126,7 +126,7 @@ export default function OnboardingFlow() {
             asChild
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
           >
-            <Link href="/choose-your-squad">
+            <Link href="https://hoodieacademy.com/choose-your-squad">
               Choose Your Squad
               <ArrowRight className="w-4 h-4 ml-2" />
             </Link>

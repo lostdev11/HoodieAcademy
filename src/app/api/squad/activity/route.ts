@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { buildSquadFilterClauses, normalizeSquadName } from '@/lib/squad-utils';
 
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -40,6 +41,9 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = getSupabaseClient();
+    const canonicalSquad = squad ? normalizeSquadName(squad) : null;
+    const squadLabel = canonicalSquad || squad || 'Unassigned';
+    const filterClauses = buildSquadFilterClauses(squadLabel);
 
     // Calculate date range based on period
     const now = new Date();
@@ -63,8 +67,8 @@ export async function GET(request: NextRequest) {
     // 1. Get all squad members
     const { data: members, error: membersError } = await supabase
       .from('users')
-      .select('wallet_address, display_name, total_xp, level, streak, is_admin, last_active, created_at')
-      .eq('squad', squad);
+      .select('wallet_address, display_name, total_xp, level, streak, is_admin, last_active, created_at, squad')
+      .or(filterClauses.join(','));
 
     if (membersError) {
       console.error('Error fetching squad members:', membersError);
@@ -203,14 +207,15 @@ export async function GET(request: NextRequest) {
     // 11. Squad rankings (compared to other squads)
     const { data: allUsers } = await supabase
       .from('users')
-      .select('squad, total_xp')
-      .not('squad', 'is', null);
+      .select('squad, total_xp');
 
     const squadXPMap: Record<string, number> = {};
     allUsers?.forEach(user => {
-      if (user.squad) {
-        squadXPMap[user.squad] = (squadXPMap[user.squad] || 0) + (user.total_xp || 0);
+      const canonical = normalizeSquadName(user.squad);
+      if (!canonical || canonical === 'Unassigned') {
+        return;
       }
+      squadXPMap[canonical] = (squadXPMap[canonical] || 0) + (user.total_xp || 0);
     });
 
     const squadRankings = Object.entries(squadXPMap)
@@ -227,7 +232,7 @@ export async function GET(request: NextRequest) {
     const response: any = {
       success: true,
       squad: {
-        name: squad,
+        name: squadLabel,
         rank: currentSquadRank,
         totalRanks: squadRankings.length
       },

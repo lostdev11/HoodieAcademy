@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
+import { getSquadBadgeImage } from '@/lib/squad-utils';
 
 interface SquadBadgeProps {
   squad: string;
@@ -153,16 +154,7 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
   
   const normalizedSquad = normalizeSquadName(squad);
   
-  const badgeMap: Record<string, string> = {
-    Creators: '/badges/badge_creators.png',
-    Decoders: '/badges/badge_decoders.png',
-    Raiders: '/badges/badge_raiders.png',
-    Speakers: '/badges/badge_speakers.png',
-    Rangers: '/badges/badge_ranger.png',
-    Unassigned: '', // No image badge for unassigned - use fallback with logo
-  };
-
-  const badgePath = badgeMap[normalizedSquad];
+  const badgePath = getSquadBadgeImage(normalizedSquad);
   
   // Always use fallback (with logo) for Unassigned or if no badge path found
   if (normalizedSquad === 'Unassigned' || !badgePath) {

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { getSquadEmoji, normalizeSquadName } from '@/lib/squad-utils';
 
 export const dynamic = 'force-dynamic';
 
-function getSupabaseClient() {
+type Database = Record<string, never>;
+
+function getSupabaseClient(): SupabaseClient<Database> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
@@ -11,12 +14,43 @@ function getSupabaseClient() {
     throw new Error('Supabase configuration missing');
   }
   
-  return createClient(supabaseUrl, supabaseServiceKey, {
+  return createClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
     }
   });
+}
+
+async function fetchUserXpMap(
+  supabase: SupabaseClient<Database>,
+  walletAddresses: string[]
+) {
+  const uniqueWallets = Array.from(new Set(walletAddresses)).filter(Boolean);
+
+  if (uniqueWallets.length === 0) {
+    return new Map<string, { totalXP: number; level: number }>();
+  }
+
+  const { data, error } = await supabase
+    .from('user_xp')
+    .select('wallet_address, total_xp, level')
+    .in('wallet_address', uniqueWallets);
+
+  if (error) {
+    console.error('❌ [Squad Leaderboard] Failed to fetch user_xp fallback data:', error);
+    return new Map();
+  }
+
+  return new Map(
+    data?.map((row) => [
+      row.wallet_address,
+      {
+        totalXP: row.total_xp || 0,
+        level: row.level || 1
+      }
+    ]) ?? []
+  );
 }
 
 /**
@@ -34,16 +68,49 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabaseClient();
 
+    const USERS_SELECT =
+      'wallet_address, display_name, squad, total_xp, level, last_active';
+    const USERS_FALLBACK_SELECT =
+      'wallet_address, display_name, squad, last_active';
+    let xpColumnsAvailable = true;
+
     // Get all users with squads
     // Use a more permissive query to catch all users, then filter in memory
-    const { data: allUsers, error } = await supabase
+    let { data: allUsers, error } = await supabase
       .from('users')
-      .select('wallet_address, display_name, squad, total_xp, level, last_active');
+      .select(USERS_SELECT);
 
     if (error) {
-      console.error('Error fetching users:', error);
+      console.warn(
+        '⚠️ [Squad Leaderboard] Failed to fetch total_xp/level from users table, falling back to user_xp:',
+        error?.message || error
+      );
+      xpColumnsAvailable = false;
+      const fallbackResponse = await supabase
+        .from('users')
+        .select(USERS_FALLBACK_SELECT);
+
+      if (fallbackResponse.error) {
+        console.error(
+          '❌ [Squad Leaderboard] Fallback users query failed:',
+          fallbackResponse.error
+        );
+        return NextResponse.json(
+          {
+            error: 'Failed to fetch squad data',
+            details: fallbackResponse.error.message
+          },
+          { status: 500 }
+        );
+      }
+
+      allUsers = fallbackResponse.data;
+    }
+
+    if (!allUsers) {
+      console.error('❌ [Squad Leaderboard] No user records returned from Supabase');
       return NextResponse.json(
-        { error: 'Failed to fetch squad data', details: error.message },
+        { error: 'Failed to fetch squad data', details: error?.message },
         { status: 500 }
       );
     }
@@ -57,15 +124,41 @@ export async function GET(request: NextRequest) {
 
     console.log(`📊 [Squad Leaderboard] Found ${users.length} users with squads out of ${allUsers?.length || 0} total users`);
 
+    let xpMap = new Map<string, { totalXP: number; level: number }>();
+
+    if (!xpColumnsAvailable && users.length > 0) {
+      xpMap = await fetchUserXpMap(
+        supabase,
+        users.map((user) => user.wallet_address)
+      );
+    }
+
+    const resolveUserTotalXP = (user: any) => {
+      if (xpColumnsAvailable) {
+        return user.total_xp || 0;
+      }
+      return xpMap.get(user.wallet_address)?.totalXP || 0;
+    };
+
+    const resolveUserLevel = (user: any) => {
+      if (xpColumnsAvailable) {
+        return user.level || 1;
+      }
+      return xpMap.get(user.wallet_address)?.level || 1;
+    };
+
     // Group by squad and calculate stats
     const squadStatsMap: Record<string, any> = {};
 
     users?.forEach(user => {
-      if (!user.squad) return;
+      const canonicalSquad = normalizeSquadName(user.squad);
+      if (!canonicalSquad || canonicalSquad === 'Unassigned') {
+        return;
+      }
 
-      if (!squadStatsMap[user.squad]) {
-        squadStatsMap[user.squad] = {
-          name: user.squad,
+      if (!squadStatsMap[canonicalSquad]) {
+        squadStatsMap[canonicalSquad] = {
+          name: canonicalSquad,
           totalXP: 0,
           memberCount: 0,
           activeMembers: 0,
@@ -75,10 +168,13 @@ export async function GET(request: NextRequest) {
         };
       }
 
-      const squad = squadStatsMap[user.squad];
-      squad.totalXP += user.total_xp || 0;
+      const squad = squadStatsMap[canonicalSquad];
+      const totalXP = resolveUserTotalXP(user);
+      const level = resolveUserLevel(user);
+
+      squad.totalXP += totalXP;
       squad.memberCount += 1;
-      squad.totalLevels += user.level || 1;
+      squad.totalLevels += level;
 
       // Check if active (within last 7 days)
       if (user.last_active) {
@@ -93,8 +189,8 @@ export async function GET(request: NextRequest) {
         squad.members.push({
           walletAddress: user.wallet_address,
           displayName: user.display_name || `User ${user.wallet_address.slice(0, 6)}...`,
-          totalXP: user.total_xp || 0,
-          level: user.level || 1,
+          totalXP,
+          level,
           streak: (user as any).streak || 0 // streak may not exist in all schemas
         });
       }
@@ -115,6 +211,7 @@ export async function GET(request: NextRequest) {
       averageLevel: squad.memberCount > 0 
         ? Math.round(squad.totalLevels / squad.memberCount) 
         : 0,
+      emoji: getSquadEmoji(squad.name),
       topMembers: includeMembers 
         ? squad.members.sort((a: any, b: any) => b.totalXP - a.totalXP).slice(0, 5)
         : undefined

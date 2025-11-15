@@ -1,0 +1,26 @@
+<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="decoders-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C7CCD6"/>
+      <stop offset="100%" stop-color="#8B92A3"/>
+    </linearGradient>
+    <linearGradient id="decoders-glow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#BAC2D1" stop-opacity="0.5"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="160" rx="28" fill="#16171A"/>
+  <rect x="6" y="6" width="148" height="148" rx="24" fill="#1F2430" stroke="#5E687A" stroke-width="2"/>
+  <circle cx="80" cy="70" r="46" fill="url(#decoders-bg)" stroke="#E5E9F1" stroke-width="3"/>
+  <path d="M50 70h20l10 18h20l10-18h20" fill="none" stroke="#14161B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="50" cy="70" r="6" fill="#13C2C2"/>
+  <circle cx="70" cy="70" r="6" fill="#13C2C2"/>
+  <circle cx="90" cy="88" r="6" fill="#13C2C2"/>
+  <circle cx="110" cy="70" r="6" fill="#13C2C2"/>
+  <circle cx="130" cy="70" r="6" fill="#13C2C2"/>
+  <circle cx="80" cy="70" r="52" stroke="url(#decoders-glow)" stroke-width="4" fill="none"/>
+  <text x="80" y="128" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="18" font-weight="700" fill="#D5DBE8" letter-spacing=".1em">
+    DECODERS
+  </text>
+</svg>
+

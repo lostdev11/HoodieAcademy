@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { OFFICIAL_SQUADS, buildSquadFilterClauses, getSquadEmoji } from '@/lib/squad-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,11 +54,13 @@ export async function GET(request: NextRequest) {
 }
 
 async function getSquadStats(supabase: any, squadName: string, detailed: boolean) {
+  const filterClauses = buildSquadFilterClauses(squadName);
+
   // Get all members
   const { data: members } = await supabase
     .from('users')
     .select('wallet_address, display_name, created_at, last_active, squad_selected_at')
-    .eq('squad', squadName);
+    .or(filterClauses.join(','));
 
   const walletAddresses = members?.map((m: any) => m.wallet_address) || [];
   const memberCount = members?.length || 0;
@@ -185,14 +188,12 @@ async function getSquadStats(supabase: any, squadName: string, detailed: boolean
 }
 
 async function getAllSquadsOverview(supabase: any) {
-  const SQUAD_NAMES = ['Creators', 'Decoders', 'Speakers', 'Raiders', 'Rangers'];
-  
   const squadsOverview = await Promise.all(
-    SQUAD_NAMES.map(async (squadName) => {
+    OFFICIAL_SQUADS.map(async (squadName) => {
       const { data: members } = await supabase
         .from('users')
         .select('wallet_address')
-        .eq('squad', squadName);
+        .or(buildSquadFilterClauses(squadName).join(','));
 
       const memberCount = members?.length || 0;
       const walletAddresses = members?.map((m: any) => m.wallet_address) || [];
@@ -229,21 +230,10 @@ async function getAllSquadsOverview(supabase: any) {
     global: {
       totalMembers,
       totalXP,
-      avgMembersPerSquad: Math.round(totalMembers / SQUAD_NAMES.length),
+      avgMembersPerSquad: OFFICIAL_SQUADS.length > 0 ? Math.round(totalMembers / OFFICIAL_SQUADS.length) : 0,
       avgXPPerUser: totalMembers > 0 ? Math.round(totalXP / totalMembers) : 0
     },
     timestamp: new Date().toISOString()
   });
-}
-
-function getSquadEmoji(squadName: string): string {
-  const emojiMap: { [key: string]: string } = {
-    'Creators': '🎨',
-    'Decoders': '🧠',
-    'Speakers': '🎤',
-    'Raiders': '⚔️',
-    'Rangers': '🦅'
-  };
-  return emojiMap[squadName] || '🏆';
 }
 

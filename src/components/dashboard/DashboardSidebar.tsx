@@ -61,6 +61,18 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
     newCourses: 0,
   });
 
+  const getNormalizedPath = (href: string) => {
+    if (!href) return href;
+    if (href.startsWith('http')) {
+      try {
+        return new URL(href).pathname;
+      } catch {
+        return href;
+      }
+    }
+    return href;
+  };
+
   // Helper function to get squad chat URL
   const getSquadChatUrl = (squadName: string): string => {
     if (!squadName) return '/squads/hoodie-creators/chat';
@@ -259,7 +271,7 @@ const sidebarItems: SidebarItem[] = [
     id: 'squads',
     label: 'My Squad',
     icon: <Trophy className="w-5 h-5" />,
-    href: '/choose-your-squad'
+    href: 'https://hoodieacademy.com/choose-your-squad'
   },
     {
       id: 'squad-chat',
@@ -362,7 +374,8 @@ const sidebarItems: SidebarItem[] = [
       {/* Navigation Items */}
       <nav className="flex-1 p-4 space-y-2">
         {sidebarItems.map((item) => {
-          const isActive = pathname === item.href || (item.dynamic && pathname.includes('/squads/') && pathname.includes('/chat'));
+          const normalizedHref = getNormalizedPath(item.href);
+          const isActive = pathname === normalizedHref || (item.dynamic && pathname.includes('/squads/') && pathname.includes('/chat'));
           return (
             <Link 
               key={item.id} 

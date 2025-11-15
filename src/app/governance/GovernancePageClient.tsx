@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useWalletSupabase } from '@/hooks/use-wallet-supabase';
 import { ProposalCard } from '@/components/governance/ProposalCard';
+import { ProposalDetailModal } from '@/components/governance/ProposalDetailModal';
 import { VotingPowerCard } from '@/components/governance/VotingPowerCard';
 import { Vote, TrendingUp, Clock, CheckCircle, XCircle, PieChart, Wallet, ArrowLeft, Home } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -20,6 +22,8 @@ export default function GovernancePageClient() {
   const [votingPower, setVotingPower] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('active');
+  const [selectedProposal, setSelectedProposal] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   useEffect(() => {
     fetchProposals();
@@ -123,6 +127,7 @@ export default function GovernancePageClient() {
         // Refresh data
         fetchProposals();
         fetchUserVotes();
+        fetchVotingPower();
       } else {
         alert(`❌ Failed to vote: ${data.error}`);
       }
@@ -130,6 +135,11 @@ export default function GovernancePageClient() {
       console.error('Error voting:', error);
       alert('❌ Error casting vote');
     }
+  };
+
+  const handleViewDetails = (proposal: any) => {
+    setSelectedProposal(proposal);
+    setIsDetailModalOpen(true);
   };
 
   const activeProposals = proposals.filter(p => p.status === 'active');
@@ -174,12 +184,11 @@ export default function GovernancePageClient() {
             <div className="flex items-center justify-center space-x-3 mb-4">
               <Vote className="w-12 h-12 text-purple-400" />
               <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400">
-                HOOD Governance Hub
+                Governance Proposals
               </h1>
             </div>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Shape the future of Hoodie Academy through decentralized governance.
-              Vote on proposals, unlock tokens, and drive community decisions.
+              View and vote on community proposals. Your voting power is based on your HOOD tokens and XP.
             </p>
             
             {/* Stats */}
@@ -298,7 +307,7 @@ export default function GovernancePageClient() {
               <CardContent className="text-sm text-gray-400 space-y-2">
                 <div className="flex items-start space-x-2">
                   <span className="text-purple-400">1.</span>
-                  <span>Your voting power = 50% HOOD + 50% XP (× 0.001)</span>
+                  <span>Your voting power = 40% HOOD + 60% XP (× 0.002) - XP has more weight!</span>
                 </div>
                 <div className="flex items-start space-x-2">
                   <span className="text-purple-400">2.</span>
@@ -337,16 +346,53 @@ export default function GovernancePageClient() {
               {/* Active Proposals */}
               <TabsContent value="active" className="space-y-4 mt-6">
                 {activeProposals.length > 0 ? (
-                  activeProposals.map((proposal) => (
-                    <ProposalCard
-                      key={proposal.id}
-                      proposal={proposal}
-                      userVote={userVotes[proposal.id]}
-                      onVote={handleVote}
-                      votingPower={votingPower}
-                      walletAddress={wallet || undefined}
-                    />
-                  ))
+                  <Accordion type="single" collapsible className="space-y-4">
+                    {activeProposals.map((proposal) => {
+                      const totalVotes = proposal.votes_for + proposal.votes_against;
+                      return (
+                        <AccordionItem
+                          key={proposal.id}
+                          value={proposal.id}
+                          className="border border-slate-700 rounded-xl px-4 bg-slate-900/50"
+                        >
+                          <AccordionTrigger className="text-left text-white hover:no-underline py-4">
+                            <div className="flex flex-col w-full">
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-lg font-semibold">{proposal.title}</span>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs ${proposal.status === 'active'
+                                    ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+                                    : proposal.status === 'passed'
+                                      ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                                      : 'bg-red-500/20 text-red-300 border-red-500/30'
+                                    }`}
+                                >
+                                  {proposal.status.toUpperCase()}
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap items-center justify-between text-sm text-gray-400 mt-2 gap-2">
+                                <span>#{proposal.proposal_number} • {proposal.proposal_type.toUpperCase()}</span>
+                                <span>{totalVotes.toLocaleString()} total votes</span>
+                              </div>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-0">
+                            <div className="pt-2 pb-4">
+                              <ProposalCard
+                                proposal={proposal}
+                                userVote={userVotes[proposal.id]}
+                                onVote={handleVote}
+                                votingPower={votingPower}
+                                walletAddress={wallet || undefined}
+                                onViewDetails={handleViewDetails}
+                              />
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
                 ) : (
                   <Card className="bg-slate-800/50 border-gray-700">
                     <CardContent className="py-12 text-center">
@@ -365,14 +411,46 @@ export default function GovernancePageClient() {
               {/* Passed Proposals */}
               <TabsContent value="passed" className="space-y-4 mt-6">
                 {passedProposals.length > 0 ? (
-                  passedProposals.map((proposal) => (
-                    <ProposalCard
-                      key={proposal.id}
-                      proposal={proposal}
-                      userVote={userVotes[proposal.id]}
-                      walletAddress={wallet || undefined}
-                    />
-                  ))
+                  <Accordion type="single" collapsible className="space-y-4">
+                    {passedProposals.map((proposal) => {
+                      const totalVotes = proposal.votes_for + proposal.votes_against;
+                      return (
+                        <AccordionItem
+                          key={proposal.id}
+                          value={proposal.id}
+                          className="border border-slate-700 rounded-xl px-4 bg-slate-900/50"
+                        >
+                          <AccordionTrigger className="text-left text-white hover:no-underline py-4">
+                            <div className="flex flex-col w-full">
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-lg font-semibold">{proposal.title}</span>
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-green-500/20 text-green-300 border-green-500/30"
+                                >
+                                  PASSED
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap items-center justify-between text-sm text-gray-400 mt-2 gap-2">
+                                <span>#{proposal.proposal_number} • {proposal.proposal_type.toUpperCase()}</span>
+                                <span>{totalVotes.toLocaleString()} total votes</span>
+                              </div>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-0">
+                            <div className="pt-2 pb-4">
+                              <ProposalCard
+                                proposal={proposal}
+                                userVote={userVotes[proposal.id]}
+                                walletAddress={wallet || undefined}
+                                onViewDetails={handleViewDetails}
+                              />
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
                 ) : (
                   <Card className="bg-slate-800/50 border-gray-700">
                     <CardContent className="py-12 text-center">
@@ -391,14 +469,46 @@ export default function GovernancePageClient() {
               {/* Rejected Proposals */}
               <TabsContent value="rejected" className="space-y-4 mt-6">
                 {rejectedProposals.length > 0 ? (
-                  rejectedProposals.map((proposal) => (
-                    <ProposalCard
-                      key={proposal.id}
-                      proposal={proposal}
-                      userVote={userVotes[proposal.id]}
-                      walletAddress={wallet || undefined}
-                    />
-                  ))
+                  <Accordion type="single" collapsible className="space-y-4">
+                    {rejectedProposals.map((proposal) => {
+                      const totalVotes = proposal.votes_for + proposal.votes_against;
+                      return (
+                        <AccordionItem
+                          key={proposal.id}
+                          value={proposal.id}
+                          className="border border-slate-700 rounded-xl px-4 bg-slate-900/50"
+                        >
+                          <AccordionTrigger className="text-left text-white hover:no-underline py-4">
+                            <div className="flex flex-col w-full">
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="text-lg font-semibold">{proposal.title}</span>
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-red-500/20 text-red-300 border-red-500/30"
+                                >
+                                  REJECTED
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap items-center justify-between text-sm text-gray-400 mt-2 gap-2">
+                                <span>#{proposal.proposal_number} • {proposal.proposal_type.toUpperCase()}</span>
+                                <span>{totalVotes.toLocaleString()} total votes</span>
+                              </div>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-0">
+                            <div className="pt-2 pb-4">
+                              <ProposalCard
+                                proposal={proposal}
+                                userVote={userVotes[proposal.id]}
+                                walletAddress={wallet || undefined}
+                                onViewDetails={handleViewDetails}
+                              />
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
                 ) : (
                   <Card className="bg-slate-800/50 border-gray-700">
                     <CardContent className="py-12 text-center">
@@ -439,6 +549,17 @@ export default function GovernancePageClient() {
           </Card>
         </div>
       )}
+
+      {/* Proposal Detail Modal */}
+      <ProposalDetailModal
+        proposal={selectedProposal}
+        open={isDetailModalOpen}
+        onOpenChange={setIsDetailModalOpen}
+        userVote={selectedProposal ? userVotes[selectedProposal.id] : null}
+        onVote={handleVote}
+        votingPower={votingPower}
+        walletAddress={wallet || undefined}
+      />
     </div>
   );
 }

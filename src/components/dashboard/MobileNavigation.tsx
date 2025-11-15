@@ -45,6 +45,18 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
   const [isOpen, setIsOpen] = useState(false);
   const [squadChatUrl, setSquadChatUrl] = useState<string>('/squads/hoodie-creators/chat');
 
+  const getNormalizedPath = (href: string) => {
+    if (!href) return href;
+    if (href.startsWith('http')) {
+      try {
+        return new URL(href).pathname;
+      } catch {
+        return href;
+      }
+    }
+    return href;
+  };
+
   // Helper function to get squad chat URL
   const getSquadChatUrl = (squadName: string): string => {
     if (!squadName) return '/squads/hoodie-creators/chat';
@@ -176,7 +188,7 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
       id: 'my-squad',
       label: 'My Squad',
       icon: <Trophy className="w-5 h-5" />,
-      href: '/choose-your-squad'
+    href: 'https://hoodieacademy.com/choose-your-squad'
     },
     {
       id: 'squad-chat',
@@ -286,7 +298,8 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
             {/* Navigation Items */}
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               {navItems.map((item) => {
-                const isActive = pathname === item.href || (item.dynamic && pathname.includes('/squads/') && pathname.includes('/chat'));
+                const normalizedHref = getNormalizedPath(item.href);
+                const isActive = pathname === normalizedHref || (item.dynamic && pathname.includes('/squads/') && pathname.includes('/chat'));
                 return (
                   <Link 
                     key={item.id} 

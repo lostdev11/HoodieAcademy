@@ -167,7 +167,7 @@ export default function SquadAssignmentGuard({ children }: SquadAssignmentGuardP
 
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <a
-                href="/choose-your-squad"
+                href="https://hoodieacademy.com/choose-your-squad"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg transition-all duration-200 shadow-lg hover:shadow-purple-500/50 transform hover:scale-105"
               >
                 <Sparkles className="w-5 h-5 mr-2" />

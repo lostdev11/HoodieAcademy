@@ -123,7 +123,7 @@ export function VotingPowerCard({ walletAddress }: VotingPowerCardProps) {
               />
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              {votingPower?.hood_balance?.toLocaleString() || '0'} HOOD × 50% = {votingPower?.hood_contribution?.toLocaleString() || '0'}
+              {votingPower?.hood_balance?.toLocaleString() || '0'} HOOD × 40% = {votingPower?.hood_contribution?.toLocaleString() || '0'}
             </div>
           </div>
 
@@ -145,7 +145,7 @@ export function VotingPowerCard({ walletAddress }: VotingPowerCardProps) {
               />
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              {votingPower?.xp_amount?.toLocaleString() || '0'} XP × 0.001 × 50% = {votingPower?.xp_contribution?.toLocaleString() || '0'}
+              {votingPower?.xp_amount?.toLocaleString() || '0'} XP × 0.002 × 60% = {votingPower?.xp_contribution?.toLocaleString() || '0'}
             </div>
           </div>
         </div>
@@ -157,7 +157,7 @@ export function VotingPowerCard({ walletAddress }: VotingPowerCardProps) {
             <span className="font-semibold">Voting Power Formula:</span>
           </div>
           <code className="text-gray-400">
-            (HOOD × 0.5) + (XP × 0.001 × 0.5)
+            (HOOD × 0.4) + (XP × 0.002 × 0.6)
           </code>
         </div>
       </CardContent>

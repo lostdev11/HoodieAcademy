@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { normalizeSquadName, squadsMatch } from '@/lib/squad-utils';
 
 export const dynamic = 'force-dynamic';
 
-function getSupabaseClient() {
+type Database = Record<string, never>;
+
+function getSupabaseClient(): SupabaseClient<Database> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   
@@ -11,12 +14,43 @@ function getSupabaseClient() {
     throw new Error('Supabase configuration missing');
   }
   
-  return createClient(supabaseUrl, supabaseServiceKey, {
+  return createClient<Database>(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false
     }
   });
+}
+
+async function fetchUserXpMap(
+  supabase: SupabaseClient<Database>,
+  walletAddresses: string[]
+) {
+  const uniqueWallets = Array.from(new Set(walletAddresses)).filter(Boolean);
+
+  if (uniqueWallets.length === 0) {
+    return new Map<string, { totalXP: number; level: number }>();
+  }
+
+  const { data, error } = await supabase
+    .from('user_xp')
+    .select('wallet_address, total_xp, level')
+    .in('wallet_address', uniqueWallets);
+
+  if (error) {
+    console.error('❌ [Squad Members API] Failed to fetch user_xp fallback data:', error);
+    return new Map();
+  }
+
+  return new Map(
+    data?.map((row) => [
+      row.wallet_address,
+      {
+        totalXP: row.total_xp || 0,
+        level: row.level || 1
+      }
+    ]) ?? []
+  );
 }
 
 /**
@@ -44,27 +78,43 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabaseClient();
 
+    const USERS_SELECT = 'wallet_address, display_name, squad, squad_id, total_xp, level, squad_selected_at, squad_lock_end_date, created_at, last_active, updated_at';
+    const USERS_FALLBACK_SELECT = 'wallet_address, display_name, squad, squad_id, squad_selected_at, squad_lock_end_date, created_at, last_active, updated_at';
+    let xpColumnsAvailable = true;
+
     // Get all users in the squad with their XP data directly from users table
     // Use a more permissive query to catch all users, then filter in memory
     // Use minimal required fields first to avoid column errors
-    const { data: allUsers, error: membersError } = await supabase
+    let { data: allUsers, error: membersError } = await supabase
       .from('users')
-      .select('wallet_address, display_name, squad, squad_id, total_xp, level, squad_selected_at, squad_lock_end_date, created_at, last_active, updated_at');
+      .select(USERS_SELECT);
 
     if (membersError) {
-      console.error('Error fetching users:', membersError);
-      return NextResponse.json(
-        { error: 'Failed to fetch squad members', details: membersError.message },
-        { status: 500 }
+      xpColumnsAvailable = false;
+      console.warn(
+        '⚠️ [Squad Members API] users.total_xp/level unavailable, falling back to user_xp:',
+        membersError.message
       );
+
+      const fallbackResponse = await supabase
+        .from('users')
+        .select(USERS_FALLBACK_SELECT);
+
+      if (fallbackResponse.error) {
+        console.error('Error fetching users:', fallbackResponse.error);
+        return NextResponse.json(
+          { error: 'Failed to fetch squad members', details: fallbackResponse.error.message },
+          { status: 500 }
+        );
+      }
+
+      allUsers = fallbackResponse.data;
     }
 
-    // Filter users with matching squad name (case-insensitive, trimmed)
-    const members = allUsers?.filter(user => 
-      user.squad && 
-      user.squad.trim() !== '' && 
-      user.squad.trim().toLowerCase() === squadName.trim().toLowerCase()
-    ) || [];
+    const canonicalTargetSquad = normalizeSquadName(squadName) ?? 'Unassigned';
+
+    // Filter users with matching squad name using canonical mapping
+    const members = allUsers?.filter(user => squadsMatch(canonicalTargetSquad, user.squad)) || [];
 
     console.log(`📊 [Squad Members API] Found ${members.length} members for squad "${squadName}" out of ${allUsers?.length || 0} total users`);
 
@@ -87,13 +137,44 @@ export async function GET(request: NextRequest) {
         debug: {
           totalUsersInDB: allUsers?.length || 0,
           membersFound: 0,
-          squadNamesInDB: [...new Set(allUsers?.filter(u => u.squad).map(u => u.squad.trim()) || [])]
+          squadNamesInDB: [
+            ...new Set(
+              allUsers
+                ?.filter(u => u.squad)
+                .map(u => normalizeSquadName(u.squad) || (u.squad?.trim() || 'Unassigned')) || []
+            )
+          ]
         }
       });
     }
 
+    let xpMap = new Map<string, { totalXP: number; level: number }>();
+    if (!xpColumnsAvailable) {
+      xpMap = await fetchUserXpMap(
+        supabase,
+        members.map(member => member.wallet_address)
+      );
+    }
+
+    const resolveTotalXP = (member: any) => {
+      if (xpColumnsAvailable) {
+        return member.total_xp || 0;
+      }
+      return xpMap.get(member.wallet_address)?.totalXP || 0;
+    };
+
+    const resolveLevel = (member: any) => {
+      if (xpColumnsAvailable) {
+        return member.level || 1;
+      }
+      return xpMap.get(member.wallet_address)?.level || 1;
+    };
+
     // Enrich members with calculated data
     const enrichedMembers = members.map(member => {
+      const totalXP = resolveTotalXP(member);
+      const level = resolveLevel(member);
+
       // Calculate days in squad
       const joinedDate = new Date(member.squad_selected_at || member.created_at);
       const daysInSquad = Math.max(0, Math.floor((Date.now() - joinedDate.getTime()) / (1000 * 60 * 60 * 24)));
@@ -107,8 +188,8 @@ export async function GET(request: NextRequest) {
         walletAddress: member.wallet_address,
         displayName: member.display_name || `User ${member.wallet_address.slice(0, 6)}...`,
         squad: member.squad,
-        totalXP: member.total_xp || 0,
-        level: member.level || 1,
+        totalXP,
+        level,
         streak: (member as any).streak || 0, // streak may not exist in all schemas
         joinedSquadAt: member.squad_selected_at || member.created_at,
         daysInSquad,

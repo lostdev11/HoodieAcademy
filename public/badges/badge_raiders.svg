@@ -1,0 +1,28 @@
+<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="raiders-bg" x1="0%" y1="0%" x2="100%" y2="120%">
+      <stop offset="0%" stop-color="#5FB2FF"/>
+      <stop offset="100%" stop-color="#1D75D0"/>
+    </linearGradient>
+    <linearGradient id="raiders-swords" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E8F3FF"/>
+      <stop offset="100%" stop-color="#A5C8F2"/>
+    </linearGradient>
+  </defs>
+  <rect width="160" height="160" rx="28" fill="#0C1524"/>
+  <rect x="6" y="6" width="148" height="148" rx="24" fill="#04142A" stroke="#0E3A74" stroke-width="2"/>
+  <circle cx="80" cy="70" r="46" fill="url(#raiders-bg)" stroke="#7CC7FF" stroke-width="3"/>
+  <g transform="translate(80 70) rotate(-35)">
+    <rect x="-6" y="-32" width="12" height="64" rx="4" fill="url(#raiders-swords)" stroke="#D2E5FA" stroke-width="2"/>
+    <circle cx="0" cy="32" r="9" fill="#0C1524" stroke="#7CC7FF" stroke-width="3"/>
+  </g>
+  <g transform="translate(80 70) rotate(35)">
+    <rect x="-6" y="-32" width="12" height="64" rx="4" fill="url(#raiders-swords)" stroke="#D2E5FA" stroke-width="2"/>
+    <circle cx="0" cy="32" r="9" fill="#0C1524" stroke="#7CC7FF" stroke-width="3"/>
+  </g>
+  <circle cx="80" cy="70" r="52" stroke="#123B7A" stroke-width="4" stroke-dasharray="6 10" fill="none"/>
+  <text x="80" y="128" text-anchor="middle" font-family="Inter, 'Segoe UI', sans-serif" font-size="18" font-weight="700" fill="#8FD0FF" letter-spacing=".16em">
+    RAIDERS
+  </text>
+</svg>
+

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer';
-import { ThumbsUp, ThumbsDown, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Clock, CheckCircle, XCircle, AlertCircle, Eye } from 'lucide-react';
 
 interface Proposal {
   id: string;
@@ -32,6 +32,7 @@ interface ProposalCardProps {
   onVote?: (proposalId: string, choice: 'for' | 'against') => void;
   votingPower?: number;
   walletAddress?: string;
+  onViewDetails?: (proposal: Proposal) => void;
 }
 
 export function ProposalCard({ 
@@ -39,7 +40,8 @@ export function ProposalCard({
   userVote, 
   onVote, 
   votingPower = 0,
-  walletAddress 
+  walletAddress,
+  onViewDetails
 }: ProposalCardProps) {
   const [isVoting, setIsVoting] = useState(false);
 
@@ -94,7 +96,7 @@ export function ProposalCard({
   const canVote = isActive && walletAddress && votingPower > 0;
 
   return (
-    <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-cyan-500/30 hover:border-cyan-500/50 transition-all">
+    <Card className="bg-gradient-to-br from-slate-900 to-slate-800 border-cyan-500/30 hover:border-cyan-500/50 transition-all cursor-pointer" onClick={() => onViewDetails?.(proposal)}>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -110,7 +112,21 @@ export function ProposalCard({
                 <span>{proposal.status.toUpperCase()}</span>
               </Badge>
             </div>
-            <CardTitle className="text-xl text-white mb-2">{proposal.title}</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl text-white mb-2">{proposal.title}</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewDetails?.(proposal);
+                }}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                View Details
+              </Button>
+            </div>
           </div>
         </div>
         
@@ -208,7 +224,10 @@ export function ProposalCard({
         {canVote && (
           <div className="grid grid-cols-2 gap-3 pt-2">
             <Button
-              onClick={() => handleVote('for')}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVote('for');
+              }}
               disabled={isVoting}
               className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold"
             >
@@ -216,7 +235,10 @@ export function ProposalCard({
               {hasVoted && userVote?.vote_choice === 'for' ? 'Voted For' : 'Vote For'}
             </Button>
             <Button
-              onClick={() => handleVote('against')}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleVote('against');
+              }}
               disabled={isVoting}
               variant="destructive"
               className="bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 font-semibold"

@@ -56,7 +56,7 @@ const navigationGroups: NavigationGroup[] = [
       { key: 'mentorship', label: 'Live Sessions', icon: <Video className="h-4 w-4" />, href: '/mentorship' },
       { key: 'governance', label: 'Governance', icon: <Vote className="h-4 w-4" />, href: '/governance' },
       { key: 'feedback', label: 'Feedback', icon: <Sparkles className="h-4 w-4" />, href: '/feedback' },
-      { key: 'my-squad', label: 'My Squad', icon: <Trophy className="h-4 w-4" />, href: '/choose-your-squad' },
+      { key: 'my-squad', label: 'My Squad', icon: <Trophy className="h-4 w-4" />, href: 'https://hoodieacademy.com/choose-your-squad' },
     ]
   },
   {
@@ -259,11 +259,24 @@ export default function BottomNavigation() {
     return () => clearInterval(interval);
   }, []);
 
+  const getPathFromHref = (href: string) => {
+    if (!href) return href;
+    if (href.startsWith('http')) {
+      try {
+        return new URL(href).pathname;
+      } catch {
+        return href;
+      }
+    }
+    return href;
+  };
+
   const isActiveRoute = (href: string) => {
-    if (href === '/') {
+    const comparableHref = getPathFromHref(href);
+    if (comparableHref === '/') {
       return pathname === '/';
     }
-    return pathname.startsWith(href);
+    return pathname.startsWith(comparableHref);
   };
 
   const getActiveGroup = () => {

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,14 +22,20 @@ import SquadMembersList from '@/components/squads/SquadMembersList';
 import SquadRankingsCard from '@/components/squads/SquadRankingsCard';
 import SquadActivityCard from '@/components/squad/SquadActivityCard';
 import SquadBadge from '@/components/SquadBadge';
+import { getSquadBadgeImage } from '@/lib/squad-utils';
 
-const SQUADS = [
-  { name: 'Creators', emoji: '🎨', id: 'creators' },
-  { name: 'Decoders', emoji: '🧠', id: 'decoders' },
-  { name: 'Speakers', emoji: '🎤', id: 'speakers' },
-  { name: 'Raiders', emoji: '⚔️', id: 'raiders' },
-  { name: 'Rangers', emoji: '🦅', id: 'rangers' }
+const BASE_SQUADS = [
+  { name: 'Creators', id: 'creators' },
+  { name: 'Decoders', id: 'decoders' },
+  { name: 'Speakers', id: 'speakers' },
+  { name: 'Raiders', id: 'raiders' },
+  { name: 'Rangers', id: 'rangers' }
 ];
+
+const SQUADS = BASE_SQUADS.map((squad) => ({
+  ...squad,
+  badge: getSquadBadgeImage(squad.name)
+}));
 
 export default function SquadTrackerPage() {
   const [selectedSquad, setSelectedSquad] = useState<string>('Creators');
@@ -202,7 +209,19 @@ export default function SquadTrackerPage() {
                               : ''
                           }`}
                         >
-                          <span className="mr-2">{squad.emoji}</span>
+                          {squad.badge ? (
+                            <div className="relative w-8 h-8 mr-2">
+                              <Image
+                                src={squad.badge}
+                                alt={`${squad.name} badge`}
+                                fill
+                                sizes="32px"
+                                className="object-contain drop-shadow"
+                              />
+                            </div>
+                          ) : (
+                            <span className="mr-2 text-xl">🏅</span>
+                          )}
                           {squad.name}
                           {userSquad === squad.name && (
                             <Badge className="ml-2 bg-cyan-600 text-white text-xs">Your Squad</Badge>
@@ -238,7 +257,19 @@ export default function SquadTrackerPage() {
                               : ''
                           }`}
                         >
-                          <span className="mr-2">{squad.emoji}</span>
+                          {squad.badge ? (
+                            <div className="relative w-8 h-8 mr-2">
+                              <Image
+                                src={squad.badge}
+                                alt={`${squad.name} badge`}
+                                fill
+                                sizes="32px"
+                                className="object-contain drop-shadow"
+                              />
+                            </div>
+                          ) : (
+                            <span className="mr-2 text-xl">🏅</span>
+                          )}
                           {squad.name}
                           {userSquad === squad.name && (
                             <Badge className="ml-2 bg-cyan-600 text-white text-xs">Your Squad</Badge>
@@ -336,6 +367,7 @@ export default function SquadTrackerPage() {
 function SquadStatsCard({ squadName }: { squadName: string }) {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const badgeSrc = getSquadBadgeImage(squadName);
 
   useEffect(() => {
     fetchStats();
@@ -382,7 +414,19 @@ function SquadStatsCard({ squadName }: { squadName: string }) {
     <Card className="bg-slate-800/50 border-purple-500/30 hover:border-purple-400/50 transition-colors">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
-          <span className="text-2xl">{stats.emoji}</span>
+          {badgeSrc ? (
+            <div className="relative w-10 h-10">
+              <Image
+                src={badgeSrc}
+                alt={`${stats.squad} badge`}
+                fill
+                sizes="40px"
+                className="object-contain drop-shadow"
+              />
+            </div>
+          ) : (
+            <span className="text-2xl">{stats.emoji}</span>
+          )}
           <span className="text-purple-400">{stats.squad}</span>
         </CardTitle>
       </CardHeader>

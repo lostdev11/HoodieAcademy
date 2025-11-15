@@ -1458,7 +1458,7 @@ export function ProfileView() {
                     variant="outline"
                     className="border-orange-500/30 text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
                   >
-                    <Link href="/choose-your-squad">
+                    <Link href="https://hoodieacademy.com/choose-your-squad">
                       <Users className="w-4 h-4 mr-2" />
                       Change Squad
                     </Link>
@@ -1486,7 +1486,7 @@ export function ProfileView() {
                 asChild
                 className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
               >
-                <Link href="/choose-your-squad">
+                <Link href="https://hoodieacademy.com/choose-your-squad">
                   <Users className="w-4 h-4 mr-2" />
                   Choose Your Squad
                 </Link>
