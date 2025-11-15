@@ -23,7 +23,8 @@ import {
   Bell,
   Vote,
   MessageSquare,
-  TrendingUp
+  TrendingUp,
+  Info
 } from 'lucide-react';
 import { fetchUserByWallet } from '@/lib/supabase';
 import { getSquadNameFromCache, fetchUserSquad } from '@/utils/squad-api';
@@ -209,6 +210,12 @@ const sidebarItems: SidebarItem[] = [
     label: 'Preview',
     icon: <BookOpen className="w-5 h-5" />,
     href: '/preview'
+  },
+  {
+    id: 'about',
+    label: 'About',
+    icon: <Info className="w-5 h-5" />,
+    href: '/about'
   },
   {
     id: 'dashboard',

@@ -19,7 +19,8 @@ import {
   Menu,
   Sparkles,
   Video,
-  Vote
+  Vote,
+  Info
 } from 'lucide-react';
 import { getSquadNameFromCache, fetchUserSquad } from '@/utils/squad-api';
 
@@ -49,6 +50,7 @@ const navigationGroups: NavigationGroup[] = [
     items: [
       { key: 'home', label: 'Home', icon: <Home className="h-4 w-4" />, href: '/' },
       { key: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" />, href: '/dashboard' },
+      { key: 'about', label: 'About', icon: <Info className="h-4 w-4" />, href: '/about' },
       { key: 'courses', label: 'Courses', icon: <GraduationCap className="h-4 w-4" />, href: '/courses' },
       { key: 'bounties', label: 'Bounties', icon: <Target className="h-4 w-4" />, href: '/bounties' },
       { key: 'mentorship', label: 'Live Sessions', icon: <Video className="h-4 w-4" />, href: '/mentorship' },
