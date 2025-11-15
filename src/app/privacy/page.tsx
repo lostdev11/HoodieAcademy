@@ -240,6 +240,13 @@ export default function PrivacyPolicy() {
             </a>
             <span className="text-gray-500">•</span>
             <a 
+              href="/about" 
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              About
+            </a>
+            <span className="text-gray-500">•</span>
+            <a 
               href="/preview" 
               className="text-purple-400 hover:text-purple-300 transition-colors"
             >

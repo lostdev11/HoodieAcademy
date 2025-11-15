@@ -202,7 +202,6 @@ export default function AboutPageClient() {
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>Trust</li>
-              <li>SEO (yup, off-page signals matter)</li>
               <li>Community pride</li>
               <li>Future holders understanding the culture</li>
             </ul>
@@ -242,7 +241,7 @@ export default function AboutPageClient() {
               If you're a WifHoodie holder, there's something special coming…
             </p>
             <p>
-              Very soon, the Retailstar Mall universe will open a hidden door.
+              Very soon, the <Link href="https://retailstar.xyz/" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline transition-colors">Retailstar Mall</Link> universe will open a hidden door.
               Inside it? A place just for Hoodies — a hub, a portal, a small corner of the Mall that only the Academy will fully understand.
             </p>
             <p className="font-semibold text-purple-300 text-lg">

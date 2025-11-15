@@ -202,6 +202,10 @@ export default function BlogPage() {
               Home
             </Link>
             <span className="text-gray-500">•</span>
+            <Link href="/about" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+              About
+            </Link>
+            <span className="text-gray-500">•</span>
             <Link href="/preview" className="text-indigo-400 hover:text-indigo-300 transition-colors">
               Preview
             </Link>
