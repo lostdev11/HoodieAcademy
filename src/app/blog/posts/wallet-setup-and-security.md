@@ -114,6 +114,19 @@ That's how you graduate from "crypto curious" to "crypto capable."
 
 ---
 
+## More Beginner Guides From Hoodie Academy
+
+If you're just getting started with crypto, these guides will help you build confidence and avoid the most common mistakes:
+
+- [How to Buy Crypto Safely (Beginner's No-BS Guide)](/blog/how-to-buy-crypto-safely)
+- [Is Crypto a Scam? Here's the Honest Answer](/blog/is-crypto-a-scam)
+- [How To Set Up a Phantom Wallet Safely](/blog/how-to-set-up-phantom-wallet)
+- [Is It Too Late To Get Into Crypto in 2025?](/blog/is-it-too-late-to-get-into-crypto-in-2025)
+
+Each guide builds on another, helping beginners go from confused → confident without getting overwhelmed.
+
+---
+
 *Category:* 🧩 **Web3 for Normies**  
 *Keywords:* wallet setup, crypto safety, phantom tutorial, web3 wallets, solana beginners
 

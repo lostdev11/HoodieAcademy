@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     default: 'Hoodie Academy - Master Web3, NFTs & Crypto Trading',
     template: '%s | Hoodie Academy'
   },
-  description: 'Join Hoodie Academy to master Web3, NFT trading, technical analysis, and wallet security. Gamified learning with squads, bounties, and real crypto rewards.',
+  description: 'Master Web3, NFTs, and crypto trading through gamified lessons, squads, and bounties inside Hoodie Academy.',
   keywords: [
     'Web3 education',
     'NFT trading',

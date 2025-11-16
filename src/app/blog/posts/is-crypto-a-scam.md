@@ -93,5 +93,18 @@ No fluff. Just real steps.
 
 ---
 
+## More Beginner Guides From Hoodie Academy
+
+If you're just getting started with crypto, these guides will help you build confidence and avoid the most common mistakes:
+
+- [How to Buy Crypto Safely (Beginner's No-BS Guide)](/blog/how-to-buy-crypto-safely)
+- [How to Set Up Your First Crypto Wallet](/blog/wallet-setup-and-security)
+- [How To Set Up a Phantom Wallet Safely](/blog/how-to-set-up-phantom-wallet)
+- [Is It Too Late To Get Into Crypto in 2025?](/blog/is-it-too-late-to-get-into-crypto-in-2025)
+
+Each guide builds on another, helping beginners go from confused → confident without getting overwhelmed.
+
+---
+
 *Category:* 🧩 **Web3 for Normies**  
 *Keywords:* crypto scams, what is crypto, web3 explained, is crypto legit, solana beginners

@@ -133,6 +133,7 @@
     width: 100%;
     height: 100%;
     box-sizing: border-box;
+    font-size: 16px;
   }
   
   body {
@@ -148,6 +149,21 @@
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold; /* Ensure headers are bold */
+  }
+
+  /* Mobile-friendly button and input styles */
+  button, a.button {
+    padding: 14px 20px !important;
+  }
+
+  input, button, select, textarea {
+    min-height: 42px;
+  }
+
+  @media (max-width: 640px) {
+    h1, h2, h3, h4 {
+      line-height: 1.35;
+    }
   }
 
   /* Basic prose styles for lesson content */

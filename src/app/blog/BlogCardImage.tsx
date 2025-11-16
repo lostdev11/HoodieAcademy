@@ -25,6 +25,7 @@ export default function BlogCardImage({ src, alt }: BlogCardImageProps) {
         src={imageSrc}
         alt={alt}
         fill
+        sizes="(max-width: 768px) 100vw, 512px"
         className="object-cover"
         onError={handleError}
       />

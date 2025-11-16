@@ -746,6 +746,7 @@ export default function HoodieAcademy() {
 
           {/* Home Page Content */}
           <main className="flex-1 px-4 py-6 space-y-6 max-w-full overflow-x-hidden">
+            <h1 className="sr-only">Hoodie Academy — Web3, NFT & Crypto Education</h1>
             {/* Welcome Header */}
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-cyan-400 mb-2">🏛️ Welcome to Hoodie Academy</h2>
@@ -1055,6 +1056,103 @@ export default function HoodieAcademy() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* SEO Content Block - Hidden Accordion */}
+            <div className="mt-12 border-t border-gray-800 pt-6">
+              <details className="group cursor-pointer">
+                <summary className="text-lg font-semibold text-white hover:opacity-80">
+                  Learn More About Hoodie Academy
+                </summary>
+                <div className="text-gray-300 mt-4 space-y-4 leading-relaxed">
+                  <p>
+                    Hoodie Academy is the first Web3 education hub designed to make crypto, NFTs, and on-chain
+                    trading feel simple, safe, and beginner-friendly. No hype, no confusing jargon, and no
+                    financial "guru" energy — just clear lessons created by people who learned this ecosystem
+                    the hard way and now want to pass down what actually works.
+                  </p>
+                  <p>
+                    Everything inside Hoodie Academy is built around one idea: learning Web3 becomes easier when
+                    you experience it, not just read about it. Instead of long, boring courses, you'll find
+                    short missions, squad challenges, quizzes, bounties, and real examples from active
+                    Solana-based communities. Whether you're trying to understand wallets, avoid scams, learn
+                    technical analysis, or finally grasp what NFTs do beyond "expensive pictures," this is where
+                    you start.
+                  </p>
+                  <p>
+                    New Web3 users often get overwhelmed because tutorials skip critical steps, assume too much
+                    knowledge, or give advice that doesn't reflect how crypto actually works today. That's why
+                    Hoodie Academy focuses on fundamentals first — setting up a wallet safely, understanding how
+                    to read a transaction, identifying red flags, and learning how to stay secure on-chain
+                    before you ever start clicking buttons or moving funds.
+                  </p>
+                  <p>
+                    As you progress through the Academy, you unlock squad-based paths where you can specialize:
+                    creators, traders, analysts, builders, storytellers, and more. These squads give you missions
+                    that build real skills while earning XP that tracks your progress. The more you contribute,
+                    the more the Academy evolves — it's a living ecosystem shaped by the community.
+                  </p>
+                  <p>
+                    Hoodie Academy is also connected to active NFT communities and Web3 projects, giving you a
+                    front-row seat to what's actually happening in the space. Instead of outdated courses or
+                    recycled advice, you get education that grows alongside the crypto market.
+                  </p>
+                  <p>
+                    If you've ever wanted to understand Web3 without feeling stupid, lost, or intimidated —
+                    Hoodie Academy was built for you. Simple lessons. Real examples. A supportive community. And
+                    the tools to learn crypto the right way.
+                  </p>
+                </div>
+              </details>
+            </div>
+
+            {/* Footer with Social Links */}
+            <footer className="mt-12 border-t border-gray-800 pt-6">
+              <div className="flex flex-col gap-2 mt-6">
+                <h4 className="font-semibold text-lg mb-1 text-white">Follow Hoodie Academy</h4>
+                <ul className="flex flex-col gap-1 text-sm text-gray-300">
+                  <li>
+                    <a href="https://x.com/HoodieAcademy"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="hover:text-white transition">
+                      X (Twitter)
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://www.youtube.com/@LopezWorkflows"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="hover:text-white transition">
+                      YouTube
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://www.instagram.com/lopezproductions_"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="hover:text-white transition">
+                      Instagram
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://www.linkedin.com/company/lopez-productions"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="hover:text-white transition">
+                      LinkedIn
+                    </a>
+                  </li>
+                  <li>
+                    <a href="https://facebook.com/"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="hover:text-white transition">
+                      Facebook
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </footer>
           </main>
         </div>
       </div>

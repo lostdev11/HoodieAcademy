@@ -6,7 +6,8 @@ date: "2025-11-13"
 category: "Web3 for Normies"
 readTime: "8-10 min"
 tags: ["phantom wallet", "wallet setup", "crypto beginners", "web3 security", "solana", "seed phrase"]
-coverImage: "/images/phantom-banner.png?v=2"
+coverImage: "/images/phantom-banner.png"
+ogImage: "/images/phantom-banner.png"
 ---
 
 # How To Set Up a Phantom Wallet Safely (Step-by-Step)
@@ -273,4 +274,17 @@ This is part of Hoodie Academy's beginner-friendly Web3 series.
 - "What Is Crypto Actually Used For?"
 - "Sending Crypto Without Losing It: The Safety Checklist"
 - "What Is Solana?" (Beginner Edition)
+
+---
+
+## More Beginner Guides From Hoodie Academy
+
+If you're just getting started with crypto, these guides will help you build confidence and avoid the most common mistakes:
+
+- [How to Buy Crypto Safely (Beginner's No-BS Guide)](/blog/how-to-buy-crypto-safely)
+- [Is Crypto a Scam? Here's the Honest Answer](/blog/is-crypto-a-scam)
+- [How to Set Up Your First Crypto Wallet](/blog/wallet-setup-and-security)
+- [Is It Too Late To Get Into Crypto in 2025?](/blog/is-it-too-late-to-get-into-crypto-in-2025)
+
+Each guide builds on another, helping beginners go from confused → confident without getting overwhelmed.
 

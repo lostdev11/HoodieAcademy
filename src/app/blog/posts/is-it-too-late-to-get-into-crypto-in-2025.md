@@ -7,6 +7,7 @@ category: "Web3 for Normies"
 readTime: "5 min"
 tags: ["crypto 2025", "crypto beginners", "web3 adoption", "is it too late", "market cycles"]
 coverImage: "/images/real-test-begins.png"
+ogImage: "/images/real-test-begins.png"
 ---
 
 # 🧢 Is It Too Late to Get Into Crypto in 2025? The Honest Answer.
@@ -155,13 +156,16 @@ The community, the culture, the utility, the story — all explained.
 
 ---
 
-## 📚 Recommended Reading
+## More Beginner Guides From Hoodie Academy
 
-👉 **[How to Set Up a Phantom Wallet](/blog/wallet-setup-and-security)**  
+If you're just getting started with crypto, these guides will help you build confidence and avoid the most common mistakes:
 
-👉 **[Is Crypto a Scam? (The Honest Answer)](/blog/is-crypto-a-scam)**  
+- [How to Buy Crypto Safely (Beginner's No-BS Guide)](/blog/how-to-buy-crypto-safely)
+- [How to Set Up Your First Crypto Wallet](/blog/wallet-setup-and-security)
+- [How To Set Up a Phantom Wallet Safely](/blog/how-to-set-up-phantom-wallet)
+- [Is Crypto a Scam? Here's the Honest Answer](/blog/is-crypto-a-scam)
 
-These will fast-track your understanding and keep you safe on your journey.
+Each guide builds on another, helping beginners go from confused → confident without getting overwhelmed.
 
 Class continues tomorrow. 🧠🧢
 
