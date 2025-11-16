@@ -872,7 +872,7 @@ export default function HoodieAcademy() {
                   </p>
                   <Button
                     size="lg"
-                    onClick={() => window.location.href = 'https://hoodieacademy.com/choose-your-squad'}
+                    onClick={() => window.location.href = '/choose-your-squad'}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-3"
                   >
                     <Target className="w-5 h-5 mr-2" />

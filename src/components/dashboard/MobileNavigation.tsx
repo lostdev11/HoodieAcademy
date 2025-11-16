@@ -188,7 +188,7 @@ export function MobileNavigation({ userSquad, isAdmin }: MobileNavigationProps) 
       id: 'my-squad',
       label: 'My Squad',
       icon: <Trophy className="w-5 h-5" />,
-    href: 'https://hoodieacademy.com/choose-your-squad'
+    href: '/choose-your-squad'
     },
     {
       id: 'squad-chat',

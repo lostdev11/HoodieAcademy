@@ -56,7 +56,7 @@ const navigationGroups: NavigationGroup[] = [
       { key: 'mentorship', label: 'Live Sessions', icon: <Video className="h-4 w-4" />, href: '/mentorship' },
       { key: 'governance', label: 'Governance', icon: <Vote className="h-4 w-4" />, href: '/governance' },
       { key: 'feedback', label: 'Feedback', icon: <Sparkles className="h-4 w-4" />, href: '/feedback' },
-      { key: 'my-squad', label: 'My Squad', icon: <Trophy className="h-4 w-4" />, href: 'https://hoodieacademy.com/choose-your-squad' },
+      { key: 'my-squad', label: 'My Squad', icon: <Trophy className="h-4 w-4" />, href: '/choose-your-squad' },
     ]
   },
   {

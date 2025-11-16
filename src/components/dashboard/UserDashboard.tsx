@@ -828,7 +828,7 @@ const SquadSection = memo(function SquadSection({ userSquad, stats, walletAddres
                   : "You're currently an unassigned Academy Member"}
               </p>
               <p className="text-sm text-gray-500 mb-4">Join a squad to unlock exclusive features and compete with your team!</p>
-              <Link href="https://hoodieacademy.com/choose-your-squad">
+              <Link href="/choose-your-squad">
                 <Button className="bg-purple-600 hover:bg-purple-700">
                   <Users className="w-4 h-4 mr-2" />
                   {userSquad && userSquad !== 'Unassigned' ? 'Change Your Squad' : 'Choose Your Squad'}
