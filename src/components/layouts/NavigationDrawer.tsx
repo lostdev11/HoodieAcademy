@@ -406,7 +406,7 @@ export const academyNavigationSections: NavigationSection[] = [
         id: 'squads',
         label: 'Squads',
         icon: <Users className="w-4 h-4" />,
-        href: '/squads',
+        href: '/choose-your-squad',
         description: 'Join and interact with your squad'
       },
       {

@@ -141,7 +141,12 @@ export default function OnboardingOverlay({ walletAddress, onClose }: Onboarding
 
     // For navigation tasks, just navigate - completion will be verified when they return
     if (task.action.type === 'navigate' && task.action.path) {
-      router.push(task.action.path);
+      // Use full page navigation for choose-your-squad to trigger server-side redirect
+      if (task.action.path === '/choose-your-squad') {
+        window.location.href = task.action.path;
+      } else {
+        router.push(task.action.path);
+      }
       return;
     }
 

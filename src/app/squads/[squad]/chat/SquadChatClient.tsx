@@ -424,8 +424,8 @@ export default function SquadChatClient({ params }: PageProps) {
                 <Home className="w-5 h-5" />
               </Link>
               <span className="text-gray-400">/</span>
-              <Link href="/squads" className="text-cyan-400 hover:text-cyan-300">
-                Squads
+              <Link href="/choose-your-squad" className="text-cyan-400 hover:text-cyan-300">
+                Choose Squad
               </Link>
               <span className="text-gray-400">/</span>
               <span className="text-white font-semibold">{squadName}</span>
@@ -453,8 +453,8 @@ export default function SquadChatClient({ params }: PageProps) {
                 <Home className="w-5 h-5" />
               </Link>
               <span className="text-gray-400">/</span>
-              <Link href="/squads" className="text-cyan-400 hover:text-cyan-300">
-                Squads
+              <Link href="/choose-your-squad" className="text-cyan-400 hover:text-cyan-300">
+                Choose Squad
               </Link>
               <span className="text-gray-400">/</span>
               <span className="text-white font-semibold">{squadName}</span>

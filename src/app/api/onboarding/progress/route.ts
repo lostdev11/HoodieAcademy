@@ -34,7 +34,7 @@ const DEFAULT_ONBOARDING_TASKS = [
     description: 'Join a squad that matches your interests',
     xpReward: 50,
     icon: 'users',
-    action: { type: 'navigate', path: '/squads' }
+    action: { type: 'navigate', path: '/choose-your-squad' }
   },
   {
     id: 'start_first_course',

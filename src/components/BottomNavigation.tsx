@@ -66,7 +66,7 @@ const navigationGroups: NavigationGroup[] = [
     primaryHref: '/hoodie-squad-track',
     items: [
       { key: 'squad-track', label: 'Squad Track', icon: <MessageSquare className="h-4 w-4" />, href: '/hoodie-squad-track' },
-      { key: 'squad-chat', label: 'Squad Chat', icon: <MessageSquare className="h-4 w-4" />, href: '/squads' },
+      { key: 'squad-chat', label: 'Squad Chat', icon: <MessageSquare className="h-4 w-4" />, href: '/squads/hoodie-creators/chat' },
     ]
   },
   {
