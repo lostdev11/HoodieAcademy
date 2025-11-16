@@ -40,10 +40,12 @@ export default function AdminAuthCheck() {
                   .eq('wallet_address', wallet)
                   .single();
                 
-                                 if (!adminError && data?.is_admin) {
+                                if (!adminError && data?.is_admin) {
                    console.log('✅ Direct admin check successful, redirecting...');
                    // Use window.location.replace to avoid redirect loops
-                   window.location.replace('/admin-dashboard');
+                   if (typeof window !== 'undefined' && window.location.pathname !== '/admin-dashboard') {
+                     window.location.replace('/admin-dashboard');
+                   }
                  } else {
                   console.log('❌ Direct admin check failed or not admin:', adminError || data);
                   setChecking(false);
@@ -75,7 +77,9 @@ export default function AdminAuthCheck() {
       // Use window.location directly to avoid redirect loops
       console.log('🔄 Using window.location to redirect to /admin');
       // Force redirect and prevent further rendering
-      window.location.replace('/admin-dashboard');
+      if (typeof window !== 'undefined' && window.location.pathname !== '/admin-dashboard') {
+        window.location.replace('/admin-dashboard');
+      }
       return;
     }
     
