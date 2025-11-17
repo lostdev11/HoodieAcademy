@@ -42,6 +42,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const widgetRef = useRef<HTMLDivElement>(null);
   const hasMovedRef = useRef(false); // Ref to track movement synchronously for touch handlers
   const ignoreTimeoutRef = useRef<number | null>(null);
+  const justOpenedRef = useRef(false); // Flag to prevent drag immediately after opening on mobile
   const MESSAGE_LIMIT = 50; // Limit messages per session
   const DRAG_THRESHOLD = 5; // Minimum pixels to move before considering it a drag
 
@@ -244,6 +245,12 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
     
+    // Prevent drag start if we just opened the chat on mobile
+    if (justOpenedRef.current) {
+      e.stopPropagation();
+      return;
+    }
+    
     const touch = e.touches[0];
     // Don't prevent default immediately - let click work if no drag occurs
     handleDragStart(touch.clientX, touch.clientY);
@@ -280,7 +287,13 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     // Use ref for synchronous check - if we didn't drag, it was a tap - open the chat
     if (!ignoreOpen && !hasMovedRef.current) {
       e.preventDefault();
+      e.stopPropagation(); // Prevent event from bubbling to the Card
       setIsOpen(true);
+      // Set flag to prevent immediate drag start after opening
+      justOpenedRef.current = true;
+      setTimeout(() => {
+        justOpenedRef.current = false;
+      }, 300); // 300ms cooldown period
     }
     // Always call handleDragEnd to clean up dragging state
     handleDragEnd();
@@ -384,7 +397,10 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
       <CardHeader 
         className="pb-3 border-b border-cyan-500/30 bg-gradient-to-r from-cyan-900/30 to-purple-900/30"
         onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
+        onTouchStart={(e) => {
+          e.stopPropagation();
+          handleTouchStart(e);
+        }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
