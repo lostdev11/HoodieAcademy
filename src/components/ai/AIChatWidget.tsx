@@ -172,8 +172,13 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   }, [hasMoved]);
 
   // Universal drag start handler for both mouse and touch
-  const handleDragStart = useCallback((clientX: number, clientY: number) => {
+  const handleDragStart = useCallback((clientX: number, clientY: number, target?: HTMLElement) => {
     if (!widgetRef.current) return;
+    
+    // Don't start drag if the target is a button or interactive element
+    if (target && (target.closest('button') || target.closest('[role="button"]') || target.closest('input') || target.closest('textarea'))) {
+      return;
+    }
     
     const rect = widgetRef.current.getBoundingClientRect();
     setDragOffset({
@@ -228,9 +233,14 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
 
   // Mouse event handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Don't start drag if clicking on a button or interactive element
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="button"]') || target.closest('input') || target.closest('textarea')) {
+      return;
+    }
     // Prevent opening chat when dragging
     e.preventDefault();
-    handleDragStart(e.clientX, e.clientY);
+    handleDragStart(e.clientX, e.clientY, target);
   }, [handleDragStart]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -245,6 +255,12 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
     
+    // Don't start drag if touching a button or interactive element
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('[role="button"]') || target.closest('input') || target.closest('textarea')) {
+      return;
+    }
+    
     // Prevent drag start if we just opened the chat on mobile
     if (justOpenedRef.current) {
       e.stopPropagation();
@@ -253,7 +269,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     
     const touch = e.touches[0];
     // Don't prevent default immediately - let click work if no drag occurs
-    handleDragStart(touch.clientX, touch.clientY);
+    handleDragStart(touch.clientX, touch.clientY, target);
   }, [handleDragStart]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
@@ -426,7 +442,16 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
-              onClick={() => setIsMinimized(!isMinimized)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMinimized(!isMinimized);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
               aria-label={isMinimized ? "Maximize chat window" : "Minimize chat window"}
             >
               {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
@@ -435,7 +460,16 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
               variant="ghost"
               size="icon"
               className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-              onClick={closeChat}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeChat(e);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
               aria-label="Close chat window"
             >
               <X className="h-4 w-4" />
