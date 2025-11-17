@@ -375,15 +375,15 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
           zIndex: 50,
           touchAction: 'manipulation' // Allow taps but prevent double-tap zoom
         }}
-        className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} p-0 overflow-hidden`}
         size="icon"
       >
-        <div className="w-full h-full flex items-center justify-center">
+        <div className="w-full h-full flex items-center justify-center p-0">
           <Image 
             src="/images/hoodie-bot.png" 
             alt="Hoodie AI Bot" 
-            width={48} 
-            height={48} 
+            width={56} 
+            height={56} 
             className="rounded-full object-cover w-full h-full"
             priority
           />
