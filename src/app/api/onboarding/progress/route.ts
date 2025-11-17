@@ -188,9 +188,17 @@ export async function GET(request: NextRequest) {
     // Map database tasks to response format
     const tasksWithDetails = DEFAULT_ONBOARDING_TASKS.map(task => {
       const dbTask = tasks.find(t => t.task_id === task.id);
+
+      // Infer completion from current user state to avoid "Unavailable" on actually-done tasks
+      let inferredCompleted = false;
+      if (task.id === 'complete_profile') {
+        inferredCompleted = hasCompletedProfile;
+      } else if (task.id === 'select_squad') {
+        inferredCompleted = hasSelectedSquad;
+      }
+
+      // Determine availability based on current state
       let available = true;
-      
-      // Check task availability based on type
       if (task.id === 'start_first_course') {
         available = hasAvailableCourses || false;
       } else if (task.id === 'complete_profile') {
@@ -198,10 +206,10 @@ export async function GET(request: NextRequest) {
       } else if (task.id === 'select_squad') {
         available = !hasSelectedSquad; // Available if not selected
       }
-      
+
       return {
         ...task,
-        completed: dbTask?.completed || false,
+        completed: Boolean(dbTask?.completed) || inferredCompleted,
         completedAt: dbTask?.completed_at || null,
         xpAwarded: dbTask?.xp_awarded || 0,
         available

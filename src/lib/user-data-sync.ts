@@ -105,9 +105,26 @@ export class UserDataSync {
         throw fetchError;
       }
 
+      // Preserve existing display_name - NEVER overwrite a saved name with default
+      // Priority: 1) additionalData.display_name (if explicitly provided), 2) existing display_name, 3) default (new users only)
+      let displayName: string;
+      if (additionalData?.display_name && additionalData.display_name.trim() !== '') {
+        // Explicitly provided new display name - use it (for updates)
+        displayName = additionalData.display_name.trim();
+      } else if (existingUser?.display_name && existingUser.display_name.trim() !== '') {
+        // Existing user has a saved display name - ALWAYS preserve it
+        displayName = existingUser.display_name;
+      } else if (existingUser) {
+        // Existing user but no display_name set yet - use default (this is OK for users who haven't set a name)
+        displayName = `User ${walletAddress.slice(0, 6)}...`;
+      } else {
+        // New user - use default
+        displayName = `User ${walletAddress.slice(0, 6)}...`;
+      }
+
       const userData: UserProfile = {
         wallet_address: walletAddress,
-        display_name: existingUser?.display_name || additionalData?.display_name || `User ${walletAddress.slice(0, 6)}...`,
+        display_name: displayName,
         squad: existingUser?.squad || additionalData?.squad || null,
         profile_completed: existingUser?.profile_completed || false,
         squad_test_completed: existingUser?.squad_test_completed || false,
@@ -121,8 +138,7 @@ export class UserDataSync {
           bio: additionalData?.bio || null,
           profile_picture: additionalData?.profile_picture || null,
           username: additionalData?.username || null
-        }),
-        ...additionalData
+        })
       };
 
       const { data: user, error: upsertError } = await supabase

@@ -218,31 +218,44 @@ export async function POST(request: NextRequest) {
 
     console.log('[USER TRACKING] Processing request for wallet:', walletAddress.slice(0, 8) + '...');
 
-    // Prepare user data with only the fields that exist in the schema
-    const userData = {
-      wallet_address: walletAddress,
-      display_name: displayName || `User ${walletAddress.slice(0, 6)}...`,
-      squad: squad || null,
-      profile_completed: !!displayName,
-      last_active: new Date().toISOString(),
-      last_seen: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_at: new Date().toISOString() // Ensure created_at is set for new users
-    };
-
-    console.log('[USER TRACKING] User data to upsert:', userData);
-
-    // First, check if user exists to preserve created_at for existing users
+    // First, check if user exists to preserve created_at and display_name for existing users
     const { data: existingUser } = await supabase
       .from('users')
-      .select('created_at')
+      .select('created_at, display_name')
       .eq('wallet_address', walletAddress)
       .single();
 
-    // If user exists, preserve their original created_at date
-    if (existingUser?.created_at) {
-      userData.created_at = existingUser.created_at;
+    // Determine display_name: preserve existing if no new one provided, or use new one if provided
+    let finalDisplayName: string;
+    if (displayName && displayName.trim() !== '') {
+      // New display name provided - use it
+      finalDisplayName = displayName.trim();
+    } else if (existingUser?.display_name && existingUser.display_name.trim() !== '') {
+      // Existing user has a display name - preserve it (don't overwrite with default)
+      finalDisplayName = existingUser.display_name;
+    } else {
+      // New user or no existing display name - use default
+      finalDisplayName = `User ${walletAddress.slice(0, 6)}...`;
     }
+
+    // Prepare user data with only the fields that exist in the schema
+    const userData = {
+      wallet_address: walletAddress,
+      display_name: finalDisplayName,
+      squad: squad || null,
+      profile_completed: !!(displayName && displayName.trim() !== ''),
+      last_active: new Date().toISOString(),
+      last_seen: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_at: existingUser?.created_at || new Date().toISOString() // Preserve existing or set new
+    };
+
+    console.log('[USER TRACKING] User data to upsert:', userData);
+    console.log('[USER TRACKING] Display name logic:', {
+      provided: displayName,
+      existing: existingUser?.display_name,
+      final: finalDisplayName
+    });
 
     // Upsert user record with better error handling
     const { data: user, error: userError } = await supabase
