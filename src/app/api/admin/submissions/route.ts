@@ -18,21 +18,10 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    // Fetch submissions from bounty_submissions table with bounty details
+    // Fetch submissions from bounty_submissions table
     const submissionsResult = await supabase
       .from('bounty_submissions')
-      .select(`
-        *,
-        bounties:bounty_id (
-          id,
-          title,
-          short_desc,
-          reward,
-          reward_type,
-          status,
-          squad_tag
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (submissionsResult.error) {
@@ -43,11 +32,41 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    console.log('[ADMIN SUBMISSIONS API] Raw data:', submissionsResult.data);
+    console.log('[ADMIN SUBMISSIONS API] Raw submissions data:', submissionsResult.data);
+    console.log('[ADMIN SUBMISSIONS API] Number of submissions:', submissionsResult.data?.length || 0);
+
+    // Get unique bounty IDs from submissions
+    const bountyIds = Array.from(new Set(
+      (submissionsResult.data || [])
+        .map(sub => sub.bounty_id)
+        .filter(Boolean)
+    ));
+
+    console.log('[ADMIN SUBMISSIONS API] Bounty IDs to fetch:', bountyIds);
+
+    // Fetch bounty details separately
+    let bountiesMap: Record<string, any> = {};
+    if (bountyIds.length > 0) {
+      const { data: bounties, error: bountiesError } = await supabase
+        .from('bounties')
+        .select('id, title, short_desc, reward, reward_type, status, squad_tag')
+        .in('id', bountyIds);
+
+      if (bountiesError) {
+        console.error('[ADMIN SUBMISSIONS API] Error fetching bounties:', bountiesError);
+      } else {
+        // Create a map for quick lookup
+        bountiesMap = (bounties || []).reduce((acc, bounty) => {
+          acc[bounty.id] = bounty;
+          return acc;
+        }, {} as Record<string, any>);
+        console.log('[ADMIN SUBMISSIONS API] Fetched bounties:', Object.keys(bountiesMap).length);
+      }
+    }
 
     // Transform submissions to match expected format
     const allSubmissions = (submissionsResult.data || []).map(submission => {
-      const bountyData = Array.isArray(submission.bounties) ? submission.bounties[0] : submission.bounties;
+      const bountyData = bountiesMap[submission.bounty_id] || null;
       
       return {
         id: submission.id,

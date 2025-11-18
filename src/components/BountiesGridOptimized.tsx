@@ -194,17 +194,21 @@ export default function BountiesGridOptimized({
       if (response.ok) {
         console.log('✅ Bounty submitted successfully!');
         
-        // Update user submissions
+        // Update user submissions with the new submission
         setUserSubmissions(prev => ({
           ...prev,
           [bountyId]: result.submission
         }));
         
+        console.log('🔄 Submission updated in state:', result.submission);
+        
         // Toast will be shown by parent component
       } else {
+        console.error('❌ Submission failed:', result.error);
         // Error toast will be shown by parent component
       }
     } catch (error) {
+      console.error('❌ Error submitting bounty:', error);
       // Error toast will be shown by parent component
     } finally {
       setSubmittingBounty(null);
@@ -245,11 +249,13 @@ export default function BountiesGridOptimized({
               <CardHeader className="pb-3 bg-gradient-to-r from-purple-900/30 to-cyan-900/30 group-hover:from-purple-900/50 group-hover:to-cyan-900/50 transition-all duration-300 border-b border-cyan-500/20">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-xl font-bold mb-2 flex items-center gap-2 text-cyan-400 group-hover:text-cyan-300 transition-colors">
-                      <span className="truncate">{bounty.title}</span>
-                      {bounty.hidden && (
-                        <EyeOff className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      )}
+                    <CardTitle className="text-xl font-bold mb-2 text-white group-hover:text-cyan-200 transition-colors">
+                      <div className="flex items-start gap-2">
+                        <span className="flex-1 break-words">{bounty.title}</span>
+                        {bounty.hidden && (
+                          <EyeOff className="w-4 h-4 text-gray-500 flex-shrink-0 mt-1" />
+                        )}
+                      </div>
                     </CardTitle>
                     <div className="flex items-center gap-2 text-sm text-purple-200 mb-2">
                       <Target className="w-4 h-4 flex-shrink-0 text-purple-400" />
@@ -305,7 +311,7 @@ export default function BountiesGridOptimized({
                 
                 {bounty.status === 'active' && (
                   <div className="mt-6 space-y-3">
-                    {!wallet ? (
+                    {!wallet && !walletAddress ? (
                       <div className="text-center p-4 bg-slate-700/50 rounded-lg border border-purple-500/30">
                         <p className="text-sm text-gray-300 mb-3 font-medium">🔒 Connect your wallet to submit</p>
                         <OptimizedButton 
@@ -350,20 +356,9 @@ export default function BountiesGridOptimized({
                             >
                               REJECTED
                             </Badge>
-                            <OptimizedButton
-                              onClick={() => {
-                                // Clear the submission to allow resubmission
-                                setUserSubmissions(prev => {
-                                  const newSubmissions = { ...prev };
-                                  delete newSubmissions[bounty.id];
-                                  return newSubmissions;
-                                });
-                              }}
-                              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 text-sm"
-                            >
-                              <RefreshCw className="w-4 h-4 mr-2" />
-                              Resubmit Entry
-                            </OptimizedButton>
+                            <p className="text-xs text-red-300 text-center mt-2">
+                              You can only submit once per bounty. This submission cannot be resubmitted.
+                            </p>
                           </div>
                         ) : (
                           <div className="bg-yellow-500/10 border-yellow-500/30">
@@ -380,12 +375,27 @@ export default function BountiesGridOptimized({
                           </div>
                         )}
                       </div>
-                    ) : (
+                    ) : (wallet || walletAddress) ? (
                       <BountySubmissionCard 
                         bounty={bounty}
                         onSubmit={handleSubmitBounty}
                         isSubmitting={submittingBounty === bounty.id}
                       />
+                    ) : (
+                      <div className="text-center p-4 bg-slate-700/50 rounded-lg border border-purple-500/30">
+                        <p className="text-sm text-gray-300 mb-3 font-medium">🔒 Connect your wallet to submit</p>
+                        <OptimizedButton 
+                          size="sm"
+                          onClick={async () => {
+                            if (typeof window !== 'undefined' && window.solana) {
+                              await window.solana.connect();
+                            }
+                          }}
+                          className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+                        >
+                          Connect Wallet
+                        </OptimizedButton>
+                      </div>
                     )}
                   </div>
                 )}
@@ -420,6 +430,7 @@ interface BountySubmissionCardProps {
 }
 
 function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissionCardProps) {
+  const { wallet } = useWalletSupabase();
   const [submissionText, setSubmissionText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -430,12 +441,31 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
 
+  // Get wallet address from localStorage as fallback
+  const walletAddress = typeof window !== 'undefined' 
+    ? localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet')
+    : null;
+  
+  // Use wallet from hook or fallback to localStorage
+  const effectiveWallet = wallet || walletAddress;
+
   // Check if bounty requires image
   const requiresImage = bounty.image_required || bounty.submission_type === 'image' || bounty.submission_type === 'both';
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    console.log('📁 File selected:', file ? { name: file.name, size: file.size, type: file.type } : 'No file');
+    
     if (file) {
+      // Check if wallet is connected before allowing upload
+      if (!effectiveWallet) {
+        console.error('❌ No wallet connected');
+        setUploadError('Please connect your wallet before uploading media');
+        setSelectedFile(null);
+        return;
+      }
+
+      console.log('✅ Wallet found:', effectiveWallet.slice(0, 10) + '...');
       setSelectedFile(file);
       setUploadError('');
       setUploadSuccess(false);
@@ -453,37 +483,55 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
       reader.readAsDataURL(file);
       
       // Auto-upload the media
+      console.log('🚀 Starting upload...');
       await uploadMedia(file);
+    } else {
+      console.log('⚠️ No file selected');
     }
   };
 
   const uploadMedia = async (file: File) => {
+    console.log('🔄 uploadMedia called with file:', file.name, file.size, file.type);
     setIsUploading(true);
     setUploadError('');
     setUploadSuccess(false);
     
     try {
+      // Validate wallet is connected
+      if (!effectiveWallet) {
+        console.error('❌ No effective wallet found');
+        throw new Error('Wallet not connected. Please connect your wallet before uploading.');
+      }
+
+      console.log('✅ Wallet validated:', effectiveWallet.slice(0, 10) + '...');
       const isImage = file.type.startsWith('image/');
       const isVideo = file.type.startsWith('video/');
       
-      // Get wallet address from localStorage
-      const walletAddress = typeof window !== 'undefined' 
-        ? localStorage.getItem('walletAddress') || localStorage.getItem('hoodie_academy_wallet') || 'anonymous'
-        : 'anonymous';
-      
+      console.log('📦 Creating FormData...');
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('walletAddress', walletAddress);
+      formData.append('walletAddress', effectiveWallet);
       formData.append('context', 'bounty_submission');
       
+      console.log('📤 Sending upload request to /api/upload/moderated-media...');
       const response = await fetch('/api/upload/moderated-media', {
         method: 'POST',
         body: formData,
       });
       
+      console.log('📥 Response received:', response.status, response.statusText);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload media');
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('❌ Upload error response:', errorData);
+        } catch (parseError) {
+          const text = await response.text();
+          console.error('❌ Failed to parse error response:', text);
+          throw new Error(`Upload failed: ${response.status} ${response.statusText}${text ? ` - ${text}` : ''}`);
+        }
+        throw new Error(errorData.error || `Failed to upload media (${response.status})`);
       }
       
       const result = await response.json();
@@ -496,16 +544,20 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
       // Mark upload as successful
       setUploadSuccess(true);
       setUploadError(''); // Explicitly clear any errors
+      console.log('✅ Upload state updated - success:', true, 'url:', result.url);
       
     } catch (error) {
       console.error('❌ Error uploading media:', error);
-      setUploadError(error instanceof Error ? error.message : 'Failed to upload media');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload media';
+      console.error('❌ Setting upload error:', errorMessage);
+      setUploadError(errorMessage);
       setUploadSuccess(false);
       setSelectedFile(null);
       setImagePreview(null);
       setUploadedImageUrl('');
       setMediaType(null);
     } finally {
+      console.log('🏁 Upload process finished, setting isUploading to false');
       setIsUploading(false);
     }
   };
@@ -523,6 +575,12 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
+    
+    // Check if wallet is connected before allowing upload
+    if (!effectiveWallet) {
+      setUploadError('Please connect your wallet before uploading media');
+      return;
+    }
     
     const files = e.dataTransfer.files;
     if (files.length > 0) {
@@ -596,13 +654,27 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
               id={`file-upload-${bounty.id}`}
               type="file"
               accept="image/*,video/*"
-              onChange={handleFileChange}
+              onChange={(e) => {
+                console.log('📎 Input onChange triggered');
+                handleFileChange(e);
+              }}
+              onClick={(e) => {
+                console.log('🖱️ Input clicked');
+                // Reset value to allow selecting same file again
+                (e.target as HTMLInputElement).value = '';
+              }}
               className="hidden"
               required={bounty.image_required}
               disabled={isUploading}
             />
             
-            <label htmlFor={`file-upload-${bounty.id}`} className="cursor-pointer block">
+            <label 
+              htmlFor={`file-upload-${bounty.id}`} 
+              className="cursor-pointer block"
+              onClick={(e) => {
+                console.log('🖱️ Label clicked');
+              }}
+            >
               {isUploading ? (
                 <div className="flex flex-col items-center gap-3 text-blue-400">
                   <div className="w-10 h-10 border-3 border-blue-400 border-t-transparent rounded-full animate-spin"></div>

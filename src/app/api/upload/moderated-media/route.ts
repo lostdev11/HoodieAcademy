@@ -4,9 +4,14 @@ import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
 
+// Validate environment variables
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('Missing Supabase environment variables');
+}
+
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
 // Define allowed media types
@@ -29,8 +34,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    if (!walletAddress) {
-      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
+    if (!walletAddress || walletAddress.trim() === '') {
+      return NextResponse.json({ 
+        error: 'Wallet address is required. Please connect your wallet before uploading.' 
+      }, { status: 400 });
     }
 
     // Validate file type
@@ -77,6 +84,19 @@ export async function POST(request: NextRequest) {
     
     await writeFile(filePath, buffer);
 
+    // Validate Supabase connection
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      // Clean up the file if database is not configured
+      try {
+        await unlink(filePath);
+      } catch (cleanupError) {
+        console.error('Error cleaning up file:', cleanupError);
+      }
+      return NextResponse.json({ 
+        error: 'Server configuration error: Database not configured. Please contact support.' 
+      }, { status: 500 });
+    }
+
     // Store media record in database for moderation
     const { data: mediaRecord, error: dbError } = await supabase
       .from('moderated_images')
@@ -90,7 +110,6 @@ export async function POST(request: NextRequest) {
         context: context,
         file_size: file.size,
         mime_type: file.type,
-        media_type: isImage ? 'image' : 'video',
         status: 'pending_review',
         uploaded_at: new Date().toISOString(),
         created_at: new Date().toISOString()
@@ -108,11 +127,16 @@ export async function POST(request: NextRequest) {
       } catch (cleanupError) {
         console.error('Error cleaning up file:', cleanupError);
       }
-      return NextResponse.json({ error: 'Failed to save media record' }, { status: 500 });
+      return NextResponse.json({ 
+        error: `Failed to save media record: ${dbError.message || 'Database error'}` 
+      }, { status: 500 });
     }
 
     // Return the public URL and record ID
     const publicUrl = `/uploads/moderated/${fileName}`;
+    
+    // Determine media type from mime_type for response
+    const mediaType = isImage ? 'image' : 'video';
     
     return NextResponse.json({
       success: true,
@@ -122,15 +146,19 @@ export async function POST(request: NextRequest) {
       originalName: file.name,
       size: file.size,
       type: file.type,
-      mediaType: isImage ? 'image' : 'video',
+      mediaType: mediaType,
       status: 'pending_review',
       message: `${isImage ? 'Image' : 'Video'} uploaded successfully and is pending admin review`
     });
 
   } catch (error) {
     console.error('Error uploading moderated media:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
-      { error: 'Failed to upload media' },
+      { 
+        error: `Failed to upload media: ${errorMessage}`,
+        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      },
       { status: 500 }
     );
   }

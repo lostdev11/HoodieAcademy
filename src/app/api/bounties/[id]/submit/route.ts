@@ -76,16 +76,20 @@ export async function POST(
     // Check if user already submitted for this bounty
     const { data: existingSubmission, error: checkError } = await supabase
       .from('bounty_submissions')
-      .select('id')
+      .select('id, status')
       .eq('bounty_id', params.id)
       .eq('wallet_address', walletAddress)
       .single();
 
+    // Prevent ALL resubmissions - if submission exists, block it regardless of status
     if (existingSubmission) {
-      return NextResponse.json({ error: 'You have already submitted for this bounty' }, { status: 400 });
+      return NextResponse.json({ 
+        error: 'You have already submitted for this bounty. Each user can only submit once per bounty.',
+        existingStatus: existingSubmission.status
+      }, { status: 400 });
     }
 
-    // Create submission
+    // Prepare submission data
     const submissionData = {
       bounty_id: params.id,
       wallet_address: walletAddress,
@@ -97,10 +101,11 @@ export async function POST(
       squad: squad || null,
       course_ref: courseRef || null,
       status: 'pending',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
     
-    console.log('📝 Inserting submission data:', submissionData);
+    console.log('📝 Inserting new submission data:', submissionData);
     
     const { data: newSubmission, error: submitError } = await supabase
       .from('bounty_submissions')
@@ -110,16 +115,19 @@ export async function POST(
 
     if (submitError) {
       console.error('❌ Error creating bounty submission:', submitError);
-      return NextResponse.json({ error: 'Failed to submit bounty', details: submitError }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to submit bounty', 
+        details: submitError 
+      }, { status: 500 });
     }
-    
+
     console.log('✅ Bounty submission created successfully:', newSubmission);
 
     // Update bounty submission count
     const { error: updateError } = await supabase
       .from('bounties')
       .update({ 
-        submissions: bounty.submissions + 1,
+        submissions: (bounty.submissions || 0) + 1,
         updated_at: new Date().toISOString()
       })
       .eq('id', params.id);
@@ -131,7 +139,7 @@ export async function POST(
     return NextResponse.json({ 
       success: true, 
       submission: newSubmission,
-      message: 'Bounty submitted successfully!' 
+      message: 'Bounty submitted successfully!'
     }, { status: 201 });
 
   } catch (error) {

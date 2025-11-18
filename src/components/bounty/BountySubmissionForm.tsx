@@ -75,6 +75,13 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Check if wallet is connected before allowing upload
+      if (!wallet) {
+        setUploadError('Please connect your wallet before uploading media');
+        setSelectedFile(null);
+        return;
+      }
+
       setSelectedFile(file);
       setUploadError('');
       setUploadSuccess(false);
@@ -128,9 +135,15 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
       console.log('📥 Upload response status:', response.status);
       
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (parseError) {
+          const text = await response.text();
+          throw new Error(`Upload failed: ${response.status} ${response.statusText}${text ? ` - ${text}` : ''}`);
+        }
         console.error('❌ Upload failed:', errorData);
-        throw new Error(errorData.error || 'Failed to upload media');
+        throw new Error(errorData.error || `Failed to upload media (${response.status})`);
       }
       
       const result = await response.json();
@@ -172,6 +185,12 @@ export const BountySubmissionForm = ({ onSubmit, className = '', bountyData }: B
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
+    
+    // Check if wallet is connected before allowing upload
+    if (!wallet) {
+      setUploadError('Please connect your wallet before uploading media');
+      return;
+    }
     
     const files = e.dataTransfer.files;
     if (files.length > 0) {
