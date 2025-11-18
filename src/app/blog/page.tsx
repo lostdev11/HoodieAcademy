@@ -126,7 +126,7 @@ export default function BlogPage() {
               href="/"
               className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full hover:from-indigo-500 hover:to-purple-500 transition-all duration-200 font-semibold text-sm"
             >
-              🏛️ Login to Academy
+              🏛️ Sign-in to Academy
             </Link>
             <Link
               href="/preview"
