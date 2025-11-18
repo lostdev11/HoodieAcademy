@@ -191,8 +191,9 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const handleDragStart = useCallback((clientX: number, clientY: number, target?: HTMLElement) => {
     if (!widgetRef.current) return;
     
-    // Don't start drag if the target is a button or interactive element
-    if (target && (target.closest('button') || target.closest('[role="button"]') || target.closest('input') || target.closest('textarea'))) {
+    // Don't start drag if the target is an interactive element inside an open chat
+    // But allow dragging the button itself when closed
+    if (isOpen && target && (target.closest('button') || target.closest('[role="button"]') || target.closest('input') || target.closest('textarea'))) {
       return;
     }
     
@@ -211,7 +212,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     setIsDragging(true);
     setHasMoved(false); // Reset movement flag
     hasMovedRef.current = false; // Reset ref as well
-  }, []);
+  }, [isOpen]);
 
   // Universal drag handler for both mouse and touch
   const handleDrag = useCallback((clientX: number, clientY: number) => {
@@ -252,15 +253,18 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
 
   // Mouse event handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Don't start drag if clicking on a button or interactive element
     const target = e.target as HTMLElement;
-    if (target.closest('button') || target.closest('[role="button"]') || target.closest('input') || target.closest('textarea')) {
+    
+    // If clicking on interactive elements inside the chat (like buttons in header), don't drag
+    if (isOpen && (target.closest('button') || target.closest('[role="button"]') || target.closest('input') || target.closest('textarea'))) {
       return;
     }
-    // Prevent opening chat when dragging
+    
+    // For the closed button itself, allow dragging (we'll distinguish click vs drag in handleButtonClick)
+    // Prevent default to allow dragging
     e.preventDefault();
     handleDragStart(e.clientX, e.clientY, target);
-  }, [handleDragStart]);
+  }, [handleDragStart, isOpen]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     handleDrag(e.clientX, e.clientY);
@@ -274,9 +278,10 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
     
-    // Don't start drag if touching a button or interactive element
     const target = e.target as HTMLElement;
-    if (target.closest('button') || target.closest('[role="button"]') || target.closest('input') || target.closest('textarea')) {
+    
+    // If touching interactive elements inside the chat (like buttons in header), don't drag
+    if (isOpen && (target.closest('button') || target.closest('[role="button"]') || target.closest('input') || target.closest('textarea'))) {
       return;
     }
     
@@ -289,7 +294,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     const touch = e.touches[0];
     // Don't prevent default immediately - let click work if no drag occurs
     handleDragStart(touch.clientX, touch.clientY, target);
-  }, [handleDragStart]);
+  }, [handleDragStart, isOpen]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (e.touches.length !== 1) return;
@@ -310,12 +315,12 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     handleDragEnd();
   }, [handleDragEnd, isDragging]);
 
-  const handleButtonClick = (e: React.MouseEvent) => {
-    // Only open chat if we didn't just finish dragging
-    if (!ignoreOpen && !hasMoved && !isDragging) {
+  const handleButtonClick = useCallback((e: React.MouseEvent) => {
+    // Only open chat if we didn't just finish dragging and didn't move significantly
+    if (!ignoreOpen && !hasMoved && !isDragging && !hasMovedRef.current) {
       setIsOpen(true);
     }
-  };
+  }, [ignoreOpen, hasMoved, isDragging]);
 
   // Handle touch end on button specifically for mobile
   const handleButtonTouchEnd = useCallback((e: React.TouchEvent) => {
@@ -432,11 +437,11 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
           left: `${position.x}px`,
           top: `${position.y}px`,
           zIndex: 50,
-          touchAction: 'manipulation', // Allow taps but prevent double-tap zoom
+          touchAction: 'none', // Allow dragging on mobile
           padding: 0,
           margin: 0,
         }}
-        className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} p-0 overflow-hidden relative`}
+        className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} p-0 overflow-hidden relative select-none`}
       >
         <div className="absolute inset-0 w-full h-full p-0 m-0 flex items-center justify-center">
           <Image 
@@ -467,7 +472,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         isMinimized 
           ? 'w-80 h-16' 
           : 'w-full max-w-[384px] h-[600px] sm:w-96'
-      } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+      } ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} select-none`}
     >
       {/* Header */}
       <CardHeader 
