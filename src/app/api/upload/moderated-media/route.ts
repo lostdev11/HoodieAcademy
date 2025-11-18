@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir, unlink } from 'fs/promises';
-import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { createClient } from '@supabase/supabase-js';
 
@@ -13,6 +11,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
+
+// Supabase Storage bucket name for moderated media
+const STORAGE_BUCKET = 'moderated-media';
 
 // Define allowed media types
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
@@ -65,47 +66,54 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Generate unique filename
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExtension}`;
-    
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'moderated');
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (error) {
-      // Directory might already exist
-    }
-
-    // Convert file to buffer and save
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const filePath = join(uploadsDir, fileName);
-    
-    await writeFile(filePath, buffer);
-
     // Validate Supabase connection
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      // Clean up the file if database is not configured
-      try {
-        await unlink(filePath);
-      } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
-      }
       return NextResponse.json({ 
         error: 'Server configuration error: Database not configured. Please contact support.' 
       }, { status: 500 });
     }
 
+    // Generate unique filename
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${uuidv4()}.${fileExtension}`;
+    const filePath = `moderated/${fileName}`;
+    
+    // Convert file to buffer for upload
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Error uploading to Supabase Storage:', uploadError);
+      return NextResponse.json({ 
+        error: `Failed to upload file: ${uploadError.message}` 
+      }, { status: 500 });
+    }
+
+    // Get public URL from Supabase Storage
+    const { data: urlData } = supabase.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(filePath);
+
+    const publicUrl = urlData.publicUrl;
+
     // Store media record in database for moderation
+    const recordId = uuidv4();
     const { data: mediaRecord, error: dbError } = await supabase
       .from('moderated_images')
       .insert({
-        id: uuidv4(),
+        id: recordId,
         filename: fileName,
         original_name: file.name,
         file_path: filePath,
-        public_url: `/uploads/moderated/${fileName}`,
+        public_url: publicUrl,
         wallet_address: walletAddress,
         context: context,
         file_size: file.size,
@@ -121,19 +129,18 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('Error saving media record:', dbError);
-      // Clean up the file if database save fails
+      // Clean up the file from storage if database save fails
       try {
-        await unlink(filePath);
+        await supabase.storage
+          .from(STORAGE_BUCKET)
+          .remove([filePath]);
       } catch (cleanupError) {
-        console.error('Error cleaning up file:', cleanupError);
+        console.error('Error cleaning up file from storage:', cleanupError);
       }
       return NextResponse.json({ 
         error: `Failed to save media record: ${dbError.message || 'Database error'}` 
       }, { status: 500 });
     }
-
-    // Return the public URL and record ID
-    const publicUrl = `/uploads/moderated/${fileName}`;
     
     // Determine media type from mime_type for response
     const mediaType = isImage ? 'image' : 'video';

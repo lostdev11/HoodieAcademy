@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client if credentials are available
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    )
+  : null;
+
+// Supabase Storage bucket name for bounty images
+const STORAGE_BUCKET = 'bounty-images';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,24 +36,42 @@ export async function POST(request: NextRequest) {
     // Generate unique filename
     const fileExtension = file.name.split('.').pop();
     const fileName = `${uuidv4()}.${fileExtension}`;
+    const filePath = `bounties/${fileName}`;
     
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'bounties');
-    try {
-      await mkdir(uploadsDir, { recursive: true });
-    } catch (error) {
-      // Directory might already exist
-    }
-
-    // Convert file to buffer and save
+    // Convert file to buffer for upload
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const filePath = join(uploadsDir, fileName);
-    
-    await writeFile(filePath, buffer);
 
-    // Return the public URL
-    const publicUrl = `/uploads/bounties/${fileName}`;
+    let publicUrl: string;
+
+    // Use Supabase Storage if available, otherwise return error
+    if (supabase) {
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(filePath, buffer, {
+          contentType: file.type,
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Error uploading to Supabase Storage:', uploadError);
+        return NextResponse.json({ 
+          error: `Failed to upload file: ${uploadError.message}` 
+        }, { status: 500 });
+      }
+
+      // Get public URL from Supabase Storage
+      const { data: urlData } = supabase.storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(filePath);
+
+      publicUrl = urlData.publicUrl;
+    } else {
+      return NextResponse.json({ 
+        error: 'File storage not configured. Please configure Supabase Storage.' 
+      }, { status: 500 });
+    }
     
     return NextResponse.json({
       success: true,
