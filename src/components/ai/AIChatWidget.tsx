@@ -15,7 +15,9 @@ import {
   Minimize2, 
   Maximize2,
   Loader2,
-  Sparkles 
+  Sparkles,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
@@ -29,6 +31,7 @@ interface AIChatWidgetProps {
 export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
   const [position, setPosition] = useState({ 
     x: 24, 
@@ -52,7 +55,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   // Fetch user profile for personalization
   const { profile } = useUserProfile(walletAddress);
 
-  // Load wallet address from localStorage
+  // Load wallet address and hidden state from localStorage
   useEffect(() => {
     const loadWalletAddress = () => {
       if (typeof window !== 'undefined') {
@@ -62,12 +65,25 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
       }
     };
 
+    const loadHiddenState = () => {
+      if (typeof window !== 'undefined') {
+        const hidden = localStorage.getItem('ai_chat_hidden');
+        if (hidden === 'true') {
+          setIsHidden(true);
+        }
+      }
+    };
+
     loadWalletAddress();
+    loadHiddenState();
 
     // Listen for wallet connection changes
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'walletAddress' || e.key === 'hoodie_academy_wallet') {
         loadWalletAddress();
+      }
+      if (e.key === 'ai_chat_hidden') {
+        loadHiddenState();
       }
     };
 
@@ -332,6 +348,21 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     }, 250);
   }, []);
 
+  const toggleHide = useCallback((event?: { preventDefault?: () => void; stopPropagation?: () => void }) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    const newHiddenState = !isHidden;
+    setIsHidden(newHiddenState);
+    // If hiding, also close the chat
+    if (newHiddenState) {
+      setIsOpen(false);
+    }
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ai_chat_hidden', String(newHiddenState));
+    }
+  }, [isHidden]);
+
   useEffect(() => {
     return () => {
       if (ignoreTimeoutRef.current) {
@@ -362,6 +393,31 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+
+  // Don't render anything if hidden
+  if (isHidden) {
+    // Show a small toggle button in bottom-right corner to reveal
+    return (
+      <Button
+        onClick={toggleHide}
+        style={{
+          position: 'fixed',
+          bottom: 16,
+          right: 16,
+          zIndex: 50,
+          padding: '8px',
+          minWidth: 'auto',
+          width: '40px',
+          height: '40px',
+        }}
+        className="rounded-full bg-cyan-500 hover:bg-cyan-600 shadow-lg"
+        size="icon"
+        aria-label="Show AI Assistant"
+      >
+        <Eye className="h-5 w-5 text-white" />
+      </Button>
+    );
+  }
 
   if (!isOpen) {
     return (
@@ -459,6 +515,24 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
               aria-label={isMinimized ? "Maximize chat window" : "Minimize chat window"}
             >
               {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-gray-400 hover:text-gray-300 hover:bg-gray-500/10"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleHide(e);
+              }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
+              aria-label="Hide chat bot"
+            >
+              <EyeOff className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
