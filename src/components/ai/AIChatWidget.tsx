@@ -376,13 +376,11 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
           left: `${position.x}px`,
           top: `${position.y}px`,
           zIndex: 50,
-          touchAction: 'manipulation' // Allow taps but prevent double-tap zoom
-        }}
-        className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} p-0 overflow-hidden relative`}
-        style={{
+          touchAction: 'manipulation', // Allow taps but prevent double-tap zoom
           padding: 0,
           margin: 0,
         }}
+        className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} p-0 overflow-hidden relative`}
       >
         <div className="absolute inset-0 w-full h-full p-0 m-0 flex items-center justify-center">
           <Image 
