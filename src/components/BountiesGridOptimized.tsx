@@ -219,9 +219,9 @@ export default function BountiesGridOptimized({
     return (
       <FadeInWhenVisible>
         <div className="text-center py-8">
-          <Target className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">No Bounties Available</h3>
-          <p className="text-gray-500">
+          <Target className="w-12 h-12 mx-auto text-cyan-300 mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">No Bounties Available</h3>
+          <p className="text-gray-200">
             {showHidden ? 'No bounties have been created yet.' : 'All available bounties are currently hidden.'}
           </p>
         </div>
@@ -251,7 +251,7 @@ export default function BountiesGridOptimized({
                         <EyeOff className="w-4 h-4 text-gray-500 flex-shrink-0" />
                       )}
                     </CardTitle>
-                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                    <div className="flex items-center gap-2 text-sm text-purple-200 mb-2">
                       <Target className="w-4 h-4 flex-shrink-0 text-purple-400" />
                       <span className="capitalize truncate font-medium">{bounty.squad_tag || 'All Squads'}</span>
                     </div>
@@ -269,7 +269,7 @@ export default function BountiesGridOptimized({
                   <ExpandableMarkdown 
                     content={bounty.short_desc}
                     maxLength={200}
-                    className="text-gray-300"
+                    className="text-white"
                   />
                 </div>
                 
@@ -400,7 +400,7 @@ export default function BountiesGridOptimized({
                   </OptimizedButton>
                 )}
                 
-                <div className="text-xs text-gray-500 mt-4 text-center border-t pt-3 border-slate-700/50">
+                <div className="text-xs text-gray-200 mt-4 text-center border-t pt-3 border-slate-700/50">
                   Created {new Date(bounty.created_at).toLocaleDateString()}
                 </div>
               </CardContent>
@@ -620,8 +620,8 @@ function BountySubmissionCard({ bounty, onSubmit, isSubmitting }: BountySubmissi
                   <Upload className="w-8 h-8" />
                   <span className="text-sm font-bold">📷 Upload Media</span>
                   <span className="text-xs text-purple-300">Click to browse or drag & drop</span>
-                  <span className="text-xs text-gray-500">Images: JPG, PNG, GIF (Max 10MB)</span>
-                  <span className="text-xs text-gray-500">Videos: MP4, WebM (Max 100MB)</span>
+                  <span className="text-xs text-gray-400">Images: JPG, PNG, GIF (Max 10MB)</span>
+                  <span className="text-xs text-gray-400">Videos: MP4, WebM (Max 100MB)</span>
                 </div>
               )}
             </label>

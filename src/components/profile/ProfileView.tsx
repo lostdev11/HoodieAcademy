@@ -562,12 +562,12 @@ export function ProfileView() {
     // Listen for storage events (when squad is updated in other tabs/components)
     window.addEventListener('storage', handleSquadUpdate);
     
-    // Listen for custom squad update events
-    window.addEventListener('squad-updated', handleSquadUpdate);
+    // Listen for custom squad update events (camelCase to match rest of codebase)
+    window.addEventListener('squadUpdated', handleSquadUpdate);
 
     return () => {
       window.removeEventListener('storage', handleSquadUpdate);
-      window.removeEventListener('squad-updated', handleSquadUpdate);
+      window.removeEventListener('squadUpdated', handleSquadUpdate);
     };
   }, [wallet]);
 

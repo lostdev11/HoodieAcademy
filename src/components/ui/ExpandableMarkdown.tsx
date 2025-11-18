@@ -32,7 +32,7 @@ export function ExpandableMarkdown({
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <div className="text-gray-300">
+      <div className={className || "text-white"}>
         <Markdown content={displayContent} />
       </div>
       
@@ -83,7 +83,7 @@ export function ExpandableMarkdownLines({
   return (
     <div className={`space-y-2 ${className}`}>
       <div 
-        className={`text-gray-300 ${
+        className={`${className || "text-white"} ${
           !isExpanded ? `line-clamp-${maxLines}` : ''
         }`}
       >

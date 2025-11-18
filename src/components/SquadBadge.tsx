@@ -16,6 +16,11 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
   const [userPfp, setUserPfp] = useState<string | null>(null);
   const [loadingPfp, setLoadingPfp] = useState(false);
 
+  // Reset image error when squad changes to allow new badge to load
+  useEffect(() => {
+    setImageError(false);
+  }, [squad]);
+
   // Fetch user's PFP if they're an Academy Member
   useEffect(() => {
     if (showPfpForAcademyMember && walletAddress && squad === 'Unassigned') {
@@ -169,6 +174,7 @@ export default function SquadBadge({ squad, walletAddress, showPfpForAcademyMemb
   return (
     <div className="text-center">
       <Image
+        key={`badge-${normalizedSquad}-${badgePath}`}
         src={badgePath}
         alt={`${normalizedSquad} Squad`}
         width={160}

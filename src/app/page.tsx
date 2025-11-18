@@ -800,22 +800,22 @@ export default function HoodieAcademy() {
                                 {bounty.title}
                               </h4>
                               {bounty.short_desc && (
-                                <p className="text-xs text-gray-300 line-clamp-3">
+                                <p className="text-xs text-white line-clamp-3">
                                   {bounty.short_desc}
                                 </p>
                               )}
                             </div>
-                            <div className="flex items-center justify-between text-xs text-gray-300">
+                            <div className="flex items-center justify-between text-xs text-white">
                               <span className="flex items-center gap-1 text-cyan-200">
                                 <Award className="w-4 h-4" />
                                 {formatBountyReward(bounty.reward, bounty.reward_type)}
                               </span>
-                              <span className="flex items-center gap-1 text-gray-300">
+                              <span className="flex items-center gap-1 text-cyan-200">
                                 <Calendar className="w-4 h-4" />
                                 {formatBountyDeadline(bounty.deadline)}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between text-[11px] text-gray-400">
+                            <div className="flex items-center justify-between text-[11px] text-gray-200">
                               <span className="flex items-center gap-1">
                                 <Users className="w-3.5 h-3.5" />
                                 {typeof bounty.submissions === 'number' ? `${bounty.submissions} submissions` : 'New bounty'}

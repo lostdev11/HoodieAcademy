@@ -212,9 +212,9 @@ export default function BountiesGrid({
   if (!visibleBounties || visibleBounties.length === 0) {
     return (
       <div className="text-center py-8">
-        <Target className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-600 mb-2">No Bounties Available</h3>
-        <p className="text-gray-500">
+        <Target className="w-12 h-12 mx-auto text-cyan-300 mb-4" />
+        <h3 className="text-lg font-semibold text-white mb-2">No Bounties Available</h3>
+        <p className="text-gray-200">
           {showHidden ? 'No bounties have been created yet.' : 'All available bounties are currently hidden.'}
         </p>
       </div>
@@ -239,7 +239,7 @@ export default function BountiesGrid({
                     <EyeOff className="w-4 h-4 text-gray-500 flex-shrink-0" />
                   )}
                 </CardTitle>
-                <div className="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                <div className="flex items-center gap-2 text-sm text-purple-200 mb-2">
                   <Target className="w-4 h-4 flex-shrink-0 text-purple-400" />
                   <span className="capitalize truncate font-medium">{bounty.squad_tag || 'All Squads'}</span>
                 </div>
@@ -257,7 +257,7 @@ export default function BountiesGrid({
               <ExpandableMarkdown 
                 content={bounty.short_desc}
                 maxLength={200}
-                className="text-gray-300"
+                className="text-white"
               />
             </div>
             
@@ -296,7 +296,7 @@ export default function BountiesGrid({
               <div className="mt-6 space-y-3">
                 {!walletAddress ? (
                   <div className="text-center p-4 bg-slate-700/50 rounded-lg border border-purple-500/30">
-                    <p className="text-sm text-gray-300 mb-3 font-medium">🔒 Connect your wallet to submit</p>
+                    <p className="text-sm text-white mb-3 font-medium">🔒 Connect your wallet to submit</p>
                     <Button 
                       size="sm"
                       onClick={() => {
@@ -365,7 +365,7 @@ export default function BountiesGrid({
               </Button>
             )}
             
-            <div className="text-xs text-gray-500 mt-4 text-center border-t pt-3 border-slate-700/50">
+            <div className="text-xs text-gray-200 mt-4 text-center border-t pt-3 border-slate-700/50">
               Created {new Date(bounty.created_at).toLocaleDateString()}
             </div>
           </CardContent>

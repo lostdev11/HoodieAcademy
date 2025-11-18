@@ -17,7 +17,7 @@ export default function Markdown({ content, className }: Props) {
   const safe = React.useMemo(() => DOMPurify.sanitize(content), [content]);
 
   return (
-    <div className={`prose dark:prose-invert max-w-none ${className ?? ""}`}>
+    <div className={`prose dark:prose-invert max-w-none prose-p:text-white prose-li:text-white prose-strong:text-white prose-em:text-white prose-code:text-white prose-pre:text-white prose-headings:text-white prose-a:text-cyan-300 ${className ?? ""}`}>
       <ReactMarkdown
         // remark adds Markdown features (tables, strikethrough, autolinks)
         remarkPlugins={[remarkGfm]}

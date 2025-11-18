@@ -155,6 +155,11 @@ export default function ChooseYourSquadPage() {
       try {
         localStorage.setItem('assignedSquad', JSON.stringify({ name }));
         localStorage.setItem('userSquad', name);
+        // Dispatch events to notify other components of squad change
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('squadUpdated', { 
+          detail: { squad: name } 
+        }));
       } catch {}
       router.push('/dashboard');
     } catch (e: any) {
