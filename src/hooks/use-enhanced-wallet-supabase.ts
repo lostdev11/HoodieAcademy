@@ -122,16 +122,36 @@ export function useEnhancedWalletSupabase() {
         try {
           await provider.connect({ onlyIfTrusted: true } as any);
           console.log('✅ Connected with trusted connection');
-        } catch (trustedError) {
-          console.log('⚠️ Trusted connection failed, trying regular connection...');
-          await provider.connect();
-          console.log('✅ Connected with regular connection');
+        } catch (trustedError: any) {
+          console.log('⚠️ Trusted connection failed, trying regular connection...', trustedError?.message);
+          try {
+            await provider.connect();
+            console.log('✅ Connected with user approval');
+          } catch (connectError: any) {
+            const errorMessage = connectError?.message || connectError?.toString() || '';
+            const isUserRejection = 
+              errorMessage.includes('User rejected') ||
+              errorMessage.includes('User cancelled') ||
+              errorMessage.includes('not been authorized') ||
+              errorMessage.includes('4001') ||
+              connectError?.code === 4001;
+            
+            if (isUserRejection) {
+              throw new Error('Connection was cancelled. Please approve the connection request in your wallet to continue.');
+            } else {
+              throw new Error(`Connection failed: ${errorMessage || 'Unknown error. Please try again.'}`);
+            }
+          }
         }
       } else {
         console.log('✅ Already connected, using existing connection');
       }
 
-      const walletAddress = provider.publicKey!.toString();
+      if (!provider.publicKey) {
+        throw new Error('Connection succeeded but no public key was returned. Please try again.');
+      }
+
+      const walletAddress = provider.publicKey.toString();
       console.log('🎯 Wallet address:', walletAddress);
       
       // Set wallet address first

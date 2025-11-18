@@ -616,13 +616,43 @@ export default function TokenGate({ children }: TokenGateProps) {
       // Connect only if not already connected
       if (!provider.publicKey) {
         try {
+          // Try trusted connection first (silent connection if previously authorized)
           await provider.connect({ onlyIfTrusted: true } as any);
-        } catch {
-          await provider.connect();
+          console.log("✅ Connected with trusted connection");
+        } catch (trustedError: any) {
+          // If trusted connection fails, try regular connection
+          console.log("⚠️ Trusted connection failed, trying regular connection...", trustedError?.message);
+          
+          try {
+            // Call connect without parameters to show the user the connection prompt
+            await provider.connect();
+            console.log("✅ Connected with user approval");
+          } catch (connectError: any) {
+            // Check if user rejected the connection
+            const errorMessage = connectError?.message || connectError?.toString() || '';
+            const isUserRejection = 
+              errorMessage.includes('User rejected') ||
+              errorMessage.includes('User cancelled') ||
+              errorMessage.includes('not been authorized') ||
+              errorMessage.includes('4001') || // User rejected error code
+              connectError?.code === 4001;
+            
+            if (isUserRejection) {
+              throw new Error('Connection was cancelled. Please approve the connection request in your wallet to continue.');
+            } else {
+              // Re-throw other errors with more context
+              throw new Error(`Connection failed: ${errorMessage || 'Unknown error. Please try again.'}`);
+            }
+          }
         }
       }
       
-      const walletAddress = provider.publicKey!.toString();
+      // Verify we have a public key after connection
+      if (!provider.publicKey) {
+        throw new Error('Connection succeeded but no public key was returned. Please try again.');
+      }
+      
+      const walletAddress = provider.publicKey.toString();
       console.log("✅ Debug: Wallet connected successfully:", walletAddress);
       
       // Log wallet connection
@@ -666,7 +696,8 @@ export default function TokenGate({ children }: TokenGateProps) {
       // Trigger verification with success message
       await checkWifHoodieOwnership(walletAddress, true);
     } catch (error: any) {
-      const errorMsg = `Wallet connection failed: ${error.message || 'User rejected the request.'}`;
+      // Error message is already user-friendly from the inner catch blocks
+      const errorMsg = error?.message || 'Wallet connection failed. Please try again.';
       console.error("💥 Debug: Wallet connection error:", error);
       setError(errorMsg);
     } finally {

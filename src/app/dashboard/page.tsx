@@ -296,12 +296,32 @@ export default function HoodieAcademy() {
       if (!provider.publicKey) {
         try {
           await provider.connect({ onlyIfTrusted: true } as any);
-        } catch (trustedError) {
-          await provider.connect();
+        } catch (trustedError: any) {
+          try {
+            await provider.connect();
+          } catch (connectError: any) {
+            const errorMessage = connectError?.message || connectError?.toString() || '';
+            const isUserRejection = 
+              errorMessage.includes('User rejected') ||
+              errorMessage.includes('User cancelled') ||
+              errorMessage.includes('not been authorized') ||
+              errorMessage.includes('4001') ||
+              connectError?.code === 4001;
+            
+            if (isUserRejection) {
+              throw new Error('Connection was cancelled. Please approve the connection request in your wallet to continue.');
+            } else {
+              throw new Error(`Connection failed: ${errorMessage || 'Unknown error. Please try again.'}`);
+            }
+          }
         }
       }
 
-      const walletAddress = provider.publicKey!.toString();
+      if (!provider.publicKey) {
+        throw new Error('Connection succeeded but no public key was returned. Please try again.');
+      }
+
+      const walletAddress = provider.publicKey.toString();
       
       // Store wallet address in all storage locations for consistency
       localStorage.setItem("hoodie_academy_wallet", walletAddress);
