@@ -133,7 +133,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
   
   // Adjust position when opening to ensure it's visible
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isDragging) {
       const isMobile = window.innerWidth < 768;
       const widgetHeight = isMinimized ? 64 : 600;
       const widgetWidth = isOpen ? (isMinimized ? 320 : 384) : 56;
@@ -155,7 +155,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
         };
       });
     }
-  }, [isOpen, isMinimized]);
+  }, [isOpen, isMinimized, isDragging]);
 
   // Universal drag end handler for both mouse and touch
   const handleDragEnd = useCallback(() => {
@@ -179,6 +179,9 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
     if (target && (target.closest('button') || target.closest('[role="button"]') || target.closest('input') || target.closest('textarea'))) {
       return;
     }
+    
+    // Clear the justOpened flag when user starts dragging
+    justOpenedRef.current = false;
     
     const rect = widgetRef.current.getBoundingClientRect();
     setDragOffset({
@@ -305,11 +308,11 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
       e.preventDefault();
       e.stopPropagation(); // Prevent event from bubbling to the Card
       setIsOpen(true);
-      // Set flag to prevent immediate drag start after opening
+      // Set flag to prevent immediate drag start after opening (reduced to 150ms for better UX)
       justOpenedRef.current = true;
       setTimeout(() => {
         justOpenedRef.current = false;
-      }, 300); // 300ms cooldown period
+      }, 150); // 150ms cooldown period - shorter for better responsiveness
     }
     // Always call handleDragEnd to clean up dragging state
     handleDragEnd();
@@ -375,17 +378,20 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
           zIndex: 50,
           touchAction: 'manipulation' // Allow taps but prevent double-tap zoom
         }}
-        className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} p-0 overflow-hidden`}
-        size="icon"
+        className={`h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 ${isDragging ? 'cursor-grabbing' : 'cursor-grab'} p-0 overflow-hidden relative`}
+        style={{
+          padding: 0,
+          margin: 0,
+        }}
       >
-        <div className="w-full h-full flex items-center justify-center p-0">
+        <div className="absolute inset-0 w-full h-full p-0 m-0 flex items-center justify-center">
           <Image 
             src="/images/hoodie-bot.png" 
             alt="Hoodie AI Bot" 
-            width={56} 
-            height={56} 
-            className="rounded-full object-cover w-full h-full"
+            fill
+            className="rounded-full object-cover"
             priority
+            sizes="56px"
           />
         </div>
         <span className="sr-only">Open AI Assistant</span>
