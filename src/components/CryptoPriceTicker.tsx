@@ -74,12 +74,24 @@ export default function CryptoPriceTicker() {
 
   // measure one copy's width to compute duration
   useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    // first half is a single copy (we render A + A)
-    const nodes = Array.from(el.children).slice(0, el.children.length / 2) as HTMLElement[];
-    const contentWidth = nodes.reduce((w, n) => w + n.offsetWidth, 0);
-    if (contentWidth > 0) setDuration(contentWidth / pixelsPerSecond);
+    const calculateDuration = () => {
+      const el = trackRef.current;
+      if (!el) return;
+      // first half is a single copy (we render A + A)
+      const nodes = Array.from(el.children).slice(0, el.children.length / 2) as HTMLElement[];
+      const contentWidth = nodes.reduce((w, n) => w + n.offsetWidth, 0);
+      if (contentWidth > 0) setDuration(contentWidth / pixelsPerSecond);
+    };
+
+    calculateDuration();
+
+    // Recalculate on resize for mobile/desktop switching
+    const handleResize = () => {
+      // Small delay to ensure layout has updated
+      setTimeout(calculateDuration, 100);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [prices]);
 
   const formatPrice = (price: number) => {
@@ -101,9 +113,9 @@ export default function CryptoPriceTicker() {
 
   const PriceItem = ({ crypto }: { crypto: CryptoPrice }) => (
     <div className={`shrink-0 whitespace-nowrap flex items-center ${crypto.color}`}>
-      <span className="font-bold text-sm mr-4">{crypto.symbol}</span>
-      <span className="text-sm font-mono mr-4">{loading ? '...' : formatPrice(crypto.price)}</span>
-      <span className={`text-sm font-semibold mr-6 ${getChangeColor(crypto.change24h)}`}>
+      <span className="font-bold text-xs sm:text-sm mr-2 sm:mr-4">{crypto.symbol}</span>
+      <span className="text-xs sm:text-sm font-mono mr-2 sm:mr-4">{loading ? '...' : formatPrice(crypto.price)}</span>
+      <span className={`text-xs sm:text-sm font-semibold mr-3 sm:mr-6 ${getChangeColor(crypto.change24h)}`}>
         {loading ? '' : `(${formatChange(crypto.change24h)}%)`}
       </span>
       {/* divider */}
@@ -115,10 +127,10 @@ export default function CryptoPriceTicker() {
     <div className="relative bg-slate-900/80 backdrop-blur-sm border-b border-cyan-500/30 overflow-hidden">
         <div className="flex items-center justify-between">
           {/* Scrollable track */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden min-w-0">
             <div
               ref={trackRef}
-              className="flex items-center gap-10 will-change-transform"
+              className="flex items-center gap-4 sm:gap-6 md:gap-10 will-change-transform"
               style={{ animation: `ticker ${duration}s linear infinite` }}
               onMouseEnter={(e) => (e.currentTarget.style.animationPlayState = 'paused')}
               onMouseLeave={(e) => (e.currentTarget.style.animationPlayState = 'running')}
@@ -135,7 +147,7 @@ export default function CryptoPriceTicker() {
           </div>
 
           {/* What's this? Button */}
-          <div className="flex-shrink-0 px-4 py-2">
+          <div className="flex-shrink-0 px-2 sm:px-4 py-2">
             <Button
               variant="ghost"
               size="sm"
@@ -150,8 +162,8 @@ export default function CryptoPriceTicker() {
         </div>
 
         {/* Edge fade for polish (optional) */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-slate-900/80 to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-slate-900/80 to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-8 sm:w-16 bg-gradient-to-r from-slate-900/80 to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-8 sm:w-16 bg-gradient-to-l from-slate-900/80 to-transparent" />
 
         {/* Info Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

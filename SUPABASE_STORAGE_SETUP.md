@@ -145,3 +145,4 @@ After setup, test the upload functionality:
 - If you have existing files, you'll need to migrate them to Supabase Storage
 - The `public_url` field in the `moderated_images` table will now contain Supabase Storage URLs instead of local paths
 
+

@@ -82,6 +82,20 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    // Check if bucket exists before attempting upload
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    if (listError) {
+      console.error('Error listing buckets:', listError);
+    } else {
+      const bucketExists = buckets?.some(bucket => bucket.name === STORAGE_BUCKET);
+      if (!bucketExists) {
+        console.error(`Bucket '${STORAGE_BUCKET}' not found in Supabase Storage`);
+        return NextResponse.json({ 
+          error: `Storage bucket '${STORAGE_BUCKET}' not found. Please create the bucket in your Supabase project. See SUPABASE_STORAGE_SETUP.md for instructions.` 
+        }, { status: 500 });
+      }
+    }
+
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
@@ -92,8 +106,18 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Error uploading to Supabase Storage:', uploadError);
+      
+      // Check for bucket not found error specifically
+      const errorMessage = uploadError.message || String(uploadError);
+      if (errorMessage.toLowerCase().includes('bucket not found') || 
+          errorMessage.toLowerCase().includes('not found')) {
+        return NextResponse.json({ 
+          error: `Storage bucket '${STORAGE_BUCKET}' not found. Please create the bucket in your Supabase project. See SUPABASE_STORAGE_SETUP.md for instructions.` 
+        }, { status: 500 });
+      }
+      
       return NextResponse.json({ 
-        error: `Failed to upload file: ${uploadError.message}` 
+        error: `Failed to upload file: ${errorMessage}` 
       }, { status: 500 });
     }
 

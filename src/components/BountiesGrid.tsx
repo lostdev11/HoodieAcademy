@@ -233,11 +233,13 @@ export default function BountiesGrid({
           <CardHeader className="pb-3 bg-gradient-to-r from-purple-900/30 to-cyan-900/30 group-hover:from-purple-900/50 group-hover:to-cyan-900/50 transition-all duration-300 border-b border-cyan-500/20">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <CardTitle className="text-xl font-bold mb-2 flex items-center gap-2 text-cyan-400 group-hover:text-cyan-300 transition-colors">
-                  <span className="truncate">{bounty.title}</span>
-                  {bounty.hidden && (
-                    <EyeOff className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                  )}
+                <CardTitle className="text-xl font-bold mb-2 text-white group-hover:text-cyan-200 transition-colors">
+                  <div className="flex items-start gap-2">
+                    <span className="flex-1 break-words">{bounty.title}</span>
+                    {bounty.hidden && (
+                      <EyeOff className="w-4 h-4 text-gray-500 flex-shrink-0 mt-1" />
+                    )}
+                  </div>
                 </CardTitle>
                 <div className="flex items-center gap-2 text-sm text-purple-200 mb-2">
                   <Target className="w-4 h-4 flex-shrink-0 text-purple-400" />

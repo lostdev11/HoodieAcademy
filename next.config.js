@@ -36,12 +36,43 @@ const nextConfig = {
   reactStrictMode: true,
   // Optimize images
   images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'arweave.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'wifhoodie.s3.eu-north-1.amazonaws.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mchwxspjjgyboshzqrsd.supabase.co',
+      },
+    ],
     domains: [
       'images.unsplash.com', 
       'via.placeholder.com', 
       'arweave.net',
       'wifhoodie.s3.eu-north-1.amazonaws.com',
-      'ui-avatars.com'
+      'ui-avatars.com',
+      'mchwxspjjgyboshzqrsd.supabase.co',
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,

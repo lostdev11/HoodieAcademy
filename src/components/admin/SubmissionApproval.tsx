@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   Eye, CheckCircle, XCircle, Clock, AlertCircle, 
   Image as ImageIcon, FileText, User, Calendar,
-  Award, Star, Zap, Trophy, Medal, Crown
+  Award, Star, Zap, Trophy, Medal, Crown, RefreshCw
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -54,42 +54,51 @@ export default function SubmissionApproval({ walletAddress }: SubmissionApproval
   const [showImageDialog, setShowImageDialog] = useState(false);
 
   // Fetch all submissions for admin review
-  useEffect(() => {
-    const fetchSubmissions = async () => {
-      setLoading(true);
-      setError(null);
+  const fetchSubmissions = async () => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const response = await fetch(`/api/admin/submissions?wallet=${walletAddress || ''}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch submissions');
-        }
-
-        const data = await response.json();
-        console.log('Fetched submissions for admin approval:', data);
-        console.log('Data type:', typeof data, 'Is array:', Array.isArray(data));
-        if (Array.isArray(data) && data.length > 0) {
-          console.log('First submission structure:', data[0]);
-        }
-        
-        // Data is already in the correct format from the admin API
-        const transformedSubmissions = Array.isArray(data) ? data : [];
-        
-        setSubmissions(transformedSubmissions);
-        console.log('Admin submissions:', transformedSubmissions);
-        console.log('Pending submissions count:', transformedSubmissions.filter(sub => sub.status === 'pending').length);
-
-      } catch (err) {
-        console.error('Error fetching submissions:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch submissions');
-      } finally {
-        setLoading(false);
+    try {
+      const response = await fetch(`/api/admin/submissions?wallet=${walletAddress || ''}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to fetch submissions:', response.status, errorText);
+        throw new Error(`Failed to fetch submissions: ${response.status}`);
       }
-    };
 
+      const data = await response.json();
+      console.log('Fetched submissions for admin approval:', data);
+      console.log('Data type:', typeof data, 'Is array:', Array.isArray(data));
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('First submission structure:', data[0]);
+        console.log('All submission statuses:', data.map((sub: any) => sub.status));
+      }
+      
+      // Data is already in the correct format from the admin API
+      const transformedSubmissions = Array.isArray(data) ? data : [];
+      
+      setSubmissions(transformedSubmissions);
+      console.log('Admin submissions:', transformedSubmissions);
+      console.log('Pending submissions count:', transformedSubmissions.filter(sub => sub.status === 'pending').length);
+      console.log('All status counts:', {
+        pending: transformedSubmissions.filter((sub: any) => sub.status === 'pending').length,
+        approved: transformedSubmissions.filter((sub: any) => sub.status === 'approved').length,
+        rejected: transformedSubmissions.filter((sub: any) => sub.status === 'rejected').length,
+        other: transformedSubmissions.filter((sub: any) => !['pending', 'approved', 'rejected'].includes(sub.status)).length
+      });
+
+    } catch (err) {
+      console.error('Error fetching submissions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch submissions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchSubmissions();
-  }, []);
+  }, [walletAddress]);
 
   const handleApprove = async (submissionId: string) => {
     if (!walletAddress) return;
@@ -262,9 +271,15 @@ export default function SubmissionApproval({ walletAddress }: SubmissionApproval
     );
   };
 
-  const pendingSubmissions = submissions.filter(sub => sub.status === 'pending');
-  const approvedSubmissions = submissions.filter(sub => sub.status === 'approved');
-  const rejectedSubmissions = submissions.filter(sub => sub.status === 'rejected');
+  // Normalize status values (case-insensitive matching)
+  const normalizeStatus = (status: string | undefined) => {
+    if (!status) return 'unknown';
+    return status.toLowerCase();
+  };
+  
+  const pendingSubmissions = submissions.filter(sub => normalizeStatus(sub.status) === 'pending');
+  const approvedSubmissions = submissions.filter(sub => normalizeStatus(sub.status) === 'approved');
+  const rejectedSubmissions = submissions.filter(sub => normalizeStatus(sub.status) === 'rejected');
 
   if (loading) {
     return (
@@ -301,6 +316,15 @@ export default function SubmissionApproval({ walletAddress }: SubmissionApproval
           </h2>
           <p className="text-slate-400">Review and approve bounty submissions</p>
         </div>
+        <Button
+          onClick={fetchSubmissions}
+          disabled={loading}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
       {/* Stats Overview */}
@@ -381,9 +405,9 @@ export default function SubmissionApproval({ walletAddress }: SubmissionApproval
                         <div className="mb-4">
                           {renderContentWithLinks(
                             submission.submission?.description || 'No description provided',
-                            submission.status === 'pending' && detectLinks(submission.submission?.description || '').length > 0
+                            normalizeStatus(submission.status) === 'pending' && detectLinks(submission.submission?.description || '').length > 0
                           )}
-                          {submission.status === 'pending' && detectLinks(submission.submission?.description || '').length > 0 && (
+                          {normalizeStatus(submission.status) === 'pending' && detectLinks(submission.submission?.description || '').length > 0 && (
                             <div className="mt-2 p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-xs text-yellow-400">
                               ⚠️ This submission contains {detectLinks(submission.submission?.description || '').length} link(s). Please review before approving.
                             </div>

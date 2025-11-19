@@ -34,6 +34,23 @@ export async function GET(request: NextRequest) {
 
     console.log('[ADMIN SUBMISSIONS API] Raw submissions data:', submissionsResult.data);
     console.log('[ADMIN SUBMISSIONS API] Number of submissions:', submissionsResult.data?.length || 0);
+    
+    // Log submission statuses for debugging
+    if (submissionsResult.data && submissionsResult.data.length > 0) {
+      const statusCounts = submissionsResult.data.reduce((acc: Record<string, number>, sub: any) => {
+        const status = sub.status || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      console.log('[ADMIN SUBMISSIONS API] Status breakdown:', statusCounts);
+      console.log('[ADMIN SUBMISSIONS API] Sample submission:', {
+        id: submissionsResult.data[0].id,
+        status: submissionsResult.data[0].status,
+        bounty_id: submissionsResult.data[0].bounty_id,
+        wallet_address: submissionsResult.data[0].wallet_address,
+        created_at: submissionsResult.data[0].created_at
+      });
+    }
 
     // Get unique bounty IDs from submissions
     const bountyIds = Array.from(new Set(
