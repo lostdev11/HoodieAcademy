@@ -19,13 +19,30 @@ import {
   Heart
 } from 'lucide-react';
 
-// Placeholder data for Founding Class (28 members)
-const foundingClassMembers = Array.from({ length: 28 }, (_, i) => ({
-  name: `Founding Member ${i + 1}`,
-  xHandle: `@HoodieMember${i + 1}`,
-  bio: `Early Academy member — Decoders Squad.`,
-  pfp: undefined // Optional - can be added later
-}));
+// Founding Class members (28 total)
+const foundingClassMembers = [
+  {
+    name: 'Karen',
+    xHandle: '@cryptokaren_sol',
+    bio: 'Custom wardrobe traits + music',
+    pfp: '/images/cryptokaren.png',
+    hoodieNumber: 'Hoodie #1760'
+  },
+  {
+    name: 'Vic',
+    xHandle: '@YourHomieVic',
+    bio: 'Bridging web2 & web3 with physical products - Creator Squad',
+    pfp: '/images/vic.png',
+    hoodieNumber: 'Hoodie #2866'
+  },
+  // Placeholder data for remaining 26 members
+  ...Array.from({ length: 26 }, (_, i) => ({
+    name: `Founding Member ${i + 3}`,
+    xHandle: `@HoodieMember${i + 3}`,
+    bio: `Early Academy member — Decoders Squad.`,
+    pfp: undefined // Optional - can be added later
+  }))
+];
 
 // Placeholder data for Top Contributors
 const topContributors = [
@@ -78,6 +95,12 @@ export default function AboutPageClient() {
               className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full hover:from-indigo-500 hover:to-purple-500 transition-all duration-200 font-semibold text-sm"
             >
               🏛️ Login to Academy
+            </Link>
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-2 px-4 py-2 border border-gray-700 text-gray-300 rounded-full hover:bg-gray-800 transition-all duration-200 text-sm"
+            >
+              📝 Blog
             </Link>
             <Link
               href="/preview"
@@ -147,6 +170,7 @@ export default function AboutPageClient() {
                   xHandle={member.xHandle}
                   bio={member.bio}
                   pfp={member.pfp}
+                  hoodieNumber={member.hoodieNumber}
                 />
               ))}
             </div>

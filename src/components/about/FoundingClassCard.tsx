@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,9 +9,10 @@ interface FoundingClassCardProps {
   xHandle: string;
   bio?: string;
   pfp?: string;
+  hoodieNumber?: string;
 }
 
-export function FoundingClassCard({ name, xHandle, bio, pfp }: FoundingClassCardProps) {
+export function FoundingClassCard({ name, xHandle, bio, pfp, hoodieNumber }: FoundingClassCardProps) {
   const xUrl = xHandle.startsWith('@') 
     ? `https://x.com/${xHandle.slice(1)}` 
     : xHandle.startsWith('http') 
@@ -34,6 +36,11 @@ export function FoundingClassCard({ name, xHandle, bio, pfp }: FoundingClassCard
           </div>
         )}
         <div className="text-center space-y-1">
+          {hoodieNumber && (
+            <Badge className="mb-2 bg-cyan-500/20 text-cyan-300 border-cyan-500/40 text-xs font-semibold">
+              {hoodieNumber}
+            </Badge>
+          )}
           <Link
             href={xUrl}
             target="_blank"
