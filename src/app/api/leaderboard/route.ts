@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     // Build base query
     let query = supabase
       .from('users')
-      .select('wallet_address, display_name, total_xp, level, squad, created_at, updated_at')
+      .select('wallet_address, display_name, total_xp, level, squad, created_at, updated_at, profile_picture')
       .order('total_xp', { ascending: false });
 
     // Apply filters
@@ -123,6 +123,7 @@ export async function GET(request: NextRequest) {
       const rank = xpToRank.get(user.total_xp) || 1;
       return {
         ...user,
+        profile_picture: user.profile_picture || null,
         rank,
         xpToNextLevel: 1000 - (user.total_xp % 1000),
         progressToNextLevel: ((user.total_xp % 1000) / 1000) * 100
@@ -164,7 +165,7 @@ async function getUserRank(supabase: any, walletAddress: string, squad?: string 
     // Get user's data
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('wallet_address, display_name, total_xp, level, squad, created_at')
+      .select('wallet_address, display_name, total_xp, level, squad, created_at, profile_picture')
       .eq('wallet_address', walletAddress)
       .single();
 
@@ -191,7 +192,7 @@ async function getUserRank(supabase: any, walletAddress: string, squad?: string 
     // Get users above and below this user (context)
     let contextQuery = supabase
       .from('users')
-      .select('wallet_address, display_name, total_xp, level, squad')
+      .select('wallet_address, display_name, total_xp, level, squad, profile_picture')
       .order('total_xp', { ascending: false });
 
     if (squad) {
@@ -209,6 +210,7 @@ async function getUserRank(supabase: any, walletAddress: string, squad?: string 
     // Add ranks to nearby users
     const rankedNearbyUsers = nearbyUsers?.map((u: any, idx: number) => ({
       ...u,
+      profile_picture: u.profile_picture || null,
       rank: startRank + idx,
       isCurrentUser: u.wallet_address === walletAddress
     })) || [];
@@ -217,6 +219,7 @@ async function getUserRank(supabase: any, walletAddress: string, squad?: string 
       success: true,
       user: {
         ...user,
+        profile_picture: user.profile_picture || null,
         rank: userRank,
         xpToNextLevel: 1000 - (user.total_xp % 1000),
         progressToNextLevel: ((user.total_xp % 1000) / 1000) * 100

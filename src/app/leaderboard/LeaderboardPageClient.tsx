@@ -21,6 +21,7 @@ import TokenGate from '@/components/TokenGate';
 import { DashboardSidebar } from '@/components/dashboard/DashboardSidebar';
 import { MobileNavigation } from '@/components/dashboard/MobileNavigation';
 import { getSquadName } from '@/utils/squad-storage';
+import { ProfileAvatar } from '@/components/profile/ProfileAvatar';
 
 interface LeaderboardUser {
   wallet_address: string;
@@ -31,6 +32,7 @@ interface LeaderboardUser {
   rank: number;
   xpToNextLevel: number;
   progressToNextLevel: number;
+  profile_picture?: string | null;
 }
 
 export default function LeaderboardPageClient() {
@@ -93,7 +95,8 @@ export default function LeaderboardPageClient() {
           squad: user.squad || undefined,
           rank: user.rank || 0,
           xpToNextLevel: user.xpToNextLevel || 1000,
-          progressToNextLevel: user.progressToNextLevel || 0
+          progressToNextLevel: user.progressToNextLevel || 0,
+          profile_picture: user.profile_picture || null
         }));
         
         // Sort by rank to ensure correct order
@@ -147,7 +150,8 @@ export default function LeaderboardPageClient() {
           squad: data.user.squad || undefined,
           rank: data.user.rank || 0,
           xpToNextLevel: data.user.xpToNextLevel || 1000,
-          progressToNextLevel: data.user.progressToNextLevel || 0
+          progressToNextLevel: data.user.progressToNextLevel || 0,
+          profile_picture: data.user.profile_picture || null
         };
         
         setCurrentUserRank(sanitizedUser);
@@ -210,6 +214,7 @@ export default function LeaderboardPageClient() {
                       <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-purple-600 rounded-full flex items-center justify-center text-2xl font-bold text-white">
                         #{currentUserRank.rank}
                       </div>
+                      <ProfileAvatar pfpUrl={currentUserRank.profile_picture} size={64} />
                       <div>
                         <p className="text-sm text-gray-400">Your Rank</p>
                         <p className="text-2xl font-bold text-white">{currentUserRank.display_name}</p>
@@ -339,6 +344,8 @@ export default function LeaderboardPageClient() {
                               <span className="text-xl font-bold text-white">#{user.rank}</span>
                             )}
                           </div>
+
+                          <ProfileAvatar pfpUrl={user.profile_picture} size={56} />
 
                           {/* User Info */}
                           <div className="flex-1 min-w-0">

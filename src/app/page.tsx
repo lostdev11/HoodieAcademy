@@ -118,28 +118,22 @@ type BountyHighlight = {
 
 const mediaWall = [
   {
-    type: "meme",
-    title: "Trading Psychology Meme",
-    author: "@MemeLord",
-    image: "/images/video-placeholder.jpg"
-  },
-  {
-    type: "promo",
-    title: "Course Promo Flyer",
-    author: "@DesignWizard",
-    image: "/images/video-placeholder.jpg"
+    type: "submission",
+    title: "Vic — Bounty 2",
+    author: "@Vic",
+    image: "/images/vic-bounty2-submit.png"
   },
   {
     type: "submission",
-    title: "Student Trait Design",
-    author: "@PixelArtist",
-    image: "/images/video-placeholder.jpg"
+    title: "JupDad — Bounty 2",
+    author: "@JupDad",
+    image: "/images/jupdad-bounty2-submit.png"
   },
   {
-    type: "meme",
-    title: "NFT Market Analysis",
-    author: "@CryptoAnalyst",
-    image: "/images/video-placeholder.jpg"
+    type: "submission",
+    title: "Cat — Bounty 2",
+    author: "@Cat",
+    image: "/images/cat-bounty2-submit.png"
   }
 ];
 
@@ -1003,12 +997,15 @@ export default function HoodieAcademy() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                       {mediaWall.map((item, index) => (
                         <div key={index} className="relative group">
-                          <div className="aspect-square bg-slate-700 rounded-lg overflow-hidden border border-slate-600/30 group-hover:border-pink-500/50 transition-colors">
+                          <div
+                            className="bg-slate-700 rounded-lg overflow-hidden border border-slate-600/30 group-hover:border-pink-500/50 transition-colors"
+                            style={{ aspectRatio: '1200 / 630' }}
+                          >
                             <Image
                               src={item.image}
                               alt={item.title}
-                              width={200}
-                              height={200}
+                              width={1200}
+                              height={630}
                               className="w-full h-full object-cover"
                             />
                           </div>

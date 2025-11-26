@@ -42,10 +42,17 @@ const foundingClassMembers = [
     pfp: '/images/nft-preacher.png',
     hoodieNumber: 'Hoodie #1433'
   },
-  // Placeholder data for remaining 25 members
-  ...Array.from({ length: 25 }, (_, i) => ({
-    name: `Founding Member ${i + 4}`,
-    xHandle: `@HoodieMember${i + 4}`,
+  {
+    name: 'Solstradamus',
+    xHandle: '@Solstradamus',
+    bio: 'OG, Portals Ambassador. Passionate guide in web3 education, hot takes, advice, etc.',
+    pfp: '/images/solstra.jpg',
+    hoodieNumber: 'Hoodie #4502'
+  },
+  // Placeholder data for remaining members
+  ...Array.from({ length: 24 }, (_, i) => ({
+    name: `Founding Member ${i + 5}`,
+    xHandle: `@HoodieMember${i + 5}`,
     bio: `Early Academy member — Decoders Squad.`,
     pfp: undefined // Optional - can be added later
   }))
