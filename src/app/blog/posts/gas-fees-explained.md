@@ -147,14 +147,33 @@ Grab a WifHoodie, join Hoodie Academy, and start learning the chain that won't d
 
 ---
 
-## More Beginner Guides From Hoodie Academy
+## Related Hoodie Academy Guides
 
-If you're just getting started with crypto, these guides will help you build confidence and avoid the most common mistakes:
+📘 [Web3 Explained for Beginners (No Tech Skills Needed)](/blog/web3-explained-for-beginners)
 
-- [How to Buy Crypto Safely (Beginner's No-BS 2025 Guide)](/blog/how-to-buy-crypto-safely)
-- [Is Crypto a Scam? Here's the Honest Answer](/blog/is-crypto-a-scam)
-- [How To Set Up a Phantom Wallet Safely](/blog/how-to-set-up-phantom-wallet)
-- [Is It Too Late To Get Into Crypto in 2025?](/blog/is-it-too-late-to-get-into-crypto-in-2025)
+A simple breakdown of how Web3 works, why wallets matter, and how blockchain "malls" operate across Solana and Ethereum.
 
-Each guide builds on another, helping beginners go from confused → confident without getting overwhelmed.
+🔐 [How to Set Up Your First Crypto Wallet (Without Getting Scammed)](/blog/wallet-setup-and-security)
+
+Step-by-step setup for beginners, including warning signs, safety habits, and common mistakes to avoid.
+
+🧰 [How to Buy Crypto Safely (Beginner's 2025 Guide)](/blog/how-to-buy-crypto-safely)
+
+Learn the safest ways to purchase crypto using PayPal, Venmo, Phantom, and trusted exchanges—no jargon, no confusion.
+
+🪙 [Gas Fees Explained Simply (Without the Crypto Nonsense)](/blog/gas-fees-explained)
+
+Why Ethereum feels expensive, why Solana doesn't, and how gas actually works behind the scenes.
+
+🧩 [What the Heck Is a Blockchain? (The Only Analogy You Need)](/blog/what-the-heck-is-a-blockchain)
+
+A beginner-friendly explanation using a shared Google Sheet analogy that finally makes sense.
+
+🎨 [What's the Point of NFTs? (Beginner-Friendly Guide)](/blog/whats-the-point-of-nfts)
+
+Understand why NFTs exist, why they cost what they do, and what people actually do with them today.
+
+🔎 [Is Crypto a Scam? (Honest Answer from the Blockchain Trenches)](/blog/is-crypto-a-scam)
+
+A grounded look at what's legit, what's not, and how to think about crypto in 2025 without getting lost in hype.
 

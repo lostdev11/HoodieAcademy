@@ -141,14 +141,33 @@ It's about trust without middlemen.
 
 When you understand the Google Sheet analogy, you understand 80% of Web3.
 
-## More Beginner-Friendly Guides From Hoodie Academy
+## Related Hoodie Academy Guides
 
-- [How to Buy Crypto Safely](/blog/how-to-buy-crypto-safely)
-- [How to Set Up Your First Crypto Wallet](/blog/wallet-setup-and-security)
-- [Is Crypto a Scam? The Honest Breakdown](/blog/is-crypto-a-scam)
-- [The Solana Wallet Guide for Absolute Beginners](/blog/how-to-set-up-phantom-wallet)
+📘 [Web3 Explained for Beginners (No Tech Skills Needed)](/blog/web3-explained-for-beginners)
 
-Web3 isn't complicated — it's just explained badly.
+A simple breakdown of how Web3 works, why wallets matter, and how blockchain "malls" operate across Solana and Ethereum.
 
-Let's fix that together.
+🔐 [How to Set Up Your First Crypto Wallet (Without Getting Scammed)](/blog/wallet-setup-and-security)
+
+Step-by-step setup for beginners, including warning signs, safety habits, and common mistakes to avoid.
+
+🧰 [How to Buy Crypto Safely (Beginner's 2025 Guide)](/blog/how-to-buy-crypto-safely)
+
+Learn the safest ways to purchase crypto using PayPal, Venmo, Phantom, and trusted exchanges—no jargon, no confusion.
+
+🪙 [Gas Fees Explained Simply (Without the Crypto Nonsense)](/blog/gas-fees-explained)
+
+Why Ethereum feels expensive, why Solana doesn't, and how gas actually works behind the scenes.
+
+🧩 [What the Heck Is a Blockchain? (The Only Analogy You Need)](/blog/what-the-heck-is-a-blockchain)
+
+A beginner-friendly explanation using a shared Google Sheet analogy that finally makes sense.
+
+🎨 [What's the Point of NFTs? (Beginner-Friendly Guide)](/blog/whats-the-point-of-nfts)
+
+Understand why NFTs exist, why they cost what they do, and what people actually do with them today.
+
+🔎 [Is Crypto a Scam? (Honest Answer from the Blockchain Trenches)](/blog/is-crypto-a-scam)
+
+A grounded look at what's legit, what's not, and how to think about crypto in 2025 without getting lost in hype.
 

@@ -31,7 +31,7 @@ const foundingClassMembers = [
   {
     name: 'Vic',
     xHandle: '@YourHomieVic',
-    bio: 'Bridging web2 & web3 with physical products - Creator Squad',
+    bio: 'Bridging Web2 & Web3 with physical products — Creator Squad',
     pfp: '/images/vic.png',
     hoodieNumber: 'Hoodie #2866'
   },
@@ -45,7 +45,7 @@ const foundingClassMembers = [
   {
     name: 'Solstradamus',
     xHandle: '@Solstradamus',
-    bio: 'OG, Portals Ambassador. Passionate guide in web3 education, hot takes, advice, etc.',
+    bio: 'OG, Portals Ambassador, passionate guide in Web3 education.',
     pfp: '/images/solstra.jpg',
     hoodieNumber: 'Hoodie #4502'
   },
@@ -132,24 +132,13 @@ export default function AboutPageClient() {
           </CardHeader>
           <CardContent className="space-y-4 text-gray-300 leading-relaxed">
             <p className="text-base sm:text-lg">
-              Hoodie Academy started as a simple idea:
-            </p>
-            <p className="text-lg sm:text-xl font-semibold text-cyan-300">
-              Web3 education shouldn't feel confusing, intimidating, or locked behind hype.
+              Hoodie Academy is a beginner-friendly Web3 education platform built to make learning crypto, NFTs, wallets, trading, and digital culture simple and approachable. Most people don't need another "crypto guru." They need clear explanations, honest guidance, and a community that actually wants them to learn.
             </p>
             <p>
-              Most people don't need another "crypto guru."
-            </p>
-            <p>
-              They need a community — something honest, grounded, and actually beginner-friendly.
-            </p>
-            <p>
-              So we built Hoodie Academy as a gamified learning hub for Web3, trading, and digital culture.
-              No flexing. No jargon walls. No gatekeeping.
-              Just real people learning together, squad by squad.
+              Web3 education shouldn't feel confusing, intimidating, or locked behind hype. So we built Hoodie Academy as a gamified learning hub where anyone can start at Level 0 and grow through squad tracks, courses, bounties, and community collaboration — all without jargon walls or gatekeeping.
             </p>
             <p className="font-semibold text-purple-300">
-              And from the very beginning, this place has been shaped by the Hoodies themselves.
+              Everything inside the Academy is shaped by the Hoodies themselves. From early testers to researchers to feature contributors, this place exists because the community built it that way.
             </p>
           </CardContent>
         </Card>
@@ -165,10 +154,10 @@ export default function AboutPageClient() {
           <CardContent className="space-y-6">
             <div className="space-y-4 text-gray-300 leading-relaxed">
               <p>
-                When Hoodie Academy launched, a small group of early members stepped up — testing the site, giving feedback, helping shape the lessons, and making the Academy better for everyone who joins after them.
+                When Hoodie Academy launched, a small group of early members stepped up to test the site, give feedback, report bugs, and help shape the lessons.
               </p>
               <p className="font-semibold text-yellow-300">
-                This is the Founding Class: 28 Hoodies who were here before the world knew what we were building.
+                This is the Founding Class — 28 Hoodies who were here before the world knew what we were building.
               </p>
               <p className="text-lg font-semibold text-cyan-300">
                 They are the reason this Academy exists today.
@@ -202,7 +191,7 @@ export default function AboutPageClient() {
           <CardContent className="space-y-6">
             <div className="space-y-4 text-gray-300 leading-relaxed">
               <p>
-                These members consistently went above and beyond — giving feedback, testing new features, helping with course content, reporting bugs, and pushing the vision forward.
+                These members consistently went above and beyond — testing features, checking course accuracy, providing early design input, and pushing the vision forward.
               </p>
             </div>
             
@@ -230,18 +219,15 @@ export default function AboutPageClient() {
           </CardHeader>
           <CardContent className="space-y-4 text-gray-300 leading-relaxed">
             <p>
-              Web3 has always been about ownership.
-            </p>
-            <p className="font-semibold text-pink-300">
-              Hoodie Academy takes that seriously — the community isn't the audience; they're co-builders.
+              Web3 has always been about ownership — not just owning assets, but owning the culture you help build. Hoodie Academy treats the community the same way: you're not the audience, you're co-builders.
             </p>
             <p>
-              Recognizing early contributors also helps with:
+              Recognizing early contributors helps with:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Trust</li>
-              <li>Community pride</li>
-              <li>Future holders understanding the culture</li>
+              <li><strong>Trust</strong> — transparency about who shaped the Academy</li>
+              <li><strong>Community pride</strong> — your work is visible</li>
+              <li><strong>Orientation for new holders</strong> — understand the culture they're joining</li>
             </ul>
             <div className="mt-6 p-4 bg-purple-900/30 border border-purple-500/30 rounded-lg">
               <p className="text-sm text-gray-300 mb-2">
@@ -260,7 +246,7 @@ export default function AboutPageClient() {
                 <ExternalLink className="w-3 h-3" />
               </Link>
               <p className="text-xs text-gray-400 mt-2">
-                This helps both the Academy and your personal brand.
+                It helps both the Academy and your personal brand.
               </p>
             </div>
           </CardContent>
@@ -276,17 +262,16 @@ export default function AboutPageClient() {
           </CardHeader>
           <CardContent className="space-y-4 text-gray-300 leading-relaxed">
             <p>
-              If you're a WifHoodie holder, there's something special coming…
+              If you're a WifHoodie holder… something special is coming.
             </p>
             <p>
-              Very soon, the <Link href="https://retailstar.xyz/" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline transition-colors">Retailstar Mall</Link> universe will open a hidden door.
-              Inside it? A place just for Hoodies — a hub, a portal, a small corner of the Mall that only the Academy will fully understand.
+              Soon, the <Link href="https://retailstar.xyz/" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline transition-colors">Retailstar Mall</Link> universe will open a hidden door — a space inside the Mall built just for Hoodies. It will connect the Academy, the Mall's lore, and future integrations in a way only Hoodies will recognize.
             </p>
             <p className="font-semibold text-purple-300 text-lg">
-              You'll have your own HoodieHQ sooner than you think.
+              Your Hoodie isn't just a pass. It's a key.
             </p>
             <p className="text-cyan-300">
-              Keep your Hoodie close.
+              Keep it close.
             </p>
           </CardContent>
         </Card>
@@ -298,10 +283,10 @@ export default function AboutPageClient() {
           </CardHeader>
           <CardContent className="space-y-4 text-gray-300 leading-relaxed">
             <p>
-              The public preview gives you a taste of what we're building — tutorials, FAQs, and the T100 course.
+              The public preview lets you explore tutorials, FAQs, and the T100 course.
             </p>
             <p>
-              If you want the full experience — squads, bounties, higher-level modules, and upcoming collabs — you'll need a WifHoodie.
+              But the full experience — squads, bounties, advanced modules, and upcoming collabs — requires a WifHoodie.
             </p>
             <div className="flex flex-wrap gap-4 mt-6">
               <Link href="/preview">
