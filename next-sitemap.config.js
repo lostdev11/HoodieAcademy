@@ -113,6 +113,14 @@ module.exports = {
       lastmod: new Date().toISOString(),
     });
 
+    // Add about page
+    paths.push({
+      loc: '/about',
+      changefreq: 'weekly',
+      priority: 0.7,
+      lastmod: new Date().toISOString(),
+    });
+
     return paths;
   },
   transform: async (config, path) => {
