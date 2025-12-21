@@ -303,7 +303,20 @@ export async function GET(request: NextRequest) {
 
     console.log('📊 [ANALYTICS API] Fetching analytics:', { type, days, limit });
 
-    const supabase = getSupabaseClient();
+    let supabase: SupabaseClient;
+    try {
+      supabase = getSupabaseClient();
+    } catch (configError: any) {
+      console.error('❌ [ANALYTICS API] Supabase configuration error:', configError);
+      return NextResponse.json(
+        { 
+          error: 'Server configuration error', 
+          details: configError.message || 'Supabase client initialization failed',
+          success: false 
+        },
+        { status: 500 }
+      );
+    }
 
     // TODO: Verify admin authentication
     // For now, we'll allow access without auth check

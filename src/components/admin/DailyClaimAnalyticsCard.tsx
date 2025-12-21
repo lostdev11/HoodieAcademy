@@ -39,8 +39,28 @@ export default function DailyClaimAnalyticsCard() {
     fetchAnalytics();
     // Refresh every 30 seconds
     const interval = setInterval(fetchAnalytics, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    
+    // Listen for claim events to refresh immediately
+    const handleClaimEvent = (event?: Event) => {
+      console.log('📊 [Analytics] Claim event detected, refreshing analytics...', event);
+      // Small delay to ensure database has been updated
+      setTimeout(() => {
+        fetchAnalytics();
+      }, 1000); // Increased delay to ensure database write is complete
+    };
+    
+    // Listen for various claim-related events
+    window.addEventListener('xpUpdated', handleClaimEvent);
+    window.addEventListener('xpAwarded', handleClaimEvent);
+    window.addEventListener('dailyClaimSuccess', handleClaimEvent);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('xpUpdated', handleClaimEvent);
+      window.removeEventListener('xpAwarded', handleClaimEvent);
+      window.removeEventListener('dailyClaimSuccess', handleClaimEvent);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAnalytics = async () => {
     try {
@@ -49,25 +69,47 @@ export default function DailyClaimAnalyticsCard() {
 
       // Fetch overview
       const overviewRes = await fetch('/api/admin/daily-claim-analytics?type=overview');
-      if (!overviewRes.ok) throw new Error('Failed to fetch overview');
-      const overviewData = await overviewRes.json();
+      const overviewData = await overviewRes.json().catch(() => ({ error: 'Failed to parse response' }));
+      if (!overviewRes.ok || overviewData.error) {
+        throw new Error(overviewData.error || `Failed to fetch overview: ${overviewRes.status}`);
+      }
+      if (!overviewData.data) {
+        throw new Error('No data received from overview endpoint');
+      }
       setOverview(overviewData.data);
 
       // Fetch breakdown
       const breakdownRes = await fetch('/api/admin/daily-claim-analytics?type=breakdown');
-      if (!breakdownRes.ok) throw new Error('Failed to fetch breakdown');
-      const breakdownData = await breakdownRes.json();
-      setBreakdown(breakdownData.data);
+      const breakdownData = await breakdownRes.json().catch(() => ({ error: 'Failed to parse response' }));
+      if (!breakdownRes.ok || breakdownData.error) {
+        throw new Error(breakdownData.error || `Failed to fetch breakdown: ${breakdownRes.status}`);
+      }
+      setBreakdown(breakdownData.data || []);
 
       // Fetch top squads
       const squadsRes = await fetch('/api/admin/daily-claim-analytics?type=squads&limit=5');
-      if (!squadsRes.ok) throw new Error('Failed to fetch squads');
-      const squadsData = await squadsRes.json();
-      setTopSquads(squadsData.data);
+      const squadsData = await squadsRes.json().catch(() => ({ error: 'Failed to parse response' }));
+      if (!squadsRes.ok || squadsData.error) {
+        throw new Error(squadsData.error || `Failed to fetch squads: ${squadsRes.status}`);
+      }
+      setTopSquads(squadsData.data || []);
 
     } catch (err: any) {
       console.error('Error fetching analytics:', err);
       setError(err.message || 'Failed to fetch analytics');
+      // Set default values on error so component still renders
+      if (!overview) {
+        setOverview({
+          totalClaims: 0,
+          uniqueClaimers: 0,
+          successfulClaims: 0,
+          rejectedClaims: 0,
+          avgTimeToClaimMinutes: 0,
+          medianTimeToClaimMinutes: 0,
+          totalXpAwarded: 0,
+          avgProcessingTimeMs: 0
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -105,22 +147,26 @@ export default function DailyClaimAnalyticsCard() {
     );
   }
 
-  if (error) {
+  if (!overview) {
     return (
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h3 className="text-xl font-bold text-white mb-4">📊 Daily Claim Analytics</h3>
-        <div className="text-red-400">Error: {error}</div>
-        <button
-          onClick={fetchAnalytics}
-          className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
-        >
-          Retry
-        </button>
+        {error ? (
+          <>
+            <div className="text-red-400 mb-4">Error: {error}</div>
+            <button
+              onClick={fetchAnalytics}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
+            >
+              Retry
+            </button>
+          </>
+        ) : (
+          <div className="text-gray-400">No data available</div>
+        )}
       </div>
     );
   }
-
-  if (!overview) return null;
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
@@ -134,6 +180,12 @@ export default function DailyClaimAnalyticsCard() {
           {loading ? '⟳' : '🔄'} Refresh
         </button>
       </div>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-900/20 border border-red-700 rounded text-red-400 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex space-x-2 mb-4 border-b border-gray-700">

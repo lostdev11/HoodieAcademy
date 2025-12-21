@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDisplayNameReadOnly } from '@/hooks/use-display-name';
 import { supabase, Message, NewMessage } from '@/lib/supabase';
 import MessageBubble from './MessageBubble';
@@ -69,7 +69,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
   }, []);
 
   // Helper function to resolve a single name
-  const resolveName = async (walletAddress: string) => {
+  const resolveName = useCallback(async (walletAddress: string) => {
     try {
       // Try to get user data from database
       const response = await fetch(`/api/users/?walletAddress=${walletAddress}`);
@@ -90,10 +90,10 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
       const shortAddress = walletAddress.slice(0, 4) + '...' + walletAddress.slice(-4);
       setResolvedNames(prev => ({ ...prev, [walletAddress]: shortAddress }));
     }
-  };
+  }, []);
 
   // Helper function to resolve multiple names
-  const resolveMultipleNames = async (walletAddresses: string[]) => {
+  const resolveMultipleNames = useCallback(async (walletAddresses: string[]) => {
     try {
       // Resolve them one by one (could be optimized with batch API call in the future)
       for (const address of walletAddresses) {
@@ -102,7 +102,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
     } catch (error) {
       console.error('Error resolving multiple names:', error);
     }
-  };
+  }, [resolveName]);
 
   // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -173,7 +173,7 @@ export default function ChatRoom({ squad }: ChatRoomProps) {
     };
 
     loadMessages();
-  }, [squad, currentUser, resolveMultipleNames]);
+  }, [squad, currentUser, resolveMultipleNames, toast]);
 
   // Subscribe to real-time messages
   useEffect(() => {

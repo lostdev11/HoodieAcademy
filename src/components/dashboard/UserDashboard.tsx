@@ -109,6 +109,10 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
       try {
         console.log('🔄 UserDashboard: Fetching user profile for', walletAddress?.slice(0, 8) + '...');
         const profileResponse = await fetch(`/api/user-profile?wallet=${walletAddress}`);
+        if (!profileResponse.ok) {
+          console.warn('⚠️ UserDashboard: Failed to fetch user profile:', profileResponse.status, profileResponse.statusText);
+          throw new Error(`HTTP ${profileResponse.status}: ${profileResponse.statusText}`);
+        }
         const profileData = await profileResponse.json();
         
         if (profileData.success && profileData.profile) {
@@ -118,8 +122,13 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
       } catch (error) {
         console.error('❌ UserDashboard: Error fetching user profile:', error);
         // Fallback to old method
-        const squadData = await fetchUserSquad(walletAddress);
-        squadName = squadData?.hasSquad && squadData?.squad?.name ? squadData.squad.name : 'Unassigned';
+        try {
+          const squadData = await fetchUserSquad(walletAddress);
+          squadName = squadData?.hasSquad && squadData?.squad?.name ? squadData.squad.name : 'Unassigned';
+        } catch (fallbackError) {
+          console.error('❌ UserDashboard: Fallback method also failed:', fallbackError);
+          squadName = 'Unassigned';
+        }
       }
       
       // Final fallback: use cached/local squad if available
@@ -164,7 +173,9 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
         let squadRank = 0;
         try {
           const rankResponse = await fetch(`/api/leaderboard?wallet=${walletAddress}`);
-          if (rankResponse.ok) {
+          if (!rankResponse.ok) {
+            console.warn('⚠️ UserDashboard: Failed to fetch global rank:', rankResponse.status, rankResponse.statusText);
+          } else {
             const rankData = await rankResponse.json();
             if (rankData.success && rankData.user) {
               globalRank = rankData.user.rank || 0;
@@ -174,17 +185,24 @@ export default function UserDashboard({ walletAddress, className = "" }: UserDas
 
           // Get squad rank if user has a squad
           if (squadName && squadName !== 'Unassigned') {
-            const squadRankResponse = await fetch(`/api/leaderboard?wallet=${walletAddress}&squad=${squadName}`);
-            if (squadRankResponse.ok) {
-              const squadRankData = await squadRankResponse.json();
-              if (squadRankData.success && squadRankData.user) {
-                squadRank = squadRankData.user.rank || 0;
-                console.log('🎯 UserDashboard: Fetched squad rank:', squadRank);
+            try {
+              const squadRankResponse = await fetch(`/api/leaderboard?wallet=${walletAddress}&squad=${encodeURIComponent(squadName)}`);
+              if (!squadRankResponse.ok) {
+                console.warn('⚠️ UserDashboard: Failed to fetch squad rank:', squadRankResponse.status, squadRankResponse.statusText);
+              } else {
+                const squadRankData = await squadRankResponse.json();
+                if (squadRankData.success && squadRankData.user) {
+                  squadRank = squadRankData.user.rank || 0;
+                  console.log('🎯 UserDashboard: Fetched squad rank:', squadRank);
+                }
               }
+            } catch (squadError) {
+              console.error('❌ UserDashboard: Error fetching squad rank:', squadError);
             }
           }
         } catch (error) {
           console.error('❌ UserDashboard: Error fetching ranks:', error);
+          // Continue with default ranks (0) - not critical
         }
 
         const newStats = {

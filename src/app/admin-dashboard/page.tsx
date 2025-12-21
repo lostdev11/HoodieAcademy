@@ -33,6 +33,7 @@ import { MentorshipManager } from '@/components/admin/MentorshipManager';
 import { GovernanceManager } from '@/components/admin/GovernanceManager';
 import SocialFeedManager from '@/components/admin/SocialFeedManager';
 import StudentOfTheWeekManager from '@/components/admin/StudentOfTheWeekManager';
+import HoodieOfTheMonthRecommender from '@/components/admin/HoodieOfTheMonthRecommender';
 import { NotificationProvider, useNotifications } from '@/contexts/NotificationContext';
 import { NotificationBadge } from '@/components/notifications/NotificationBadge';
 import CourseManagementTab from '@/components/admin/CourseManagementTab';
@@ -85,6 +86,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
       'governance': 'Governance',
       'courses': 'Courses',
       'student-of-the-week': 'Student of the Month',
+      'hoodie-recommendations': 'Hoodie Recommendations',
       'preview-academy': 'Free Course',
       'starter-pack': 'Starter Pack'
     };
@@ -194,6 +196,7 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                     {activeTab === 'governance' && <Vote className="w-4 h-4" />}
                     {activeTab === 'courses' && <BookOpen className="w-4 h-4" />}
                     {activeTab === 'student-of-the-week' && <Award className="w-4 h-4" />}
+                    {activeTab === 'hoodie-recommendations' && <Trophy className="w-4 h-4" />}
                     {activeTab === 'preview-academy' && <BookOpen className="w-4 h-4" />}
                     {activeTab === 'starter-pack' && <Gift className="w-4 h-4" />}
                     <span>{getTabDisplayName(activeTab)}</span>
@@ -318,6 +321,12 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
                   <div className="flex items-center space-x-2">
                     <Award className="w-4 h-4" />
                     <span>Student of the Month</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="hoodie-recommendations">
+                  <div className="flex items-center space-x-2">
+                    <Trophy className="w-4 h-4" />
+                    <span>Hoodie Recommendations</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="preview-academy">
@@ -515,6 +524,14 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
               <span>Student of the Month</span>
             </Button>
             <Button
+              variant={activeTab === "hoodie-recommendations" ? "default" : "outline"}
+              onClick={() => setActiveTab("hoodie-recommendations")}
+              className="flex items-center space-x-2"
+            >
+              <Trophy className="w-4 h-4" />
+              <span>Hoodie Recommendations</span>
+            </Button>
+            <Button
               variant={activeTab === "preview-academy" ? "default" : "outline"}
               onClick={() => setActiveTab("preview-academy")}
               className="flex items-center space-x-2"
@@ -654,6 +671,11 @@ function AdminDashboardContent({ walletAddress }: { walletAddress: string }) {
           {/* Student of the Week Tab */}
           <TabsContent value="student-of-the-week">
             <StudentOfTheWeekManager walletAddress={walletAddress} />
+          </TabsContent>
+
+          {/* Hoodie of the Month Recommendations Tab */}
+          <TabsContent value="hoodie-recommendations">
+            <HoodieOfTheMonthRecommender walletAddress={walletAddress} />
           </TabsContent>
 
           {/* Free Course Tab */}

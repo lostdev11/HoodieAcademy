@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
+  // Explicitly set the workspace root to silence the multiple lockfiles warning
+  outputFileTracingRoot: path.join(__dirname),
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
@@ -7,14 +11,8 @@ const nextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
-  experimental: {
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
-  },
+  // Server external packages (moved from experimental)
+  serverExternalPackages: ['@supabase/supabase-js'],
   // Redirects for SEO: Normalize www to non-www and HTTP to HTTPS
   // Note: These are handled by middleware, but added here as backup
   // The middleware handles dynamic redirects based on the request
@@ -26,7 +24,6 @@ const nextConfig = {
     ];
   },
   // PERFORMANCE OPTIMIZATIONS
-  swcMinify: true, // Use SWC for faster minification
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn'],
@@ -66,14 +63,6 @@ const nextConfig = {
         hostname: 'mchwxspjjgyboshzqrsd.supabase.co',
       },
     ],
-    domains: [
-      'images.unsplash.com', 
-      'via.placeholder.com', 
-      'arweave.net',
-      'wifhoodie.s3.eu-north-1.amazonaws.com',
-      'ui-avatars.com',
-      'mchwxspjjgyboshzqrsd.supabase.co',
-    ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
   },
@@ -106,6 +95,17 @@ const nextConfig = {
         ],
       },
     ];
+  },
+  // Webpack configuration to ignore problematic files
+  webpack: (config, { webpack }) => {
+    // Ignore problematic files in node_modules using IgnorePlugin
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /node_modules\/thread-stream\/.*\.(md|txt|zip|sh|test\.ts|LICENSE)$/,
+      })
+    );
+
+    return config;
   },
 }
 

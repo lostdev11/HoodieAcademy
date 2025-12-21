@@ -47,9 +47,6 @@ export function useDisplayName() {
         const userData = await response.json();
         const dbDisplayName = userData?.user?.display_name;
         
-        console.log('🔍 [DISPLAY NAME] Fetched user data:', userData);
-        console.log('🔍 [DISPLAY NAME] Database display name:', dbDisplayName);
-        
         if (dbDisplayName) {
           // Database has a display name - use it and update localStorage
           localStorage.setItem('userDisplayName', dbDisplayName);
@@ -58,7 +55,6 @@ export function useDisplayName() {
             isLoading: false,
             error: null
           });
-          console.log('✅ [DISPLAY NAME] Using database display name:', dbDisplayName);
         } else {
           // No display name in database, use cached or fallback
           const finalName = cachedName || `User ${walletAddress.slice(0, 6)}...`;
@@ -67,7 +63,6 @@ export function useDisplayName() {
             isLoading: false,
             error: null
           });
-          console.log('⚠️ [DISPLAY NAME] No database display name, using fallback:', finalName);
         }
       } else {
         // API failed, use cached or fallback

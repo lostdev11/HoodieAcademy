@@ -180,19 +180,22 @@ export function DashboardSidebar({ isCollapsed = false, onToggle }: DashboardSid
 
       try {
         const response = await fetch(`/api/notifications/counts?wallet=${walletAddress}&is_admin=${isAdmin}`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.counts) {
-            setNotificationCounts({
-              newAnnouncements: data.counts.newAnnouncements || 0,
-              newEvents: data.counts.newEvents || 0,
-              newBounties: data.counts.newBounties || 0,
-              newCourses: data.counts.newCourses || 0,
-            });
-          }
+        if (!response.ok) {
+          console.error('Failed to fetch notifications:', response.status, response.statusText);
+          return;
+        }
+        const data = await response.json();
+        if (data.counts) {
+          setNotificationCounts({
+            newAnnouncements: data.counts.newAnnouncements || 0,
+            newEvents: data.counts.newEvents || 0,
+            newBounties: data.counts.newBounties || 0,
+            newCourses: data.counts.newCourses || 0,
+          });
         }
       } catch (error) {
         console.error('Failed to fetch notifications:', error);
+        // Silently fail - notifications are not critical
       }
     };
 

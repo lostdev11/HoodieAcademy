@@ -29,6 +29,14 @@ const DEFAULT_ONBOARDING_TASKS = [
     action: { type: 'navigate', path: '/profile' }
   },
   {
+    id: 'add_pfp',
+    title: 'Add Profile Picture',
+    description: 'Set your profile picture to personalize your account',
+    xpReward: 20,
+    icon: 'image',
+    action: { type: 'navigate', path: '/profile' }
+  },
+  {
     id: 'select_squad',
     title: 'Choose Your Squad',
     description: 'Join a squad that matches your interests',
@@ -98,7 +106,7 @@ export async function GET(request: NextRequest) {
     // Check if user has completed onboarding and get user profile
     const { data: user } = await supabase
       .from('users')
-      .select('onboarding_completed, onboarding_completed_at, display_name, squad, squad_id')
+      .select('onboarding_completed, onboarding_completed_at, display_name, squad, squad_id, profile_picture')
       .eq('wallet_address', walletAddress)
       .single();
 
@@ -122,6 +130,11 @@ export async function GET(request: NextRequest) {
 
     // Check if user has completed profile (has display name)
     const hasCompletedProfile = !!user?.display_name;
+
+    // Check if user has a profile picture (not null and not just emoji)
+    const hasProfilePicture = !!user?.profile_picture && 
+      user.profile_picture !== '🧑‍🎓' && 
+      (user.profile_picture.startsWith('http://') || user.profile_picture.startsWith('https://'));
 
     // Check if user has selected a squad
     const hasSelectedSquad = !!user?.squad && user.squad !== 'Unassigned';
@@ -166,6 +179,8 @@ export async function GET(request: NextRequest) {
             available = hasAvailableCourses || false;
           } else if (task.id === 'complete_profile') {
             available = !hasCompletedProfile; // Available if not completed
+          } else if (task.id === 'add_pfp') {
+            available = !hasProfilePicture; // Available if not completed
           } else if (task.id === 'select_squad') {
             available = !hasSelectedSquad; // Available if not selected
           }
@@ -193,6 +208,8 @@ export async function GET(request: NextRequest) {
       let inferredCompleted = false;
       if (task.id === 'complete_profile') {
         inferredCompleted = hasCompletedProfile;
+      } else if (task.id === 'add_pfp') {
+        inferredCompleted = hasProfilePicture;
       } else if (task.id === 'select_squad') {
         inferredCompleted = hasSelectedSquad;
       }
@@ -203,6 +220,8 @@ export async function GET(request: NextRequest) {
         available = hasAvailableCourses || false;
       } else if (task.id === 'complete_profile') {
         available = !hasCompletedProfile; // Available if not completed
+      } else if (task.id === 'add_pfp') {
+        available = !hasProfilePicture; // Available if not completed
       } else if (task.id === 'select_squad') {
         available = !hasSelectedSquad; // Available if not selected
       }

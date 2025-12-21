@@ -212,6 +212,9 @@ export default function OnboardingOverlay({ walletAddress, onClose }: Onboarding
     return (
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-900 border-cyan-500/30">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Loading</DialogTitle>
+          </DialogHeader>
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
               <Sparkles className="w-8 h-8 animate-pulse text-cyan-400 mx-auto mb-4" />

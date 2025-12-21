@@ -216,52 +216,32 @@ export default function TokenGate({ children }: TokenGateProps) {
     };
   }, []);
 
-  // Debug logging
+  // Debug logging (only log on initial mount and errors)
   useEffect(() => {
-    console.log('TokenGate: Component mounted');
-    console.log('TokenGate: HELIUS_API_KEY available:', !!HELIUS_API_KEY);
-    console.log('TokenGate: WIFHOODIE_COLLECTION_ID:', WIFHOODIE_COLLECTION_ID);
-    console.log('TokenGate: isPhantomInstalled:', isPhantomInstalled);
-    console.log('TokenGate: Current state:', {
-      isConnecting,
-      isConnected,
-      walletAddress,
-      isHolder,
-      error,
-      isVerifying,
-      isRedirecting,
-      isAuthenticated,
-      isClient,
-      loading,
-      hasBeenConnected,
-      showSuccess
-    });
-  }, [isPhantomInstalled, isConnecting, isConnected, walletAddress, isHolder, error, isVerifying, isRedirecting, isAuthenticated, isClient, loading, hasBeenConnected, showSuccess]);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('TokenGate: Component mounted');
+    }
+  }, []);
 
   // Add the helper function inside the component so it can access state setters
   const checkWifHoodieOwnership = async (wallet: string, showSuccessMessage: boolean = true) => {
     if (!wallet) {
-      console.log("🔍 Debug: No wallet address provided, skipping verification");
       return;
     }
     
     // Check if Helius API key is defined
     if (!HELIUS_API_KEY) {
-      console.error("❌ Debug: Helius API key is missing!");
+      console.error("❌ Helius API key is missing!");
       setError("Configuration error: Helius API key is not defined.");
       setLoading(false);
       return;
     }
-    
-    console.log("🔑 Debug: Helius API key is defined:", HELIUS_API_KEY ? "YES" : "NO");
-    console.log("👛 Debug: Checking wallet:", wallet);
     
     setLoading(true);
     setError(null);
     
     try {
       const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
-      console.log("🌐 Debug: Making API request to Helius...");
       
       const response = await fetch(url, {
         method: 'POST',
@@ -283,33 +263,28 @@ export default function TokenGate({ children }: TokenGateProps) {
       // Check for HTTP errors
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("❌ Debug: HTTP error from Helius API:", response.status, errorText);
+        console.error("❌ HTTP error from Helius API:", response.status);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       const data = await response.json();
-      console.log("📦 Debug: Raw API response:", data);
       
       // Check for API errors
       if (data.error) {
-        console.error("❌ Debug: Helius API returned error:", data.error);
+        console.error("❌ Helius API returned error:", data.error.message || 'Unknown error');
         throw new Error(`API Error: ${data.error.message || 'Unknown API error'}`);
       }
 
       const { result } = data;
       
       if (!result || !result.items) {
-          console.error("❌ Debug: Helius API did not return items:", result);
+          console.error("❌ Helius API did not return items");
           throw new Error("Failed to fetch assets from wallet. The API response was malformed.");
       }
-
-      console.log("🎯 Debug: Total assets returned by Helius:", result.items.length);
-      console.log("📋 Debug: Raw assets data:", result.items);
 
       // Filter for WifHoodie collection NFTs
       const wifHoodieNfts = result.items.filter((nft: any) => {
         if (!nft.grouping || !Array.isArray(nft.grouping)) {
-          console.log("⚠️ Debug: NFT has no grouping data:", nft.id);
           return false;
         }
         
@@ -317,30 +292,26 @@ export default function TokenGate({ children }: TokenGateProps) {
           const isCollection = group.group_key === "collection";
           const isCorrectCollection = group.group_value === WIFHOODIE_COLLECTION_ID;
           
-          if (isCollection) {
-            console.log(`🔍 Debug: Found NFT collection: ${group.group_value}. Is WifHoodie? ${isCorrectCollection}`);
-          }
-          
           return isCollection && isCorrectCollection;
         });
         
         if (isWifHoodie) {
-          console.log("✅ Debug: Found WifHoodie NFT:", nft.id);
+          // Only log when WifHoodie NFT is found (not for every collection check)
+          console.log("✅ Found WifHoodie NFT:", nft.id);
         }
         
         return isWifHoodie;
       });
 
-      console.log("🎉 Debug: WifHoodie NFTs found:", wifHoodieNfts.length);
-      console.log("📊 Debug: Filtered WifHoodie NFTs:", wifHoodieNfts);
-
       const hasWifHoodie = wifHoodieNfts.length > 0;
-      console.log("🎯 Debug: Final result - Does wallet hold WifHoodie NFT?", hasWifHoodie);
+      
+      if (hasWifHoodie) {
+        console.log("✅ WifHoodie verification successful:", wifHoodieNfts.length, "NFT(s) found");
+      }
 
       setIsHolder(hasWifHoodie);
       
       if (hasWifHoodie) {
-        console.log("✅ Debug: Verification successful - storing session data");
         
         // Log successful verification
         await logNftVerification(wallet, {
@@ -361,7 +332,6 @@ export default function TokenGate({ children }: TokenGateProps) {
         localStorage.setItem('hoodie_academy_wallet', wallet);
         localStorage.setItem('walletAddress', wallet);
         localStorage.setItem('connectedWallet', wallet);
-        console.log('Wallet verified and synced to all storage systems:', wallet);
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('walletConnected', { detail: { wallet } }));
         }
@@ -370,22 +340,11 @@ export default function TokenGate({ children }: TokenGateProps) {
         
         // Only show success message for fresh verifications
         if (showSuccessMessage) {
-          console.log("🎉 Debug: Showing success message for fresh verification");
-          
-          // Check if user needs to complete onboarding from database
-          // TODO: Implement database check here
-          console.log("🆕 Debug: Checking onboarding status from database...");
-          
-          // For now, always show success message
           setShowSuccess(true);
           // Hide success message after 2 seconds
           setTimeout(() => setShowSuccess(false), 2000);
-        } else {
-          console.log("🔄 Debug: Skipping success message for existing session");
         }
       } else {
-        console.log("❌ Debug: No WifHoodie NFTs found - verification failed");
-        
         // Log failed verification
         await logNftVerification(wallet, {
           success: false,
@@ -394,7 +353,7 @@ export default function TokenGate({ children }: TokenGateProps) {
         });
       }
     } catch (error: any) {
-      console.error("💥 Debug: NFT check failed with error:", error);
+      console.error("❌ NFT verification failed:", error.message);
       setError(`NFT verification failed: ${error.message}`);
     }
     setLoading(false);
@@ -423,23 +382,20 @@ export default function TokenGate({ children }: TokenGateProps) {
         const sessionValid = sessionAge < 24 * 60 * 60 * 1000; // 24 hours
         
         if (sessionValid) {
-          console.log("🔄 Debug: Restoring session for wallet:", session.walletAddress);
           setWalletAddress(session.walletAddress);
           setIsHolder(true);
           setIsAuthenticated(true);
           setHasBeenConnected(true);
           clearTimeout(timeoutId); // Clear timeout on successful restoration
         } else {
-          console.log("⏰ Debug: Session expired, clearing storage");
           sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
         }
       } catch (error) {
-        console.error("❌ Debug: Error parsing session data:", error);
+        console.error("❌ Error parsing session data:", error);
         sessionStorage.removeItem(VERIFICATION_SESSION_KEY);
       }
     } else if (storedWallet) {
       // Try to restore from localStorage if sessionStorage is empty
-      console.log("🔄 Debug: Restoring wallet from localStorage:", storedWallet);
       setWalletAddress(storedWallet);
       clearTimeout(timeoutId); // Clear timeout when wallet is found
       // Will trigger verification via the walletAddress useEffect
@@ -468,8 +424,6 @@ export default function TokenGate({ children }: TokenGateProps) {
   // }, [walletAddress]);
 
   const disconnectWallet = async () => {
-    console.log("🔌 Debug: Disconnecting wallet:", walletAddress);
-    
     // Log wallet disconnection
     if (walletAddress) {
       logWalletConnection(walletAddress, 'wallet_disconnect', { provider: 'phantom' });
@@ -484,9 +438,6 @@ export default function TokenGate({ children }: TokenGateProps) {
         })
       })
         .then(res => res.json())
-        .then(data => {
-          console.log('📊 API disconnection logged from TokenGate:', data);
-        })
         .catch(err => {
           console.warn('⚠️ API disconnection logging failed:', err);
         });
@@ -526,7 +477,6 @@ export default function TokenGate({ children }: TokenGateProps) {
     
     // Guard against multiple simultaneous connections
     if (isConnecting) {
-      console.log("⏳ Debug: Wallet is already connecting, skipping...");
       return;
     }
     
@@ -541,8 +491,6 @@ export default function TokenGate({ children }: TokenGateProps) {
     
     setIsConnecting(true);
     
-    console.log("🔌 Debug: Starting wallet connection for provider:", providerName);
-    
     let provider: SolanaProvider | null = null;
     if (providerName === 'phantom') {
       // Wait for Phantom to be available with retry mechanism
@@ -553,11 +501,9 @@ export default function TokenGate({ children }: TokenGateProps) {
         const phantomProvider = getPhantomProvider();
         if (phantomProvider?.isPhantom) {
           provider = phantomProvider;
-          console.log("✅ Debug: Phantom wallet found and available");
           break;
         }
         
-        console.log(`⏳ Debug: Phantom not found, retry ${retries + 1}/${maxRetries}`);
         retries++;
         
         if (retries < maxRetries) {
@@ -589,7 +535,6 @@ export default function TokenGate({ children }: TokenGateProps) {
       const solflareProvider = getSolflareProvider();
       if (solflareProvider) {
         provider = solflareProvider;
-        console.log("✅ Debug: Solflare wallet found and available");
       } else {
         const errorMsg = isMobile 
           ? "Solflare is not available on mobile. Please use Phantom instead."
@@ -611,22 +556,16 @@ export default function TokenGate({ children }: TokenGateProps) {
     }
     
     try {
-      console.log("🔗 Debug: Attempting to connect to wallet...");
-      
       // Connect only if not already connected
       if (!provider.publicKey) {
         try {
           // Try trusted connection first (silent connection if previously authorized)
           await provider.connect({ onlyIfTrusted: true } as any);
-          console.log("✅ Connected with trusted connection");
         } catch (trustedError: any) {
           // If trusted connection fails, try regular connection
-          console.log("⚠️ Trusted connection failed, trying regular connection...", trustedError?.message);
-          
           try {
             // Call connect without parameters to show the user the connection prompt
             await provider.connect();
-            console.log("✅ Connected with user approval");
           } catch (connectError: any) {
             // Check if user rejected the connection
             const errorMessage = connectError?.message || connectError?.toString() || '';
@@ -653,7 +592,6 @@ export default function TokenGate({ children }: TokenGateProps) {
       }
       
       const walletAddress = provider.publicKey.toString();
-      console.log("✅ Debug: Wallet connected successfully:", walletAddress);
       
       // Log wallet connection
       await logWalletConnection(walletAddress, 'wallet_connect', { provider: providerName });
@@ -674,7 +612,6 @@ export default function TokenGate({ children }: TokenGateProps) {
       })
         .then(res => res.json())
         .then(data => {
-          console.log('📊 API connection logged from TokenGate:', data);
           if (data.banned) {
             // Wallet is banned
             console.error('⛔ Wallet is banned!');
@@ -698,7 +635,7 @@ export default function TokenGate({ children }: TokenGateProps) {
     } catch (error: any) {
       // Error message is already user-friendly from the inner catch blocks
       const errorMsg = error?.message || 'Wallet connection failed. Please try again.';
-      console.error("💥 Debug: Wallet connection error:", error);
+      console.error("❌ Wallet connection error:", errorMsg);
       setError(errorMsg);
     } finally {
       setIsConnecting(false);

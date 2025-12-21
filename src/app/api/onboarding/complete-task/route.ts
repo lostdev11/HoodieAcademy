@@ -21,6 +21,7 @@ function getSupabaseClient() {
 // Task definitions with XP rewards
 const TASK_XP_REWARDS: Record<string, number> = {
   'complete_profile': 25,
+  'add_pfp': 20,
   'select_squad': 50,
   'start_first_course': 75,
   'claim_daily_login': 5,
@@ -46,6 +47,22 @@ async function verifyTaskCompletion(
       
       if (!user?.display_name) {
         return { verified: false, reason: 'Profile not completed. Please add a display name.' };
+      }
+      return { verified: true };
+    }
+
+    case 'add_pfp': {
+      // Verify user has a profile picture (not null and is a valid URL, not just emoji)
+      const { data: user } = await supabase
+        .from('users')
+        .select('profile_picture')
+        .eq('wallet_address', walletAddress)
+        .single();
+      
+      if (!user?.profile_picture || 
+          user.profile_picture === '🧑‍🎓' || 
+          (!user.profile_picture.startsWith('http://') && !user.profile_picture.startsWith('https://'))) {
+        return { verified: false, reason: 'Profile picture not set. Please add a profile picture.' };
       }
       return { verified: true };
     }

@@ -47,6 +47,7 @@ import SquadBadge from "@/components/SquadBadge"
 import CryptoPriceTicker from "@/components/CryptoPriceTicker"
 import { getSquadNameFromCache, isSquadLockedFromCache } from '@/utils/squad-api'
 import Image from 'next/image'
+import AdminNotificationBanner from "@/components/admin/AdminNotificationBanner"
 
 // Lazy load heavy components
 const AcademyInfo = lazy(() => import("@/components/home/AcademyInfo"));
@@ -608,7 +609,7 @@ export default function HoodieAcademy() {
                   <SquadBadge squad={userSquad || 'Unassigned'} walletAddress={walletAddress} />
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full">
+              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 sm:gap-5 w-full">
                 {/* Wallet Info */}
                 {walletAddress && (
                   <div className="flex items-center space-x-2 bg-slate-700/50 px-3 py-2 rounded-lg border border-cyan-500/30 w-full sm:w-auto flex-shrink-0">
@@ -693,7 +694,7 @@ export default function HoodieAcademy() {
                 </Button>
                 
                 {/* Time - Hidden on mobile to prevent overlap */}
-                <div className="hidden lg:flex flex-col text-right flex-shrink-0">
+                <div className="hidden lg:flex flex-col text-right flex-shrink-0 ml-auto">
                   <div className="text-xs text-gray-400">Current Time</div>
                   <div className="text-sm text-cyan-400 font-mono">{currentTime}</div>
                 </div>
@@ -741,6 +742,9 @@ export default function HoodieAcademy() {
           {/* Home Page Content */}
           <main className="flex-1 px-4 py-6 space-y-6 max-w-full overflow-x-hidden">
             <h1 className="sr-only">Hoodie Academy — Web3, NFT & Crypto Education</h1>
+            {walletAddress && isAdmin && (
+              <AdminNotificationBanner walletAddress={walletAddress} isAdmin={isAdmin} />
+            )}
             {/* Welcome Header */}
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-cyan-400 mb-2">🏛️ Welcome to Hoodie Academy</h2>

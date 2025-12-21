@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -699,7 +699,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
               <>
                 <div className="flex gap-2">
                   <Input
-                    value={input}
+                    value={input || ''}
                     onChange={handleInputChange}
                     placeholder="Ask me anything about Web3, Solana, or coding..."
                     className="flex-1 bg-gradient-to-br from-slate-800/80 to-slate-700/80 border-cyan-500/30 text-gray-100 placeholder:text-gray-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 transition-all duration-200 font-medium"
@@ -708,7 +708,7 @@ export default function AIChatWidget({ initialOpen = false }: AIChatWidgetProps)
                   <Button
                     type="submit"
                     size="icon"
-                    disabled={isLoading || !input.trim() || hasReachedLimit}
+                    disabled={isLoading || !(input || '').trim() || hasReachedLimit}
                     className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-600 hover:to-purple-700 disabled:opacity-50 transition-all duration-200"
                     aria-label="Send message"
                   >

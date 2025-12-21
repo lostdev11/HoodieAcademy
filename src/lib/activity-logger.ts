@@ -51,7 +51,6 @@ export async function logUserActivity(activityData: ActivityLogData): Promise<bo
     });
 
     if (response.ok) {
-      console.log('📊 Activity logged:', activityData.activity_type, 'for', activityData.wallet_address);
       return true;
     } else {
       console.warn('⚠️ Failed to log activity:', response.status, response.statusText);

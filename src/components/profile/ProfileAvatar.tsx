@@ -12,7 +12,7 @@ export function ProfileAvatar({ pfpUrl, size = 96 }: { pfpUrl?: string | null; s
 
   return (
     <div className="relative">
-      <div className="rounded-full ring-2 ring-yellow-500/40 overflow-hidden" style={{ width: size, height: size }}>
+      <div className="rounded-full overflow-hidden" style={{ width: size, height: size }}>
         {showImage ? (
           // Only use Next.js Image for valid HTTP URLs
           <Image src={src} alt="Profile picture" width={size} height={size} className="object-cover" />

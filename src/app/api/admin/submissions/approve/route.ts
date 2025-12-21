@@ -98,6 +98,55 @@ export async function POST(request: NextRequest) {
               // Don't fail the approval for completion tracking errors
             } else {
               console.log(`[BOUNTY COMPLETED] User ${submission.wallet_address} completed bounty ${submission.bounty_id}`);
+              
+              // Sync XP to users table after successful completion
+              try {
+                // Get current XP from user_xp table (source of truth)
+                const { data: userXP, error: userXPError } = await supabase
+                  .from('user_xp')
+                  .select('total_xp, level')
+                  .eq('wallet_address', submission.wallet_address)
+                  .maybeSingle();
+
+                if (!userXPError && userXP) {
+                  // Update users table to keep in sync
+                  const { error: syncError } = await supabase
+                    .from('users')
+                    .upsert({
+                      wallet_address: submission.wallet_address,
+                      total_xp: userXP.total_xp,
+                      level: userXP.level,
+                      updated_at: new Date().toISOString()
+                    }, {
+                      onConflict: 'wallet_address'
+                    });
+
+                  if (syncError) {
+                    console.error('[XP SYNC ERROR] Failed to sync XP to users table:', syncError);
+                  } else {
+                    console.log(`[XP SYNCED] Synced ${xpReward} XP to users table for ${submission.wallet_address}`);
+                  }
+                } else {
+                  // If user_xp doesn't exist, create user with XP
+                  const { error: createUserError } = await supabase
+                    .from('users')
+                    .upsert({
+                      wallet_address: submission.wallet_address,
+                      total_xp: xpReward,
+                      level: Math.floor(xpReward / 1000) + 1,
+                      updated_at: new Date().toISOString()
+                    }, {
+                      onConflict: 'wallet_address'
+                    });
+
+                  if (createUserError) {
+                    console.error('[USER CREATION ERROR] Failed to create/update user:', createUserError);
+                  }
+                }
+              } catch (syncError) {
+                console.error('[XP SYNC ERROR] Error syncing XP to users table:', syncError);
+                // Don't fail the approval for sync errors
+              }
             }
           }
         } catch (completionError) {

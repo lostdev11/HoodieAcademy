@@ -138,6 +138,16 @@ export default function DailyLoginBonus({ walletAddress, className = '' }: Daily
           window.dispatchEvent(new CustomEvent('forceRefresh', {
             detail: { targetWallet: walletAddress }
           }));
+          
+          // Dispatch specific event for daily claim analytics refresh
+          window.dispatchEvent(new CustomEvent('dailyClaimSuccess', {
+            detail: {
+              walletAddress,
+              xpAwarded: result.xpAwarded,
+              newTotalXP: result.newTotalXP,
+              timestamp: new Date().toISOString()
+            }
+          }));
         }, 100);
         
         // Don't reload status immediately - let the local state persist

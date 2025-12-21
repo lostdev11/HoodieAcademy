@@ -89,9 +89,40 @@ export async function GET(request: NextRequest) {
       };
     }) || [];
 
+    // Filter out test/mock users
+    const isTestUser = (user: any) => {
+      const wallet = user.wallet_address?.toLowerCase() || '';
+      const displayName = user.display_name?.toLowerCase() || '';
+      
+      // Filter test wallet addresses
+      if (wallet.startsWith('test-') || 
+          wallet.startsWith('test-wallet') ||
+          wallet === 'admin-wallet' ||
+          wallet.includes('test123456789') ||
+          wallet.includes('usertest') ||
+          wallet.includes('demowallet') ||
+          wallet.includes('testwallet')) {
+        return true;
+      }
+      
+      // Filter test display names
+      if (displayName.includes('test user') ||
+          displayName === 'admin user' ||
+          displayName === 'alice johnson' ||
+          displayName === 'bob smith' ||
+          displayName === 'charlie brown' ||
+          displayName.startsWith('demo user')) {
+        return true;
+      }
+      
+      return false;
+    };
+
+    const realUsers = enrichedUsers.filter(user => !isTestUser(user));
+
     return NextResponse.json({
-      users: enrichedUsers,
-      total: enrichedUsers.length
+      users: realUsers,
+      total: realUsers.length
     });
 
   } catch (error) {
